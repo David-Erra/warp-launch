@@ -96,7 +96,7 @@ scripts/test.sh                      # proves (swift-testing); `swift test` sol 
 - [`docs/disseny.md`](docs/disseny.md): disseny i passos de cada fase.
 - [`docs/fets-verificats.md`](docs/fets-verificats.md): comportament comprovat de Warp, de Claude Code i de l'entorn.
 - [`docs/antecedents.md`](docs/antecedents.md): eines semblants que existeixen i per què no ens serveixen.
-- [`prototip/`](prototip/): el prototip anterior en Python (`espai`), desinstal·lat i pendent de revisió.
+- El prototip anterior en Python (`espai`), desinstal·lat, ja no és al repo: és a l'historial, al commit `114c97d`.
 
 ## Llicència
 

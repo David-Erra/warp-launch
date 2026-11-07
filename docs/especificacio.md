@@ -169,7 +169,7 @@ Per a en David, **una finestra de Warp és un grup de sessions** (pestanyes). No
 ## Pendents
 
 - **Revisar tot el que es va fer abans:**
-  - el codi i les proves del prototip (`prototip/`);
+  - el codi i les proves del prototip (des del 07/11/2026, fora del repo: a l'historial, al commit 114c97d);
   - els fets marcats «(prototip)» a `fets-verificats.md`;
   - les configuracions de Warp que va generar.
 - **Preguntes tècniques de la fase 1:**

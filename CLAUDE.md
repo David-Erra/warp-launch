@@ -90,9 +90,9 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
   1. Lectura de la configuració actual de Warp.
   2. Editor.
   3. Llançaments, pas a pas.
-- **El prototip `espai` (Python) està desinstal·lat:** no hi ha LaunchAgent ni comanda. El codi és a
-  `prototip/`. En David creu que **tot el que es va fer abans potser no val i s'ha de revisar**: el codi,
-  les proves i els fets que se'n van treure.
+- **El prototip `espai` (Python) està desinstal·lat:** no hi ha LaunchAgent ni comanda. Des del 07/11/2026, `prototip/`
+  ja no és al repo (en David): el codi del prototip és a l'historial, al commit 114c97d (`git show 114c97d:prototip/espai.py`).
+  En David creu que **tot el que es va fer abans potser no val i s'ha de revisar**: el codi, les proves i els fets que se'n van treure.
 - **L'app nova no pot dependre de res creat abans fora d'aquest repo**, com `espai`, `~/.config/espai-warp/`
   o les configuracions `espai-*.yaml`.
 
@@ -134,7 +134,6 @@ GH_TOKEN="$(gh auth token -u David-Erra)" scripts/publica.sh [--aplica]  # sense
 scripts/warp-restauracio.sh estat         # si Warp desa les finestres (només lectura)
 scripts/warp-restauracio.sh activa|desactiva [--aplica]  # regla 7: sense --aplica no escriu; amb, cal l'OK d'en David
 scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-banana (cal GEMINI_API_KEY)
-python3 -m unittest discover -s prototip/tests   # proves del prototip (només referència)
 ```
 
 - **Elements gràfics** (decisió d'en David, 03/11/2026):
@@ -160,7 +159,6 @@ python3 -m unittest discover -s prototip/tests   # proves del prototip (només r
 | `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
 | `.claude/skills/mac-design/` | Normes de disseny d'app de Mac (adaptada de BAMA, MIT); `docs/disseny.md` hi mana |
 | `.claude/skills/app-icon/` | Com es fa la icona: dibuix amb codi (nano-banana, com a alternativa), Icon Composer i `actool` (adaptada de BAMA, MIT) |
-| `prototip/` | `espai.py` i les seves proves: referència per revisar, **no és font de veritat** |
 | `.claude/settings.json` | Regles `deny` de Claude Code (vegeu sota) |
 | `LICENSE` | Llicència MIT (© 2026 David Erra); les skills de BAMA porten la seva (`LICENSE-BAMA`) |
 
@@ -196,9 +194,9 @@ desenes de sessions o les tanca totes de cop.
      `--desa` i `configuracio valida` (OK d'en David, 03/11/2026).
    - Tota ordre que obri finestres o escrigui fora del repo ha de tenir un mode de prova, i ha de ser el
      comportament per defecte.
-5. **Del prototip només pots executar les proves** (`python3 -m unittest discover -s prototip/tests`).
-   No executis `prototip/espai.py` amb cap subcomanda: `instal·la` el tornaria a instal·lar, `desa` escriu
-   l'estat i `obre` obre Warp. Per entendre'l, llegeix-ne el codi.
+5. **El prototip ja no és al repo** (07/11/2026): és a l'historial, al commit 114c97d. Per entendre'l, llegeix-ne el codi
+   (`git show 114c97d:prototip/espai.py`). No el recuperis per executar-lo, ni amb cap subcomanda: `instal·la` el tornaria a
+   instal·lar, `desa` escriu l'estat i `obre` obre Warp.
 
 **Fitxers**
 

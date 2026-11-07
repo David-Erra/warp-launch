@@ -324,7 +324,7 @@ corregeix-lo i deixa'n constància.
     (per exemple, `tool_complete`), `session_id` i `cwd`.
   - Warp les apunta al log. Està per veure si serveixen per lligar cada pane amb la seva sessió.
 - **Arguments de cada procés:** `ps` perd les cometes. L'`argv` exacte i l'entorn d'un procés propi es
-  llegeixen amb `sysctl(KERN_PROCARGS2)` (prototip; vegeu `argv_env_de` a `prototip/espai.py`). L'entorn
+  llegeixen amb `sysctl(KERN_PROCARGS2)` (prototip; vegeu `argv_env_de` a `prototip/espai.py`, a l'historial: `git show 114c97d:prototip/espai.py`). L'entorn
   inclou `WARP_TERMINAL_SESSION_UUID`. La revisió del 03/11/2026 en va llegir l'entorn de 6 processos.
 - **Memòria** (03/11/2026, revisió): 14 sessions vives ocupaven 6,94 GB, una mitjana de 508 MB (de 354 a
   794 MB). Amb 64 sessions serien uns 32 GB. El Mac té 64 GB.
