@@ -83,8 +83,7 @@ Recursos/AppIcon.icon/
 7. **Formes plenes,** sense contorns.
 8. **Un sol to de fons.** `automatic-gradient` gairebé sempre queda bé.
 9. **Ha de ser diferent de les icones que té al costat al Dock:**
-   `defaults read com.apple.dock persistent-apps | grep file-label`. El 03/11/2026 hi havia, entre d'altres, Warp,
-   Claude, VS Code i les apps del sistema.
+   `defaults read com.apple.dock persistent-apps | grep file-label`.
 
 ## Passos
 
@@ -92,10 +91,10 @@ Recursos/AppIcon.icon/
 
    Comprova que cap no fa servir un SF Symbol, text ni el logotip de ningú.
 
-2. **Dibuix amb codi (Warp Launch, des del 06/11/2026).** En David va triar dibuixar la icona amb codi quan nano-banana
-   va deixar de tenir crèdit (402). Les capes actuals surten de `swift scripts/icona-dibuixa.swift` (CoreGraphics, sense
-   cost): per canviar el dibuix, canvia'n la geometria (constants a dalt de l'script), torna'l a executar i segueix
-   pel pas 3. Si mai es torna a fer amb nano-banana, aquest és el camí:
+2. **Dibuix amb codi (Warp Launch, des del 06/11/2026).** En David va triar dibuixar la icona amb codi. Les capes
+   actuals surten de `swift scripts/icona-dibuixa.swift` (CoreGraphics, sense cost): per canviar el dibuix, canvia'n la
+   geometria (constants a dalt de l'script), torna'l a executar i segueix pel pas 3. Si mai es torna a fer amb
+   nano-banana, aquest és el camí:
 
    **Genera cada capa amb nano-banana:** una crida per capa, a `build/icona/<capa>-original.png`. Per exemple:
 
