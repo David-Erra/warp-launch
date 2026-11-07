@@ -60,6 +60,9 @@ public struct VistaConfiguracio: View {
                 }
             }
         }
+        // En canviar de pestanya (o quan una pestanya creix, com amb el text de «Copia el diagnòstic»), la finestra canvia
+        // d'alçada per baix: la vora de dalt, amb la barra de les pestanyes, no es mou (macOS 26).
+        .windowResizeAnchor(.top)
     }
 
     /// Una pestanya: tan alta com el contingut, i com a molt `alcadaMaxima`; el que no hi cap es desplaça dins del `Form`.
