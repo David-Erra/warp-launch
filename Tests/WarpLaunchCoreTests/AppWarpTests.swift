@@ -84,6 +84,32 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         }
     }
 
+    /// Una còpia a la Paperera (la de l'usuari o la d'un altre disc) no és cap Warp instal·lat, encara que macOS la doni:
+    /// es mira a Aplicacions, i si tampoc n'hi ha, no hi ha Warp Stable. Amb Warp Preview, igual.
+    @Test func laPapereraNoCompta() throws {
+        let tmp = try CarpetaTemporal()
+        let paperera = try paquet(tmp, "inici/.Trash/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let disc = try paquet(tmp, "Volumes/Disc/.Trashes/501/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let preview = try paquet(tmp, "inici/.Trash/WarpPreview.app", id: AppWarp.identificadorPreview, executable: "preview")
+        for trobada in [paperera, disc] {
+            let cerca = CercaFalsa([AppWarp.identificador: trobada, AppWarp.identificadorPreview: preview]).cerca
+            let sense = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca)
+            #expect(sense == InstallacioWarp(app: AppWarp(url: tmp.url("Applications/Warp.app")),
+                                             executable: tmp.ruta + "/Applications/Warp.app/Contents/MacOS/stable",
+                                             hiHaStable: false), "\(trobada.path)")
+            #expect(sense.preview(ProcessosFalsos(), stableObert: false) == nil, "Warp Preview a la Paperera no compta")
+        }
+        // Amb Warp a Aplicacions, és aquest.
+        _ = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"),
+                                         cerca: CercaFalsa([AppWarp.identificador: paperera]).cerca)
+        #expect(warp.hiHaStable && warp.app == AppWarp(url: tmp.url("Applications/Warp.app")))
+        // Una carpeta que només s'hi assembla sí que compta.
+        let semblant = try paquet(tmp, "inici/Trash/.Trash-no/Warp.app", id: AppWarp.identificador, executable: "stable")
+        #expect(InstallacioWarp.troba(aplicacions: tmp.url("Res/Warp.app"),
+                                      cerca: CercaFalsa([AppWarp.identificador: semblant]).cerca).app == AppWarp(url: semblant))
+    }
+
     /// Cap Warp: ni el diu macOS ni n'hi ha a Aplicacions. Obrir res fallaria, i el binari és el de sempre (no n'hi ha cap).
     @Test func capWarp() throws {
         let tmp = try CarpetaTemporal()

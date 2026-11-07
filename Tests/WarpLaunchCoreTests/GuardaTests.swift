@@ -173,8 +173,8 @@ private let prohibidesArrossegar = [
         #expect(linies("InstallacioWarp.troba(").map { $0.prefix(trobaWarp.count) } == [Substring(trobaWarp)])
         // La llista fixa: `troba` només demana els dos identificadors de Warp.
         #expect(linies("cerca(").sorted() == [
-            "Sources/WarpLaunchCore/AppWarp.swift: let preview = cerca(AppWarp.identificadorPreview).map(AppWarp.init(url:)).flatMap { $0.esPreview ? $0 : nil }",
-            "Sources/WarpLaunchCore/AppWarp.swift: let trobada = cerca(AppWarp.identificador).map(AppWarp.init(url:)).flatMap { $0.esWarp ? $0 : nil }",
+            "Sources/WarpLaunchCore/AppWarp.swift: let preview = installada(cerca(AppWarp.identificadorPreview)).flatMap { $0.esPreview ? $0 : nil }",
+            "Sources/WarpLaunchCore/AppWarp.swift: let trobada = installada(cerca(AppWarp.identificador)).flatMap { $0.esWarp ? $0 : nil }",
         ])
         // Fora dels comentaris.
         #expect(Set(linies("TrobaWarp.delSistema").filter { !$0.contains(": //") }.map { String($0.prefix { $0 != ":" }) }) == [

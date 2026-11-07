@@ -63,6 +63,11 @@ public struct InstallacioWarp: Sendable, Equatable {
     public static let perOmissio = InstallacioWarp(app: AppWarp(url: AppWarp.rutaPerDefecte),
                                                    executable: binariPerOmissio(AppWarp.rutaPerDefecte), hiHaStable: true)
 
+    /// Si és dins d'una Paperera: la de l'usuari (`~/.Trash`) o la d'un altre disc (`.Trashes`).
+    static func esALaPaperera(_ url: URL) -> Bool {
+        url.standardizedFileURL.pathComponents.contains { $0 == ".Trash" || $0 == ".Trashes" }
+    }
+
     /// `Contents/MacOS/stable`: el binari de Warp Stable si el paquet no diu quin és (o no hi és).
     static func binariPerOmissio(_ app: URL) -> String { app.appending(path: "Contents/MacOS/stable").path }
 
@@ -70,10 +75,13 @@ public struct InstallacioWarp: Sendable, Equatable {
     /// `aplicacions`, on es mira Warp Stable si `cerca` no el troba. Només es fa servir una app si el seu `Info.plist`
     /// diu que és la que es busca.
     public static func troba(aplicacions: URL, cerca: (String) -> URL?) -> InstallacioWarp {
-        let trobada = cerca(AppWarp.identificador).map(AppWarp.init(url:)).flatMap { $0.esWarp ? $0 : nil }
+        // 0.29.3: una còpia a la Paperera no és cap Warp instal·lat, però macOS la pot donar igualment. No s'hi obre res:
+        // com si no en sabés res.
+        func installada(_ url: URL?) -> AppWarp? { url.flatMap { esALaPaperera($0) ? nil : AppWarp(url: $0) } }
+        let trobada = installada(cerca(AppWarp.identificador)).flatMap { $0.esWarp ? $0 : nil }
         let app = trobada ?? AppWarp(url: aplicacions)
         let hiHaStable = trobada != nil || app.esWarp
-        let preview = cerca(AppWarp.identificadorPreview).map(AppWarp.init(url:)).flatMap { $0.esPreview ? $0 : nil }
+        let preview = installada(cerca(AppWarp.identificadorPreview)).flatMap { $0.esPreview ? $0 : nil }
         return InstallacioWarp(app: app, executable: (hiHaStable ? app.executable : nil) ?? binariPerOmissio(app.url),
                                hiHaStable: hiHaStable, executablePreview: preview?.executable)
     }
