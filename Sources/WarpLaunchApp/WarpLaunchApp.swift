@@ -40,6 +40,7 @@ struct WarpLaunchApp: App {
             }
             .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
         }
+        // La mida de la pestanya que es veu: tan alta com el contingut, fins a 640 pt (`VistaConfiguracio.formulari`).
         .windowResizability(.contentSize)
 
         MenuBarExtra {

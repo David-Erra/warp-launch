@@ -1,9 +1,36 @@
 import SwiftUI
 import WarpLaunchCore
 
-/// La finestra de Configuració (⌘,; docs/disseny.md, pas 11): la plantilla de les pestanyes noves, l'ordre que en
-/// surt, el fitxer i el diagnòstic (pla A4). Un sol panell, d'amplada fixa i alçada del contingut (settings.md de mac-design). Els canvis de
-/// la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`), no al de l'editor.
+/// Les pestanyes de la Configuració, en aquest ordre (settings.md de mac-design: una per tema, «General» primer). macOS en
+/// posa les icones a la barra d'eines, i el títol de la finestra és el de la pestanya que es veu. L'app no desa quina és
+/// l'última: no fa servir les preferències del sistema (prova de guarda), i la configuració JSON és d'en David.
+enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
+    /// «En iniciar sessió», «Fitxer» i «Diagnòstic».
+    case general
+    /// La plantilla de les pestanyes noves, l'ordre que en surt i les opcions que la Configuració no canvia.
+    case pestanyesNoves
+
+    var id: Self { self }
+
+    var titol: String {
+        switch self {
+        case .general: "General"
+        case .pestanyesNoves: "Pestanyes noves"
+        }
+    }
+
+    /// SF Symbols de macOS 11, o d'abans.
+    var simbol: String {
+        switch self {
+        case .general: "gearshape"
+        case .pestanyesNoves: "plus.rectangle.on.rectangle"
+        }
+    }
+}
+
+/// La finestra de Configuració (⌘,; docs/disseny.md, pas 11), en dues pestanyes (`PestanyaConfiguracio`): «General» (en
+/// iniciar sessió, el fitxer i el diagnòstic, pla A4) i «Pestanyes noves» (la plantilla i l'ordre que en surt). Els canvis
+/// de la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`), no al de l'editor.
 public struct VistaConfiguracio: View {
     @Bindable var editor: Editor
     let carpeta: String
@@ -20,25 +47,60 @@ public struct VistaConfiguracio: View {
         self.diagnostic = diagnostic
     }
 
+    /// settings.md: cada pestanya, un `Form` agrupat de 520 pt d'amplada; la que faria més de 640 pt d'alçada es desplaça.
+    static let amplada: CGFloat = 520
+    static let alcadaMaxima: CGFloat = 640
+
     public var body: some View {
-        Form {
-            if let plantilla = editor.plantillaVisible {
-                seccionsPlantilla(plantilla)
-            } else {
-                // Carregant, o el fitxer no es pot llegir: cap valor, perquè no se sap quina és la plantilla.
-                Section("Pestanyes noves") {
-                    Text(editor.motiuPlantillaNoEditable ?? "")
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+        // Sense cap marc al `TabView`: la mida és la de la pestanya que es veu (`formulari`).
+        TabView {
+            ForEach(PestanyaConfiguracio.allCases) { pestanya in
+                Tab(pestanya.titol, systemImage: pestanya.simbol) {
+                    formulari(pestanya)
                 }
             }
-            seccioArrencada
-            seccioFitxer
-            seccioDiagnostic
+        }
+    }
+
+    /// Una pestanya: tan alta com el contingut, i com a molt `alcadaMaxima`; el que no hi cap es desplaça dins del `Form`.
+    ///
+    /// L'ordre dels modificadors compta. Un `Form` agrupat és una vista de desplaçament, i la seva alçada ideal és la de tot
+    /// el contingut. `fixedSize` vertical demana l'alçada ideal al marc, i el marc la retalla a `alcadaMaxima` i col·loca el
+    /// `Form` amb aquesta alçada: la pestanya fa l'alçada del contingut, fins a 640 pt, sigui quina sigui l'alçada que li
+    /// ofereixin. Amb `.windowResizability(.contentSize)` a l'escena, la finestra pren aquesta mida (la mínima i la màxima
+    /// del contingut són iguals) i canvia de mida a cada pestanya. Si el contingut és més curt, el `Form` no té res per
+    /// desplaçar i macOS no hi posa cap barra; si és més llarg, el `Form` fa 640 pt i s'hi desplaça. Mesurat amb un programa
+    /// a part, sense mostrar cap finestra (07/11/2026, macOS 27.2). Fins a la 0.30.1, sense `frame(maxHeight:)`, la finestra
+    /// feia l'alçada de tot el contingut, més que la pantalla, i no es podia fer més baixa.
+    private func formulari(_ pestanya: PestanyaConfiguracio) -> some View {
+        Form {
+            switch pestanya {
+            case .general:
+                seccioArrencada
+                seccioFitxer
+                seccioDiagnostic
+            case .pestanyesNoves:
+                seccionsPestanyesNoves
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 520)
+        .frame(width: Self.amplada)
+        .frame(maxHeight: Self.alcadaMaxima)
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private var seccionsPestanyesNoves: some View {
+        if let plantilla = editor.plantillaVisible {
+            seccionsPlantilla(plantilla)
+        } else {
+            // Carregant, o el fitxer no es pot llegir: cap valor, perquè no se sap quina és la plantilla.
+            Section("Pestanyes noves") {
+                Text(editor.motiuPlantillaNoEditable ?? "")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     @ViewBuilder
