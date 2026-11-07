@@ -728,7 +728,7 @@ struct Anonimitzador: Sendable {
     let actiu: Bool
     /// La carpeta d'inici, tal com és i canònica, sense barra final; la més llarga primer.
     let inicis: [String]
-    /// El nom d'usuari, i com surt al nom d'un projecte de Claude (`david.erra` → `david-erra`).
+    /// El nom d'usuari, i com surt al nom d'un projecte de Claude (`nom.cognom` → `nom-cognom`).
     let usuaris: [String]
 
     init(inici: String, usuari: String, actiu: Bool) {
