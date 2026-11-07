@@ -532,7 +532,20 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
 
         let (codi, sortida) = executa("obre", "feina", "--config", carpeta.path)
         #expect(codi == 1)
-        #expect(sortida.text.contains("Warp és tancat: primer s'obriria Warp.\n✗ \(avis) No s'obriria res.\n"), "\(sortida.text)")
+        // Just després de la finestra, i sense dir que primer s'obriria Warp: no s'obriria res, tampoc Warp Stable.
+        let linies = sortida.text.split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(linies.count > 2 && linies[1].hasPrefix("Finestra ") && linies[2] == "✗ \(avis) No s'obriria res.",
+                "\(sortida.text)")
+        #expect(!sortida.text.contains("primer s'obriria Warp") && !sortida.text.contains("Warp és tancat"), "\(sortida.text)")
+        // Sense Warp Preview i amb Warp Stable tancat, sí que ho diu.
+        var tancat = e.entorn
+        var processos = try #require(tancat.lector.processos as? ProcessosFalsos)
+        processos.processos[40] = nil
+        tancat.lector.processos = processos
+        var sortidaTancat = Sortida()
+        #expect(OrdreCLI.executa(["obre", "feina", "--config", carpeta.path], entorn: tancat, sortida: &sortidaTancat) != 1)
+        #expect(sortidaTancat.text.contains("\nWarp és tancat: primer s'obriria Warp.\n"), "\(sortidaTancat.text)")
+        #expect(!sortidaTancat.text.contains("Preview"), "\(sortidaTancat.text)")
         let (codiJSON, json) = executa("obre", "feina", "--json", "--config", carpeta.path)
         #expect(codiJSON == 1)
         let objecte = try #require(try JSONSerialization.jsonObject(with: Data(json.text.utf8)) as? [String: Any])

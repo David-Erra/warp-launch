@@ -28,12 +28,16 @@ enum InformeObertura {
         var linies = [d.capcalera]
         let pla = d.pla
         linies.append("Finestra \(d.numero) de \(d.finestres): «\(pla.finestra.nom)» (\(d.configuracio.path))")
-        switch d.warpObert {
-        case true?: linies.append("Warp és obert.")
-        case false?: linies.append("Warp és tancat: primer s'obriria Warp.")
-        case nil: linies.append("No se sap si Warp és obert.")
+        // D-P12: amb Warp Preview no s'obriria res, tampoc Warp Stable: el text de Warp Preview ja diu què hi ha obert.
+        if let preview = d.warpPreview {
+            linies.append("✗ \(preview.text) No s'obriria res.")
+        } else {
+            switch d.warpObert {
+            case true?: linies.append("Warp és obert.")
+            case false?: linies.append("Warp és tancat: primer s'obriria Warp.")
+            case nil: linies.append("No se sap si Warp és obert.")
+            }
         }
-        if let preview = d.warpPreview { linies.append("✗ \(preview.text) No s'obriria res.") }
         linies.append(pla.xifres.text)
         if let motiu = pla.motiuEspera { linies.append("⏳ \(motiu)") }
 
