@@ -83,6 +83,8 @@ private final class Banc {
     let warp: FitxersLaunchWarp
     let editor: Editor
     let sessions: EstatSessions
+    /// D-P4: amb la configuració ja feta, compta com a acceptat; amb `consentiment: false`, `preferencies.json` diu que no.
+    let consentiment: ConsentimentRestauracio
     var obertura: Obertura!
     /// Les lectures que tornarà Warp, en ordre; l'última es repeteix.
     var lectures: [LecturaWarp] = [abans]
@@ -110,7 +112,7 @@ private final class Banc {
     /// Es crida abans de cada lectura, amb el seu número (0…).
     var abansDeLlegir: ((Int) -> Void)?
 
-    init(estat: Data? = nil, configuracio: Configuracio = configuracio) throws {
+    init(estat: Data? = nil, configuracio: Configuracio = configuracio, consentiment acceptat: Bool = true) throws {
         carpeta = FileManager.default.temporaryDirectory.appending(path: "warp-launch-ui-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: carpeta.appending(path: "warp"), withIntermediateDirectories: true)
         let config = carpeta.appending(path: "config")
@@ -122,7 +124,9 @@ private final class Banc {
         let rellotge = Rellotge()
         sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: config), rellotge: { rellotge.ara })
         sessions.carrega()
-        obertura = Obertura(editor: editor, sessions: sessions, entorn: Obertura.Entorn(
+        if !acceptat { try MagatzemPreferencies(carpeta: config).desa(Preferencies(restauracio: .senseTriar)) }
+        consentiment = ConsentimentRestauracio(magatzem: MagatzemPreferencies(carpeta: config), creaEntornRefresc: nil)
+        obertura = Obertura(editor: editor, sessions: sessions, consentiment: consentiment, entorn: Obertura.Entorn(
             llegeix: { [unowned self] in
                 abansDeLlegir?(llegides)
                 let lectura = lectures[min(llegides, lectures.count - 1)]
@@ -594,6 +598,23 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(llancament.esborrat && llancament.estat == .senseConfirmar)
     }
 
+    /// D-P4: sense el consentiment, en arrencar no es toca la carpeta de Warp; en acceptar, sí.
+    @Test func senseConsentimentNoNeteja() async throws {
+        let fitxer = try LaunchConfigWarp.genera(pestanyes: [PestanyaYAML(titol: "T", carpeta: "/x", exec: nil)],
+                                                 llancament: id(600))
+        var estat = EstatApp()
+        estat.desa(Llancament(id: id(600), fitxer: fitxer.nomFitxer, mida: fitxer.mida, creat: t0, finestra: id(100),
+                              pestanyes: [id(2)], estat: .pendent))
+        let b = try Banc(estat: try estat.json(), consentiment: false)
+        _ = try b.warp.escriu(fitxer)
+        b.obertura.netejaEnArrencar()
+        #expect(b.fitxersWarp == [fitxer.nomFitxer])
+        #expect(b.estatAlDisc.llancaments.last?.esborrat == false)
+        b.consentiment.accepta()
+        b.obertura.netejaEnArrencar()
+        #expect(b.fitxersWarp.isEmpty)
+    }
+
     /// El Claude de T1 surt abans que Warp desi la finestra: el fitxer s'esborra de seguida, però s'espera la finestra
     /// per lligar també T2, que és només terminal (revisió de la 0.20.0).
     @Test func laMarcaAbansQueLaFinestra() async throws {
@@ -1061,6 +1082,30 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         }
         #expect(await b.obertura.enIniciarSessio() == .res)
         #expect(b.obertura.estat == seva)
+    }
+
+    /// D-P4: sense el consentiment, ni «Obre-ho tot» ni el full d'iniciar sessió: l'editor, al davant, mostra la pantalla de
+    /// consentiment, i no es llegeix Warp. En acceptar, el full ja es pot proposar.
+    @Test func senseConsentimentCapFull() async throws {
+        let b = try Banc(configuracio: duesFinestres, consentiment: false)
+        b.lectures = [senseBase([])]
+        #expect(!b.consentiment.potContinuar)
+        #expect(!b.obertura.potObrirTot && !b.editor.potObrirTot)
+        #expect(!b.obertura.potObrir(id(100)) && !b.editor.potObrir(id(100)))
+        await b.obertura.demanaTot()
+        await b.obertura.demana(id(100))
+        #expect(b.obertura.estat == .cap)
+        b.editor.demanaObreTot()
+        #expect(await b.obertura.enIniciarSessio() == .mostra)
+        #expect(b.obertura.estat == .cap && !b.obertura.mostraFull)
+        #expect(b.llegides == 0 && b.urls.isEmpty && b.fitxersWarp.isEmpty && b.engegades == 0)
+
+        b.consentiment.accepta()
+        #expect(b.obertura.potObrirTot)
+        #expect(await b.obertura.enIniciarSessio() == .mostra)
+        guard case let .confirmantTot(p) = b.obertura.estat else { Issue.record("\(b.obertura.estat)"); return }
+        #expect(p.aObrir.count == 2)
+        #expect(b.urls.isEmpty, "el full no obre res")
     }
 
     /// Amb `estat.json` que no es pot fer servir, el motiu queda a la vista (un full que no obre res), no s'amaga (revisió).

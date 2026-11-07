@@ -123,6 +123,8 @@ public final class Obertura {
     public internal(set) var resultat: Resultat?
     @ObservationIgnored let editor: Editor
     @ObservationIgnored let sessions: EstatSessions
+    /// D-P4: sense el consentiment de la restauració, no es proposa obrir res, ni es toca la carpeta de Warp.
+    @ObservationIgnored let consentiment: ConsentimentRestauracio
     @ObservationIgnored let entorn: Entorn
     /// Cada llançament amb el fitxer escrit, i el que se n'ha vist fins ara (per a `enSortir`). Amb «Obre-ho tot», n'hi pot
     /// haver més d'un alhora.
@@ -146,19 +148,21 @@ public final class Obertura {
     /// Per conversa (`EntradaObertura.conversesEnCurs`). Se n'esborra quan es veu el Claude, o als 10 min.
     @ObservationIgnored private var conversesEnCurs: [String: ConversaEnCurs] = [:]
 
-    public init(editor: Editor, sessions: EstatSessions, entorn: Entorn) {
+    public init(editor: Editor, sessions: EstatSessions, consentiment: ConsentimentRestauracio, entorn: Entorn) {
         self.editor = editor
         self.sessions = sessions
+        self.consentiment = consentiment
         self.entorn = entorn
     }
 
     /// El full de confirmació és a la vista.
     public var mostraFull: Bool { estat != .cap }
 
-    /// Si es pot començar a obrir aquesta finestra: la configuració és oberta, la finestra té pestanyes, no hi ha cap
-    /// altra obertura en curs i `estat.json` es pot fer servir.
+    /// Si es pot començar a obrir aquesta finestra: s'ha acceptat el consentiment (D-P4), la configuració és oberta, la
+    /// finestra té pestanyes, no hi ha cap altra obertura en curs i `estat.json` es pot fer servir.
     public func potObrir(_ finestra: Finestra.ID?) -> Bool {
-        guard estat == .cap, editor.estat == .oberta, sessions.motiuNoEsPotObrir == nil, let finestra else { return false }
+        guard estat == .cap, consentiment.potContinuar, editor.estat == .oberta, sessions.motiuNoEsPotObrir == nil,
+              let finestra else { return false }
         return editor.configuracio.finestres.first { $0.id == finestra }?.pestanyes.isEmpty == false
     }
 
@@ -372,6 +376,7 @@ public final class Obertura {
     /// En arrencar l'app: esborra els fitxers temporals que hagin quedat (un llançament a mig fer, o d'una versió
     /// anterior) i ho apunta a `estat.json`.
     public func netejaEnArrencar() {
+        guard consentiment.potContinuar else { return }
         // Sense un `estat.json` que es pugui fer servir, no s'hi toca res, però els fitxers propis que hagin quedat
         // (amb la marca i de fa més de 2 min) s'esborren igualment.
         guard sessions.motiuNoEsPotObrir == nil else {

@@ -16,6 +16,8 @@ enum Registre {
     static let lligam = Logger(subsystem: "cat.davide.warp-launch", category: "lligam")
     /// L'ajust de la restauració de sessió de Warp i la foto de les finestres (D19).
     static let refresc = Logger(subsystem: "cat.davide.warp-launch", category: "refresc")
+    /// El consentiment per gestionar la restauració de Warp (D-P4): si s'accepta, i els errors de `preferencies.json`.
+    static let consentiment = Logger(subsystem: "cat.davide.warp-launch", category: "consentiment")
 
     /// Els 8 primers caràcters d'un id: prou per distingir les finestres d'una prova.
     static func curt(_ id: UUID) -> String { String(id.uuidString.prefix(8)) }

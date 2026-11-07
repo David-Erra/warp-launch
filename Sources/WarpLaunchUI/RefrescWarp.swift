@@ -11,6 +11,9 @@ import WarpLaunchCore
 /// pestanyes sense Claude), perquè la restauració era activada quan Warp va arrencar. Com menys estona és activada, menys risc.
 ///
 /// Obrir finestres no en depèn: es fa pels processos (`Obertura`).
+///
+/// **Només amb el consentiment de l'usuari (D-P4, 0.29.0):** l'únic que el crea és `ConsentimentRestauracio`, quan s'ha
+/// acceptat.
 @MainActor
 @Observable
 public final class RefrescWarp {

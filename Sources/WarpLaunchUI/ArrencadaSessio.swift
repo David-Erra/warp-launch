@@ -78,7 +78,7 @@ public final class ArrencadaSessio {
 extension Obertura {
     /// Què ha de fer l'app amb l'editor després de preparar el full d'iniciar sessió (des de la 0.27.2, sense esperar Warp).
     public enum AccioInici: Equatable, Sendable {
-        /// Hi ha un full (o un error de la configuració) per veure: l'editor al davant.
+        /// Hi ha un full (o un error de la configuració, o la pantalla de consentiment) per veure: l'editor al davant.
         case mostra
         /// No falta cap finestra, o no hi ha res a obrir: l'editor es pot amagar.
         case amaga
@@ -94,6 +94,11 @@ extension Obertura {
     /// mirar i no l'engega dues vegades (`confirmaIObreTot`).
     public func enIniciarSessio() async -> AccioInici {
         Registre.obertura.notice("en iniciar sessió")
+        // D-P4: primer, la pantalla de consentiment (a l'editor). L'app torna a cridar-ho quan s'accepta.
+        guard consentiment.potContinuar else {
+            Registre.obertura.notice("en iniciar sessió: falta el consentiment")
+            return .mostra
+        }
         // En David pot haver obert un altre full abans: no es trepitja ni s'amaga.
         guard estat == .cap else {
             Registre.obertura.notice("en iniciar sessió: ja hi ha una altra obertura")

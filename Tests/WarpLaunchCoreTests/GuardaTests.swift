@@ -62,6 +62,34 @@ private let prohibidesArrossegar = [
         let trobades = try aparicions(de: prohibidesCodi, a: codi.filter { $0.ruta != serveiArrencada })
             + aparicions(de: prohibidesCodi.filter { $0 != #"SMAppService"# }, a: codi.filter { $0.ruta == serveiArrencada })
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+
+        // D19 i D-P4 (0.29.0): el refresc de l'ajust de Warp només el crea `ConsentimentRestauracio`, un sol cop i només amb
+        // el consentiment acceptat; l'app no en guarda cap altre, ni tampoc per sortir.
+        let rutaConsentiment = "Sources/WarpLaunchUI/ConsentimentRestauracio.swift"
+        let refrescos = try aparicions(de: [#"\bRefrescWarp\("#], a: codi)
+        #expect(refrescos.count == 1 && refrescos[0].hasPrefix("\(rutaConsentiment):"), "\(refrescos)")
+        let consentiment = try #require(codi.first { $0.ruta == rutaConsentiment }).text
+        #expect(consentiment.contains("    private func creaRefresc() {\n"
+            + "        guard estat == .acceptat, refresc == nil, let creaEntornRefresc else { return }\n"
+            + "        refresc = RefrescWarp(entorn: creaEntornRefresc())\n    }"))
+        #expect(consentiment.components(separatedBy: "refresc = ").count == 2, "només aquella assignació")
+        // L'entorn de l'ajust només es demana allà, a tot el codi.
+        let crides = try aparicions(de: [#"creaEntornRefresc\(\)"#], a: codi)
+        #expect(crides.count == 1 && crides[0].hasPrefix("\(rutaConsentiment):"), "\(crides)")
+        // Acceptat: o ho diu `preferencies.json` en carregar, o «Accepta» ho acaba de desar.
+        #expect(consentiment.contains("estat = try magatzem.carrega().restauracio.esAcceptat ? .acceptat : .pendent"))
+        #expect(consentiment.components(separatedBy: "estat = .acceptat").count == 2)
+        let desa = try #require(consentiment.range(of: "try magatzem.accepta(ara: rellotge())"))
+        let accepta = try #require(consentiment.range(of: "estat = .acceptat"))
+        #expect(desa.upperBound < accepta.lowerBound)
+        // A l'app: l'únic consentiment i l'únic entorn de l'ajust, i el refresc només és el del consentiment.
+        let app = try #require(codi.first { $0.ruta == "Sources/WarpLaunchApp/WarpLaunchApp.swift" }).text
+        for unic in [#"\bConsentimentRestauracio\("#, #"RefrescWarp\.Entorn\("#, #"^\s*creaEntornRefresc = "#] {
+            let llocs = try aparicions(de: [unic], a: codi)
+            #expect(llocs.count == 1 && llocs[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift:"), "\(llocs)")
+        }
+        #expect(app.contains("ConsentimentRestauracio(magatzem: preferencies, creaEntornRefresc: creaEntornRefresc)"))
+        #expect(app.contains("var refresc: RefrescWarp? { consentiment.refresc }"))
     }
 
     /// La foto de Warp (D19) només es refresca quan en David ho demana, mai sola (0.27.3, 06/11/2026): l'únic que crida
@@ -108,7 +136,10 @@ private let prohibidesArrossegar = [
         let trobades = try aparicions(de: [#"\bAjustRestauracio\("#], a: codi)
         #expect(trobades.count == 1 && trobades[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift"), "\(trobades)")
         let app = try fitxers("Sources/WarpLaunchApp").map(\.text).joined()
-        #expect(app.contains("if case .real = arguments.carpeta {\n            let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)"))
+        // D-P4: dins de l'entorn que `ConsentimentRestauracio` només demana amb el consentiment acceptat
+        // (`elCodiNoObreResNiRegistraArrencades`).
+        #expect(app.contains("if case .real = arguments.carpeta, let preferencies {\n            creaEntornRefresc = {\n"
+            + "                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)\n"))
     }
 
     @Test func lesProvesNoLlegeixenLEstatReal() throws {
@@ -165,6 +196,12 @@ private let prohibidesArrossegar = [
             "mostra.swift:4: «\(lector)»", "mostra.swift:5: «\(lector)»", "mostra.swift:6: «\(lector)»",
         ])
         #expect(try aparicions(de: [lector], a: [(ruta: "mostra.swift", text: "Lector(rutaWarp: url, rutaAjustos: altra)")]).isEmpty)
+        // El refresc de l'ajust (D-P4): crear-lo sí; el seu entorn, no.
+        #expect(try aparicions(de: [#"\bRefrescWarp\("#], a: [(ruta: "mostra.swift", text: """
+            let r = RefrescWarp(entorn: e)
+            let e = RefrescWarp.Entorn(ajust: a)
+            let x = AltreRefrescWarp(entorn: e)
+            """)]) == ["mostra.swift:1: «\\bRefrescWarp\\(»"])
         // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
         let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
         #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)

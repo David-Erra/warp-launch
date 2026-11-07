@@ -5,8 +5,9 @@ import WarpLaunchObridor
 import WarpLaunchUI
 
 /// App de barra de menú (docs/disseny.md): l'editor, el menú de la icona i la Configuració. Llegeix Warp (en segon pla)
-/// i la configuració, i només escriu de Warp l'ajust de la restauració (D19). **Només obre res de Warp des del full de confirmació** (fase 3.1, `Obertura`): una finestra cada
-/// vegada, amb Warp ja obert.
+/// i la configuració, i només escriu de Warp l'ajust de la restauració (D19), i només amb el consentiment de l'usuari
+/// (D-P4): fins llavors, totes les finestres mostren la pantalla de consentiment. **Només obre res de Warp des del full de
+/// confirmació** (fase 3.1, `Obertura`): una finestra cada vegada, amb Warp ja obert.
 @main
 struct WarpLaunchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegat
@@ -15,9 +16,13 @@ struct WarpLaunchApp: App {
         let aplicacio = delegat.aplicacio
 
         Window(WarpLaunch.nom, id: Aplicacio.idEditor) {
-            VistaEditor(editor: aplicacio.editor, warp: aplicacio.warp, inici: aplicacio.inici,
-                        carpetaDeProva: aplicacio.carpetaDeProva)
-                .background(AccesFinestra { aplicacio.activacio.adopta($0) })
+            // D-P4: fins que no s'accepta, la pantalla de consentiment.
+            PortaConsentiment(consentiment: aplicacio.consentiment, carpetaDeProva: aplicacio.carpetaDeProva,
+                              surt: { NSApp.terminate(nil) }) {
+                VistaEditor(editor: aplicacio.editor, warp: aplicacio.warp, inici: aplicacio.inici,
+                            carpetaDeProva: aplicacio.carpetaDeProva)
+            }
+            .background(AccesFinestra { aplicacio.activacio.adopta($0) })
         }
         .defaultSize(width: 900, height: 560)
         .restorationBehavior(.disabled)
@@ -27,9 +32,12 @@ struct WarpLaunchApp: App {
         }
 
         Settings {
-            VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
-                              deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada)
-                .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
+            PortaConsentiment(consentiment: aplicacio.consentiment, carpetaDeProva: aplicacio.carpetaDeProva,
+                              surt: { NSApp.terminate(nil) }) {
+                VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
+                                  deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada)
+            }
+            .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
         }
         .windowResizability(.contentSize)
 
@@ -50,8 +58,11 @@ final class Aplicacio {
     let arguments: ArgumentsApp
     let editor: Editor
     let warp: EstatWarp
-    /// La restauració de sessió de Warp, sempre desactivada, i la foto de les finestres (D19). `nil` amb una carpeta de prova.
-    let refresc: RefrescWarp?
+    /// D-P4: el permís per gestionar la restauració de Warp (`preferencies.json`). Fins que no s'accepta, l'app no toca Warp.
+    let consentiment: ConsentimentRestauracio
+    /// La restauració de sessió de Warp, sempre desactivada, i la foto de les finestres (D19). `nil` amb una carpeta de prova
+    /// o sense el consentiment: només el crea `ConsentimentRestauracio`, i l'app no en guarda cap altre.
+    var refresc: RefrescWarp? { consentiment.refresc }
     /// Els lligams de cada pestanya (`estat.json`, a la mateixa carpeta que la configuració).
     let sessions: EstatSessions
     /// Obrir una finestra a Warp (fase 3.1). `nil` sense carpeta.
@@ -67,43 +78,55 @@ final class Aplicacio {
     init() {
         inici = FileManager.default.homeDirectoryForCurrentUser.path
         arguments = ArgumentsApp(CommandLine.arguments, inici: inici)
-        let editor: Editor, sessions: EstatSessions
+        let editor: Editor, sessions: EstatSessions, preferencies: MagatzemPreferencies?
         switch arguments.carpeta {
         case let .real(carpeta), let .prova(carpeta):
             editor = Editor(magatzem: MagatzemConfiguracio(carpeta: carpeta, inici: inici))
             sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta))
+            preferencies = MagatzemPreferencies(carpeta: carpeta)
         case let .incorrecta(motiu):
             editor = Editor(senseCarpeta: motiu)
             sessions = EstatSessions(magatzem: nil)
+            preferencies = nil
         }
         self.editor = editor
         self.sessions = sessions
         let processos = ProcessosDelSistema()
         let lector = Lector(processos: processos, inici: inici)
         // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.
-        var refresc: RefrescWarp?
-        if case .real = arguments.carpeta {
-            let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)
-            refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { try ajust.valor() }, posa: { try ajust.posa($0) },
-                                                             warpObert: { processos.warpObert() },
-                                                             llegeixBase: { try lector.llegeix(base: .sempre) }))
+        // D-P4: `ConsentimentRestauracio` només crida `creaEntornRefresc` (i només llavors es crea l'ajust) amb el
+        // consentiment acceptat.
+        var creaEntornRefresc: (@MainActor () -> RefrescWarp.Entorn)?
+        if case .real = arguments.carpeta, let preferencies {
+            creaEntornRefresc = {
+                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)
+                return RefrescWarp.Entorn(ajust: { try ajust.valor() },
+                                          // El primer canvi de l'app desa a `preferencies.json` el valor que hi havia.
+                                          posa: { nou in
+                                              try preferencies.posaRestauracio(nou, valor: { try ajust.valor() },
+                                                                               posa: { try ajust.posa($0) })
+                                          },
+                                          warpObert: { processos.warpObert() },
+                                          llegeixBase: { try lector.llegeix(base: .sempre) })
+            }
         }
-        self.refresc = refresc
-        // Amb l'ajust gestionat per l'app, la base només és la foto: les lectures de cada minut, i obrir, van pels processos,
-        // també durant un refresc o si l'ajust ha quedat activat.
-        let base: BaseWarp = refresc == nil ? .segonsAjust : .mai
+        let consentiment = ConsentimentRestauracio(magatzem: preferencies, creaEntornRefresc: creaEntornRefresc)
+        self.consentiment = consentiment
+        // Amb l'ajust gestionat per l'app (la configuració de debò), la base només és la foto: les lectures de cada minut, i
+        // obrir, van pels processos, també durant un refresc o si l'ajust ha quedat activat. Sense el consentiment, l'app no
+        // llegeix Warp.
+        let base: BaseWarp = creaEntornRefresc == nil ? .segonsAjust : .mai
         let warp = EstatWarp(lector: { try lector.llegeix(base: base) })
-        warp.refresc = refresc
         self.warp = warp
         if case .incorrecta = arguments.carpeta {
             obertura = nil
         } else {
             // L'única connexió amb l'obridor (`ObreWarp`) i amb la carpeta de Warp de debò.
-            obertura = Obertura(editor: editor, sessions: sessions, entorn: Obertura.Entorn(
+            obertura = Obertura(editor: editor, sessions: sessions, consentiment: consentiment, entorn: Obertura.Entorn(
                 llegeix: { await warp.llegeix() },
                 obre: { try await ObreWarp.obre($0) },
                 // Amb l'ajust activat, Warp restauraria les seves finestres en arrencar.
-                engegaWarp: { refresc?.tanca(); try await ObreWarp.engega() },
+                engegaWarp: { consentiment.refresc?.tanca(); try await ObreWarp.engega() },
                 fitxers: FitxersLaunchWarp.real,
                 transcripcions: LectorTranscripcions(),
                 confianca: LectorConfianca(),
@@ -139,6 +162,11 @@ final class Aplicacio {
                               },
                               enTancarConfiguracio: { editor.desaSiCal() },
                               enAmagar: {
+                                  // D-P4: tancar la pantalla de consentiment és no acceptar-lo. No hi ha res per desar.
+                                  guard consentiment.potContinuar else {
+                                      NSApp.terminate(nil)
+                                      return
+                                  }
                                   // Un nom a mig escriure es desa: amb l'editor amagat, el camp no es veuria.
                                   editor.acabaNom(desant: true)
                                   // Un camp de l'inspector pot tenir el cursor: el que s'hi escrigui després és un
@@ -149,8 +177,12 @@ final class Aplicacio {
                               enMostrar: { editor.enMostrar() })
         editor.carrega()
         sessions.carrega()
-        // Els fitxers temporals que hagin quedat d'una obertura a mig fer (només els propis, amb la marca).
-        obertura?.netejaEnArrencar()
+        // Ara mateix si ja s'havia acceptat (o no cal); si no, en acceptar.
+        consentiment.enContinuar { [obertura] in
+            warp.refresc = consentiment.refresc
+            // Els fitxers temporals que hagin quedat d'una obertura a mig fer (només els propis, amb la marca).
+            obertura?.netejaEnArrencar()
+        }
     }
 
     /// Llegeix Warp en arrencar i, després, cada minut (D18). No obre ni toca res de Warp ni de Claude, llevat de tornar a
@@ -192,14 +224,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             comElementDInici: ServeiArrencada.obertaComElementDInici,
             segonsEncesa: TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000,
             registrada: aplicacio.arrencada.obreSola)
-        Task { await aplicacio.llegeixPeriodicament() }
-        // D3: el full de «Obre-ho tot», quan Warp és a punt. Si no falta cap finestra, l'editor s'amaga.
-        if aplicacio.enIniciarSessio, let obertura = aplicacio.obertura {
-            let aplicacio = aplicacio
+        let aplicacio = aplicacio
+        // D-P4: sense el consentiment, primer la pantalla de consentiment (també en iniciar sessió). L'app no llegeix ni toca
+        // Warp, ni proposa res, fins que s'accepta.
+        let ambConsentiment = aplicacio.consentiment.potContinuar
+        if aplicacio.enIniciarSessio, !ambConsentiment { aplicacio.activacio.mostraEditor(obre: {}) }
+        aplicacio.consentiment.enContinuar {
+            Task { await aplicacio.llegeixPeriodicament() }
+            // D3: el full de «Obre-ho tot», quan Warp és a punt. Si no falta cap finestra, l'editor s'amaga; però no just
+            // després d'haver acceptat el consentiment.
+            guard aplicacio.enIniciarSessio, let obertura = aplicacio.obertura else { return }
             Task {
                 switch await obertura.enIniciarSessio() {
                 case .mostra: aplicacio.activacio.mostraEditor(obre: {})
-                case .amaga: aplicacio.activacio.amagaEditorSiNoSHaFetServir()
+                case .amaga: if ambConsentiment { aplicacio.activacio.amagaEditorSiNoSHaFetServir() }
                 case .res: break
                 }
             }
@@ -251,6 +289,22 @@ private struct MenuIcona: View {
     // Cada bloc en una `Section` sense títol, sense `Divider` solts: una `Section` amb títol seguida d'un `Divider` feia
     // dos separadors seguits (revisió del pas 11).
     var body: some View {
+        if aplicacio.consentiment.potContinuar {
+            menu
+        } else {
+            // D-P4: fins que no s'accepta, només la pantalla de consentiment i sortir.
+            Section {
+                Button("Mostra Warp Launch") { mostraEditor() }
+            }
+            Section {
+                Button("Surt de \(WarpLaunch.nom)") { NSApp.terminate(nil) }
+                    .keyboardShortcut("q")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var menu: some View {
         let editor = aplicacio.editor
 
         Section {

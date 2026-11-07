@@ -24,7 +24,8 @@ public final class EstatWarp {
     /// Després de cada lectura bona: l'app hi posa al dia els lligams de les pestanyes (`EstatSessions`).
     @ObservationIgnored public var enLlegir: @MainActor (LecturaWarp) -> Void = { _ in }
 
-    /// Qui refresca la foto de les finestres (D19). `nil` si l'app no gestiona l'ajust de Warp (carpeta de prova).
+    /// Qui refresca la foto de les finestres (D19). `nil` si l'app no gestiona l'ajust de Warp (carpeta de prova, o sense
+    /// el consentiment, D-P4).
     @ObservationIgnored public var refresc: RefrescWarp?
 
     /// Per què no s'ha pogut llegir Warp (sovint, el permís de Privacitat i seguretat).
