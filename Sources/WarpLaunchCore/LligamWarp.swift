@@ -8,7 +8,8 @@ import Foundation
 /// - **Ja lligada:** el seu pane és a Warp, o un Claude viu porta la seva marca. No es toca, i la seva pestanya de Warp no
 ///   s'ofereix a cap altra.
 /// - **Criteris, de més segur a menys:** la conversa (el Claude viu d'un pane té la que recorda la pestanya); el títol i
-///   la carpeta; només el títol; només la carpeta, que no pot ser la d'inici (el 03/11, 34 de 64 panes hi eren).
+///   la carpeta; només el títol; només la carpeta, que no pot ser la d'inici (en una lectura real del 03/11/2026, més de
+///   la meitat dels panes hi eren).
 /// - **Com es veu una pestanya de Warp:** com a la importació (`Importador`): sense títol, el nom de la carpeta; amb el
 ///   pane a la carpeta d'inici, la del seu Claude.
 /// - **On es busca:** per a cada criteri, de més segur a menys, primer a la finestra de Warp que correspon a cada

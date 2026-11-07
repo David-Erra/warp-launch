@@ -722,7 +722,7 @@ public enum Diagnostic {
 // MARK: - Anonimització
 
 /// Treu de l'informe el nom d'usuari, la carpeta d'inici i els noms de carpeta, i en deixa la forma (`--anonimitza`, i el
-/// botó «Copia el diagnòstic» de la Configuració): `~/GitHub-Personal` → `~/AaaAaa-Aaaaaaaa`. Els noms de les carpetes i
+/// botó «Copia el diagnòstic» de la Configuració): `~/Codi-Prova` → `~/Aaaa-Aaaaa`. Els noms de les carpetes i
 /// els fitxers que llegeix l'app (`.claude`, `sessions`, `Warp.app`…) es queden: no són de l'usuari.
 struct Anonimitzador: Sendable {
     let actiu: Bool

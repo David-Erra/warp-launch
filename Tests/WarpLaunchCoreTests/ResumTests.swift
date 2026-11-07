@@ -6,12 +6,12 @@ import Testing
     @Test func plurals() {
         #expect(Plural.compta(0, "pestanya", "pestanyes") == "0 pestanyes")
         #expect(Plural.compta(1, "pestanya", "pestanyes") == "1 pestanya")
-        #expect(Plural.compta(23, "pestanya", "pestanyes") == "23 pestanyes")
+        #expect(Plural.compta(12, "pestanya", "pestanyes") == "12 pestanyes")
     }
 
     @Test func resumDeWarp() {
-        #expect(ResumWarp(finestres: 7, pestanyes: 64, sessionsClaude: 14).descripcio
-            == "Warp: 7 finestres · 64 pestanyes · 14 sessions de Claude")
+        #expect(ResumWarp(finestres: 4, pestanyes: 30, sessionsClaude: 6).descripcio
+            == "Warp: 4 finestres · 30 pestanyes · 6 sessions de Claude")
         #expect(ResumWarp(finestres: 1, pestanyes: 1, sessionsClaude: 1).descripcio
             == "Warp: 1 finestra · 1 pestanya · 1 sessió de Claude")
     }

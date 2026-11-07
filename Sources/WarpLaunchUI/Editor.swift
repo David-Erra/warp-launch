@@ -315,7 +315,7 @@ public final class Editor {
         perRevisar ? "Per revisar" : finestra?.nom ?? WarpLaunch.nom
     }
 
-    /// «23 pestanyes · 14 amb Claude · 2 avisos». Si no s'ha pogut desar, ho diu.
+    /// «12 pestanyes · 8 amb Claude · 2 avisos». Si no s'ha pogut desar, ho diu.
     public var subtitol: String {
         if let errorDesat {
             return errorDesat == .modificadaFora ? "El fitxer ha canviat fora de l'app" : "No s'ha pogut desar"

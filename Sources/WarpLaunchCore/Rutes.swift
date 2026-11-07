@@ -2,7 +2,7 @@ import Foundation
 
 public enum Rutes {
     /// Ruta canònica d'una carpeta o fitxer: resol els symlinks i posa les majúscules tal com són al disc.
-    /// Warp desa la ruta tal com es va escriure (`~/documents/github/…`) i Claude, la canònica (`~/GitHub/…`):
+    /// Warp desa la ruta tal com es va escriure (`~/documents/codi/…`) i Claude, la canònica (`~/Codi/…`):
     /// abans de comparar-les cal passar-les totes dues per aquí.
     /// Si la ruta no existeix, la retorna normalitzada (sense `..` ni `/` repetides), amb les majúscules intactes.
     public static func canonica(_ ruta: String) -> String {

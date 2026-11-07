@@ -88,7 +88,7 @@ private func executa(_ shell: String, _ ordre: String, feines: [String] = [], ab
         #expect(try executa(shell, "export CODI=7; claude --version; printf '%s\\0' \"codi $?\"").last == "codi 7")
     }
 
-    /// Les formes que han fet servir els agents d'en David (05/11/2026): 10 de 12 van amb `cd … &&`.
+    /// Formes d'ordre vistes en feines reals (05/11/2026): la majoria van amb `cd … &&`.
     @Test(arguments: shells) func lesFormesReals(shell: String) throws {
         let esperat = ["--bg"] + mode + ["x"]
         #expect(try executa(shell, "cd / && claude --bg x") == esperat)

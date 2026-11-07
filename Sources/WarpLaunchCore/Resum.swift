@@ -3,7 +3,7 @@ import Foundation
 // Xifres per al menú de la icona i per al subtítol de l'editor.
 
 public enum Plural {
-    /// «1 pestanya», «0 pestanyes», «23 pestanyes».
+    /// «1 pestanya», «0 pestanyes», «12 pestanyes».
     public static func compta(_ n: Int, _ singular: String, _ plural: String) -> String {
         "\(n) \(n == 1 ? singular : plural)"
     }
@@ -36,7 +36,7 @@ public struct ResumWarp: Sendable, Equatable {
                   sessionsClaude: pestanyes.flatMap(\.panes).filter { $0.claude != nil }.count)
     }
 
-    /// «Warp: 7 finestres · 64 pestanyes · 14 sessions de Claude», o «Warp: 6 terminals · 6 sessions de Claude».
+    /// «Warp: 4 finestres · 30 pestanyes · 6 sessions de Claude», o «Warp: 6 terminals · 6 sessions de Claude».
     public var descripcio: String {
         if let terminals {
             return "Warp: \(Plural.compta(terminals, "terminal", "terminals"))"
@@ -51,7 +51,7 @@ extension Finestra {
     /// Pestanyes que obriran Claude.
     public var ambClaude: Int { pestanyes.filter(\.claude.activat).count }
 
-    /// «23 pestanyes · 14 amb Claude».
+    /// «12 pestanyes · 8 amb Claude».
     public var resum: String {
         "\(Plural.compta(pestanyes.count, "pestanya", "pestanyes")) · \(ambClaude) amb Claude"
     }

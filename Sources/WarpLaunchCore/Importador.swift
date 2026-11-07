@@ -292,9 +292,9 @@ public struct ResumImportacio: Sendable, Equatable {
         self.saltenPermisos = saltenPermisos
     }
 
-    /// En tornar a importar, «7 finestres · 64 pestanyes · 48 amb Claude (13 amb la seva ordre, 35 amb la plantilla) ·
-    /// 16 només terminal». En una configuració nova, la plantilla no hi surt: «7 finestres · 64 pestanyes · 13 amb
-    /// Claude, amb la seva ordre · 51 només terminal (35 sense Claude obert)» (D-P5a).
+    /// En tornar a importar, «4 finestres · 30 pestanyes · 24 amb Claude (6 amb la seva ordre, 18 amb la plantilla) ·
+    /// 6 només terminal». En una configuració nova, la plantilla no hi surt: «4 finestres · 30 pestanyes · 6 amb
+    /// Claude, amb la seva ordre · 24 només terminal (18 sense Claude obert)» (D-P5a).
     public var descripcio: String {
         let finestresIPestanyes = "\(Plural.compta(finestres, "finestra", "finestres")) · "
             + Plural.compta(pestanyes, "pestanya", "pestanyes")

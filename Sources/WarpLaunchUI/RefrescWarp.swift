@@ -7,8 +7,8 @@ import WarpLaunchCore
 /// segons perquè Warp desi les finestres a la seva base («la foto»), i la torna a desactivar. Amb Warp tancat, la llegeixen
 /// tal com és.
 ///
-/// **Ja no cada 5 minuts (0.27.3, en David, 06/11/2026):** en reiniciar el Mac, Warp va restaurar la foto (6 finestres, 62
-/// pestanyes sense Claude), perquè la restauració era activada quan Warp va arrencar. Com menys estona és activada, menys risc.
+/// **Ja no cada 5 minuts (0.27.3, en David, 06/11/2026):** en un reinici de prova, Warp va restaurar la foto (les
+/// pestanyes, sense Claude), perquè la restauració era activada quan Warp va arrencar. Com menys estona és activada, menys risc.
 ///
 /// Obrir finestres no en depèn: es fa pels processos (`Obertura`).
 ///

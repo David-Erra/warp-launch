@@ -495,7 +495,7 @@ private struct MacDeProva {
 
     @Test func laFormaDelsNoms() {
         let anon = Anonimitzador(inici: "/Users/joan", usuari: "joan", actiu: true)
-        #expect(anon.forma("GitHub-Personal 2") == "AaaAaa-Aaaaaaaa 0")
+        #expect(anon.forma("Codi-Prova 2") == "Aaaa-Aaaaa 0")
         // Els altres caràcters ocupen el mateix en UTF-16 que els de debò.
         #expect(anon.forma("Cançó🎵") == "Aaa\u{E9}\u{E9}\u{1F642}")
         #expect(anon.forma("Cançó🎵").utf16.count == "Cançó🎵".utf16.count)

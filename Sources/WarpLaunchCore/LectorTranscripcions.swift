@@ -32,8 +32,8 @@ public struct LectorTranscripcions: Sendable {
     }
 
     /// Fins on es busca, des del principi, el primer missatge i la primera resposta d'una transcripció, i des del final,
-    /// l'últim missatge. El 05/11/2026, el primer més tardà de 1.938 era als 894 KB, les transcripcions sense cap missatge
-    /// feien 3 KB com a molt, i a les 62 carpetes el darrer missatge era a 752 KB del final com a molt.
+    /// l'últim missatge. El 05/11/2026, el primer més tardà era als 894 KB, les transcripcions sense cap missatge
+    /// feien 3 KB com a molt, i a les carpetes d'una configuració gran el darrer missatge era a 752 KB del final com a molt.
     static let maximLectura = 4 * 1024 * 1024
 
     public var carpeta: URL
@@ -106,9 +106,9 @@ public struct LectorTranscripcions: Sendable {
         return trobades
     }
 
-    /// El primer missatge és del terminal, i Claude hi ha respost. El 05/11/2026, 776 de 1.938 transcripcions eren de
-    /// `claude -p` (`entrypoint: sdk-cli`) i 6 de Claude Desktop, que potser encara la té oberta; i, de les 202 més recents
-    /// de les 62 carpetes, 13 no tenien cap resposta (només un `/clear`, o un «cd ..» escrit per error). Si la resposta no
+    /// El primer missatge és del terminal, i Claude hi ha respost. El 05/11/2026, una bona part de les transcripcions eren de
+    /// `claude -p` (`entrypoint: sdk-cli`) i unes poques de Claude Desktop, que potser encara la té oberta; i, de les més recents
+    /// de cada carpeta, unes quantes no tenien cap resposta (només un `/clear`, o un «cd ..» escrit per error). Si la resposta no
     /// surt en els primers `maximLectura`, compta.
     static func esConversaDeTerminal(_ fitxer: URL) -> Bool {
         guard let lector = try? FileHandle(forReadingFrom: fitxer) else { return false }
@@ -156,8 +156,8 @@ public struct LectorTranscripcions: Sendable {
     /// el missatge no porta una data que s'entengui.
     ///
     /// Les línies d'una feina no compten: una conversa de terminal que després s'ha passat a segon pla és de quan se'n va
-    /// escriure l'últim missatge al terminal. El 05/11/2026, una pestanya hauria passat de la seva conversa (24/10) a una
-    /// feina del 28/10. Després d'una línia de feina es continua fins on calgui: una feina de més de `maximLectura`, com
+    /// escriure l'últim missatge al terminal. El 05/11/2026, una pestanya hauria passat de la seva conversa a una
+    /// feina posterior. Després d'una línia de feina es continua fins on calgui: una feina de més de `maximLectura`, com
     /// una de viva de 10 MB que hi havia aquell dia, semblaria d'ara mateix.
     static func darrerMissatge(_ fitxer: URL, siNoEsSap: Date) -> Date? {
         guard let lector = try? FileHandle(forReadingFrom: fitxer), let mida = try? lector.seekToEnd() else { return siNoEsSap }

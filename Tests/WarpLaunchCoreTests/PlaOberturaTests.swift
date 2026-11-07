@@ -380,7 +380,8 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
 }
 
 /// Quina conversa reprèn cada pestanya (D7, decisió d'en David del 05/11/2026): sempre la més recent de la seva carpeta, sense
-/// agafar-ne cap de viva ni d'una altra pestanya (R9). Abans, 56 de les 62 pestanyes haurien començat una conversa nova.
+/// agafar-ne cap de viva ni d'una altra pestanya (R9). Abans, en una prova real, gairebé totes les pestanyes n'haurien
+/// començat una de nova.
 @Suite struct ConversaMesRecentTests {
     private static let vella = "aaaaaaaa-0000-4000-8000-000000000001"
     private static let nova = "bbbbbbbb-0000-4000-8000-000000000002"
@@ -405,7 +406,7 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
         #expect(resultat.avisos[0].description == "T1: reprèn la conversa més recent de la carpeta (fa 3 dies)")
     }
 
-    /// Una recordada sense missatges, com les de les 10:20 del 05/11/2026: també la més recent.
+    /// Una recordada sense missatges, com les d'una obertura anterior (05/11/2026): també la més recent.
     @Test func laRecordadaSenseMissatgesNoCompta() {
         let resultat = pla(estat: EstatApp(pestanyes: [id(1): vincle(sessio: "buida")]))
         #expect(resultat.aObrir.map(\.conversa) == [.repren(Self.nova)])
@@ -531,7 +532,7 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
 }
 
 /// Amb la restauració de sessió desactivada, Warp no desa les finestres (docs/fets-verificats.md, 05/11/2026): `finestres` és
-/// buit, i el que hi ha obert ho diuen els processos. El 05/11/2026, amb la base d'abans, l'app deia que les 62 pestanyes ja
+/// buit, i el que hi ha obert ho diuen els processos. El 05/11/2026, amb la base d'abans, l'app deia que totes les pestanyes ja
 /// eren obertes i no n'obria cap.
 @Suite struct SenseFinestresTests {
     /// La lectura tal com surt de `Lector`: sense finestres, amb les sessions i els terminals.
@@ -670,8 +671,8 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
                                   warpAcabatDEngegar: warpAcabatDEngegar)
     }
 
-    /// El cas real de «Principal»: cap finestra a la base, i un terminal nou amb la marca per pestanya. Abans, «No s'ha pogut
-    /// reconèixer la finestra nova» després d'esperar 30 s, encara que s'havia vist Claude a 6 de 6.
+    /// El cas real (05/11/2026): cap finestra a la base, i un terminal nou amb la marca per pestanya. Abans, «No s'ha pogut
+    /// reconèixer la finestra nova» després d'esperar 30 s, encara que s'havia vist Claude a totes les pestanyes.
     @Test func lesMarquesConfirmenSenseFinestra() throws {
         let terminals = [TerminalViu(pid: 1, carpeta: "/x/t1", pane: pane("n"), marca: id(1), claude: true),
                          TerminalViu(pid: 2, carpeta: "/x/t2", pane: pane("m"), marca: id(2), claude: true)]

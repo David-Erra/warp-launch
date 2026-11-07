@@ -48,8 +48,8 @@ extension Obertura {
             finestres.filter { triades.contains($0.pla.finestra.id) && Self.esPotObrir($0) }
         }
 
-        /// «S'obriran 5 finestres noves de Warp amb 58 pestanyes: 50 amb Claude (45 reprenen la seva conversa) i 8 només
-        /// terminal · unes 25 GB».
+        /// «S'obriran 3 finestres noves de Warp amb 16 pestanyes: 10 amb Claude (8 reprenen la seva conversa) i 6 només
+        /// terminal · unes 5 GB».
         public var text: String {
             let finestres = aObrir
             guard !finestres.isEmpty else { return "No s'obrirà res." }

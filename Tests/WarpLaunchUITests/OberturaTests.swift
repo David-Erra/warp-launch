@@ -489,7 +489,7 @@ private struct NoObre: Error, CustomStringConvertible {
 
     // MARK: La restauració de sessió desactivada (0.22.0)
 
-    /// El cas real de «Principal» (05/11/2026): Warp no desa les finestres, però cada pestanya té el seu terminal nou. Es
+    /// El cas real (05/11/2026): Warp no desa les finestres, però cada pestanya té el seu terminal nou. Es
     /// confirma de seguida, i no als 30 s amb «No s'ha pogut reconèixer la finestra nova».
     @Test func senseFinestresEsConfirmaPelsTerminals() async throws {
         let b = try Banc()

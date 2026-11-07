@@ -59,22 +59,22 @@ private func repeteix(_ codi: String, _ vegades: Int) -> [String] {
     (1...vegades).map { codi.replacingOccurrences(of: "#", with: "\($0)") }
 }
 
-/// La forma de la lectura real del 04/11/2026, amb noms inventats: 7 finestres (23, 17, 1, 2, 6, 11 i 4 pestanyes),
-/// 13 sessions (10 amb `--continue`), 11 pestanyes a `~` i 5 amb una carpeta que ja no existeix.
-private func lecturaComLaReal() -> LecturaWarp {
+/// Una lectura gran, inventada: 7 finestres (21, 17, 1, 2, 6, 9 i 4 pestanyes), 13 sessions (10 amb `--continue`),
+/// 11 pestanyes a `~` i 5 amb una carpeta que ja no existeix.
+private func lecturaGran() -> LecturaWarp {
     var fabrica = Fabrica()
     return fabrica.lectura([
-        ["~"] + repeteix("p:GitHub/empresa/eina-#", 8) + repeteix("x:documents/github/empresa/web-#", 5)
-            + repeteix("p:GitHub/empresa/cli-#", 3) + ["~"] + repeteix("p:GitHub/empresa/agent-#", 5),
-        ["c:GitHub/empresa/estudi", "~", "p:GitHub/empresa/moduls"] + repeteix("~", 4)
-            + repeteix("p:GitHub/empresa/estudi-agent-#", 2) + ["~"] + repeteix("p:GitHub/empresa/oficina-#", 3)
-            + repeteix("~", 2) + ["p:GitHub/empresa", "p:GitHub/empresa/connector-mcp"],
+        ["~"] + repeteix("p:GitHub/feina/eina-#", 6) + repeteix("x:documents/codi/feina/web-#", 5)
+            + repeteix("p:GitHub/feina/cli-#", 3) + ["~"] + repeteix("p:GitHub/feina/agent-#", 5),
+        ["c:GitHub/feina/estudi", "~", "p:GitHub/feina/moduls"] + repeteix("~", 4)
+            + repeteix("p:GitHub/feina/estudi-agent-#", 2) + ["~"] + repeteix("p:GitHub/feina/oficina-#", 3)
+            + repeteix("~", 2) + ["p:GitHub/feina", "p:GitHub/feina/connector-mcp"],
         ["~"],
-        ["c:GitHub/personal/notes", "c:GitHub/personal/diagrames"],
-        ["c:Projectes/agenda", "c:GitHub/empresa/xat", "n:GitHub/personal/warp-launch",
-         "c:GitHub/empresa/biblioteca", "c:GitHub/planta/planta-eines", "c:GitHub/empresa/finances"],
-        repeteix("p:GitHub/planta/planta-#", 11),
-        ["n:Projectes/proj-1", "n:Projectes/proj-2", "c:Projectes/proj-3", "c:Projectes/calculadora"],
+        ["c:GitHub/casa/notes", "c:GitHub/casa/diagrames"],
+        ["c:Codi/agenda", "c:GitHub/feina/xat", "n:GitHub/casa/warp-launch",
+         "c:GitHub/feina/biblioteca", "c:GitHub/taller/taller-eines", "c:GitHub/feina/finances"],
+        repeteix("p:GitHub/taller/taller-#", 9),
+        ["n:Codi/proj-1", "n:Codi/proj-2", "c:Codi/proj-3", "c:Codi/calculadora"],
     ])
 }
 
@@ -82,10 +82,10 @@ private func lecturaComLaReal() -> LecturaWarp {
     /// Fase 3.1: cada pestanya importada recorda el seu pane (totes, també les de terminal) i, si hi corria Claude, la
     /// seva conversa i la carpeta de la sessió.
     @Test func lesPestanyesImportadesRecordenElPaneILaConversa() throws {
-        let lectura = lecturaComLaReal()
+        let lectura = lecturaGran()
         let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanyes = importacio.configuracio.finestres.flatMap(\.pestanyes)
-        #expect(importacio.vincles.count == 64)
+        #expect(importacio.vincles.count == 60)
         #expect(Set(importacio.vincles.keys) == Set(pestanyes.map(\.id)))
         #expect(importacio.vincles.values.filter { $0.sessio != nil }.count == 13)
         // En el mateix ordre que la lectura: el pane i la sessió de cada pestanya.
@@ -96,16 +96,16 @@ private func lecturaComLaReal() -> LecturaWarp {
         }
     }
 
-    @Test func laLecturaRealDona48AmbClaudeI16Sense() throws {
-        let importacio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
-        #expect(importacio.resum == ResumImportacio(finestres: 7, pestanyes: 64, ambSessio: 13, ambPlantilla: 35,
-                                                    senseClaude: 16, senseClaudeObert: 0, saltenPermisos: 48))
+    @Test func unaLecturaGranDona44AmbClaudeI16Sense() throws {
+        let importacio = Importador.importa(lecturaGran(), inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
+        #expect(importacio.resum == ResumImportacio(finestres: 7, pestanyes: 60, ambSessio: 13, ambPlantilla: 31,
+                                                    senseClaude: 16, senseClaudeObert: 0, saltenPermisos: 44))
         #expect(importacio.resum.descripcio
-            == "7 finestres · 64 pestanyes · 48 amb Claude (13 amb la seva ordre, 35 amb la plantilla) · 16 només terminal")
+            == "7 finestres · 60 pestanyes · 44 amb Claude (13 amb la seva ordre, 31 amb la plantilla) · 16 només terminal")
         let c = importacio.configuracio
-        #expect(c.finestres.map(\.pestanyes.count) == [23, 17, 1, 2, 6, 11, 4])
+        #expect(c.finestres.map(\.pestanyes.count) == [21, 17, 1, 2, 6, 9, 4])
         #expect(c.finestres.map(\.nom)
-            == ["empresa", "empresa 2", "Finestra 3", "personal", "Finestra 5", "planta", "Projectes"])
+            == ["feina", "feina 2", "Finestra 3", "casa", "Finestra 5", "taller", "Codi"])
         #expect(c.plantilla == .habituals)
         #expect(importacio.notes.isEmpty)
         // Per què n'hi ha 16 sense Claude (el full d'importació ho diu).
@@ -113,7 +113,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         #expect(importacio.compta(.carpetaNoExisteix) == 5)
         #expect(importacio.compta(.sessio) == 13)
 
-        // Totes les pestanyes amb Claude, amb la comanda d'en David; les 16 sense, amb la plantilla apagada.
+        // Totes les pestanyes amb Claude, amb la comanda de `.habituals`; les 16 sense, amb la plantilla apagada.
         let pestanyes = c.finestres.flatMap(\.pestanyes)
         for pestanya in pestanyes where pestanya.claude.activat {
             // Continua: amb la conversa de la pestanya, `--resume` on la comanda tenia `--continue` (D7).
@@ -124,20 +124,20 @@ private func lecturaComLaReal() -> LecturaWarp {
         apagada.activat = false
         #expect(pestanyes.filter { !$0.claude.activat }.allSatisfy { $0.claude == apagada })
 
-        // Id únics: 64 pestanyes i 7 finestres.
-        #expect(Set(pestanyes.map(\.id) + c.finestres.map(\.id)).count == 71)
+        // Id únics: 60 pestanyes i 7 finestres.
+        #expect(Set(pestanyes.map(\.id) + c.finestres.map(\.id)).count == 67)
     }
 
     /// En una configuració nova, les pestanyes on no corria Claude queden només terminal (D-P5a, en David, 07/11/2026).
     /// Les que tenien Claude conserven la seva ordre, i les de `~` i les d'una carpeta que no existeix, com sempre.
     @Test func unaConfiguracioNovaDeixaNomesTerminalLesQueNoTenienClaude() throws {
-        let importacio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .perOmissio,
+        let importacio = Importador.importa(lecturaGran(), inici: inici, plantilla: .perOmissio,
                                             senseSessio: .nomesTerminal, nouId: IdsDeProva().nou)
-        #expect(importacio.resum == ResumImportacio(finestres: 7, pestanyes: 64, ambSessio: 13, ambPlantilla: 0,
-                                                    senseClaude: 51, senseClaudeObert: 35, saltenPermisos: 13))
+        #expect(importacio.resum == ResumImportacio(finestres: 7, pestanyes: 60, ambSessio: 13, ambPlantilla: 0,
+                                                    senseClaude: 47, senseClaudeObert: 31, saltenPermisos: 13))
         #expect(importacio.resum.descripcio
-            == "7 finestres · 64 pestanyes · 13 amb Claude, amb la seva ordre · 51 només terminal (35 sense Claude obert)")
-        #expect(importacio.compta(.nomesTerminal) == 35)
+            == "7 finestres · 60 pestanyes · 13 amb Claude, amb la seva ordre · 47 només terminal (31 sense Claude obert)")
+        #expect(importacio.compta(.nomesTerminal) == 31)
         #expect(importacio.compta(.plantilla) == 0)
         #expect(importacio.compta(.carpetaInici) == 11)
         #expect(importacio.compta(.carpetaNoExisteix) == 5)
@@ -152,19 +152,19 @@ private func lecturaComLaReal() -> LecturaWarp {
                 == habitual.replacingOccurrences(of: "--continue", with: "--resume id-1"))
         }
         // Totes recorden el seu pane, també les que queden només terminal (fase 3.1).
-        #expect(importacio.vincles.count == 64)
+        #expect(importacio.vincles.count == 60)
     }
 
     /// Tornar a importar sobre una configuració que ja existeix no canvia: on no corria Claude, la plantilla (D11). Fora
     /// d'aquestes pestanyes, les dues importacions són iguals; i, en una configuració nova, si s'hi activa Claude, ja té
     /// les opcions de la plantilla.
     @Test func tornarAImportarDonaLaPlantillaOnNoCorriaClaude() throws {
-        let nova = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals,
+        let nova = Importador.importa(lecturaGran(), inici: inici, plantilla: .habituals,
                                       senseSessio: .nomesTerminal, nouId: IdsDeProva().nou)
-        let tornada = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals,
+        let tornada = Importador.importa(lecturaGran(), inici: inici, plantilla: .habituals,
                                          senseSessio: .plantilla, nouId: IdsDeProva().nou)
-        #expect(tornada.resum.ambPlantilla == 35 && tornada.resum.senseClaudeObert == 0)
-        #expect(nova.resum.ambPlantilla == 0 && nova.resum.senseClaudeObert == 35)
+        #expect(tornada.resum.ambPlantilla == 31 && tornada.resum.senseClaudeObert == 0)
+        #expect(nova.resum.ambPlantilla == 0 && nova.resum.senseClaudeObert == 31)
 
         var apagada = ClaudePestanya.habituals
         apagada.activat = false
@@ -206,22 +206,22 @@ private func lecturaComLaReal() -> LecturaWarp {
     }
 
     @Test func esDesaIEsTornaALlegirIgual() throws {
-        let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
+        let configuracio = Importador.importa(lecturaGran(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
                                               nouId: IdsDeProva().nou).configuracio
         let llegida = try Configuracio.llegeix(try configuracio.json(), inici: inici)
         #expect(llegida.configuracio == configuracio)
         #expect(llegida.avisos.isEmpty)
     }
 
-    @Test func elsAvisosDeLaLecturaReal() throws {
-        let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
+    @Test func elsAvisosDUnaLecturaGran() throws {
+        let configuracio = Importador.importa(lecturaGran(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
                                               nouId: IdsDeProva().nou).configuracio
         let avisos = Validacio.avisos(configuracio, inici: inici) { !$0.contains("/documents/") }
         #expect(avisos.compta(.error) == 0)
         #expect(avisos.compta(.avis) == 16)
         #expect(avisos.tots.filter { $0.tipus == .carpetaInici }.count == 11)
         #expect(avisos.tots.filter { $0.tipus == .carpetaNoExisteix }.count == 5)
-        #expect(avisos.tots.filter { $0.tipus == .ultracode }.count == 48)
+        #expect(avisos.tots.filter { $0.tipus == .ultracode }.count == 44)
     }
 
     @Test func unaSessioVivaConservaLaSevaOrdreIContinua() throws {

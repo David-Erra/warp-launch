@@ -164,7 +164,7 @@ public final class FullImportacio {
             + "aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre."
     }
 
-    /// «16 pestanyes sortiran a «Per revisar»», o `nil` si no n'hi ha cap.
+    /// «6 pestanyes sortiran a «Per revisar»», o `nil` si no n'hi ha cap.
     public var textPerRevisar: String? {
         let n = perRevisar
         return n == 0 ? nil : Plural.compta(n, "pestanya sortirà", "pestanyes sortiran") + " a «Per revisar»"

@@ -89,10 +89,10 @@ private func errorEsperat(esforc: String?, ultracode: Bool, settings: Settings, 
 }
 
 @Suite struct OrdreClaudeTests {
-    // MARK: La comanda d'en David
+    // MARK: La comanda habitual
 
-    @Test func laComandaDEnDavid() throws {
-        // 10 de les 13 sessions del 03/11/2026 porten `--continue`; les altres 3, no. Es llegeix igual, però l'app no
+    @Test func laComandaHabitual() throws {
+        // Unes sessions porten `--continue` i altres no (03/11/2026). Es llegeix igual, però l'app no
         // el torna a escriure (D7): reprèn la conversa de la pestanya, o en comença una de nova.
         let ambContinua = ["claude", "--dangerously-skip-permissions", "--effort", "ultracode", "--continue"]
         #expect(llegida(ambContinua) == .habituals)

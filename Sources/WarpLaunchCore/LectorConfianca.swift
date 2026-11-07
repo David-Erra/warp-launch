@@ -14,7 +14,7 @@ public struct Confianca: Sendable, Equatable {
     }
 
     /// Si Claude obrirà la carpeta sense preguntar: la carpeta real o una de les seves carpetes pare té la confiança. Claude
-    /// compara les rutes tal com són: la confiança de `~/Documents/GitHub/x` (un enllaç) no compta per a `~/GitHub/x`, que
+    /// compara les rutes tal com són: la confiança de `~/Documents/codi/x` (un enllaç) no compta per a `~/codi/x`, que
     /// és on corre (docs/fets-verificats.md, 05/11/2026).
     public func confiada(_ carpeta: String) -> Bool {
         let carpeta = Rutes.canonica(carpeta)

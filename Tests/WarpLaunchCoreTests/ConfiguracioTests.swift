@@ -150,7 +150,7 @@ private let jsonDeMostra = #"""
         }
     }
 
-    @Test func lesOpcionsHabitualsSonLesDenDavid() {
+    @Test func lesOpcionsHabituals() {
         // --dangerously-skip-permissions --effort ultracode, continuant la conversa (decisió D11, 03/11/2026).
         let h = ClaudePestanya.habituals
         #expect(h.activat && h.continua && h.saltaPermisos && h.ultracode)
@@ -252,7 +252,7 @@ private let jsonDeMostra = #"""
     }
 
     @Test func laPlantillaNoOmpleUnBlocParcial() throws {
-        // La plantilla d'en David salta els permisos; una pestanya escrita a mà amb un bloc parcial no l'hereta.
+        // La plantilla `.habituals` salta els permisos; una pestanya escrita a mà amb un bloc parcial no l'hereta.
         let llegida = try llegeix("""
             {"versio": 1,
              "plantilla": {"saltaPermisos": true, "ultracode": true, "esforc": "xhigh", "continua": false, "model": "opus"},

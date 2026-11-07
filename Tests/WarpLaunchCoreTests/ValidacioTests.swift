@@ -13,7 +13,7 @@ private func avisos(_ claude: ClaudePestanya, carpeta: String = "/Users/prova/Gi
 }
 
 @Suite struct ValidacioTests {
-    @Test func laComandaDEnDavidNomesPortaLAvisDUltracode() {
+    @Test func laComandaHabitualNomesPortaLAvisDUltracode() {
         #expect(avisos(.habituals) == [.ultracode])
         #expect(Avis(.ultracode).gravetat == .info)
         #expect(avisos(.perOmissio) == [])

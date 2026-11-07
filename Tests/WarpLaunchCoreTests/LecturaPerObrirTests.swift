@@ -97,7 +97,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
     private let id3 = "33333333-3333-4333-8333-333333333333"
     private let id4 = "44444444-4444-4444-8444-444444444444"
 
-    /// `projects/` amb un projecte real, un enllaç a un projecte d'abans (com els de `Documents-GitHub` d'en David), una
+    /// `projects/` amb un projecte real, un enllaç a un projecte d'abans (com quan s'ha mogut la carpeta dels repos), una
     /// conversa en un altre projecte (també vista per un enllaç), i una altra en dos projectes.
     private func escenari() throws -> (CarpetaTemporal, LectorTranscripcions) {
         let tmp = try CarpetaTemporal()
@@ -175,7 +175,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
         #expect(recents(tmp, carpeta: "/x/altra").isEmpty, "només les de la carpeta")
     }
 
-    /// El cas real: el 05/11/2026, 776 de 1.938 transcripcions eren de `claude -p`. No són converses d'en David.
+    /// El cas real (05/11/2026): una bona part de les transcripcions eren de `claude -p`, que no són converses del terminal.
     @Test func recentsNomesLesDelTerminal() throws {
         let tmp = try CarpetaTemporal()
         let meta = #"{"type":"user","isMeta":true,"entrypoint":"cli","message":{"content":"<local-command>"}}"#
@@ -223,7 +223,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
     }
 
     /// Compta l'últim missatge, no la data del fitxer, que Claude també escriu en tancar-se. El cas real: una pestanya deia
-    /// «fa 4 dies», i l'últim missatge era de l'01/08. Amb `maxim` també: el fitxer més nou pot no ser la conversa més recent.
+    /// «fa 4 dies», i l'últim missatge era de mesos abans. Amb `maxim` també: el fitxer més nou pot no ser la conversa més recent.
     @Test func recentsPerLUltimMissatge() throws {
         let tmp = try CarpetaTemporal()
         try transcripcio(tmp, id1, Self.conversa(a: "2026-08-01") + #"{"type":"cost-state","cost":1}"# + "\n", fa: 10)
@@ -233,8 +233,8 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
         #expect(try primera(tmp)?.darrerMissatge == Self.dia("2026-10-24"))
     }
 
-    /// Les línies d'una feina en segon pla no compten. El cas real: en una pestanya, una feina del 28/10 hauria passat davant de la
-    /// conversa de la pestanya, del 24/10. Una feina de principi a fi no és cap conversa del terminal.
+    /// Les línies d'una feina en segon pla no compten. El cas real: en una pestanya, una feina posterior hauria passat davant de la
+    /// conversa de la pestanya. Una feina de principi a fi no és cap conversa del terminal.
     @Test func lesLiniesDUnaFeinaNoCompten() throws {
         let tmp = try CarpetaTemporal()
         try transcripcio(tmp, id1, Self.conversa(a: "2026-10-12") + Self.conversa(a: "2026-10-28", feina: true), fa: 50)
@@ -284,7 +284,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
         #expect(primera(tmp)?.darrerMissatge == dataFitxer)
     }
 
-    /// El projecte pot ser un enllaç, com a `on` (144 de les carpetes d'en David).
+    /// El projecte pot ser un enllaç, com a `on` (passa quan s'ha mogut la carpeta dels repos).
     @Test func recentsPelProjecteQueEsUnEnllac() throws {
         let tmp = try CarpetaTemporal()
         try transcripcio(tmp, id1, Self.conversa, fa: 100, projecte: "-x-vell")
@@ -352,7 +352,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
         #expect(!confianca.confiada(inici + "/no"))
         #expect(!confianca.confiada(tmp.ruta))
         // Claude compara la ruta tal com és: la confiança d'un enllaç no compta per a la carpeta real, ni tampoc si la
-        // pestanya apunta a l'enllaç, perquè Claude corre a la carpeta real (el 05/11/2026, 17 de 22 a «Varis»).
+        // pestanya apunta a l'enllaç, perquè Claude corre a la carpeta real (el 05/11/2026, la majoria de les pestanyes d'una finestra).
         #expect(!confianca.confiada(tmp.ruta + "/real"))
         #expect(!confianca.confiada(tmp.ruta + "/enllac"))
     }

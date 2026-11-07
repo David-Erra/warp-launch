@@ -48,9 +48,9 @@ public enum OrdreClaude {
     /// - Parameter repren: la conversa de la pestanya, si se sap (`estat.json`). Només compta si la pestanya diu
     ///   `continua`; sense, l'ordre comença una conversa nova. És explícit a totes les crides: cap no pot oblidar-lo.
     ///
-    /// Ordre de les opcions: el de la comanda d'en David (`--dangerously-skip-permissions --effort ultracode`), després
-    /// la resta, les que l'app no entén, i `--remote-control` sense nom al final (el seu valor és opcional i, si no,
-    /// s'empassaria l'argument següent).
+    /// Ordre de les opcions: primer `--dangerously-skip-permissions` i `--effort` (com a la plantilla `.habituals` de les
+    /// proves, `--dangerously-skip-permissions --effort ultracode`), després la resta, les que l'app no entén, i
+    /// `--remote-control` sense nom al final (el seu valor és opcional i, si no, s'empassaria l'argument següent).
     ///
     /// Amb `--dangerously-skip-permissions`, Claude no fa cas de `--permission-mode` (2.1.318): l'ordre els porta tots
     /// dos, tal com diu la configuració, i l'avís és cosa de la validació.
@@ -64,7 +64,7 @@ public enum OrdreClaude {
         var settings = c.settings
         if c.ultracode {
             if c.esforc == "xhigh" {
-                esforc = "ultracode"  // l'àlies: xhigh més ultracode, com ho escriu en David
+                esforc = "ultracode"  // l'àlies: xhigh més ultracode, com s'escriu a mà
             } else {
                 settings = try ambUltracode(settings)
             }

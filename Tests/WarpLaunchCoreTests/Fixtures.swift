@@ -153,15 +153,14 @@ func escriuSessio(a carpeta: URL, pid: Int32, sessionId: String, cwd: String, ki
     try FileManager.default.createDirectory(at: carpeta, withIntermediateDirectories: true)
     var json: [String: Any] = ["pid": pid, "sessionId": sessionId, "cwd": cwd, "kind": kind,
                                "startedAt": iniciadaMs, "status": "idle", "version": "2.1.317",
-                               "procStart": "Tue Nov  3 13:23:29 2026", "entrypoint": "cli"]
+                               "procStart": "Tue Nov  3 10:00:00 2026", "entrypoint": "cli"]
     if let nom { json["name"] = nom; json["nameSource"] = "cli" }
     let dades = try JSONSerialization.data(withJSONObject: json)
     try dades.write(to: carpeta.appending(path: "\(pid).json"))
 }
 
 extension ClaudePestanya {
-    /// Dada de prova: `claude --dangerously-skip-permissions --effort ultracode`, continuant la conversa (les opcions amb
-    /// què en David obre Claude, 03/11/2026). Fins a la 0.27.3 era la plantilla d'importar sense configuració; des de la
-    /// 0.28.0 l'app ja no la té (D11, revisada el 07/11/2026). La mateixa a `WarpLaunchUITests/AjudesDeProva.swift`.
+    /// Dada de prova: `claude --dangerously-skip-permissions --effort ultracode`, continuant la conversa. Fins a la 0.27.3
+    /// era la plantilla d'importar sense configuració; des de la 0.28.0 l'app ja no la té (D11, revisada el 07/11/2026). La mateixa a `WarpLaunchUITests/AjudesDeProva.swift`.
     static let habituals = ClaudePestanya(esforc: "xhigh", ultracode: true, saltaPermisos: true)
 }
