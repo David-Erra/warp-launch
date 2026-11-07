@@ -1,32 +1,29 @@
 # CLAUDE.md — Warp Launch
 
-App personal de macOS d'en **David Erra** per **llegir, editar i tornar a obrir les finestres i pestanyes
+App de macOS de **David Erra** per **llegir, editar i tornar a obrir les finestres i pestanyes
 de Warp, cadascuna amb la seva sessió de Claude Code**. Ha de poder fer-ho sola en iniciar sessió al Mac.
 És una app nativa de barra de menú (SwiftUI). Comanda: `warp-launch`. Identificador: `cat.davide.warp-launch`.
 
 **Idioma:** català (codi, comentaris, missatges, commits i documentació). **To:** directe, concís, amb xifres i fets.
 
-## El problema (paraules d'en David, 03/11/2026)
+## El problema
 
-> Faig servir Warp cada cop amb més intensitat i cada cop tinc més sessions. Quan paro l'ordinador
-> i el torno a reiniciar és un problema, perquè he de tornar a obrir totes les finestres amb totes les
-> sessions de Claude. Tampoc em satisfà com guarda la configuració Warp: he d'iniciar totes les
-> sessions a mà i he de recordar tota la configuració.
+Qui fa servir Warp amb moltes sessions de Claude Code les ha de tornar a obrir a mà després de cada reinici: totes les
+finestres i, a cada pestanya, la seva sessió de Claude. La configuració que desa Warp no ho resol: les sessions s'han
+d'iniciar a mà i s'ha de recordar tota la configuració.
 
-Per a en David, **una finestra de Warp és un grup de sessions**; no ho confonguis amb els *tab groups* de Warp.
-Gairebé cada pestanya té un agent Claude Code per repo (`claude --dangerously-skip-permissions --effort ultracode`).
-El 03/11/2026 hi havia 7 finestres i 64 pestanyes de terminal, però només 14 sessions de Claude vives,
-d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
+Aquí, **una finestra de Warp és un grup de sessions**; no ho confonguis amb els *tab groups* de Warp.
+Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de prova (03/11/2026) hi havia desenes de
+pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
+Els requisits són a `docs/especificacio.md`.
 
 ## Estat (07/11/2026, 0.30.1)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
-  sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la en un altre Mac.
-  L'app instal·lada és a `/Applications` des de la 0.27.0 (la 0.28.0, des del 07/11/2026).
-  - **Compte de GitHub:** el compte actiu de `gh` al Mac d'en David no és `David-Erra`. `git push` i `git pull` ja fan servir
-    `David-Erra` en aquest repo (ajudant de credencials a `.git/config`), però les ordres de `gh` que escriuen (`publica.sh`,
-    `gh release`) necessiten `GH_TOKEN="$(gh auth token -u David-Erra)"` davant. No canviïs el compte actiu (`gh auth switch`):
-    el fan servir altres sessions.
+  sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
+  - **Compte de GitHub:** les ordres de `gh` que escriuen (`publica.sh`, `gh release`) necessiten `GH_TOKEN` d'un compte
+    que pugui escriure al repo, passat només a aquella ordre (`GH_TOKEN="$(gh auth token -u <compte>)"`). No canviïs el compte
+    actiu de `gh` (`gh auth switch`): el poden fer servir altres sessions.
 - **Fase 1 (lectura) feta, versió 0.2.0.** `warp-launch llegeix [--json]` mostra les finestres, les pestanyes, la
   carpeta i la sessió de Claude de cada pestanya.
 - **Fase 2 (editor) feta (06/11/2026; en David dona per bona la icona):** format v1 de la configuració, magatzem (desar i còpies), esquelet de
@@ -36,7 +33,7 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
   pestanyes (pas 9b, proves 4 i 5), arrossegar i «Mou a ▸» (pas 10, prova 6), obrir la finestra arrossegant per
   deixar-hi les pestanyes en una posició (pas 10b, prova 7) i reordenar les finestres a la barra lateral (arrossegant-les,
   o «Mou amunt» i «Mou avall»; prova 7c feta el 04/11/2026), i menús, dreceres, menú de la icona i la plantilla a la
-  Configuració, amb el seu Desfés (pas 11, provat a l'app el 04/11/2026). Del pas 12, el paquet és fet (0.26.0: `Info.plist` i `scripts/instal·la.sh`); la icona, dibuixada amb codi (`scripts/icona-dibuixa.swift`, decisió d'en David del 06/11/2026, perquè nano-banana no tenia crèdit), a la 0.26.1.
+  Configuració, amb el seu Desfés (pas 11, provat a l'app el 04/11/2026). Del pas 12, el paquet és fet (0.26.0: `Info.plist` i `scripts/instal·la.sh`); la icona, dibuixada amb codi (`scripts/icona-dibuixa.swift`, decisió d'en David del 06/11/2026), a la 0.26.1.
   Prova 8 feta el 06/11/2026 amb la 0.26.0. Passos a `docs/disseny.md`, secció 4.
 - **Fase 3.1 (obrir una finestra a Warp, R12): passos fets, de la 0.15.0 a la 0.24.0** (triada per en David abans del pas 12).
   Per donar-la per feta falten proves reals (L2, L5 i la del CLI `--obre`) i l'OK d'en David. Pla, passos i proves L1 a L5 a
@@ -50,24 +47,23 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
   el fitxer i l'app confirma en 0,6 s, però D16 queda desmentit (la línia surt a l'historial). En arrencar, l'app
   esborra els seus fitxers temporals que hagin quedat a la carpeta de launch configurations de Warp (només els
   propis, amb la marca). **0.21.0: «Lliga amb Warp…»** lliga una configuració sense `estat.json` (com `prova2`) amb
-  les pestanyes ja obertes, per a L3 amb `/tmp/warp-launch-provaL3`. **El 05/11/2026, en David torna a obrir les 6
-  finestres i 62 pestanyes des de l'app** (totes confirmades, però cap conversa represa, i 17 Claude aturats perquè l'app
-  no avisava bé de la confiança; corregit a la 0.21.1). **La configuració real ja existeix:** `~/.config/warp-launch/`, còpia de L3 feta el
-  05/11/2026 a petició d'en David (regla 9). «Obrir-ho tot» és la fase 3.2 (0.25.0) i obrir-se en iniciar sessió, la 3.3 (0.27.0).
+  les pestanyes ja obertes, per a L3 amb `/tmp/warp-launch-provaL3`. **El 05/11/2026, en una prova real, l'app torna a obrir
+  totes les finestres i pestanyes** (totes confirmades, però cap conversa represa, i diversos Claude aturats perquè l'app
+  no avisava bé de la confiança; corregit a la 0.21.1). «Obrir-ho tot» és la fase 3.2 (0.25.0) i obrir-se en iniciar sessió, la 3.3 (0.27.0).
 - **0.22.1: cada pestanya reprèn sempre la conversa més recent de la seva carpeta** (D7, revisada per en David el 05/11/2026),
   si no és viva ni d'una altra pestanya. **0.22.2:** només compten les escrites al terminal on Claude ha respost, i la més recent
   és la de l'últim missatge al terminal, no la data del fitxer.
 - **0.22.3: les feines noves `claude --bg` dels agents van en bypass** (en David, 05/11/2026), si la pestanya hi va: la línia porta `CLAUDE_ENV_FILE`
   (`EntornClaude`, `entorn-claude.sh` a la carpeta de la configuració). Les que ja existeixen es desperten sense el paràmetre, per no fer còpies.
-  Sense efecte a les pestanyes ja obertes. Prova real feta el 05/11/2026 amb 1 feina: va en bypass i els missatges hi arriben sols, en els dos sentits.
-- **El 05/11/2026, en David desactiva la restauració de sessió de Warp** (D6: «aquesta app substitueix la funcionalitat»).
-  Warp deixa de desar les finestres a `warp.sqlite`. **Des de la 0.22.0, l'app sap què hi ha obert pels processos** (els fills
+  Sense efecte a les pestanyes ja obertes. Prova real feta el 05/11/2026 amb una feina: va en bypass.
+- **D6 (05/11/2026): la restauració de sessió de Warp va desactivada** («aquesta app substitueix la funcionalitat»).
+  Així, Warp no desa les finestres a `warp.sqlite`. **Des de la 0.22.0, l'app sap què hi ha obert pels processos** (els fills
   de `stable terminal-server`, `docs/disseny.md`, «Sense la base de Warp») i no llegeix la base si la restauració és
   desactivada; no en veu les finestres ni els títols. Per importar i lligar, des de la 0.23.0 en fa una foto (D19). Si Warp és tancat, «Obre» l'obre.
-- **0.23.0 (D19): l'app gestiona `restore_session`.** Sempre desactivat, també en sortir. **Des de la 0.27.3, només quan en David ho demana** (abans, cada 5 min):
-  amb Warp obert, l'activa fins que Warp desa (de 5 a 30 s) perquè la base tingui una foto de les finestres. El 06/11/2026, en reiniciar el Mac,
-  Warp va restaurar la foto sol (62 pestanyes sense Claude). «Torna a llegir Warp», importar i lligar: amb Warp obert, refresquen i llegeixen; amb Warp tancat, l'última foto. Obrir
-  finestres continua pels processos. Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, la foto quadra amb els 62 terminals.
+- **0.23.0 (D19): l'app gestiona `restore_session`.** Sempre desactivat, també en sortir. **Des de la 0.27.3, només quan l'usuari ho demana** (abans, cada 5 min):
+  amb Warp obert, l'activa fins que Warp desa (de 5 a 30 s) perquè la base tingui una foto de les finestres. En un reinici de prova,
+  Warp va restaurar la foto sol (les pestanyes, sense Claude). «Torna a llegir Warp», importar i lligar: amb Warp obert, refresquen i llegeixen; amb Warp tancat, l'última foto. Obrir
+  finestres continua pels processos. Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, i la foto quadra amb tots els terminals oberts.
 - **0.24.0 (D17): `warp-launch obre <finestra> --obre`** obre la finestra pel mateix camí que el botó de l'app (`ExecucioObertura`, compartit).
   No fa res si l'app és oberta (tots dos escriurien `estat.json`), i si Warp és tancat, primer l'obre (en David, 05/11/2026). Sense prova real encara:
   **mai sense l'OK d'en David per a cada prova** (regla 1).
@@ -75,24 +71,24 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
   marcades, i les obre totes de cop; si una falla, les altres continuen. **Provat el 06/11/2026 amb la 0.26.0**, amb la represa d'una conversa (prova 1), una finestra oberta en part (3) i la prova 8 (4): totes bé. `docs/disseny.md`, secció 8.
 - **Fase 3.3, 0.27.0 (D3): obrir-se en iniciar sessió.** Un interruptor a la Configuració afegeix l'app als ítems d'inici de macOS
   (`SMAppService.mainApp`, només a `ServeiArrencada`; regla 3: només quan en David l'activa, i només amb l'app a `/Applications`). En
-  iniciar sessió, mostra de seguida el full de «Obre-ho tot» (0.27.2: sense esperar Warp): no obre res sense el clic. **Primer reinici el 06/11/2026
-  amb la 0.27.2:** l'app s'obre sola i prepara el full en 2 s, però Warp també s'obre sol i restaura 62 pestanyes sense Claude
-  (`docs/fets-verificats.md`). D'aquí la 0.27.3: la foto només quan en David la demana, i el full avisa de les pestanyes que no
-  reconeix. Falta un reinici amb la 0.27.3. L'opció de Warp que l'obre en iniciar sessió («Start Warp at login») sempre ha estat desactivada (en David, 07/11/2026):
-  no se sap qui va obrir Warp. `docs/disseny.md`, secció 9.
+  iniciar sessió, mostra de seguida el full de «Obre-ho tot» (0.27.2: sense esperar Warp): no obre res sense el clic. **En un reinici de prova
+  amb la 0.27.2,** l'app s'obre sola i prepara el full en 2 s, però Warp també s'obre sol i restaura les pestanyes sense Claude
+  (`docs/fets-verificats.md`). D'aquí la 0.27.3: la foto només quan l'usuari la demana, i el full avisa de les pestanyes que no
+  reconeix. Falta un reinici amb la 0.27.3. Warp es va obrir sol amb l'opció que l'obre en iniciar sessió («Start Warp at login»)
+  desactivada, segons en David (07/11/2026): no se sap qui l'obre. `docs/disseny.md`, secció 9.
 - **0.28.0 (D11, revisada per en David el 07/11/2026): la plantilla segura.** Una configuració nova (sense fitxer) s'importa amb
   `claude` sense saltar els permisos ni ultracode (`.perOmissio`, continuant la conversa). «Salta els permisos», l'esforç i
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
 - **Per a altres usuaris, de la 0.29.0 a la 0.30.1** (decisions d'en David del 07/11/2026 a `docs/especificacio.md`; passos, proves
-  i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha vist a l'app ni s'ha publicat:** la versió de GitHub i
-  la d'`/Applications` són la 0.28.0.
+  i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha vist a l'app ni s'ha publicat:** la versió
+  publicada a GitHub és la 0.28.0.
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
     obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
-    `configuracio.json` o `estat.json` compta com a acceptada (la d'en David no pregunta). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
-  - **0.29.1 (D-P5a):** en una configuració nova, les pestanyes on no corria Claude queden només terminal (amb la lectura del
-    04/11/2026, 13 amb Claude i 51 només terminal, en lloc de 48 i 16). Tornar a importar no canvia.
+    `configuracio.json` o `estat.json` compta com a acceptada (a qui ja feia servir l'app no li pregunta). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
+  - **0.29.1 (D-P5a):** en una configuració nova, les pestanyes on no corria Claude queden només terminal (amb la lectura d'un
+    Mac de prova del 04/11/2026, una cinquena part amb Claude i la resta només terminal, en lloc de tres quartes parts amb Claude). Tornar a importar no canvia.
   - **0.29.2 i 0.29.3 (D-P12): Warp Stable a qualsevol carpeta.** On és ho diu macOS, només a `WarpLaunchObridor/TrobaWarp.swift`
     (l'única `urlForApplication`); si no, `/Applications`. Una còpia a la Paperera no compta. El binari surt del paquet
     (`CFBundleExecutable`). Amb només Warp Preview, o Preview obert i Stable no, l'app no obre res i ho diu.
@@ -100,7 +96,7 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
     diagnòstic»: 8 comprovacions dels formats de Warp i de Claude Code que l'app llegeix, en anglès i, si es vol, anonimitzat. No
     bloqueja res. `VersionsProvades` (Warp 0.2026.10.21, Claude Code 2.1.317 a 2.1.318) es posa al dia a mà.
 - **Signatura:** `scripts/build-app.sh` signa amb el certificat «Warp Launch Dev» del clauer d'en David (D12).
-  L'app té permís a Privacitat i seguretat › Arxius i carpetes per llegir les dades de Warp.
+  Per llegir les dades de Warp, cal donar a l'app el permís de Privacitat i seguretat › Arxius i carpetes.
 - **Ordre de feina acordat:**
   1. Lectura de la configuració actual de Warp.
   2. Editor.
@@ -126,10 +122,11 @@ Llegeix, en aquest ordre:
 - **Proves amb `swift-testing`** (`import Testing`), que fa servir les macros de TestingMacros. XCTest no
   està disponible amb les Command Line Tools.
 - **Xcode 27.2 només fa falta per compilar la icona** (`scripts/icona-compila.sh` i `icona-revisa.sh`).
-  - Llicència acceptada i configuració inicial (`-runFirstLaunch`) feta el 03/11/2026.
+  - La llicència i la configuració inicial (`sudo /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -runFirstLaunch`)
+    es fan un sol cop i les fa en David; fetes el 03/11/2026 (`docs/fets-verificats.md`).
   - `xcode-select` apunta a les Command Line Tools: per fer servir Xcode, cal
     `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (els scripts ja el posen).
-- **Signatura:** no hi ha cap certificat de desenvolupador d'Apple. `build-app.sh` signa amb «Warp Launch Dev», un certificat
+- **Signatura:** el projecte no fa servir cap certificat de desenvolupador d'Apple. `build-app.sh` signa amb «Warp Launch Dev», un certificat
   propi del clauer d'en David (D12); si no el troba (en un altre Mac), ad hoc.
 
 ```bash
@@ -146,7 +143,7 @@ scripts/test.sh                          # proves; no facis servir `swift test` 
 scripts/build-app.sh                     # crea «build/Warp Launch.app» (release, signada amb «Warp Launch Dev» o ad hoc); no l'obre
 scripts/instal·la.sh [--aplica]          # sense --aplica, diu què copiaria a /Applications; amb, copia (regla 3: només amb l'OK d'en David)
 scripts/instal·la.sh --github [--aplica] [--versio x.y.z]  # igual, amb la versió publicada a GitHub (per a altres Macs; README.md)
-GH_TOKEN="$(gh auth token -u David-Erra)" scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub (regla 3: OK cada vegada)
+GH_TOKEN=… scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub (regla 3: OK cada vegada)
 scripts/warp-restauracio.sh estat         # si Warp desa les finestres (només lectura)
 scripts/warp-restauracio.sh activa|desactiva [--aplica]  # regla 7: sense --aplica no escriu; amb, cal l'OK d'en David
 scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-banana (cal GEMINI_API_KEY)
@@ -223,13 +220,13 @@ desenes de sessions o les tanca totes de cop.
 7. **Els fitxers de Warp són només de lectura.**
    - `warp.sqlite` s'obre sempre en només lectura (`SQLITE_OPEN_READONLY`, o `?mode=ro` des del
      terminal), perquè Warp l'escriu en calent.
-   - No toquis `~/.warp/` (`settings.toml`, `tab_configs/`, launch configurations, incloses les 7
-     `espai-*.yaml`), ni les preferències de Warp.
+   - No toquis `~/.warp/` (`settings.toml`, `tab_configs/`, launch configurations, incloses les
+     `espai-*.yaml` del prototip), ni les preferències de Warp.
    - **Única excepció (en David, 05/11/2026):** la línia `restore_session` de `[general]` a `~/.warp/settings.toml`, per
      activar la restauració de sessió una estona i poder llegir les finestres i els títols de Warp.
      - Només amb `scripts/warp-restauracio.sh`, i només amb l'OK d'en David per a cada vegada.
-     - Abans, digues-li què passa mentre és activada: si Warp es tanca, restaura les seves finestres, i Settings Sync porta
-       l'ajust a les altres instal·lacions.
+     - Abans, digues-li què passa mentre és activada: si Warp es tanca, restaura les seves finestres, i, amb Settings Sync,
+       l'ajust arriba a les altres instal·lacions.
      - En acabar, torna-la a desactivar i comprova-ho amb `estat`, passat 1 s (Warp podria tornar a posar el valor d'abans).
    - **Segona excepció (en David, 05/11/2026, D19): l'app** pot canviar aquesta mateixa línia, sola i sense OK per a cada vegada, només amb la carpeta
      de debò (`AjustRestauracio`, `RefrescWarp`). Cap altre codi ni cap altra línia. Mentre l'app és en marxa, l'ajust que activis a mà es torna a desactivar en 60 s:

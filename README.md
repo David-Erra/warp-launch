@@ -94,7 +94,6 @@ Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una 
   baixada d'internet. Compilada des del codi en un altre Mac, `build-app.sh`
   la signa ad hoc, i llavors, després de cada actualització, macOS pot tornar a demanar el permís d'Arxius i carpetes
   i el de l'inici de sessió.
-- Part de la documentació de `docs/` parla del Mac d'en David (les seves finestres i proves).
 
 ## Desenvolupament
 
