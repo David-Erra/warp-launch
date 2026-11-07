@@ -50,7 +50,7 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(warp == InstallacioWarp(app: AppWarp(url: stable), executable: tmp.ruta + "/inici/Applications/Warp.app/Contents/MacOS/stable",
                                         hiHaStable: true))
         #expect(warp.app.versio == "0.2026.11.04.08.17.01")
-        #expect(cerca.demanades == [AppWarp.identificador, AppWarp.identificadorPreview], "només els dos de Warp")
+        #expect(cerca.demanades == ["dev.warp.Warp-Stable", "dev.warp.Warp-Preview"], "només els dos de Warp")
     }
 
     /// El nom del binari és el que diu el paquet, no un de fix.

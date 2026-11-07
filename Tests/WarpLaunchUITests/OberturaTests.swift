@@ -1104,6 +1104,21 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         #expect(b.urls.isEmpty && b.fitxersWarp.isEmpty && b.engegades == 0)
     }
 
+    /// D-P12: si Warp Preview s'obre (i Warp Stable es tanca) amb el full de «Obre-ho tot» a la vista, «Obre» ho torna a
+    /// mirar i no obre res, tampoc Warp Stable.
+    @Test func siWarpPreviewSObreAmbElFullDeTotNoObreRes() async throws {
+        let b = try Banc(configuracio: duesFinestres)
+        b.lectures = [senseBase([])]
+        await b.obertura.demanaTot()
+        guard case let .confirmantTot(proposta) = b.obertura.estat else { Issue.record("sense full"); return }
+        #expect(proposta.aObrir.count == 2)
+        b.lectures = [ambPreview(.obert)]
+        b.llegides = 0
+        await b.obertura.confirmaIObreTot()
+        #expect(b.obertura.estat == .noEsPot(WarpPreview.obert.text))
+        #expect(b.engegades == 0 && b.urls.isEmpty && b.fitxersWarp.isEmpty && b.estatAlDisc.llancaments.isEmpty)
+    }
+
     /// Totes les finestres ja són obertes: cap full, i l'editor es pot amagar.
     @Test func totesObertesCapFull() async throws {
         let b = try Banc(configuracio: duesFinestres)

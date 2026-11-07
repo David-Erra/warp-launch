@@ -176,6 +176,12 @@ private let prohibidesArrossegar = [
             "Sources/WarpLaunchCore/AppWarp.swift: let preview = installada(cerca(AppWarp.identificadorPreview)).flatMap { $0.esPreview ? $0 : nil }",
             "Sources/WarpLaunchCore/AppWarp.swift: let trobada = installada(cerca(AppWarp.identificador)).flatMap { $0.esWarp ? $0 : nil }",
         ])
+        // I els dos identificadors són els de Warp, escrits un sol cop (D-P12: les adreces, en una llista fixa). Sense
+        // això, canviar-ne el valor faria preguntar per una altra app i cap prova no ho veuria.
+        #expect(linies("\"dev.warp.Warp-").sorted() == [
+            "Sources/WarpLaunchCore/AppWarp.swift: public static let identificador = \"dev.warp.Warp-Stable\"",
+            "Sources/WarpLaunchCore/AppWarp.swift: public static let identificadorPreview = \"dev.warp.Warp-Preview\"",
+        ])
         // Fora dels comentaris.
         #expect(Set(linies("TrobaWarp.delSistema").filter { !$0.contains(": //") }.map { String($0.prefix { $0 != ":" }) }) == [
             "Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCLI/main.swift", "Sources/WarpLaunchObridor/ObreWarp.swift",
