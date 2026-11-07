@@ -90,6 +90,44 @@ private let prohibidesArrossegar = [
         }
         #expect(app.contains("ConsentimentRestauracio(magatzem: preferencies, creaEntornRefresc: creaEntornRefresc)"))
         #expect(app.contains("var refresc: RefrescWarp? { consentiment.refresc }"))
+        // Revisió de la 0.29.0: `creaEntornRefresc\(\)` no veia `creaEntornRefresc?()` ni un àlies. Cada línia de codi
+        // que l'esmenta, a tot `Sources`, és una d'aquestes.
+        let esmenta = codi.flatMap { fitxer in
+            fitxer.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { $0.contains("creaEntornRefresc") && !$0.hasPrefix("//") }
+                .map { "\(fitxer.ruta): \($0)" }
+        }
+        let rutaApp = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
+        #expect(esmenta.sorted() == [
+            "\(rutaApp): var creaEntornRefresc: (@MainActor () -> RefrescWarp.Entorn)?",
+            "\(rutaApp): creaEntornRefresc = {",
+            "\(rutaApp): let consentiment = ConsentimentRestauracio(magatzem: preferencies, creaEntornRefresc: creaEntornRefresc)",
+            "\(rutaApp): let base: BaseWarp = creaEntornRefresc == nil ? .segonsAjust : .mai",
+            "\(rutaConsentiment): @ObservationIgnored private let creaEntornRefresc: (@MainActor () -> RefrescWarp.Entorn)?",
+            "\(rutaConsentiment): public init(magatzem: MagatzemPreferencies?, creaEntornRefresc: (@MainActor () -> RefrescWarp.Entorn)?,",
+            "\(rutaConsentiment): self.creaEntornRefresc = creaEntornRefresc",
+            "\(rutaConsentiment): guard estat == .acceptat, refresc == nil, let creaEntornRefresc else { return }",
+            "\(rutaConsentiment): refresc = RefrescWarp(entorn: creaEntornRefresc())",
+        ].sorted(), "\(esmenta.joined(separator: "\n"))")
+        // L'estat del consentiment només canvia en aquestes quatre línies (també amb `self.estat =`).
+        let assignacio = try Regex(#"\bestat\s*=(?!=)"#)
+        let assignacions = consentiment.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.hasPrefix("//") && $0.contains(assignacio) }
+        #expect(assignacions == [
+            "estat = .noCal",
+            "estat = try magatzem.carrega().restauracio.esAcceptat ? .acceptat : .pendent",
+            "estat = .error(error.description)",
+            "estat = .acceptat",
+        ], "\(assignacions)")
+        // El consentiment només el dona l'usuari, amb el botó «Accepta»: cap altre codi no l'accepta ni el desa per ell.
+        let accepten = try aparicions(de: [#"\.accepta\("#], a: codi)
+        #expect(accepten.count == 2 && accepten.contains { $0.hasPrefix("\(rutaConsentiment):") }
+            && accepten.contains { $0.hasPrefix("Sources/WarpLaunchUI/VistaConsentiment.swift:") }, "\(accepten)")
+        let vista = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaConsentiment.swift" }).text
+        #expect(vista.contains(#"Button("Accepta") { consentiment.accepta() }"#))
+        let preferencies = "Sources/WarpLaunchCore/Preferencies.swift"
+        let consentiments = try aparicions(de: [#"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#], a: codi)
+        #expect(!consentiments.isEmpty && consentiments.allSatisfy { $0.hasPrefix("\(preferencies):") }, "\(consentiments)")
     }
 
     /// La foto de Warp (D19) només es refresca quan en David ho demana, mai sola (0.27.3, 06/11/2026): l'únic que crida
@@ -202,6 +240,20 @@ private let prohibidesArrossegar = [
             let e = RefrescWarp.Entorn(ajust: a)
             let x = AltreRefrescWarp(entorn: e)
             """)]) == ["mostra.swift:1: «\\bRefrescWarp\\(»"])
+        // El consentiment (revisió de la 0.29.0): acceptar-lo i construir-ne un d'acceptat, sí; definir `accepta` o
+        // comparar-hi, no.
+        let consentiment = [#"\.accepta\("#, #"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#]
+        #expect(try aparicions(de: consentiment, a: [(ruta: "mostra.swift", text: """
+            consentiment.accepta()
+            public func accepta(ara: Date) {}
+            guard estat == .acceptat else { return }
+            p.restauracio = .acceptat(ara)
+            Preferencies(restauracio: .migrat)
+            if p.restauracio == .migrat {}
+            """)]) == [
+            "mostra.swift:1: «\\.accepta\\(»", "mostra.swift:4: «\\.acceptat\\(»", "mostra.swift:4: «\\.restauracio\\s*=(?!=)»",
+            "mostra.swift:5: «\\.migrat\\b»", "mostra.swift:6: «\\.migrat\\b»",
+        ])
         // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
         let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
         #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)
