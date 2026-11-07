@@ -221,7 +221,8 @@ corregeix-lo i deixa'n constància.
 
 - **Fitxer de sessió** (prototip; la revisió del 03/11/2026 hi va afegir que també l'escriuen els processos `bg`):
   - Cada procés de Claude, interactiu o `bg`, escriu `~/.claude/sessions/<pid>.json` amb `sessionId`, `cwd`,
-    `name`, `kind` (`interactive` o `bg`), `entrypoint`, `startedAt` i `procStart`.
+    `name`, `kind` (`interactive` o `bg`; el 07/11/2026, també `daemon` i `daemon-worker`, vegeu «Per al diagnòstic»),
+    `entrypoint`, `startedAt` i `procStart`.
   - `procStart` és l'hora d'inici en UTC i en format ctime, sense zona (03/11/2026, revisió). Per comparar-lo
     amb `ps -o lstart`, que dona l'hora local, cal convertir la zona.
   - **El fitxer s'esborra quan el procés acaba.** Després d'un reinici no en queda res.
@@ -663,6 +664,25 @@ d'un repo, que engega feines) a les 13:29:56Z i li passa al Claude a les 13:30:0
   with 76 swapfiles»), abans de crear-se `espai` (16:41Z) i aquest repo (17:04Z). Hi ha un segon reinici a les 14:22 local, amb el botó.
   No se sap quin procés va omplir la memòria: l'informe no porta la llista de processos.
 - **Memòria amb les 62 obertes** (05/11, 13:34): 69 processos de Claude, 20,8 GB de 64 GB; `memory_pressure` diu 73% lliure, sense swap.
+
+## Per al diagnòstic i per trobar Warp (07/11/2026, Warp 0.2026.11.04, Claude Code 2.1.319)
+
+- **L'Info.plist de Warp** (`PlistBuddy` a `/Applications/Warp.app/Contents/Info.plist`): `CFBundleIdentifier`
+  `dev.warp.Warp-Stable`, `CFBundleExecutable` `stable`, i `CFBundleShortVersionString` i `CFBundleVersion`
+  `0.2026.11.04.08.17.01`. Des de la 0.29.2, l'app en treu el binari. L'identificador de Warp Preview (`dev.warp.Warp-Preview`)
+  no s'ha verificat: Preview no és en aquest Mac.
+- **El nom de procés de Claude Code és la seva versió** (`ps -o ucomm`): el `p_comm` del `claude` natiu és «2.1.319», no
+  «claude» (71 processos al vespre). Per això el diagnòstic recorre tots els processos de l'usuari i no els busca pel nom.
+- **El binari de Claude Code també corre com a `ugrep`** (`ps`, revisió del diagnòstic): quan Claude cerca, `argv[0]` és
+  «ugrep». És fill del shell de l'eina Bash i hereta de la pestanya `WARP_TERMINAL_SESSION_UUID`. N'hi havia 4.
+- **Els tipus de sessió** (llegit als binaris 2.1.317, 2.1.318 i 2.1.319 de `~/.local/share/claude/versions`, sense executar-los;
+  `grep -a` el torna a trobar a la 2.1.319): Claude Code accepta `kind` `["interactive","bg","daemon","daemon-worker"]`. Escriu
+  `~/.claude/sessions/<pid>.json` amb `pid`, `sessionId`, `cwd`, `startedAt`, `procStart`, `version` i `kind` (el de
+  `CLAUDE_CODE_SESSION_KIND`, o `interactive`), i l'esborra en sortir (`process.on("exit")`). Encara no s'ha vist amb un dimoni
+  real que `claude daemon run` escrigui el de `kind` `daemon`.
+- **A `~/.claude/sessions` també hi ha fitxers `<pid>.<sha256>.key`** (`ls`): claus de missatgeria, 142 entrades en total. Els
+  67 fitxers de sessió eren tots `interactive` i de la 2.1.319.
+- **`~/.claude.json`:** les 164 entrades de `projects` porten la clau `hasTrustDialogAccepted`.
 
 ## Foundation i JSON (03/11/2026, macOS 27.2)
 

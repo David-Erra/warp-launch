@@ -230,6 +230,8 @@ no hi ha ordre, o Claude s'aturaria). El CLI en mostra els avisos i els errors.
 
 - `configuracio.json`: la configuració. És d'en David.
 - `estat.json`: el que l'app sap de Warp i de Claude (el pane i la sessió de cada pestanya). És de l'app.
+- `preferencies.json` (0.29.0): el consentiment per gestionar la restauració de Warp i el `restore_session` d'abans del primer
+  canvi de l'app. És de l'app (secció 10).
 - `copies/configuracio-AAAAMMDD-HHMMSS-<motiu>[-N].json`: les 20 últimes còpies, amb els permisos del fitxer.
   Només compten els fitxers amb aquest nom exacte: la resta de `copies/` (fitxers, carpetes o enllaços d'en David)
   no es toca mai.
@@ -340,7 +342,9 @@ i no toca el disc.
   principal: el primer amb Claude, o el primer. Una pestanya dividida en diversos panes dona una nota (D9).
 - **Claude** (decisió d'en David, D11; la plantilla d'importar és la segura des de la 0.28.0, vegeu «Plantilla i Configuració»):
   - **amb sessió viva:** les opcions del seu argv, més `continua: true` (R4). El nom fix només si venia de `-n`;
-  - **sense sessió:** la plantilla;
+  - **sense sessió:** en una configuració nova (sense fitxer), **només terminal** (0.29.1, D-P5a, en David, 07/11/2026): la
+    plantilla amb `activat: false`, origen `.nomesTerminal`. Tornant a importar sobre una que ja existeix, la plantilla (D11).
+    Ho tria qui importa (`Importador.importa(…, senseSessio:)`, sense valor per defecte; `Editor.senseSessioPerImportar` i el CLI);
   - **a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
     les opcions);
   - **sessió viva en una pestanya a `~`:** la carpeta de la sessió, amb una nota. Si la pestanya és en una altra
@@ -356,7 +360,9 @@ i no toca el disc.
 - **Xifres amb la lectura del 03/11/2026** (d'abans de la 0.28.0, amb la plantilla d'en David): 7 finestres (23, 17, 1,
   2, 6, 11 i 4 pestanyes), 64 pestanyes. 48 amb Claude (13 amb la seva ordre i 35 amb la plantilla), totes amb
   `--dangerously-skip-permissions`, i 16 sense. El full de previsualització ho deia amb aquestes xifres. Des de la
-  0.28.0, les 35 de la plantilla s'obren sense saltar els permisos.
+  0.28.0, les 35 de la plantilla s'obren sense saltar els permisos. **Des de la 0.29.1, aquestes xifres només valen tornant
+  a importar;** en una configuració nova, amb la lectura del 04/11/2026: «13 amb Claude, amb la seva ordre · 51 només terminal
+  (35 sense Claude obert)».
 - **Quan:** mai sola. «Importa de Warp…» mostra un full de previsualització, i el fitxer s'escriu en prémer
   «Crea». «Torna a importar-ho tot…» substitueix la configuració, amb còpia i Desfés.
 - **CLI:** `warp-launch importa` mostra el resultat sense escriure res. `--desa` exigeix `--config <carpeta>`:
@@ -400,7 +406,8 @@ Una prova llegeix el codi del repo (`#filePath`) i falla si:
   `PortaRetallsSistema.enganxa/hiHaPestanyes/escriu` (el porta-retalls d'en David).
 
 Una altra prova comprova que cada expressió troba el que ha de trobar. Així les proves no poden llegir l'estat real,
-ni tocar el porta-retalls, ni fer sortir el procés de proves al Dock.
+ni tocar el porta-retalls, ni fer sortir el procés de proves al Dock. Les guardes de la fase 3.1 són a la secció 7
+(«Seguretat»), i les del consentiment, de trobar Warp i del diagnòstic, a la secció 10.
 
 ## 4. Passos
 
@@ -1060,9 +1067,10 @@ l'obertura de les 10:20 i no tenien missatges.
 - `warp://` només en una línia, `URL(string: "warp://launch/" + nom)` a `WarpLaunchCore/LaunchConfigWarp.swift`
   (0.15.0, fet). `URLLlancament` té l'`init` intern: fora del core no se'n pot fer cap.
 - `NSWorkspace`: `activateFileViewerSelecting(` a `Finder.swift`, i un sol `NSWorkspace.shared.open(`, a l'obridor
-  (`ObreWarp`), que rep un `URLLlancament`, obre amb `/Applications/Warp.app` després de comprovar que el bundle és
-  `dev.warp.Warp-Stable`, i descarta el valor que retorna (`NSRunningApplication` continua prohibit). Amb D17 el fa
-  servir també el CLI: l'obridor va en un mòdul que comparteixen tots dos, i continua sent una sola crida.
+  (`ObreWarp`), que rep un `URLLlancament`, obre amb el Warp Stable trobat (fins a la 0.29.1, `/Applications/Warp.app`) després
+  de comprovar que el bundle és `dev.warp.Warp-Stable`, i descarta el valor que retorna (`NSRunningApplication` continua
+  prohibit). Amb D17 el fa servir també el CLI: l'obridor va en un mòdul que comparteixen tots dos, i continua sent una sola
+  crida. Des de la 0.29.2, al mateix mòdul hi ha l'única pregunta a macOS d'on és Warp (`TrobaWarp`, secció 10).
 - `launch_configurations` només a `WarpLaunchCore/FitxersLaunchWarp.swift`, i `removeItem`/`unlink` només dins
   d'`esborra`.
 - `.confirma(` només a `WarpLaunchUI/FullObertura.swift`. Els botons «Obre…» només criden `demanaObertura(`, sense
@@ -1231,7 +1239,7 @@ finestra**, totes marcades.
 
 ### La foto de les finestres (0.23.0, D19)
 
-`RefrescWarp` (UI, sense res de debò: la connexió és a l'app) i `AjustRestauracio` (core, les comprovacions de `warp-restauracio.sh`). Només amb la carpeta `.real`.
+`RefrescWarp` (UI, sense res de debò: la connexió és a l'app) i `AjustRestauracio` (core, les comprovacions de `warp-restauracio.sh`). Només amb la carpeta `.real` i, des de la 0.29.0, amb el consentiment de `preferencies.json` (secció 10).
 
 - **L'ajust sempre és `false`:** `vigila()` en arrencar i cada 60 s; `tanca()` en sortir i abans d'engegar Warp.
 - **Quan en David ho demana** («Torna a llegir Warp», importar i lligar; fins a la 0.27.3, també cada 5 min), **amb Warp obert:** posa `true`, cada segon llegeix la base i acaba quan **quadra amb els terminals vius** (tants panes com terminals, i tots els coneguts hi
@@ -1426,3 +1434,124 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
   - **Falta:** un reinici amb la 0.27.3 (l'opció de Warp que l'obre en iniciar sessió, «Start Warp at login», sempre ha estat desactivada, diu en David el
     07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
     registra, i amb el Mac encès fa menys de 10 minuts el full surt igualment.
+
+## 10. Per a altres usuaris (07/11/2026, de la 0.29.0 a la 0.30.1)
+
+Les vuit decisions d'en David del 07/11/2026 són a `especificacio.md` («Per a altres usuaris»). El codi i els commits les
+anomenen D-P4 (la 4, el consentiment), D-P5a (la 5, importar) i D-P12 (trobar Warp, de la 8). El diagnòstic (pla A4) no surt
+de cap decisió. Cada pas va tenir una revisió, amb correccions. **Cap pas no s'ha vist a l'app** (regla 4): el que falta
+provar, sempre amb l'OK d'en David, és al final de cada pas.
+
+### Consentiment de la restauració (0.29.0, D-P4)
+
+- **`preferencies.json`** (versió 1, al costat de la configuració, escriptura atòmica): el consentiment (`senseTriar`,
+  `acceptat` amb la data o `migrat`) i el `restore_session` d'abans del primer canvi de l'app, desat un sol cop (cap botó no el
+  torna, de moment). Un fitxer d'una versió més nova, mal fet o un enllaç trencat no se sobreescriu: la pantalla només deixa
+  sortir, amb l'error i la ruta. `configuracio.json` no canvia (regla 11).
+- **Migració:** una carpeta amb `configuracio.json` o `estat.json` i sense `preferencies.json` compta com a acceptada, sense
+  preguntar ni escriure res. En David no veu la pantalla; el fitxer s'escriu el primer cop que l'app canvia l'ajust, amb el valor
+  d'aquell moment (segurament `false`, no el d'abans de D19).
+- **Sense consentiment, l'app no toca Warp:** ni `RefrescWarp` ni `AjustRestauracio` (tampoc en sortir), ni llegeix Warp, ni
+  neteja els seus fitxers temporals, ni proposa obrir res (una finestra, «Obre-ho tot», el full d'inici de sessió). El menú de la
+  icona només té «Mostra Warp Launch» i «Surt».
+- **La pantalla** (`VistaConsentiment`, a l'editor i a la Configuració) diu per què cal i què canvia (l'ajust «Restore windows,
+  tabs, and panes on startup», Settings Sync i els segons en què l'app l'activa quan es demana llegir Warp). «Accepta» o «Surt de
+  Warp Launch», sense botó per defecte ni drecera. Sortir, o tancar l'editor, tanca l'app sense desar res, i la propera vegada ho
+  torna a preguntar. Amb una carpeta de prova (`--config`) també surt, i diu que l'app no tocarà l'ajust. En iniciar sessió, primer
+  la pantalla i després el full de «Obre-ho tot».
+- **Guarda:** el refresc només el crea `ConsentimentRestauracio`, un cop i amb el consentiment acceptat; l'entorn de l'ajust,
+  només l'app i amb `.real`. La revisió hi va afegir cada línia amb `creaEntornRefresc`, les 4 assignacions de l'estat, `accepta(`
+  només des del botó i del model, i `.acceptat(`, `.migrat` i `.restauracio =` només a `Preferencies.swift`: tres camins que la
+  primera guarda no veia ara fallen.
+- **Proves:** `PreferenciesTests` (13), `ConsentimentRestauracioTests` (8, amb un ajust fals que sense consentiment no rep cap
+  `posa`) i 2 a `OberturaTests`.
+- **A l'app, amb `--config` i una carpeta nova:** surt la pantalla; «Surt de Warp Launch» i tancar l'editor tanquen l'app sense
+  crear `preferencies.json`; «Accepta» el crea i passa a l'editor (barra d'eines i mida); amb `{"versio": 9}`, l'error amb la
+  ruta. Amb la configuració real, no pregunta res.
+- **Per decidir:** la migració també val per a qui ja feia servir la 0.28.0 (la primera usuària), que no va decidir D19. Si se
+  li ha de preguntar: o la migració només compta per a la carpeta d'en David, o es pregunta a tothom un cop (i en David accepta
+  una vegada). Tancar la Configuració amb la pantalla no surt de l'app (tancar l'editor, sí): és una línia si ha de sortir.
+
+### Importar una configuració nova (0.29.1, D-P5a)
+
+- Les pestanyes on no corria Claude queden només terminal, a l'app («Crea») i a `warp-launch importa` sense configuració real
+  (secció 2, «Importació (R2)»). Tornar a importar no canvia.
+- El full i el CLI ho diuen amb xifres («4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que
+  ja no existeix»), i el full explica com s'hi activa Claude a l'inspector i amb quina ordre. La revisió va corregir tres textos
+  que encara deien que hi entraria Claude (l'avís de la foto amb Warp tancat, la nota d'una sessió sense pestanya i la
+  Configuració › «Pestanyes noves» sense configuració).
+- **Proves:** a `ImportadorTests`, `FullImportacioTests`, `OrdreCLITests` i `EditorTests` (configuració nova contra tornar a
+  importar: només difereixen les 35 pestanyes sense Claude).
+- **A l'app, amb `--config` i una carpeta nova:** el full «Importa de Warp», i que després de «Crea», «Obre Claude Code en
+  aquesta pestanya» hi posi `claude`.
+- **Per decidir:** amb Warp tancat i sense configuració (la primera importació després d'un reinici, de l'última foto), cap
+  sessió no és viva i totes queden només terminal (recomanació: mantenir-ho); «Comença en blanc» i després «Torna a importar-ho
+  tot» compta com a tornar a importar; `importa` amb la configuració real malmesa fa servir la plantilla segura. Risc de D4: 51
+  pestanyes només terminal en lloc de 16, que es poden confondre si dues finestres en tenen a la mateixa carpeta.
+
+### Warp Stable a qualsevol carpeta, i Warp Preview (0.29.2 i 0.29.3, D-P12)
+
+- **On és Warp:** ho diu macOS (`NSWorkspace.shared.urlForApplication(withBundleIdentifier:)`), en una sola línia de
+  `WarpLaunchObridor/TrobaWarp.swift`, on cap prova no arriba. El core en rep el resultat (`InstallacioWarp.troba(aplicacions:cerca:)`,
+  amb una `cerca` falsa a les proves). Si macOS no en sap res, o diu una carpeta on ja no és o un paquet que no és Warp,
+  `/Applications/Warp.app`, com fins ara. Una còpia a la Paperera (`.Trash` o `.Trashes`) no compta (0.29.3).
+- **El binari** surt del paquet (`CFBundleExecutable`): és el que compta com a Warp obert, el del seu `terminal-server`
+  (`warpObert(executable:)`, `terminalsDeWarp(executable:)`) i el que obre `ObreWarp`. `executableWarp` ja no existeix. Es mira a
+  cada lectura (`Lector.warp`).
+- **Warp Preview** (`dev.warp.Warp-Preview`) no és compatible. Si només hi ha Preview, o és obert i Stable no
+  (`LecturaWarp.warpPreview`: `.nomesPreview` o `.obert`), no s'obre res, tampoc Warp Stable: «Warp Preview encara no és compatible:
+  cal Warp Stable.» (una finestra, «Obre-ho tot» i l'inici de sessió). `obre --obre` falla sense escriure res; `llegeix` ho
+  mostra amb ⚠ i `obre`, amb ✗ i el codi 1, també en mode de prova. `warpPreview` és un codi a `llegeix --json` («obert» o
+  «nomesPreview») i un text a `obre --json`. Amb tots dos oberts, Stable, sense dir res.
+- **Guarda (l'excepció de la decisió 8):** `urlForApplication` només a `TrobaWarp.swift` i amb `$0` (falla en 8 fitxers més, o
+  amb una altra crida o un altre identificador); els dos identificadors, només a `AppWarp.swift` i amb el text exacte. Les proves
+  no poden esmentar `TrobaWarp` ni `urlForApplication`, ni cridar `troba` sense una carpeta temporal. `NSWorkspace.shared.open` i
+  `openApplication` continuen només a `ObreWarp.swift`.
+- **Proves:** `AppWarpTests` (13, amb la Paperera), la guarda, `OrdreCLITests` i `OberturaTests` (una finestra i «Obre-ho tot»
+  amb Preview). Al Mac, només amb `--versio` i `llegeix`: troba el Warp d'`/Applications` per macOS, obert, amb 67 terminals.
+- **Per provar:** Warp a `~/Applications` (el mou en David) i Warp Preview (no és en aquest Mac; l'identificador no s'ha
+  verificat).
+- **Per decidir:** amb Preview obert i Stable tancat, l'app no obre res i demana obrir Stable a mà (recomanació: mantenir-ho, no
+  obre un segon Warp sense avisar). Amb dues còpies de Stable, macOS en tria una i, si corre l'altra, l'app la veu tancada
+  (recomanació: reconèixer el Warp obert pels processos, abans de convidar ningú). Sense comprovar: un Warp que corre sense
+  moure'l de Descàrregues (App Translocation). Sense cap Warp, el full encara proposa obrir-lo i falla en confirmar.
+
+### Diagnòstic (0.30.0 i 0.30.1, pla A4)
+
+- **Per què:** que un canvi de format de Warp o de Claude Code es vegi, en lloc de fallar en silenci. No bloqueja res (en David
+  no ha acceptat aturar «Obre-ho tot»), no executa cap programa i no escriu res.
+- **Vuit comprovacions** (`Diagnostic`, amb un `EntornDiagnostic` que les proves substitueixen), cadascuna bé, avís o error, amb
+  el detall en anglès: terminals de Warp; fitxers de sessió (`claude` sense fitxer vàlid, il·legibles, `kind` desconegut);
+  transcripcions; `~/.claude.json` (`projects`, `hasTrustDialogAccepted`); taules i columnes de `warp.sqlite` (`LectorWarp.esquema`,
+  `PRAGMA table_info` en només lectura, només si Warp desa la base); versions de Warp (Info.plist) i de Claude Code (fitxers de
+  sessió dels processos vius), comparades amb `VersionsProvades` (Warp 0.2026.10.21, Claude Code de la 2.1.317 a la 2.1.318; fora,
+  avís «no provada»); i `restore_session` amb el consentiment.
+- **CLI:** `warp-launch diagnostica [--json] [--anonimitza]`; codi 1 si alguna dona error, 64 si l'ús és incorrecte.
+  `--anonimitza` treu el nom d'usuari, la carpeta d'inici i els noms de carpeta, també dins dels errors, i en deixa la forma
+  (`~/GitHub-Personal` → `~/AaaAaa-Aaaaaaaa`); es queden els noms que l'app llegeix (`.claude`, `sessions`, `Warp.app`…).
+- **App:** Configuració › «Diagnòstic»: «Copia el diagnòstic» (anonimitzat) i, al seu menú, «Copia el diagnòstic complet»; al
+  costat, què s'ha copiat («Copiat (anonimitzat): 6 bé, 2 avisos, 0 errors.»). Llegeix fora del fil principal amb el mateix
+  `Lector` (`CopiaDiagnostic`). Només es veu amb el consentiment acceptat.
+- **Revisió (0.30.1):** `daemon` és un `kind` conegut; el binari de Claude que corre com a `ugrep` no compta; un `claude` sense
+  fitxer en una carpeta on Claude no confia (espera la pregunta de confiança) és una nota, no un error; un fitxer d'un procés viu
+  que l'app no veu com a `claude` és un avís; l'anonimització treu també les rutes relatives.
+- **Guarda:** `Diagnostic.swift` no conté cap de 23 maneres d'escriure, d'executar o de tocar el porta-retalls; `CopiaDiagnostic`
+  només a l'app (a les proves, amb un porta-retalls fals); a les proves, `LectorTranscripcions` i `LectorConfianca` amb una ruta
+  de prova. Aquestes guardes veuen els noms amb mòdul (`(^|[^A-Za-z0-9_])`, no `\b`).
+- **Proves:** 28 al core (27 a `DiagnosticTests`, cada comprovació amb un fixture bo i un de trencat, l'anonimització i que no
+  canvia cap fitxer; 1 a la guarda) i 1 a la UI (`CopiaDiagnosticTests`).
+- **Per provar (amb l'OK d'en David):** `warp-launch diagnostica` sobre l'estat real, que no és a la regla 4 (amb Warp
+  0.2026.11.04 i Claude Code 2.1.319, s'esperen 2 avisos de «no provada»), i el botó a la Configuració.
+- **Pendents:** `VersionsProvades` es posa al dia a mà després de cada prova real amb una versió nova. Amb una carpeta de prova,
+  la comprovació de `restore_session` diu que l'app el desactiva en un minut, i no és cert. No s'ha vist amb un dimoni real que
+  `claude daemon run` escrigui el fitxer de `kind` `daemon`. Els motius d'`AjustRestauracio` i `Preferencies` surten en català
+  dins de l'informe fins a la traducció. Les guardes antigues (`\bProcess\(`, `\bkill(pg)?\(`, `\bLector\(`) no veuen els noms
+  amb mòdul, i a les proves un `Lector(` sense `carpetaSessions` llegiria el `~/.claude/sessions` de debò (recomanació: una tasca
+  a part).
+
+### Resum
+
+- Proves: de 443 a 506 al core i de 232 a 249 a la UI, totes bé. `prototip/` surt del repo (és a l'historial, 114c97d).
+- Cap versió del lot no és publicada ni instal·lada: la de GitHub i la d'`/Applications` són la 0.28.0.
+- De les vuit decisions, falten la signatura amb Developer ID (1), l'idioma (3), Sparkle (6) i les excepcions de la guarda per a
+  la pàgina del permís i per a Sparkle (8). Abans de convidar ningú, es revisa què diu `docs/` del Mac d'en David.

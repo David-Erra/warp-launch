@@ -18,7 +18,7 @@ Gairebé cada pestanya té un agent Claude Code per repo (`claude --dangerously-
 El 03/11/2026 hi havia 7 finestres i 64 pestanyes de terminal, però només 14 sessions de Claude vives,
 d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
 
-## Estat (07/11/2026, 0.28.0)
+## Estat (07/11/2026, 0.30.1)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la en un altre Mac.
@@ -84,6 +84,21 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
   `claude` sense saltar els permisos ni ultracode (`.perOmissio`, continuant la conversa). «Salta els permisos», l'esforç i
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
+- **Per a altres usuaris, de la 0.29.0 a la 0.30.1** (decisions d'en David del 07/11/2026 a `docs/especificacio.md`; passos, proves
+  i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha vist a l'app ni s'ha publicat:** la versió de GitHub i
+  la d'`/Applications` són la 0.28.0.
+  - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
+    de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
+    obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
+    `configuracio.json` o `estat.json` compta com a acceptada (la d'en David no pregunta). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
+  - **0.29.1 (D-P5a):** en una configuració nova, les pestanyes on no corria Claude queden només terminal (amb la lectura del
+    04/11/2026, 13 amb Claude i 51 només terminal, en lloc de 48 i 16). Tornar a importar no canvia.
+  - **0.29.2 i 0.29.3 (D-P12): Warp Stable a qualsevol carpeta.** On és ho diu macOS, només a `WarpLaunchObridor/TrobaWarp.swift`
+    (l'única `urlForApplication`); si no, `/Applications`. Una còpia a la Paperera no compta. El binari surt del paquet
+    (`CFBundleExecutable`). Amb només Warp Preview, o Preview obert i Stable no, l'app no obre res i ho diu.
+  - **0.30.0 i 0.30.1: diagnòstic de només lectura.** `warp-launch diagnostica` i Configuració › «Diagnòstic» › «Copia el
+    diagnòstic»: 8 comprovacions dels formats de Warp i de Claude Code que l'app llegeix, en anglès i, si es vol, anonimitzat. No
+    bloqueja res. `VersionsProvades` (Warp 0.2026.10.21, Claude Code 2.1.317 a 2.1.318) es posa al dia a mà.
 - **Signatura:** `scripts/build-app.sh` signa amb el certificat «Warp Launch Dev» del clauer d'en David (D12).
   L'app té permís a Privacitat i seguretat › Arxius i carpetes per llegir les dades de Warp.
 - **Ordre de feina acordat:**
@@ -126,6 +141,7 @@ scripts/test.sh                          # proves; no facis servir `swift test` 
 .build/debug/warp-launch configuracio valida  # errors i avisos de ~/.config/warp-launch (només lectura)
 .build/debug/warp-launch obre <finestra> [--json] [--config <carpeta>]  # mode de prova: què s'obriria (no escriu ni obre res)
 .build/debug/warp-launch obre <finestra> --obre [--config <carpeta>]   # obre de debò (regla 1: només amb l'OK d'en David)
+.build/debug/warp-launch diagnostica [--json] [--anonimitza]  # si Warp i Claude Code tenen la forma que l'app llegeix (només lectura; no és a la regla 4: sobre l'estat real, amb l'OK d'en David)
 /usr/bin/log show --last 10m --predicate 'subsystem == "cat.davide.warp-launch"'  # registre de l'app (arrossegar)
 scripts/build-app.sh                     # crea «build/Warp Launch.app» (release, signada amb «Warp Launch Dev» o ad hoc); no l'obre
 scripts/instal·la.sh [--aplica]          # sense --aplica, diu què copiaria a /Applications; amb, copia (regla 3: només amb l'OK d'en David)
@@ -151,6 +167,7 @@ scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-bana
 |---|---|
 | `Sources/WarpLaunchCore/` | Lògica sense interfície: models, lectura de Warp i de Claude, configuració JSON |
 | `Sources/WarpLaunchUI/` | Model de l'editor (`Editor`, `EstatWarp`) i vistes SwiftUI; no toca `NSApp` |
+| `Sources/WarpLaunchObridor/` | L'única crida que obre res a Warp (`ObreWarp`) i l'única pregunta a macOS d'on és Warp (`TrobaWarp`); la fan servir l'app i el CLI, cap prova no en depèn |
 | `Sources/WarpLaunchApp/` | App de barra de menú, prima: escenes, activació i Dock (executable `WarpLaunch`, `--config <carpeta>`) |
 | `Sources/WarpLaunchCLI/` | Comanda `warp-launch`: només hi posa els valors reals; la lògica és a `OrdreCLI` (core), que es prova amb fixtures |
 | `Tests/WarpLaunchCoreTests/` | Proves `swift-testing`, sempre amb dades fictícies; inclou la prova de guarda (`GuardaTests`) |
