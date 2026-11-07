@@ -187,6 +187,24 @@ private func lecturaComLaReal() -> LecturaWarp {
         #expect(nova.notes == tornada.notes)
     }
 
+    /// Amb Warp tancat (la foto, sense cap sessió viva), cap pestanya conserva la seva ordre: en una configuració nova
+    /// queden totes només terminal (D-P5a), i en tornar a importar prenen la plantilla (D11). L'avís de la foto ho diu
+    /// sense prometre la plantilla, que en una configuració nova no hi és (revisió de la 0.29.1).
+    @Test func ambWarpTancatCapPestanyaConservaLaSevaOrdre() throws {
+        var f = Fabrica()
+        let lectura = f.lectura([["p:GitHub/a", "p:GitHub/b", "~"]])
+        let nova = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, senseSessio: .nomesTerminal,
+                                      nouId: IdsDeProva().nou)
+        #expect(nova.resum.ambSessio == 0 && nova.resum.ambPlantilla == 0)
+        #expect(nova.configuracio.finestres.flatMap(\.pestanyes).allSatisfy { !$0.claude.activat })
+        let tornada = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla,
+                                         nouId: IdsDeProva().nou)
+        #expect(tornada.resum.ambSessio == 0 && tornada.resum.ambPlantilla == 2)
+
+        #expect(LecturaWarp.avisFotoWarpTancat.contains("cap pestanya conserva la seva ordre"))
+        #expect(!LecturaWarp.avisFotoWarpTancat.contains("plantilla"))
+    }
+
     @Test func esDesaIEsTornaALlegirIgual() throws {
         let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
                                               nouId: IdsDeProva().nou).configuracio
@@ -387,6 +405,34 @@ private func lecturaComLaReal() -> LecturaWarp {
             "sessió de Claude «fora» a «/Users/prova/a»: no s'importa (corre fora de Warp, o dins de tmux); a la mateixa "
                 + "carpeta hi ha «Finestra 1 › Títol», que no porta les seves opcions",
             "sessió de Claude a «/Users/prova/b»: no s'importa (la seva pestanya no és a la base de Warp)",
+        ])
+
+        // En una configuració nova, la pestanya de la mateixa carpeta no obre Claude: la nota no diu que només li
+        // falten les opcions (D-P5a, revisió de la 0.29.1).
+        let nova = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, senseSessio: .nomesTerminal,
+                                      nouId: IdsDeProva().nou)
+        #expect(nova.notes.map(\.description).first == "sessió de Claude «fora» a «/Users/prova/a»: no s'importa "
+            + "(corre fora de Warp, o dins de tmux); a la mateixa carpeta hi ha «Finestra 1 › Títol», que queda només terminal")
+    }
+
+    /// Una sessió sense pestanya a una carpeta amb pestanyes de cada mena: les que obren Claude amb la plantilla i les
+    /// que queden només terminal (a `~`) es diuen per separat, en plural si n'hi ha més d'una.
+    @Test func laNotaDUnaSessioSensePestanyaSeparaLesQueQuedenNomesTerminal() {
+        var f = Fabrica()
+        let aInici = f.sessio(inici, ["claude"])
+        let aDues = f.sessio("\(inici)/a", ["claude"])
+        let barrejades = f.sessio("\(inici)/c", ["claude"])
+        let lectura = f.lectura([["~", "~", "p:a", "p:a", "p:c", "x:c"]], sensePestanya: [aInici, aDues, barrejades])
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla,
+                                            nouId: IdsDeProva().nou)
+        #expect(importacio.notes.map(\.description) == [
+            "sessió de Claude a «/Users/prova»: no s'importa (la seva pestanya no és a la base de Warp); a la mateixa "
+                + "carpeta hi ha «Finestra 1 › Títol», «Finestra 1 › Títol», que queden només terminal",
+            "sessió de Claude a «/Users/prova/a»: no s'importa (la seva pestanya no és a la base de Warp); a la mateixa "
+                + "carpeta hi ha «Finestra 1 › Títol», «Finestra 1 › Títol», que no porten les seves opcions",
+            "sessió de Claude a «/Users/prova/c»: no s'importa (la seva pestanya no és a la base de Warp); a la mateixa "
+                + "carpeta hi ha «Finestra 1 › Títol», que no porta les seves opcions; i «Finestra 1 › Títol», que queda "
+                + "només terminal",
         ])
     }
 

@@ -104,13 +104,16 @@ public enum Importador {
         }
 
         // Una sessió que no s'ha pogut lligar (dins de tmux, o una pestanya que Warp encara no ha desat) pot ser d'una
-        // pestanya que s'ha importat sense les seves opcions: es diu quina és a la mateixa carpeta.
+        // pestanya que s'ha importat sense les seves opcions, o només terminal (en una configuració nova, D-P5a): es diu
+        // quina és a la mateixa carpeta.
         for sessio in lectura.sessionsSensePestanya {
             let mateixaCarpeta = finestres.flatMap { f in
-                f.pestanyes.filter { $0.carpeta == sessio.carpeta && origens[$0.id] != .sessio }.map { "\(f.nom) › \($0.titol)" }
+                f.pestanyes.filter { $0.carpeta == sessio.carpeta && origens[$0.id] != .sessio }
+                    .map { (ambClaude: $0.claude.activat, text: "\(f.nom) › \($0.titol)") }
             }
             notes.append(.sessioSensePestanya(carpeta: sessio.carpeta, nom: sessio.nom, dinsDeWarp: sessio.dinsDeWarp,
-                                              pestanyes: mateixaCarpeta))
+                                              pestanyes: mateixaCarpeta.filter(\.ambClaude).map(\.text),
+                                              terminals: mateixaCarpeta.filter { !$0.ambClaude }.map(\.text)))
         }
         // Les pestanyes de les finestres descartades no hi són.
         let ids = Set(finestres.flatMap(\.pestanyes).map(\.id))
@@ -215,9 +218,10 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
     case carpetesDiferents(Lloc, pestanya: String, sessio: String)
     /// Pestanya dividida: només s'importa el pane principal (el primer amb Claude, o el primer).
     case panesDescartats(Lloc, panes: Int, sessions: Int)
-    /// Una sessió de Claude que no és a cap pestanya de Warp. No s'importa. `pestanyes`: les importades sense les
-    /// opcions d'una sessió que són a la mateixa carpeta («finestra › pestanya»).
-    case sessioSensePestanya(carpeta: String, nom: String?, dinsDeWarp: Bool, pestanyes: [String])
+    /// Una sessió de Claude que no és a cap pestanya de Warp. No s'importa. De les importades sense les opcions d'una
+    /// sessió que són a la mateixa carpeta («finestra › pestanya»), `pestanyes` són les que obren Claude (amb la
+    /// plantilla) i `terminals`, les que queden només terminal (a `~`, o en una configuració nova, D-P5a).
+    case sessioSensePestanya(carpeta: String, nom: String?, dinsDeWarp: Bool, pestanyes: [String], terminals: [String])
     /// Una finestra de Warp sense pestanyes de terminal (la `numero`-èsima de la lectura). No s'importa.
     case finestraSensePestanyes(numero: Int)
 
@@ -244,12 +248,15 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
         case let .panesDescartats(lloc, panes, sessions):
             let perdudes = sessions == 0 ? "" : ", i es perd \(Plural.compta(sessions, "sessió", "sessions")) de Claude"
             return "\(lloc.text): pestanya dividida en \(panes) panes; només s'importa el principal\(perdudes)"
-        case let .sessioSensePestanya(carpeta, nom, dinsDeWarp, pestanyes):
+        case let .sessioSensePestanya(carpeta, nom, dinsDeWarp, pestanyes, terminals):
             let qui = nom.map { "«\($0)» " } ?? ""
             let on = dinsDeWarp ? "la seva pestanya no és a la base de Warp" : "corre fora de Warp, o dins de tmux"
-            let mateixa = pestanyes.isEmpty ? ""
-                : "; a la mateixa carpeta hi ha " + pestanyes.map { "«\($0)»" }.joined(separator: ", ")
-                    + ", que no porta les seves opcions"
+            func llista(_ p: [String], _ un: String, _ diverses: String) -> String? {
+                p.isEmpty ? nil : p.map { "«\($0)»" }.joined(separator: ", ") + ", " + (p.count == 1 ? un : diverses)
+            }
+            let parts = [llista(pestanyes, "que no porta les seves opcions", "que no porten les seves opcions"),
+                         llista(terminals, "que queda només terminal", "que queden només terminal")].compactMap { $0 }
+            let mateixa = parts.isEmpty ? "" : "; a la mateixa carpeta hi ha " + parts.joined(separator: "; i ")
             return "sessió de Claude \(qui)a «\(carpeta)»: no s'importa (\(on))\(mateixa)"
         case let .finestraSensePestanyes(numero):
             return "la finestra \(numero) de Warp no té cap pestanya de terminal: no s'importa"

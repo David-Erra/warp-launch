@@ -84,8 +84,10 @@ extension Editor {
         case .oberta: return nil
         case .carregant: return "Es llegeix la configuració…"
         case .senseConfiguracio:
-            return "Encara no hi ha cap configuració. Si importes de Warp o comences en blanc, les pestanyes noves "
-                + "s'obriran amb «\(Self.textOrdre(plantillaPerImportar))»."
+            // En importar, les pestanyes que no tenien Claude obert queden només terminal (D-P5a): no s'hi obre aquesta.
+            return "Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert "
+                + "queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb "
+                + "«\(Self.textOrdre(plantillaPerImportar))»."
         case let .error(motiu):
             return "No es pot canviar: \(motiu)"
         }

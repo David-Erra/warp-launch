@@ -2732,8 +2732,11 @@ private func editorAmbQuatre(_ tmp: Temporal) throws -> Editor {
         #expect(!buida.potCanviarPlantilla)
         #expect(buida.plantillaVisible == .perOmissio)
         #expect(buida.plantillaVisible == buida.plantillaPerImportar)
-        #expect(buida.motiuPlantillaNoEditable == "Encara no hi ha cap configuració. Si importes de Warp o comences en "
-            + "blanc, les pestanyes noves s'obriran amb «claude».")
+        // Les importades que no tenien Claude obert queden només terminal (D-P5a): el text no diu que s'hi obrirà
+        // «claude» (revisió de la 0.29.1).
+        #expect(buida.motiuPlantillaNoEditable == "Encara no hi ha cap configuració. Si importes de Warp, les pestanyes "
+            + "que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives "
+            + "Claude, s'obriran amb «claude».")
         let sense = Editor(senseCarpeta: "la carpeta no existeix")
         sense.carrega()
         #expect(sense.motiuPlantillaNoEditable?.hasPrefix("No es pot canviar: ") == true)
