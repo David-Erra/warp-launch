@@ -70,9 +70,10 @@ private func obrenOTanquen(_ codi: [(ruta: String, text: String)]) throws -> [St
 }
 
 /// Pla A4: a les proves, els lectors de Claude només amb una ruta, i «Copia el diagnòstic» només amb un porta-retalls fals.
-private let lectorTranscripcions = #"\bLectorTranscripcions\((?!carpeta:)"#
-private let lectorConfianca = #"\bLectorConfianca\((?!ruta:)"#
-private let copiaDiagnostic = #"\bCopiaDiagnostic\((?![^\n]*escriu:)"#
+/// Sense `\b`: amb les regles d'Unicode, `WarpLaunchCore.LectorConfianca(` no hi té cap límit de paraula.
+private let lectorTranscripcions = #"(^|[^A-Za-z0-9_])LectorTranscripcions\((?!carpeta:)"#
+private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca\((?!ruta:)"#
+private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
 /// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, executi o toqui el porta-retalls. Sense `\b`: amb les
 /// regles d'Unicode, `default.moveItem` o `Darwin.open` no hi tenen cap límit de paraula.
@@ -321,7 +322,7 @@ private let prohibidesArrossegar = [
         let diagnostic = try #require(codi.first { $0.ruta == "Sources/WarpLaunchCore/Diagnostic.swift" })
         let trobades = try aparicions(de: escriuen, a: [diagnostic])
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
-        let copies = try aparicions(de: [#"\bCopiaDiagnostic\("#], a: codi)
+        let copies = try aparicions(de: [#"(^|[^A-Za-z0-9_])CopiaDiagnostic\("#], a: codi)
         #expect(copies.count == 1 && copies[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift:"), "\(copies)")
         // Cada expressió troba la seva línia.
         let mostra = [(ruta: "mostra.swift", text: """
@@ -428,8 +429,14 @@ private let prohibidesArrossegar = [
             LectorConfianca(ruta: tmp.url("c"))
             CopiaDiagnostic(diagnostic: d)
             CopiaDiagnostic(diagnostic: d, escriu: { _ in })
+            WarpLaunchCore.LectorTranscripcions()
+            WarpLaunchCore.LectorConfianca()
+            WarpLaunchUI.CopiaDiagnostic(diagnostic: d)
             """)]) == ["mostra.swift:1: «\(lectorTranscripcions)»", "mostra.swift:3: «\(lectorConfianca)»",
-                       "mostra.swift:5: «\(copiaDiagnostic)»"])
+                       "mostra.swift:5: «\(copiaDiagnostic)»", "mostra.swift:7: «\(lectorTranscripcions)»",
+                       "mostra.swift:8: «\(lectorConfianca)»", "mostra.swift:9: «\(copiaDiagnostic)»"])
+        // Ni `MeuLectorConfianca(`, que és un altre nom.
+        #expect(try aparicions(de: [lectorConfianca], a: [(ruta: "mostra.swift", text: "MeuLectorConfianca()")]).isEmpty)
         // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
         let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
         #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)
