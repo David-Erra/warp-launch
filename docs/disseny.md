@@ -15,8 +15,8 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 `.inspector` a la dreta.
 
 - **Barra lateral** (un nivell):
-  - «Per revisar» (`exclamationmark.triangle`, amb el nombre), només si hi ha avisos. Amb la lectura del
-    03/11/2026 en serien 16: 11 pestanyes a `~` i 5 amb una carpeta que ja no existeix.
+  - «Per revisar» (`exclamationmark.triangle`, amb el nombre), només si hi ha avisos: per exemple, pestanyes a `~` o
+    amb una carpeta que ja no existeix.
   - «Finestres»: una fila per finestra de Warp (`macwindow` i el nombre de pestanyes).
 - **Llista de pestanyes** (selecció múltiple). Cada fila: el nom, i a sota la carpeta abreujada o l'avís més greu.
   A la dreta, un resum: «Opus · Molt alt · Ultracode», o «Només terminal».
@@ -28,7 +28,7 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
   - **Ordre:** la línia de comanda que s'executarà, seleccionable, amb «Copia l'ordre».
   - Amb diverses pestanyes seleccionades, només el bloc Claude, amb «Valors diversos».
   - Sense cap pestanya seleccionada, la finestra: nom, xifres i «Obre a Warp…» (desactivat fins a la fase 3).
-- **Títol:** el nom de la finestra seleccionada. **Subtítol:** «23 pestanyes · 14 amb Claude · 2 avisos».
+- **Títol:** el nom de la finestra seleccionada. **Subtítol:** «12 pestanyes · 8 amb Claude · 2 avisos».
 - **Estats buits** (`ContentUnavailableView`):
   - Sense configuració: «Importa de Warp…» i «Comença en blanc». No es llegeix ni s'escriu res fins al clic.
   - Finestra sense pestanyes: «Nova pestanya…» i, si n'hi ha al porta-retalls, «Enganxa les pestanyes». El panell
@@ -160,7 +160,7 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 `MenuBarExtra` d'estil menú, amb un SF Symbol en mode plantilla, sempre visible.
 
 1. «Mostra l'editor».
-2. «Finestres»: una línia per finestra («empresa — 23 pestanyes, 14 amb Claude»). Obre l'editor amb aquella
+2. «Finestres»: una línia per finestra («empresa — 12 pestanyes, 8 amb Claude»). Obre l'editor amb aquella
    finestra seleccionada. **Lloc de R12:** a la fase 3, cada finestra serà un submenú amb «Obre a Warp…».
 3. Què hi ha obert a Warp, i «Torna a llegir Warp».
 4. Si cal, els avisos: «La configuració té errors», «El fitxer ha canviat fora de l'app» o «No s'ha pogut desar».
@@ -260,7 +260,7 @@ no hi ha ordre, o Claude s'aturaria). El CLI en mostra els avisos i els errors.
 - **Carpeta absoluta i canònica.** Si s'escriu `~/…` a mà, s'accepta i es normalitza.
 - **Esforç i ultracode per separat.** `--effort ultracode` (i `"esforc": "ultracode"` escrit a mà) es desa com a
   `xhigh` més `ultracode`. Si `--settings` és JSON i porta `"ultracode": true`, la clau passa al camp `ultracode`.
-  Un `false` s'hi queda si la pestanya no té ultracode: apaga el de la configuració de Claude d'en David.
+  Un `false` s'hi queda si la pestanya no té ultracode: apaga el de la configuració de Claude de l'usuari.
 - **Continuar:** només es desa la intenció (`continua`). Com es continua (D7) ho decideix qui llança, i per
   això D7 no ha canviat el format: es reprèn la conversa de la pestanya (`--resume <id>`) si l'app la sap, i si no,
   se'n comença una de nova. **Mai `--continue`** (D7), tampoc a l'ordre que es mostra i es copia (D15, 0.15.0).
@@ -323,7 +323,7 @@ no hi ha ordre, o Claude s'aturaria). El CLI en mostra els avisos i els errors.
   Mentre es carrega o si el fitxer no es pot llegir, no en mostra cap: no se sap quina és.
 - **Plantilla d'importar segura (0.28.0, D11 revisada per en David el 07/11/2026):** sense fitxer, la plantilla d'importar és
   `.perOmissio` (`claude` continuant la conversa, sense saltar els permisos ni ultracode), la mateixa que «Comença en blanc».
-  Abans era la d'en David (`.habituals`, que ara només és a les proves). Les opcions es trien a la plantilla (Configuració ›
+  Abans era `.habituals` (salta els permisos, «Molt alt» i ultracode), que ara només és a les proves. Les opcions es trien a la plantilla (Configuració ›
   «Pestanyes noves») o per pestanya a l'inspector. Una configuració que ja existeix conserva la seva plantilla.
 - Si la plantilla canvia amb el full d'importació obert, no es pot confirmar fins a tornar a llegir Warp: si no,
   s'importaria amb una plantilla que el full no ha mostrat.
@@ -349,20 +349,19 @@ i no toca el disc.
     les opcions);
   - **sessió viva en una pestanya a `~`:** la carpeta de la sessió, amb una nota. Si la pestanya és en una altra
     carpeta que la de la sessió, mana la de la pestanya (el `cwd` de la sessió potser segueix els `cd` de Claude),
-    també amb una nota. Avui no n'hi ha cap: les 13 coincideixen;
+    també amb una nota. En una lectura real (03/11/2026), cap: totes les sessions vives coincidien;
   - **sessió viva a `~` o en una carpeta que no existeix:** Claude activat, amb la seva ordre (D11: «les que ja
-    tenen Claude conserven la comanda llegida»), i l'avís de la carpeta. Avui no n'hi ha cap.
+    tenen Claude conserven la comanda llegida»), i l'avís de la carpeta. En aquella lectura, cap.
 - **Notes** (el full i el CLI les mostren): primer missatge descartat, sessió que reprenia una conversa concreta
   (`--resume <id>`, `--session-id`), carpetes de la sessió i de la pestanya diferents, panes descartats,
   finestres sense pestanyes de terminal i sessions sense pestanya. Aquestes no s'importen, i la nota diu quina
   pestanya importada és a la mateixa carpeta: potser és la seva (dins de tmux, per exemple) i no en porta les
   opcions.
-- **Xifres amb la lectura del 03/11/2026** (d'abans de la 0.28.0, amb la plantilla d'en David): 7 finestres (23, 17, 1,
-  2, 6, 11 i 4 pestanyes), 64 pestanyes. 48 amb Claude (13 amb la seva ordre i 35 amb la plantilla), totes amb
-  `--dangerously-skip-permissions`, i 16 sense. El full de previsualització ho deia amb aquestes xifres. Des de la
-  0.28.0, les 35 de la plantilla s'obren sense saltar els permisos. **Des de la 0.29.1, aquestes xifres només valen tornant
-  a importar;** en una configuració nova, amb la lectura del 04/11/2026: «13 amb Claude, amb la seva ordre · 51 només terminal
-  (35 sense Claude obert)».
+- **Exemple** (xifres inventades): una lectura de 4 finestres i 30 pestanyes, 6 amb una sessió viva, 18 sense sessió en una
+  carpeta que existeix i 6 a `~` o amb una carpeta que ja no hi és. Tornant a importar: 24 amb Claude (6 amb la seva ordre i
+  18 amb la plantilla) i 6 sense. Abans de la 0.28.0, una configuració nova feia servir `.habituals`, i les 18 de la plantilla
+  saltaven els permisos; des de la 0.28.0, la segura. **Des de la 0.29.1, en una configuració nova:** «6 amb Claude, amb la seva
+  ordre · 24 només terminal (18 sense Claude obert)». El full de previsualització ho diu amb aquestes xifres.
 - **Quan:** mai sola. «Importa de Warp…» mostra un full de previsualització, i el fitxer s'escriu en prémer
   «Crea». «Torna a importar-ho tot…» substitueix la configuració, amb còpia i Desfés.
 - **CLI:** `warp-launch importa` mostra el resultat sense escriure res. `--desa` exigeix `--config <carpeta>`:
@@ -443,10 +442,12 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
      amagar i tornar a obrir, sense bloqueig; obrir des del Finder mostra l'editor; ⌘, surt al davant; si macOS
      demana permís per llegir les dades de Warp; «Surt» només tanca Warp Launch.
 5. **0.6.0 — ordre de Claude.** `OrdreClaude` i proves: per a cada combinació d'esforç, ultracode i `--settings`,
-   llegir l'ordre generada torna la mateixa configuració; la comanda d'en David dona les mateixes opcions.
+   llegir l'ordre generada torna la mateixa configuració; la de la plantilla `.habituals` de les proves dona les mateixes
+   opcions.
    - Fet (0.6.0). `OrdreClaude.argv(_:represa:)` i `OrdreClaude.text(_:)`; `ClaudePestanya(_ opcions:)` per
      llegir-la de tornada (la farà servir la importació).
-     - L'habitual d'en David dona exactament `claude --dangerously-skip-permissions --effort ultracode --continue`.
+     - La plantilla `.habituals` de les proves donava exactament `claude --dangerously-skip-permissions --effort ultracode --continue`
+       (0.6.0); des de la 0.15.0 (D15), sense `--continue`.
      - Ultracode: amb «Molt alt», l'àlies `--effort ultracode`; amb un altre esforç, `"ultracode": true` dins de
        `--settings` (s'afegeix al JSON que hi hagi). Error si `--settings` és un fitxer (per a Claude, tot el que
        no va de `{` a `}`), si no és un JSON vàlid o té claus repetides, o si ja hi ha `"ultracode"` amb un valor
@@ -472,7 +473,7 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
      - **Queda per al pas 6:** l'avís de «Salta els permisos» amb un mode (Claude no fa cas del mode) i els altres
        avisos nous de la taula. També cal dir, a la importació, si s'ha descartat un primer missatge.
 6. **0.7.0 — importació i avisos.** `Importador`, `Validacio`, `OrdreCLI` i `warp-launch importa`. Proves amb un
-   escenari de la mateixa forma que la lectura real (dona 48/16), sessió a `~`, sessions sense pestanya,
+   escenari de la mateixa forma que una lectura real, sessió a `~`, sessions sense pestanya,
    codis de sortida, `--desa` sense `--config`.
    - La importació diu quan descarta el primer missatge d'una sessió.
    - Opcions d'un sol ús, com `-w` (un worktree nou), `--fork-session` o `--from-pr`: a cada obertura en farien
@@ -481,9 +482,8 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
      base de Warp de prova) i `warp-launch importa [--json] [--desa --config <carpeta>]` i
      `warp-launch configuracio valida [--config <carpeta>]`. Codis de sortida: 0, 1 (no s'ha pogut llegir o
      desar), 2 (la configuració, llegida o importada, té errors) i 64 (ús).
-     - Amb la lectura real del 04/11/2026: 7 finestres, 64 pestanyes, 48 amb Claude (13 de la seva ordre i 35 de
-       la plantilla) i 16 sense; les 48 amb `claude --dangerously-skip-permissions --effort ultracode --continue`.
-       16 avisos (11 a `~`, 5 carpetes que no existeixen), 0 errors i cap nota.
+     - Amb una lectura real (04/11/2026): les pestanyes amb una sessió viva conserven la seva ordre, les altres reben la
+       plantilla, i les de `~` o amb una carpeta que no existeix queden sense Claude i amb un avís; 0 errors i cap nota.
      - Les opcions d'un sol ús es queden a `altres` amb un avís; si se n'han de treure, ho decideix en David
        quan n'aparegui una.
      - L'app encara no importa: el full d'importació és del pas 8.
@@ -512,7 +512,7 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
      - el canvi extern: cada vegada que l'editor passa al davant, mira els bytes del fitxer. Sense canvis a l'app,
        el torna a carregar (i el Desfés d'abans es perd); amb canvis, no toca res i surt el bàner;
      - la importació: `previsualitza` (no escriu res), `crea(amb:)` quan no hi ha configuració (D11; la plantilla és
-       la segura, `.perOmissio`, des de la 0.28.0; abans, la d'en David) i `substitueix(amb:)` («Torna a importar»), amb
+       la segura, `.perOmissio`, des de la 0.28.0; abans, `.habituals`) i `substitueix(amb:)` («Torna a importar»), amb
        còpia i Desfés, que conserva la plantilla.
    - Diferències amb el pas 4: «Nova finestra» va després de la seleccionada, no al final. Una pestanya nova a `~`
      queda sense Claude, com a la importació.
@@ -543,13 +543,14 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
        per finestres; una pestanya arreglada s'hi queda fins que se'n tria una altra.
      - **Nova pestanya…** (`plus` a la barra d'eines): el diàleg de carpetes s'obre a la carpeta que conté la de
        l'última pestanya seleccionada. Una finestra nova obre el nom per escriure'l.
-     - **Títol i subtítol:** «empresa», «23 pestanyes · 23 amb Claude · 2 avisos»; si no es pot desar, ho diu.
+     - **Títol i subtítol:** el nom de la finestra i, per exemple, «12 pestanyes · 12 amb Claude · 2 avisos»; si no es pot
+       desar, ho diu.
      - **Estats buits:** sense configuració (Importa de Warp…, Comença en blanc), cap finestra, finestra sense
        pestanyes (Nova pestanya…), «Res per revisar» i «Tria una finestra».
      - **Full d'importació** (estat buit i Fitxer › «Importa de Warp…» o «Torna a importar-ho tot de Warp…»): torna a
-       llegir Warp i diu les xifres («7 finestres · 64 pestanyes», «48 amb Claude: 13 amb l'ordre de la seva sessió i
-       35 amb la plantilla», «16 només terminal: 11 a la carpeta d'inici i 5 amb una carpeta que ja no existeix»,
-       «48 salten els permisos», amb la plantilla d'en David d'abans de la 0.28.0), l'ordre de la plantilla, quantes
+       llegir Warp i diu les xifres (amb l'exemple de la secció 2 i `.habituals`, d'abans de la 0.28.0: «4 finestres ·
+       30 pestanyes», «24 amb Claude: 6 amb l'ordre de la seva sessió i 18 amb la plantilla», «6 només terminal: 4 a la
+       carpeta d'inici i 2 amb una carpeta que ja no existeix», «18 salten els permisos»), l'ordre de la plantilla, quantes
        pestanyes sortiran a «Per revisar», les finestres i les notes. No escriu res fins a «Crea» o «Substitueix».
    - Les ordres de la barra de menús (⌘T, ⌘D, Canvia el nom…) són del pas 11.
    - **Revisió** (flux de 3 revisors i 3 verificadors, 04/11/2026): 17 troballes, 12 confirmades (10 de diferents),
@@ -574,9 +575,8 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
      les pantalles en clar i en fosc. S'obren 0 finestres de Warp i 0 sessions de Claude: només es llegeix Warp.
    - **Prova 2 feta (04/11/2026, 0.9.0, `--config /tmp/warp-launch-prova2`):** l'estat buit, el full
      d'importació, la barra lateral i la llista després de «Crea», i l'edició (Retorn, Escapada, ⌫ i ⌘Z, menú
-     contextual, clic al buit) funcionen. El mode fosc no s'ha mirat («no és important»). Warp havia canviat des
-     del matí: 6 finestres (23, 2, 17, 11, 4 i 6 pestanyes), 63 pestanyes, 48 amb Claude (3 amb la seva ordre i 45
-     amb la plantilla) i 15 a «Per revisar».
+     contextual, clic al buit) funcionen. El mode fosc no s'ha mirat («no és important»). Warp havia canviat des de
+     la lectura del pas 6 (finestres, pestanyes i sessions vives), i el full ho mostrava amb les xifres noves.
 9. **0.10.0 — inspector,** amb els camps de R4, la vista de l'ordre i l'edició de diverses pestanyes.
    Amb «Salta els permisos» activat, el mode de permisos queda desactivat (Claude no en fa cas).
    Cada camp de text passa `agrupa` amb el nom del camp, i crida `acabaAgrupacio()` en perdre el focus.
@@ -751,8 +751,7 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
         l'script que s'executa (el certificat només protegeix d'una compilació equivocada).
       - Proves: `ScriptPublicaTests` (repo de git temporal amb un origin nu, `build-app.sh` i `gh` falsos) i les de `--github`
         a `ScriptInstallaTests`.
-    - **Icona: feta el 06/11/2026, dibuixada amb codi** (decisió d'en David, perquè nano-banana respon 402, «prepayment
-      credits are depleted»). `swift scripts/icona-dibuixa.swift` escriu les dues capes de `Recursos/AppIcon.icon/Assets/`:
+    - **Icona: feta el 06/11/2026, dibuixada amb codi** (decisió d'en David). `swift scripts/icona-dibuixa.swift` escriu les dues capes de `Recursos/AppIcon.icon/Assets/`:
       - `principal.png`, la finestra del davant (51 % de l'amplada), amb la barra de títol (tres punts buits i una franja
         buida sota). Sense els punts semblava una targeta de crèdit;
       - `fons.png`, dues finestres al darrere, amunt i a l'esquerra, separades per una franja buida (opacitat 0,55).
@@ -766,8 +765,8 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
         ha arribat;
       - sense Esc, aturar-se 0,5 s al mig de la fila d'una altra finestra, i també a la vora de dalt i de baix, encara
         l'obre, i s'hi poden deixar les pestanyes en una posició (com a la prova 7c).
-    - **Després, cadascun amb el seu OK:** crear la configuració real (fet el 05/11/2026, com a còpia de `provaL3`) i instal·lar a
-      `/Applications` (fet a la 0.27.0). Es desfà desactivant l'interruptor de l'inici de sessió (0.27.0) i esborrant l'app, `~/.config/warp-launch/`,
+    - **Després, cadascun amb el seu OK:** crear la configuració real i instal·lar a
+      `/Applications`. Es desfà desactivant l'interruptor de l'inici de sessió (0.27.0) i esborrant l'app, `~/.config/warp-launch/`,
       `~/Library/Preferences/cat.davide.warp-launch.plist`,
       `~/Library/Saved Application State/cat.davide.warp-launch.savedState` i, si n'hi ha, el permís
       (`tccutil reset All cat.davide.warp-launch`).
@@ -931,7 +930,7 @@ es va escriure. Mentre existeix, Warp el pot mostrar a ⌃⌘L (watcher amb 500 
       "sessio": "1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d",
       "carpetaSessio": "/Users/prova/GitHub/empresa/botiga",
       "origen": "marca",
-      "vista": "2026-11-04T20:31:00Z"
+      "vista": "2026-11-04T12:00:00Z"
     }
   },
   "llancaments": [
@@ -965,7 +964,7 @@ es va escriure. Mentre existeix, Warp el pot mostrar a ⌃⌘L (watcher amb 500 
 | 4 | Una altra pestanya acaba de reprendre la `sessio` recordada i el seu Claude encara no s'ha vist (flux, 11) | «una altra pestanya acaba de reprendre la seva conversa» |
 
 - **Avisos que no bloquegen:** una pestanya sense lligam a la mateixa carpeta que una d'oberta («potser ja és oberta a
-  «empresa › Botiga»»; la carpeta no prova res: el 03/11, 34 de 64 panes eren a `~`); l'últim llançament de la finestra
+  «empresa › Botiga»»; la carpeta no prova res: en una lectura real del 03/11/2026, més de la meitat dels panes eren a `~`); l'últim llançament de la finestra
   va quedar sense confirmar o pendent fa menys de 10 min («mira Warp abans»), o va fallar («va fallar: si Warp n'ha
   obert res, mira-ho abans»).
 - **«Tancada fa menys d'1 min» atura la finestra** (`Pla.motiuEspera`): si s'obrissin les altres pestanyes, la finestra
@@ -978,8 +977,8 @@ es va escriure. Mentre existeix, Warp el pot mostrar a ⌃⌘L (watcher amb 500 
 ### Lligar amb Warp (0.21.0)
 
 Una configuració feta a mà, o creada abans de la 0.17.0 (com `prova2`, de la 0.14.0), no té lligams a `estat.json`:
-l'app no sap quines pestanyes ja són obertes, i en obrir una finestra les tornaria a obrir totes (el 05/11/2026,
-«Varis» hauria obert 22 pestanyes i 22 sessions noves). Tornar a importar-la no serveix: es perdrien els canvis fets a
+l'app no sap quines pestanyes ja són obertes, i en obrir una finestra les tornaria a obrir totes (el 05/11/2026, en una
+prova real, una finestra hauria tornat a obrir totes les pestanyes, cadascuna amb una sessió nova). Tornar a importar-la no serveix: es perdrien els canvis fets a
 mà. **«Lliga amb Warp…»** (menú Fitxer) llegeix Warp i, per a cada pestanya sense lligam, proposa la pestanya de Warp
 on ja és oberta (`LligamWarp`). Només desa amb «Lliga» al full; no canvia la configuració, ni obre o tanca res.
 
@@ -1004,16 +1003,16 @@ on ja és oberta (`LligamWarp`). Només desa amb «Lliga» al full; no canvia la
   pane, una pestanya: si una altra entrada el tenia, el perd.
 - **El full d'obrir** ho recorda: si hi ha pestanyes «potser ja obertes», diu que es cancel·li i es lligui abans.
 - **Límit:** de les pestanyes on Claude ja no corre, no se'n sap la conversa (la base de Warp no la desa: el
-  05/11/2026, 1 bloc de 628 contenia «--resume»), i en obrir-les en començaran una de nova.
-- **Comprovat amb les dades reals** (05/11/2026, `prova2` i `llegeix --json`, sense obrir l'app): 62 de 62 parelles,
-  47 pel títol i la carpeta, 15 només pel títol (a Warp, la carpeta d'inici o la d'abans d'arreglar-la); 9 amb Claude
-  viu; cada finestra de `prova2` cau sencera en una sola de Warp.
+  05/11/2026, només 1 bloc de centenars contenia «--resume»), i en obrir-les en començaran una de nova.
+- **Comprovat amb una configuració de prova gran** (05/11/2026, `prova2` i `llegeix --json`, sense obrir l'app): totes
+  les pestanyes es lliguen, unes tres quartes parts pel títol i la carpeta i la resta només pel títol (a Warp, la carpeta
+  d'inici o la d'abans d'arreglar-la); cada finestra de `prova2` cau sencera en una sola de Warp.
 
 ### Conversa de les que s'obren (D7)
 
 **Decisió d'en David del 05/11/2026: sempre la més recent de la carpeta** (0.22.1). Abans, cada pestanya reprenia només la
-conversa recordada; el 05/11/2026, les 56 pestanyes per obrir n'haurien començat una de nova, perquè les recordades eren de
-l'obertura de les 10:20 i no tenien missatges.
+conversa recordada; el 05/11/2026, en una prova real, totes les pestanyes per obrir n'haurien començat una de nova, perquè les
+recordades eren d'una obertura anterior i no tenien missatges.
 
 | `continua` | Hi ha una conversa recent a la carpeta | Conversa recordada | Resultat |
 |---|---|---|---|
@@ -1031,7 +1030,7 @@ l'obertura de les 10:20 i no tenien missatges.
   segon pla de principi a fi.
 - **Quina és la més recent:** la de l'últim missatge al terminal, buscat des del final. No és la data del fitxer, perquè Claude
   també l'escriu en tancar-se, i les línies d'una feina (`sessionKind`) no compten. Si no surt en els últims 4 MiB, la del
-  fitxer. Una feina es llegeix sencera: 71 ms en una carpeta amb una feina de 10 MB; en la pitjor de les 62 carpetes, 73 ms.
+  fitxer. Una feina es llegeix sencera: 71 ms en una carpeta amb una feina de 10 MB; en la pitjor carpeta d'una configuració gran, 73 ms.
 - **Quines no s'agafen:** les vives (R9), en una pestanya, fora de Warp o en segon pla, i la d'un Claude aturat a preguntar si
   confies en la carpeta, que encara no té sessió però sí `--resume` als arguments (`LecturaWarp.conversesArrencant`; un d'obert a
   mà, sense marca, no es veu); la darrera vista en una altra pestanya de la configuració (a la mateixa carpeta, cadascuna es queda la seva); la que una altra pestanya acaba de reprendre; i la ja
@@ -1039,13 +1038,13 @@ l'obertura de les 10:20 i no tenien missatges.
 - **L'inspector i «Copia l'ordre»** diuen la mateixa conversa que el full, amb les vives de l'última lectura de Warp. Guarden les
   converses de cada carpeta fins a la lectura següent (60 s com a molt), perquè l'inspector les demana a cada redibuix. No saben
   què acaba de reprendre una altra pestanya; el full, sí.
-- **Comprovat amb les dades reals** (05/11/2026, només lectura): 56 de 56 pestanyes reprenen, 0 de noves; 62 carpetes
-  diferents; el càlcul triga 100 ms com a molt per finestra. Quatre converses passen de 200 MB: encara s'ha de veure quant
+- **Comprovat amb dades reals** (05/11/2026, només lectura): totes les pestanyes per obrir reprenen, cap de nova; el càlcul
+  triga 100 ms com a molt per finestra. Algunes converses passen de 200 MB: encara s'ha de veure quant
   triguen a reprendre's, quanta memòria fan servir i si Claude hi fa alguna pregunta.
 - **Mai `--continue`; mai el mateix id en dues pestanyes del mateix llançament, ni un id que una altra pestanya acaba de
   reprendre** (regla 4 de «ja obertes»). Si la recordada es repeteix: la segona, nova, amb avís.
 - **Projecte d'una carpeta:** `~/.claude/projects/<carpeta amb tot el que no és [A-Za-z0-9] canviat per ->`, seguint
-  l'enllaç (144 de `-Users-<usuari>-GitHub-*` són enllaços a `…Documents-GitHub-*`). Més de 200 caràcters: Claude hi
+  l'enllaç (hi pot haver projectes que són enllaços a un altre, per exemple si la carpeta dels repos s'ha mogut). Més de 200 caràcters: Claude hi
   posa un hash, i es busca a tots els projectes que no són enllaços, com Claude (`W6e`).
 - **`--fork-session` a `altres`:** a més de l'avís d'opció d'un sol ús, «crearà una còpia».
 - **Confiança:** si `~/.claude.json` no té `hasTrustDialogAccepted` per a la carpeta o una carpeta pare, avís «Claude
@@ -1056,7 +1055,7 @@ l'obertura de les 10:20 i no tenien missatges.
 
 - **Xifres:** «S'obrirà 1 finestra nova de Warp amb 9 pestanyes: 6 amb Claude (4 reprenen la seva conversa, 2 en
   comencen una de nova) i 3 només terminal · unes 3 GB · ja obertes: 14 · no s'obriran: 1». 0,5 GB per sessió (el
-  03/11, mitjana de 508 MB). Més de 10 sessions: «totes s'engegaran alhora».
+  03/11/2026, una mitjana d'uns 500 MB). Més de 10 sessions: «totes s'engegaran alhora».
 - **Contingut:** llistes per grup amb el motiu de cada pestanya, la versió de Warp i el YAML en un desplegable.
 - **Botons:** «Cancel·la» (Esc) i «Obre 9 pestanyes», sense drecera i sense ser el botó per defecte. Si no n'hi ha cap
   per obrir: «Totes les pestanyes ja són obertes», amb «D'acord».
@@ -1177,12 +1176,12 @@ Com a la fase 2: cada `feat:` porta proves, el bump de `VERSION` i `WarpLaunch.v
    abans de desar. Un criteri feble a la finestra podia prendre la pestanya que coincidia del tot amb una altra
    finestra de la configuració; la conversa d'una pestanya dividida lligava el primer pane; i les pestanyes de Warp no
    es veien com a la importació (sense títol, o amb el pane a la carpeta d'inici).
-6f. **0.22.3 — les feines dels agents, en bypass.** Fet (05/11/2026). Vegeu «Les feines de l'agent» a l'ordre de cada pestanya. Amb les dades reals i Warp
-   buit, calculat sense escriure res: 62 de 62 línies porten la variable, 62 reprenen, 0 excloses, cap conversa repetida, la línia més llarga fa
-   261 bytes i el fitxer més gran, 9.359. Prova real feta el 05/11/2026 amb la 0.22.3: en David reobre les finestres i, des d'una pestanya, 1 feina nova surt en bypass i rep i contesta un missatge sola (`fets-verificats.md`).
+6f. **0.22.3 — les feines dels agents, en bypass.** Fet (05/11/2026). Vegeu «Les feines de l'agent» a l'ordre de cada pestanya. Amb una configuració gran de prova
+   i Warp buit, calculat sense escriure res: totes les línies porten la variable i reprenen, cap exclosa ni cap conversa repetida; la línia més llarga fa uns 260 bytes. Prova real feta el
+   05/11/2026 amb la 0.22.3: una feina nova engegada des d'una pestanya surt en bypass (`fets-verificats.md`).
 6e. **0.22.2 — correccions de la revisió de la 0.22.1 i l'script.** Fet (05/11/2026). 2 revisors i 4 verificadors: 3 confirmades, 1
-   refutada i 5 sense verificar. Set corregides; la vuitena, el text de la regla 7, depèn de D19. Les 62 pestanyes, comparades amb les dades reals: només en canvia una, que deixa de reprendre una conversa
-   buida. **L'script fa una sola lectura**, es nega amb `WARP_SETTINGS` buit i ja no crea res a `~/.warp/`.
+   refutada i 5 sense verificar. Set corregides; la vuitena, el text de la regla 7, depèn de D19. Comparat amb dades reals, només en canvia una pestanya, que deixa de reprendre una
+   conversa buida. **L'script fa una sola lectura**, es nega amb `WARP_SETTINGS` buit i ja no crea res a `~/.warp/`.
 6d. **0.22.1 — la conversa més recent de la carpeta (D7, revisada).** Fet (05/11/2026). Vegeu «Conversa de les que s'obren».
 6c. **0.22.0 — saber què hi ha obert sense la base de Warp, i obrir Warp si és tancat.** Fet (05/11/2026). En David desactiva
    la restauració de sessió i Warp deixa de desar les finestres (vegeu «Sense la base de Warp»). `LectorAjustosWarp` i
@@ -1194,7 +1193,7 @@ Com a la fase 2: cada `feat:` porta proves, el bump de `VERSION` i `WarpLaunch.v
    acabaven l'espera amb la restauració activada (es perdien panes), Warp s'engegava sense avisar si es tancava amb el full
    obert, i el full quedava blocat si `openApplication` no tornava. Els 2 que queden: la pestanya de terminal que no es
    reconeix (vegeu «Els límits») i reactivar la restauració, sense provar.
-6g. **0.23.0 — l'app gestiona `restore_session` (D19).** Vegeu «Sense la base de Warp». Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, la foto quadra amb els 62 terminals (`docs/fets-verificats.md`).
+6g. **0.23.0 — l'app gestiona `restore_session` (D19).** Vegeu «Sense la base de Warp». Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, la foto quadra amb tots els terminals vius (`docs/fets-verificats.md`).
 7. **0.24.0 — el CLI obre amb `--obre` (D17).** Fet (05/11/2026), sense prova real. Els passos d'obrir després de la confirmació
    (desar el llançament, escriure el fitxer, obrir, esperar la finestra, esborrar i lligar) passen d'`Obertura` a
    `ExecucioObertura` (core), que fan servir l'app i el CLI; també l'espera de l'arrencada de Warp. El CLI depèn de
@@ -1235,7 +1234,7 @@ finestra**, totes marcades.
   d'una finestra desmarcada queden lliures per a les altres.
 - **Revisió** (3 revisors i 3 verificadors, 05/11/2026): 5 defectes confirmats, corregits (els dos d'aquí dalt; la finestra buida
   de Warp es diu un sol cop; el resum diu quantes pestanyes van amb Claude; i la prova de «totes de cop» ara ho comprova).
-- **Prova real feta el 06/11/2026 amb la 0.26.0:** 1 finestra de 6, 2 pestanyes i 2 sessions, confirmada en 0,6 s (`docs/fets-verificats.md`).
+- **Prova real feta el 06/11/2026 amb la 0.26.0:** 1 finestra, 2 pestanyes i 2 sessions, confirmada en 0,6 s (`docs/fets-verificats.md`).
 
 ### La foto de les finestres (0.23.0, D19)
 
@@ -1248,7 +1247,7 @@ finestra**, totes marcades.
   tancat, `.sempre` sense escriure res. Sense poder llegir la base, no s'activa res. Si no quadra o Warp és tancat, l'avís (`avisFoto`) surt als fulls d'importar i de lligar i al menú, que a la lectura següent torna als terminals.
 - **Sortir:** `atura()`: desactiva i, mentre una alerta pot aturar la sortida, cap cicle torna a activar. Si es cancel·la, `repren()`.
 - **Riscos que queden:** si l'app mor a mig refresc o Warp es reinicia molt de pressa dins d'un refresc (de 5 a 30 s), Warp arrencaria amb l'ajust activat i restauraria les finestres. No s'ha mesurat quan llegeix l'ajust en arrencar: cal revisar-ho a la fase 3.3.
-- **La foto és la base de Warp:** es manté encara que Warp es reiniciï amb l'ajust desactivat (05/11/2026: encara hi havia 5 finestres i 57 pestanyes d'abans). No hi ha cap fitxer nou.
+- **La foto és la base de Warp:** es manté encara que Warp es reiniciï amb l'ajust desactivat (05/11/2026: encara hi havia les finestres i les pestanyes d'abans). No hi ha cap fitxer nou.
 
 ### Sense la base de Warp (0.22.0)
 
@@ -1287,8 +1286,7 @@ n'obriria només una part, que la finestra quedarà partida (`.potserTancadaFaPo
 - No es pot importar ni lligar res de Warp, i una pestanya feta a mà que no sigui a la configuració no l'obre mai ningú.
 - **Una pestanya de terminal no es reconeix** (un shell sense fills no porta ni marca ni pane): cada «Obre» en fa una altra, amb
   un avís llevat que sigui a la carpeta d'inici. Una pestanya on Claude n'ha sortit també es torna a obrir, però una sola vegada
-  (la còpia ja porta la marca), i és el que es vol: recupera la conversa. El 05/11/2026, 0 de les 62 pestanyes són de terminal.
-  Arreglar-ho demana desar el pid i l'hora d'inici del shell a `estat.json`, un camp nou que ha d'aprovar en David.
+  (la còpia ja porta la marca), i és el que es vol: recupera la conversa. Arreglar-ho demana desar el pid i l'hora d'inici del shell a `estat.json`, un camp nou que ha d'aprovar en David.
 - Si es torna a activar la restauració, la base torna a manar: no s'ha provat quant triga Warp a posar-la al dia.
 
 **Warp tancat.** Abans, «Obre Warp primer». Ara el full ho diu i el botó «Obre» l'obre (`ObreWarp.engega`), n'espera l'arrencada
@@ -1323,18 +1321,18 @@ l'app no pot tancar: ho diuen el full i el bàner.
   `docs/`. **S'obren 1 finestra, 2 pestanyes i 1 sessió de Claude nova (unes 0,5 GB).** Es mira: l'`argv` exacte i la
   marca (`llegeix --json`); `estat.json`; l'ordre dels panes; que la línia no surti a `~/.zsh_history` ni a `commands`
   (D16); que no surti el diàleg de confiança; el títol. En David escriu «prova L2» a Claude. La finestra queda oberta.
-- **L3 amb les finestres d'en David** (canviada el 05/11/2026: en David la vol fer amb `prova2`, abans que L2).
-  `--config /tmp/warp-launch-provaL3`, una còpia de `prova2` (6 finestres, 62 pestanyes, totes amb Claude). (a) «Lliga
-  amb Warp…»: el full ha de dir 62 de 62 (47 i 15) i 9 amb Claude obert; «Lliga». (b) «Obre a Warp…» a cada
+- **L3 amb una configuració gran** (canviada el 05/11/2026: en David la vol fer amb `prova2`, abans que L2).
+  `--config /tmp/warp-launch-provaL3`, una còpia de `prova2` (desenes de pestanyes). (a) «Lliga amb Warp…»: el full ha
+  de lligar-les totes (vegeu «Lligar amb Warp») i dir quantes tenen Claude obert; «Lliga». (b) «Obre a Warp…» a cada
   finestra: «Totes les pestanyes ja són obertes». **(a) i (b) no obren res.** (c) En David tanca a mà una pestanya amb
-  Claude viu (no la d'aquesta sessió, a «Principal»), espera 1 min i fa «Obre a Warp…» a la seva finestra: «1 reprèn
+  Claude viu (no la de la sessió de Claude que fa la prova), espera 1 min i fa «Obre a Warp…» a la seva finestra: «1 reprèn
   la seva conversa», la resta ja obertes. **S'obren 1 finestra, 1 pestanya i 1 sessió de Claude (la mateixa
   conversa).** Es mira: el mateix `sessionId`, cap diàleg ni «different directory», i `estat.json`. Es desfà: en David
   tanca la finestra nova si vol; `rm -r /tmp/warp-launch-provaL3` (`prova2` no es toca).
   **El 05/11/2026, en David fa una altra cosa:** tanca totes les finestres i les torna a obrir des de l'app, sense
-  lligar: 6 finestres, 62 pestanyes, 62 sessions, totes confirmades, però cap conversa represa i 17 Claude aturats a
-  «Varis» (`docs/fets-verificats.md`). (a), (b) i (c) queden per fer. **Corregit a la 0.21.1:** l'avís de confiança compara les
-  rutes del fitxer tal com són, sense fer-les canòniques (n'avisava de 5 de 17), i `LecturaPerObrirTests` ho comprova.
+  lligar: totes confirmades, però cap conversa represa, i la majoria dels Claude d'una finestra aturats a la pregunta de confiança
+  (`docs/fets-verificats.md`). (a), (b) i (c) queden per fer. **Corregit a la 0.21.1:** l'avís de confiança compara les
+  rutes del fitxer tal com són, sense fer-les canòniques (només n'avisava d'una part), i `LecturaPerObrirTests` ho comprova.
 - **L3 original, reprendre la conversa** (configuració de L2). (a) Amb la finestra oberta: «Totes ja obertes». (b) En David
   tanca la finestra i espera 1 min; «1 reprèn la seva conversa, 1 terminal». **S'obren 1 finestra, 2 pestanyes i 1
   sessió de Claude (la mateixa conversa).** Es mira: el mateix `sessionId`, «prova L2» a la conversa, cap diàleg ni
@@ -1352,12 +1350,12 @@ l'app no pot tancar: ho diuen el full i el bàner.
 - **CLI `--obre` (0.24.0):** la seva pròpia prova, amb OK, com L1.
 - **Estat (06/11/2026):**
   - **L1:** feta el 05/11/2026.
-  - **L3 amb les finestres d'en David:** (a) i (b) no s'han fet. El 05/11/2026, en lloc de lligar, en David torna a obrir les 6
-    finestres de `provaL3` (17 Claude aturats per la confiança, corregit a la 0.21.1). La (c), el 06/11/2026 amb la 0.26.0: 1 pestanya
-    que reprèn la seva conversa, 21 ja obertes, confirmada en 0,6 s.
+  - **L3 amb una configuració gran:** (a) i (b) no s'han fet. El 05/11/2026, en lloc de lligar, en David torna a obrir totes les
+    finestres de `provaL3` (Claude aturats per la confiança, corregit a la 0.21.1). La (c), el 06/11/2026 amb la 0.26.0: 1 pestanya
+    que reprèn la seva conversa, la resta de la finestra ja oberta, confirmada en 0,6 s.
   - **L4:** una finestra oberta en part, el 06/11/2026 amb la 0.26.0, correcta segons en David (el registre no en té cap línia).
-  - **La configuració real, sencera:** el 06/11/2026, després del primer reinici, 62 pestanyes, totes amb Claude. No està comprovat
-    si cada pestanya va reprendre la seva conversa.
+  - **Una configuració gran, sencera:** el 06/11/2026, després d'un reinici, totes les pestanyes es tornen a obrir amb el seu Claude.
+    No està comprovat si cada pestanya va reprendre la seva conversa.
   - **Sense fer:** L2, la L3 original, L5 tal com és escrita i la del CLI `--obre`.
 
 ### Preguntes obertes i on es resolen
@@ -1412,9 +1410,9 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
   mostra el full, que no obre res sense el clic.
 - **Què fa** (`Obertura.enIniciarSessio`): prepara de seguida el full de «Obre-ho tot». Si Warp és tancat, el full ho diu i
   l'obrirà amb el clic; si Warp s'obre sol abans del clic, el clic ho torna a mirar i no l'engega dues vegades.
-  - Fins a la 0.27.1 esperava Warp fins a 2 minuts (Warp també era als ítems d'inici). El 06/11/2026 en David el treu dels
-    ítems d'inici i pregunta per què ha d'esperar: l'app no pot saber si Warp s'obrirà sol (`settings.toml` no té
-    `login_item`, i `AppAddedAsLoginItem` continua dient `true`), així que ja no espera (0.27.2).
+  - Fins a la 0.27.1 esperava Warp fins a 2 minuts, per si Warp també era als ítems d'inici. L'app no pot saber si Warp
+    s'obrirà sol (`settings.toml` no té `login_item`, i `AppAddedAsLoginItem` continua dient `true` després de treure Warp dels
+    ítems d'inici), així que des de la 0.27.2 ja no espera (en David, 06/11/2026).
   - Si no falta cap finestra, no hi ha full, i l'editor (que SwiftUI obre sol en arrencar) s'amaga, llevat que s'hi hagi fet
     algun canvi o hi hagi un full.
   - Si mentrestant en David ha obert un altre full o una altra obertura, no la trepitja ni amaga res.
@@ -1427,12 +1425,12 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
 - **Prova real (amb l'OK d'en David):** copiar l'app a `/Applications`, activar l'interruptor, i reiniciar el Mac (el reinici el
   fa en David). Es mira: que l'app s'obri sola, quant triga el full, si macOS demana aprovació, i el registre
   (`en iniciar sessió`). Es desfà amb l'interruptor.
-  - **Primer reinici (06/11/2026, 0.27.2):** l'app s'obre sola i prepara el full «6 finestres de 6» en 2 s, però Warp també
-    s'obre sol i restaura 6 finestres i 62 pestanyes sense Claude. En David tanca Warp i fa clic: l'app obre les 62 pestanyes, totes
-    amb Claude. Detall a `docs/fets-verificats.md`, «Primer reinici amb l'arrencada en iniciar sessió». Canvis de la 0.27.3: la foto
+  - **Reinici de prova (06/11/2026, 0.27.2):** l'app s'obre sola i prepara el full, amb totes les finestres, en 2 s, però Warp
+    també s'obre sol i restaura les pestanyes sense Claude. Amb Warp tancat a mà, el clic torna a obrir totes les pestanyes amb el
+    seu Claude. Detall a `docs/fets-verificats.md`, «Primer reinici amb l'arrencada en iniciar sessió». Canvis de la 0.27.3: la foto
     de Warp (D19) només quan en David la demana, i el full diu quantes pestanyes de Warp no reconeix (`PropostaTot.terminalsDesconeguts`).
-  - **Falta:** un reinici amb la 0.27.3 (l'opció de Warp que l'obre en iniciar sessió, «Start Warp at login», sempre ha estat desactivada, diu en David el
-    07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
+  - **Falta:** un reinici amb la 0.27.3 (al reinici de prova, l'opció de Warp que l'obre en iniciar sessió, «Start Warp at login»,
+    era desactivada segons en David, 07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
     registra, i amb el Mac encès fa menys de 10 minuts el full surt igualment.
 
 ## 10. Per a altres usuaris (07/11/2026, de la 0.29.0 a la 0.30.1)
@@ -1449,8 +1447,8 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   torna, de moment). Un fitxer d'una versió més nova, mal fet o un enllaç trencat no se sobreescriu: la pantalla només deixa
   sortir, amb l'error i la ruta. `configuracio.json` no canvia (regla 11).
 - **Migració:** una carpeta amb `configuracio.json` o `estat.json` i sense `preferencies.json` compta com a acceptada, sense
-  preguntar ni escriure res. En David no veu la pantalla; el fitxer s'escriu el primer cop que l'app canvia l'ajust, amb el valor
-  d'aquell moment (segurament `false`, no el d'abans de D19).
+  preguntar ni escriure res. Qui ja tenia una configuració no veu la pantalla; el fitxer s'escriu el primer cop que l'app canvia
+  l'ajust, amb el valor d'aquell moment (si l'app ja el gestionava, `false`, no el d'abans de D19).
 - **Sense consentiment, l'app no toca Warp:** ni `RefrescWarp` ni `AjustRestauracio` (tampoc en sortir), ni llegeix Warp, ni
   neteja els seus fitxers temporals, ni proposa obrir res (una finestra, «Obre-ho tot», el full d'inici de sessió). El menú de la
   icona només té «Mostra Warp Launch» i «Surt».
@@ -1468,26 +1466,27 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
 - **A l'app, amb `--config` i una carpeta nova:** surt la pantalla; «Surt de Warp Launch» i tancar l'editor tanquen l'app sense
   crear `preferencies.json`; «Accepta» el crea i passa a l'editor (barra d'eines i mida); amb `{"versio": 9}`, l'error amb la
   ruta. Amb la configuració real, no pregunta res.
-- **Per decidir:** la migració també val per a qui ja feia servir la 0.28.0 (la primera usuària), que no va decidir D19. Si se
-  li ha de preguntar: o la migració només compta per a la carpeta d'en David, o es pregunta a tothom un cop (i en David accepta
+- **Per decidir:** la migració també val per a qui ja feia servir la 0.28.0 sense haver decidit D19. Si se li ha de
+  preguntar: o la migració només compta per a la carpeta d'en David, o es pregunta a tothom un cop (i en David accepta
   una vegada). Tancar la Configuració amb la pantalla no surt de l'app (tancar l'editor, sí): és una línia si ha de sortir.
 
 ### Importar una configuració nova (0.29.1, D-P5a)
 
 - Les pestanyes on no corria Claude queden només terminal, a l'app («Crea») i a `warp-launch importa` sense configuració real
   (secció 2, «Importació (R2)»). Tornar a importar no canvia.
-- El full i el CLI ho diuen amb xifres («4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que
+- El full i el CLI ho diuen amb xifres (per exemple, «4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que
   ja no existeix»), i el full explica com s'hi activa Claude a l'inspector i amb quina ordre. La revisió va corregir tres textos
   que encara deien que hi entraria Claude (l'avís de la foto amb Warp tancat, la nota d'una sessió sense pestanya i la
   Configuració › «Pestanyes noves» sense configuració).
 - **Proves:** a `ImportadorTests`, `FullImportacioTests`, `OrdreCLITests` i `EditorTests` (configuració nova contra tornar a
-  importar: només difereixen les 35 pestanyes sense Claude).
+  importar: només difereixen les pestanyes sense Claude obert).
 - **A l'app, amb `--config` i una carpeta nova:** el full «Importa de Warp», i que després de «Crea», «Obre Claude Code en
   aquesta pestanya» hi posi `claude`.
 - **Per decidir:** amb Warp tancat i sense configuració (la primera importació després d'un reinici, de l'última foto), cap
   sessió no és viva i totes queden només terminal (recomanació: mantenir-ho); «Comença en blanc» i després «Torna a importar-ho
-  tot» compta com a tornar a importar; `importa` amb la configuració real malmesa fa servir la plantilla segura. Risc de D4: 51
-  pestanyes només terminal en lloc de 16, que es poden confondre si dues finestres en tenen a la mateixa carpeta.
+  tot» compta com a tornar a importar; `importa` amb la configuració real malmesa fa servir la plantilla segura. Risc de D4: moltes
+  més pestanyes només terminal (en una lectura real, més del triple), que es poden confondre si dues finestres en tenen a la
+  mateixa carpeta.
 
 ### Warp Stable a qualsevol carpeta, i Warp Preview (0.29.2 i 0.29.3, D-P12)
 
@@ -1508,9 +1507,10 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   no poden esmentar `TrobaWarp` ni `urlForApplication`, ni cridar `troba` sense una carpeta temporal. `NSWorkspace.shared.open` i
   `openApplication` continuen només a `ObreWarp.swift`.
 - **Proves:** `AppWarpTests` (13, amb la Paperera), la guarda, `OrdreCLITests` i `OberturaTests` (una finestra i «Obre-ho tot»
-  amb Preview). Al Mac, només amb `--versio` i `llegeix`: troba el Warp d'`/Applications` per macOS, obert, amb 67 terminals.
-- **Per provar:** Warp a `~/Applications` (el mou en David) i Warp Preview (no és en aquest Mac; l'identificador no s'ha
-  verificat).
+  amb Preview). Al Mac de prova, només amb `--versio` i `llegeix`: troba el Warp d'`/Applications` per macOS, obert, i en llegeix els
+  terminals.
+- **Per provar:** Warp a `~/Applications` (el mou en David) i Warp Preview (l'identificador no s'ha verificat amb un Preview
+  instal·lat).
 - **Per decidir:** amb Preview obert i Stable tancat, l'app no obre res i demana obrir Stable a mà (recomanació: mantenir-ho, no
   obre un segon Warp sense avisar). Amb dues còpies de Stable, macOS en tria una i, si corre l'altra, l'app la veu tancada
   (recomanació: reconèixer el Warp obert pels processos, abans de convidar ningú). Sense comprovar: un Warp que corre sense
@@ -1528,7 +1528,7 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   avís «no provada»); i `restore_session` amb el consentiment.
 - **CLI:** `warp-launch diagnostica [--json] [--anonimitza]`; codi 1 si alguna dona error, 64 si l'ús és incorrecte.
   `--anonimitza` treu el nom d'usuari, la carpeta d'inici i els noms de carpeta, també dins dels errors, i en deixa la forma
-  (`~/GitHub-Personal` → `~/AaaAaa-Aaaaaaaa`); es queden els noms que l'app llegeix (`.claude`, `sessions`, `Warp.app`…).
+  (`~/Codi-Prova` → `~/Aaaa-Aaaaa`); es queden els noms que l'app llegeix (`.claude`, `sessions`, `Warp.app`…).
 - **App:** Configuració › «Diagnòstic»: «Copia el diagnòstic» (anonimitzat) i, al seu menú, «Copia el diagnòstic complet»; al
   costat, què s'ha copiat («Copiat (anonimitzat): 6 bé, 2 avisos, 0 errors.»). Llegeix fora del fil principal amb el mateix
   `Lector` (`CopiaDiagnostic`). Només es veu amb el consentiment acceptat.
@@ -1541,7 +1541,7 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
 - **Proves:** 28 al core (27 a `DiagnosticTests`, cada comprovació amb un fixture bo i un de trencat, l'anonimització i que no
   canvia cap fitxer; 1 a la guarda) i 1 a la UI (`CopiaDiagnosticTests`).
 - **Per provar (amb l'OK d'en David):** `warp-launch diagnostica` sobre l'estat real, que no és a la regla 4 (amb Warp
-  0.2026.11.04 i Claude Code 2.1.319, s'esperen 2 avisos de «no provada»), i el botó a la Configuració.
+  0.2026.11.04 i Claude Code 2.1.319, més noves que `VersionsProvades`, s'esperen 2 avisos de «no provada»), i el botó a la Configuració.
 - **Pendents:** `VersionsProvades` es posa al dia a mà després de cada prova real amb una versió nova. Amb una carpeta de prova,
   la comprovació de `restore_session` diu que l'app el desactiva en un minut, i no és cert. No s'ha vist amb un dimoni real que
   `claude daemon run` escrigui el fitxer de `kind` `daemon`. Els motius d'`AjustRestauracio` i `Preferencies` surten en català
@@ -1552,6 +1552,6 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
 ### Resum
 
 - Proves: de 443 a 506 al core i de 232 a 249 a la UI, totes bé. `prototip/` surt del repo (és a l'historial, 114c97d).
-- Cap versió del lot no és publicada ni instal·lada: la de GitHub i la d'`/Applications` són la 0.28.0.
+- Cap versió del lot no és publicada: la de GitHub és la 0.28.0.
 - De les vuit decisions, falten la signatura amb Developer ID (1), l'idioma (3), Sparkle (6) i les excepcions de la guarda per a
-  la pàgina del permís i per a Sparkle (8). Abans de convidar ningú, es revisa què diu `docs/` del Mac d'en David.
+  la pàgina del permís i per a Sparkle (8).
