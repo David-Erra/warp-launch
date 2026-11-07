@@ -22,7 +22,11 @@ d'uns 500 MB cadascuna. Els requisits són a `docs/especificacio.md`.
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la en un altre Mac.
-  L'app instal·lada és a `/Applications` des de la 0.27.0.
+  L'app instal·lada és a `/Applications` des de la 0.27.0 (la 0.28.0, des del 07/11/2026).
+  - **Compte de GitHub:** el compte actiu de `gh` al Mac d'en David no és `David-Erra`. `git push` i `git pull` ja fan servir
+    `David-Erra` en aquest repo (ajudant de credencials a `.git/config`), però les ordres de `gh` que escriuen (`publica.sh`,
+    `gh release`) necessiten `GH_TOKEN="$(gh auth token -u David-Erra)"` davant. No canviïs el compte actiu (`gh auth switch`):
+    el fan servir altres sessions.
 - **Fase 1 (lectura) feta, versió 0.2.0.** `warp-launch llegeix [--json]` mostra les finestres, les pestanyes, la
   carpeta i la sessió de Claude de cada pestanya.
 - **Fase 2 (editor) feta (06/11/2026; en David dona per bona la icona):** format v1 de la configuració, magatzem (desar i còpies), esquelet de
@@ -126,7 +130,7 @@ scripts/test.sh                          # proves; no facis servir `swift test` 
 scripts/build-app.sh                     # crea «build/Warp Launch.app» (release, signada amb «Warp Launch Dev» o ad hoc); no l'obre
 scripts/instal·la.sh [--aplica]          # sense --aplica, diu què copiaria a /Applications; amb, copia (regla 3: només amb l'OK d'en David)
 scripts/instal·la.sh --github [--aplica] [--versio x.y.z]  # igual, amb la versió publicada a GitHub (per a altres Macs; README.md)
-scripts/publica.sh [--aplica]            # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub (regla 3: OK cada vegada)
+GH_TOKEN="$(gh auth token -u David-Erra)" scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub (regla 3: OK cada vegada)
 scripts/warp-restauracio.sh estat         # si Warp desa les finestres (només lectura)
 scripts/warp-restauracio.sh activa|desactiva [--aplica]  # regla 7: sense --aplica no escriu; amb, cal l'OK d'en David
 scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-banana (cal GEMINI_API_KEY)
