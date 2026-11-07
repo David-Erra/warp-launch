@@ -76,20 +76,19 @@ struct VistaConsentiment: View {
                 }
             }
 
-            Text("""
-                Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar \
-                la propera vegada.
-                """)
-                .foregroundStyle(.secondary)
+            // Amb un `preferencies.json` que no es pot llegir, l'error i on és el fitxer: la propera vegada no es pregunta.
+            if case .error = consentiment.estat {
+                Label(consentiment.textSortir, systemImage: "exclamationmark.triangle.fill")
+                    .symbolRenderingMode(.multicolor)
+                    .textSelection(.enabled)
+            } else {
+                Text(consentiment.textSortir)
+                    .foregroundStyle(.secondary)
+            }
 
             if let carpetaDeProva {
                 Label("Configuració de prova (\(carpetaDeProva)): l'app no tocarà aquest ajust.", systemImage: "testtube.2")
                     .foregroundStyle(.secondary)
-            }
-            if case let .error(motiu) = consentiment.estat {
-                Label("\(motiu). Arregla'l o esborra'l, i torna a obrir Warp Launch.", systemImage: "exclamationmark.triangle.fill")
-                    .symbolRenderingMode(.multicolor)
-                    .textSelection(.enabled)
             }
             if let error = consentiment.errorDesat {
                 Label("No s'ha pogut desar el permís: \(error).", systemImage: "exclamationmark.triangle.fill")

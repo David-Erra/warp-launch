@@ -85,6 +85,7 @@ private func consentiment(_ carpeta: Carpeta, _ ajust: AjustFals, _ demanats: Co
         c.refresc?.atura()
         #expect(ajust.posats.isEmpty && ajust.llegits == 0 && ajust.valor)
         #expect(carpeta.noms.isEmpty, "no es desa res")
+        #expect(c.textSortir.contains("no es desa res, i t'ho tornarà a preguntar la propera vegada"), "\(c.textSortir)")
         #expect(consentiment(carpeta, ajust, demanats).estat == .pendent, "es torna a preguntar")
         #expect(demanats.n == 0)
     }
@@ -168,6 +169,10 @@ private func consentiment(_ carpeta: Carpeta, _ ajust: AjustFals, _ demanats: Co
         guard case let .error(motiu) = c.estat else { Issue.record("\(c.estat)"); return }
         #expect(motiu.contains("versió 9"))
         #expect(!c.potContinuar && !c.potAcceptar)
+        // Revisió de la 0.29.0: la propera vegada no es pregunta (torna a sortir l'error), i diu on és el fitxer.
+        #expect(c.textSortir.hasPrefix(motiu), "\(c.textSortir)")
+        #expect(c.textSortir.contains(carpeta.magatzem.fitxer.path), "\(c.textSortir)")
+        #expect(!c.textSortir.contains("preguntar"), "\(c.textSortir)")
         c.accepta()
         #expect(c.refresc == nil && demanats.n == 0)
         #expect(try String(contentsOf: carpeta.magatzem.fitxer, encoding: .utf8) == text)

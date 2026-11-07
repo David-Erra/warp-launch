@@ -64,6 +64,17 @@ public final class ConsentimentRestauracio {
     /// Es pot prémer «Accepta».
     public var potAcceptar: Bool { estat == .pendent }
 
+    /// Què passa si no s'accepta, per a la pantalla. Amb un `preferencies.json` que no es pot llegir, la propera vegada no
+    /// es pregunta (torna a sortir l'error): diu on és el fitxer, que s'ha d'arreglar o esborrar (revisió de la 0.29.0).
+    public var textSortir: String {
+        guard case let .error(motiu) = estat else {
+            return "Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a "
+                + "preguntar la propera vegada."
+        }
+        let on = magatzem.map { " (\($0.fitxer.path))" } ?? ""
+        return "\(motiu). Mentre no l'arreglis o l'esborris\(on), Warp Launch no es pot fer servir."
+    }
+
     /// Executa `accio` un sol cop, quan l'app pot continuar: ara mateix si ja es pot, o en acceptar.
     public func enContinuar(_ accio: @escaping @MainActor () -> Void) {
         if potContinuar { accio() } else { pendents.append(accio) }
