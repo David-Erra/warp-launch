@@ -69,6 +69,20 @@ private func obrenOTanquen(_ codi: [(ruta: String, text: String)]) throws -> [St
     try codi.flatMap { try aparicions(de: prohibidesCodi(a: $0.ruta), a: [$0]) }
 }
 
+/// Pla A4: a les proves, els lectors de Claude només amb una ruta.
+private let lectorTranscripcions = #"\bLectorTranscripcions\((?!carpeta:)"#
+private let lectorConfianca = #"\bLectorConfianca\((?!ruta:)"#
+
+/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, executi o toqui el porta-retalls. Sense `\b`: amb les
+/// regles d'Unicode, `default.moveItem` o `Darwin.open` no hi tenen cap límit de paraula.
+private let escriuen = [
+    #"\.desa\("#, #"\.posa\("#, #"\.accepta\("#, #"EscripturaAtomica"#, #"\.write\("#, #"createFile"#,
+    #"createDirectory"#, #"removeItem"#, #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#,
+    #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
+    #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
+    #"recordaRestauracioOriginal"#, #"(^|[^A-Za-z0-9_])Process\("#, #"NSPasteboard"#, #"copiaText"#,
+]
+
 /// El que s'arrossega no surt de l'app: ni fitxers, ni text, ni `ShareLink`.
 private let prohibidesArrossegar = [
     #"ShareLink"#, #"ProxyRepresentation"#, #"FileRepresentation"#, #"CodableRepresentation"#, #"\.onDrag\b"#,
@@ -291,9 +305,51 @@ private let prohibidesArrossegar = [
             #"\.claude\.json"#, #"\.claude/projects"#,
             // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
             #"TrobaWarp"#, #"urlForApplication"#, #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#, #"perOmissio\.app(?![A-Za-z0-9_])"#,
+            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude).
+            lectorTranscripcions, lectorConfianca,
         ]
         let trobades = try aparicions(de: prohibides, a: proves)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+    }
+
+    /// Pla A4: el diagnòstic només llegeix (`Diagnostic.swift`).
+    @Test func elDiagnosticNomesLlegeix() throws {
+        let codi = try fitxers("Sources")
+        let diagnostic = try #require(codi.first { $0.ruta == "Sources/WarpLaunchCore/Diagnostic.swift" })
+        let trobades = try aparicions(de: escriuen, a: [diagnostic])
+        #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        // Cada expressió troba la seva línia.
+        let mostra = [(ruta: "mostra.swift", text: """
+            try magatzem.desa(p)
+            try ajust.posa(false)
+            try m.accepta(ara: ara)
+            try EscripturaAtomica.escriu(d, a: u)
+            try d.write(to: u)
+            FileManager.default.createFile(atPath: r, contents: d)
+            try FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
+            try FileManager.default.removeItem(at: u)
+            try FileManager.default.moveItem(at: u, to: v)
+            try FileManager.default.copyItem(at: u, to: v)
+            try FileManager.default.replaceItem(at: u, withItemAt: v, backupItemName: nil, resultingItemURL: nil)
+            Darwin.unlink(r)
+            rename(r, s)
+            Darwin.open(r, O_WRONLY)
+            sqlite3_open(r, &db)
+            FileHandle(forWritingTo: u)
+            FileHandle(forUpdating: u)
+            AjustRestauracio(ruta: u)
+            try m.posaRestauracio(true, valor: v, posa: p)
+            try m.recordaRestauracioOriginal(true)
+            Process()
+            NSPasteboard.general.clearContents()
+            PortaRetallsSistema.copiaText(t)
+            """)]
+        #expect(try aparicions(de: escriuen, a: mostra).count == escriuen.count)
+        #expect(try aparicions(de: escriuen, a: [(ruta: "mostra.swift", text: """
+            try AjustRestauracio.analitza(text).valor
+            try MagatzemPreferencies(carpeta: c).carrega()
+            try LectorWarp(ruta: r).queFalta()
+            """)]).isEmpty)
     }
 
     /// Res del que s'arrossega no surt de l'app (docs/disseny.md, «Arrossegar»): ni fitxers, ni text, ni `ShareLink`.
@@ -359,6 +415,13 @@ private let prohibidesArrossegar = [
             InstallacioWarp.perOmissio.app.versio
             InstallacioWarp.perOmissio.executable
             """)]) == ["mostra.swift:1: «\(troba)»", "mostra.swift:2: «\(troba)»", "mostra.swift:4: «perOmissio\\.app(?![A-Za-z0-9_])»"])
+        // Pla A4: els lectors de Claude.
+        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca], a: [(ruta: "mostra.swift", text: """
+            LectorTranscripcions()
+            LectorTranscripcions(carpeta: tmp.url("p"))
+            LectorConfianca()
+            LectorConfianca(ruta: tmp.url("c"))
+            """)]) == ["mostra.swift:1: «\(lectorTranscripcions)»", "mostra.swift:3: «\(lectorConfianca)»"])
         // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
         let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
         #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)

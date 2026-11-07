@@ -23,6 +23,12 @@ public struct Preferencies: Sendable, Equatable {
         case migrat
 
         public var esAcceptat: Bool { self != .senseTriar }
+
+        /// Quan es va acceptar, si se sap (només amb `acceptat`). Per al diagnòstic, que no mira els casos (la guarda els
+        /// deixa només en aquest fitxer).
+        public var acceptatEl: Date? {
+            if case let .acceptat(data) = self { data } else { nil }
+        }
     }
 
     public var versio: Int

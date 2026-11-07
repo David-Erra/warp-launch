@@ -24,7 +24,12 @@ public struct LectorSessions: Sendable {
         var kind: String?
         var startedAt: Double?
         var status: String?
+        /// La versió de Claude Code que l'ha escrit (`2.1.317`): només la fa servir el diagnòstic.
+        var version: String?
     }
+
+    /// Els `kind` coneguts (docs/fets-verificats.md): un altre vol dir que Claude Code ha canviat el format (diagnòstic).
+    static let tipusConeguts: Set<String> = ["interactive", "bg", "daemon-worker"]
 
     /// Sessions **interactives** amb el procés viu, ordenades per pid, i els avisos de la lectura.
     /// Les sessions `bg` no hi són: hereten l'UUID del pane on es va engegar el dimoni i no diuen res de la pestanya.

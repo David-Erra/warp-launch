@@ -14,11 +14,15 @@ public struct EntornCLI: Sendable {
     public var transcripcions: LectorTranscripcions
     public var confianca: LectorConfianca
     public var ara: @Sendable () -> Date
+    /// `diagnostica`: la versió de macOS que diu l'informe.
+    public var sistema: String
 
     public init(lector: Lector, inici: String, carpetaReal: URL, transcripcions: LectorTranscripcions,
                 confianca: LectorConfianca, nouId: @escaping @Sendable () -> UUID = { UUID() },
                 carpetaExisteix: @escaping @Sendable (String) -> Bool = Validacio.carpetaExisteixAlDisc,
-                ara: @escaping @Sendable () -> Date = { Date() }) {
+                ara: @escaping @Sendable () -> Date = { Date() },
+                sistema: String = ProcessInfo.processInfo.operatingSystemVersionString) {
+        self.sistema = sistema
         self.lector = lector
         self.inici = inici
         self.carpetaReal = carpetaReal
@@ -109,14 +113,21 @@ public enum OrdreCLI {
           warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]
               Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna
               amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta.
+          warp-launch diagnostica [--json] [--anonimitza]
+              Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els
+              fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les
+              versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada
+              comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.
+              --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma).
           warp-launch --versio
 
         Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre, el nom de les
-        transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. No obre ni tanca res,
+        transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica, també
+        l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,
         excepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).
         Codis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot
-        obert; amb obre, també si Warp Preview no deixa obrir res); 2 la configuració (llegida o importada) té
-        errors, o alguna pestanya no s'obriria; 64 ús incorrecte.
+        obert; amb obre, també si Warp Preview no deixa obrir res; amb diagnostica, alguna comprovació ha donat
+        error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no s'obriria; 64 ús incorrecte.
         """
     }
 
@@ -139,6 +150,8 @@ public enum OrdreCLI {
                 return try valida(resta, entorn: entorn, sortida: &sortida)
             case "obre":
                 return try obre(resta, entorn: entorn, sortida: &sortida)
+            case "diagnostica":
+                return try diagnostica(resta, entorn: entorn, sortida: &sortida)
             case let desconegut?:
                 throw .us("ordre desconeguda «\(desconegut)»")
             }
@@ -164,6 +177,7 @@ public enum OrdreCLI {
     private struct Opcions {
         var json = false
         var desa = false
+        var anonimitza = false
         var config: URL?
     }
 
@@ -178,6 +192,7 @@ public enum OrdreCLI {
             switch nom {
             case "--json": o.json = true
             case "--desa": o.desa = true
+            case "--anonimitza": o.anonimitza = true
             case "--warp":
                 guard let ruta = resta.popFirst() else { throw .us("falta la ruta després de --warp") }
                 lector.rutaWarp = URL(filePath: ruta)
@@ -356,6 +371,26 @@ public enum OrdreCLI {
         sortida.escriu("Resultat: \(Plural.compta(errors, "error", "errors")), "
             + "\(Plural.compta(avisos.compta(.avis), "avís", "avisos")).")
         return errors == 0 ? Codi.correcte : Codi.configuracioAmbErrors
+    }
+
+    /// Pla A4 (0.30.0): les comprovacions de `Diagnostic`, amb el Warp, el Claude i la carpeta de l'entorn. Només llegeix;
+    /// l'informe és en anglès (va a les issues de GitHub). Surt amb 1 si alguna comprovació dona error.
+    private static func diagnostica(_ args: ArraySlice<String>, entorn: EntornCLI,
+                                    sortida: inout Sortida) throws(ErrorCLI) -> Int32 {
+        var lector = entorn.lector
+        let o = try opcions(args, ordre: "diagnostica", admeses: ["--json", "--anonimitza"], lector: &lector,
+                            inici: entorn.inici)
+        let informe = Diagnostic.executa(EntornDiagnostic(lector: lector, carpetaConfiguracio: entorn.carpetaReal,
+                                                          transcripcions: entorn.transcripcions,
+                                                          confianca: entorn.confianca, sistema: entorn.sistema),
+                                         anonimitza: o.anonimitza)
+        if o.json {
+            guard let dades = try? informe.json() else { throw .fallida("no s'ha pogut generar el JSON") }
+            sortida.escriu(String(decoding: dades, as: UTF8.self))
+        } else {
+            sortida.text += informe.text
+        }
+        return informe.compta(.error) == 0 ? Codi.correcte : Codi.fallida
     }
 
     /// El pla d'obrir una finestra, com el calcularia l'app ara mateix, i el que cal per obrir-la. No escriu res.

@@ -33,6 +33,10 @@ public struct Confianca: Sendable, Equatable {
 public struct LectorConfianca: Sendable {
     public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".claude.json")
 
+    /// Les claus que es llegeixen: les fa servir també el diagnòstic, per dir si Claude Code les ha canviades.
+    static let clauProjectes = "projects"
+    static let clauConfianca = "hasTrustDialogAccepted"
+
     public var ruta: URL
 
     public init(ruta: URL = LectorConfianca.rutaPerDefecte) {
@@ -43,9 +47,9 @@ public struct LectorConfianca: Sendable {
     public func llegeix(inici: String) -> Confianca? {
         guard let dades = try? Data(contentsOf: ruta),
               let json = (try? JSONSerialization.jsonObject(with: dades)) as? [String: Any],
-              let projectes = json["projects"] as? [String: Any] else { return nil }
+              let projectes = json[Self.clauProjectes] as? [String: Any] else { return nil }
         let confiades = projectes.compactMap { carpeta, valor -> String? in
-            guard let valor = valor as? [String: Any], valor["hasTrustDialogAccepted"] as? Bool == true else { return nil }
+            guard let valor = valor as? [String: Any], valor[Self.clauConfianca] as? Bool == true else { return nil }
             return Self.senseBarresDeMes(carpeta)
         }
         return Confianca(confiades: Set(confiades), inici: Rutes.canonica(inici))

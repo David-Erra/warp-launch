@@ -64,19 +64,72 @@ public struct LectorWarp: Sendable {
         self.ruta = ruta
     }
 
+    /// Una taula de `warp.sqlite` i les columnes que se'n llegeixen.
+    public struct TaulaLlegida: Sendable, Equatable {
+        public var nom: String
+        public var columnes: [String]
+        /// Sense, la lectura continua: només es perd alguna dada (`blocks`: la carpeta de l'última comanda).
+        public var opcional: Bool
+    }
+
+    /// Les taules i columnes que llegeix `llegeixTaules` (Warp 0.2026.10.21). El diagnòstic les busca a la base per dir si
+    /// Warp l'ha canviada; una prova comprova que una base amb només aquestes es llegeix sencera.
+    public static let esquema: [TaulaLlegida] = [
+        TaulaLlegida(nom: "windows", columnes: ["id", "active_tab_index"], opcional: false),
+        TaulaLlegida(nom: "tabs", columnes: ["id", "window_id", "custom_title", "color"], opcional: false),
+        TaulaLlegida(nom: "pane_nodes", columnes: ["id", "tab_id", "is_leaf"], opcional: false),
+        TaulaLlegida(nom: "pane_leaves", columnes: ["pane_node_id", "kind"], opcional: false),
+        TaulaLlegida(nom: "terminal_panes", columnes: ["id", "uuid", "cwd"], opcional: false),
+        TaulaLlegida(nom: "blocks", columnes: ["pane_leaf_uuid", "pwd", "start_ts"], opcional: true),
+    ]
+
     public func llegeix() throws -> [FinestraWarp] {
+        try ambConnexio { db in
+            // Una sola transacció: totes les consultes veuen el mateix desat de Warp,
+            // que renumera finestres i pestanyes cada vegada que desa.
+            try executa(db, "BEGIN")
+            // Les sentències viuen dins de `llegeixTaules` i ja estan finalitzades quan es tanca la transacció.
+            let resultat = Result { try llegeixTaules(db) }
+            sqlite3_exec(db, "COMMIT", nil, nil, nil)
+            return try resultat.get()
+        }
+    }
+
+    /// Les taules i columnes d'`esquema` que no són a la base (`taula`, o `taula.columna`), les obligatòries i les
+    /// opcionals, per al diagnòstic. Només llegeix l'esquema (`PRAGMA table_info`), en només lectura com `llegeix`.
+    public func queFalta() throws -> (obligatories: [String], opcionals: [String]) {
+        try ambConnexio { db in
+            var obligatories: [String] = []
+            var opcionals: [String] = []
+            for taula in Self.esquema {
+                // Els noms són els d'`esquema`, fixos: no venen de fora.
+                let consulta = try Sentencia(db, "PRAGMA table_info(\(taula.nom))")
+                var columnes = Set<String>()
+                while try consulta.seguent() {
+                    if let nom = consulta.text(1) { columnes.insert(nom) }
+                }
+                let falten = columnes.isEmpty ? [taula.nom] : taula.columnes.filter { !columnes.contains($0) }
+                    .map { "\(taula.nom).\($0)" }
+                if taula.opcional { opcionals += falten } else { obligatories += falten }
+            }
+            return (obligatories, opcionals)
+        }
+    }
+
+    /// Obre la base en només lectura i hi fa `cos`.
+    private func ambConnexio<T>(_ cos: (OpaquePointer) throws -> T) throws -> T {
         guard FileManager.default.fileExists(atPath: ruta.path) else { throw ErrorLectura.noHiHaBase(ruta.path) }
         do {
-            return try llegeix(immutable: false)
+            return try ambConnexio(immutable: false, cos)
         } catch where !FileManager.default.fileExists(atPath: ruta.path + "-shm") {
             // SQLite no pot obrir en només lectura una base WAL sense el fitxer -shm. Sense -shm no hi ha cap
             // connexió que hi escrigui (Warp el crea mentre la té oberta), així que es pot llegir com a
             // immutable: sense bloquejos i sense crear cap fitxer.
-            return try llegeix(immutable: true)
+            return try ambConnexio(immutable: true, cos)
         }
     }
 
-    private func llegeix(immutable: Bool) throws -> [FinestraWarp] {
+    private func ambConnexio<T>(immutable: Bool, _ cos: (OpaquePointer) throws -> T) throws -> T {
         var connexio: OpaquePointer?
         let (nom, opcions) = immutable
             ? (ruta.absoluteString + "?immutable=1", SQLITE_OPEN_READONLY | SQLITE_OPEN_URI)
@@ -89,14 +142,7 @@ public struct LectorWarp: Sendable {
         // close_v2: si quedés alguna sentència viva, la connexió es tancaria en finalitzar-la.
         defer { sqlite3_close_v2(db) }
         sqlite3_busy_timeout(db, 3000)
-
-        // Una sola transacció: totes les consultes veuen el mateix desat de Warp,
-        // que renumera finestres i pestanyes cada vegada que desa.
-        try executa(db, "BEGIN")
-        // Les sentències viuen dins de `llegeixTaules` i ja estan finalitzades quan es tanca la transacció.
-        let resultat = Result { try llegeixTaules(db) }
-        sqlite3_exec(db, "COMMIT", nil, nil, nil)
-        return try resultat.get()
+        return try cos(db)
     }
 
     private func llegeixTaules(_ db: OpaquePointer) throws -> [FinestraWarp] {
