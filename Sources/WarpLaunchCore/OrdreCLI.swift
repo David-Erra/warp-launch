@@ -97,7 +97,7 @@ public enum OrdreCLI {
           warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]
               La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.
               Les pestanyes on no corre Claude prenen la plantilla de ~/.config/warp-launch, o, si no n'hi ha,
-              la segura («claude», sense saltar els permisos).
+              queden només terminal, com en crear la configuració a l'app.
               --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:
               la configuració real només es crea des de l'app.
           warp-launch configuracio valida [--config <carpeta>]
@@ -245,7 +245,8 @@ public enum OrdreCLI {
         if lectura.warpDesaFinestres == false { throw .fallida(LecturaWarp.senseFinestres + " No hi ha res per importar.") }
         let inici = Rutes.canonica(entorn.inici)
         let plantilla = plantillaPerImportar(entorn, inici: inici)
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: plantilla.valor, nouId: entorn.nouId)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: plantilla.valor,
+                                            senseSessio: plantilla.senseSessio, nouId: entorn.nouId)
         var configuracio = importacio.configuracio
         configuracio.generador = "\(WarpLaunch.nom) \(WarpLaunch.versio)"
 
@@ -279,6 +280,9 @@ public enum OrdreCLI {
         sortida.escriu(importacio.resum.descripcio)
         sortida.escriu("\(Plural.compta(importacio.resum.saltenPermisos, "pestanya salta", "pestanyes salten")) els permisos (--dangerously-skip-permissions).")
         sortida.escriu(plantilla.origen)
+        if plantilla.senseSessio == .nomesTerminal {
+            sortida.escriu("Les pestanyes que no tenien Claude obert queden només terminal (configuració nova).")
+        }
         sortida.text += InformeConfiguracio.text(configuracio, avisos: avisos, origens: importacio.origens, inici: inici)
         if !importacio.notes.isEmpty {
             sortida.escriu("")
@@ -298,20 +302,22 @@ public enum OrdreCLI {
         return codi
     }
 
-    /// La plantilla d'`importa`, com a l'app (`Editor.plantillaPerImportar`): la de la configuració real, si n'hi ha; si
-    /// no, la segura, que no salta els permisos ni porta ultracode (D11, revisada per en David el 07/11/2026). Una
-    /// configuració que no es pot llegir no atura la vista prèvia: es fa servir la segura, i `origen` diu per què.
-    /// Només llegeix.
-    private static func plantillaPerImportar(_ entorn: EntornCLI, inici: String) -> (valor: ClaudePestanya, origen: String) {
+    /// La plantilla d'`importa`, com a l'app (`Editor.plantillaPerImportar` i `senseSessioPerImportar`): la de la
+    /// configuració real, si n'hi ha, i les pestanyes que no tenien Claude obert la prenen. Si no n'hi ha, la segura, que
+    /// no salta els permisos ni porta ultracode (D11, revisada per en David el 07/11/2026), i aquestes pestanyes queden
+    /// només terminal (D-P5a). Una configuració que no es pot llegir no atura la vista prèvia: es fa servir la segura,
+    /// com si es tornés a importar, i `origen` diu per què. Només llegeix.
+    private static func plantillaPerImportar(_ entorn: EntornCLI, inici: String)
+        -> (valor: ClaudePestanya, senseSessio: Importador.SenseSessio, origen: String) {
         let magatzem = MagatzemConfiguracio(carpeta: entorn.carpetaReal, inici: inici)
         let segura = "Plantilla: la segura, sense saltar els permisos"
         do {
             guard let carregada = try magatzem.carrega() else {
-                return (.perOmissio, segura + " (encara no hi ha cap configuració).")
+                return (.perOmissio, .nomesTerminal, segura + " (encara no hi ha cap configuració).")
             }
-            return (carregada.configuracio.plantilla, "Plantilla: la de \(magatzem.fitxer.path).")
+            return (carregada.configuracio.plantilla, .plantilla, "Plantilla: la de \(magatzem.fitxer.path).")
         } catch {
-            return (.perOmissio, segura + " (no s'ha pogut llegir \(magatzem.fitxer.path): \(error)).")
+            return (.perOmissio, .plantilla, segura + " (no s'ha pogut llegir \(magatzem.fitxer.path): \(error)).")
         }
     }
 

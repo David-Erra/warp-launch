@@ -123,28 +123,47 @@ private struct Escenari {
         #expect(!e.existeix(e.real))
 
         let linies = sortida.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        #expect(linies.prefix(4) == [
+        #expect(linies.prefix(5) == [
             "Importació de Warp (vista prèvia: no s'ha desat res)",
-            "2 finestres · 3 pestanyes · 2 amb Claude (1 amb la seva ordre, 1 amb la plantilla) · 1 només terminal",
+            "2 finestres · 3 pestanyes · 1 amb Claude, amb la seva ordre · 2 només terminal (1 sense Claude obert)",
             "1 pestanya salta els permisos (--dangerously-skip-permissions).",
             "Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració).",
+            "Les pestanyes que no tenien Claude obert queden només terminal (configuració nova).",
         ])
-        // «A» conserva l'ordre del seu Claude; «B» pren la plantilla segura (D11, 07/11/2026).
+        // «A» conserva l'ordre del seu Claude; «B», que no en tenia, queda només terminal (D-P5a, 07/11/2026).
         #expect(sortida.text.contains("""
 
-            projectes · 2 pestanyes · 2 amb Claude
+            projectes · 2 pestanyes · 1 amb Claude
                1  A · ~/GitHub/projectes/a · Claude, de la seva ordre
-               2  B · ~/GitHub/projectes/b · Claude, de la plantilla
+               2  B · ~/GitHub/projectes/b · sense Claude
 
             Finestra 2 · 1 pestanya · 0 amb Claude
                1  Pestanya 1 · ~ · sense Claude
                   ⚠ Carpeta d'inici: probablement Warp l'ha perduda
 
             Ordres de Claude:
-               1  claude
                1  claude --dangerously-skip-permissions --effort ultracode
 
             """))
+    }
+
+    /// Sense configuració, `importa` fa com l'app en crear-la: les pestanyes on no corre Claude queden només terminal
+    /// (D-P5a, en David, 07/11/2026), també en el JSON i amb `--desa`. Les que en tenen conserven la seva ordre.
+    @Test func importaSenseConfiguracioDeixaNomesTerminalLesQueNoTenienClaude() throws {
+        let e = try Escenari()
+        let llegida = try Configuracio.llegeix(Data(e.executa("importa", "--json").sortida.text.utf8), inici: e.inici)
+        let pestanyes = llegida.configuracio.finestres.flatMap(\.pestanyes)
+        #expect(pestanyes.map(\.titol) == ["A", "B", "Pestanya 1"])
+        #expect(pestanyes.map(\.claude.activat) == [true, false, false])
+        #expect(pestanyes[0].claude.saltaPermisos && pestanyes[0].claude.ultracode, "«A», amb la seva ordre")
+        #expect(pestanyes[1].claude == .nomesTerminal)
+
+        let carpeta = e.tmp.url("nova")
+        #expect(e.executa("importa", "--desa", "--config", carpeta.path).codi == 0)
+        let desada = try #require(try MagatzemConfiguracio(carpeta: carpeta, inici: e.inici).carrega()).configuracio
+        #expect(desada.finestres.flatMap(\.pestanyes).map(\.claude.activat) == [true, false, false])
+        #expect(desada.plantilla == .perOmissio)
+        #expect(!e.existeix(e.real))
     }
 
     /// Sense configuració, les pestanyes on no corre Claude no salten els permisos ni porten ultracode (D11, revisada per
@@ -154,12 +173,12 @@ private struct Escenari {
         let (codi, sortida) = e.executa("importa")
         #expect(codi == 0)
         #expect(sortida.text.contains("0 pestanyes salten els permisos"))
-        #expect(sortida.text.contains("\nOrdres de Claude:\n   2  claude\n"), "les dues, sense saltar els permisos")
+        #expect(sortida.text.contains("\nOrdres de Claude:\n   1  claude\n"), "«A», sense saltar els permisos; «B» és terminal")
         #expect(!sortida.text.contains("ultracode"))
 
         let llegida = try Configuracio.llegeix(Data(e.executa("importa", "--json").sortida.text.utf8), inici: e.inici)
         let ambClaude = llegida.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat)
-        #expect(ambClaude.map(\.titol) == ["A", "B"])
+        #expect(ambClaude.map(\.titol) == ["A"])
         #expect(ambClaude.allSatisfy { !$0.claude.saltaPermisos && !$0.claude.ultracode && !$0.claude.enBypass })
         #expect(!e.existeix(e.real))
     }
@@ -178,6 +197,9 @@ private struct Escenari {
         #expect(codi == 0)
         #expect(sortida.text.contains("1 pestanya salta els permisos"))
         #expect(sortida.text.contains("Plantilla: la de \(real.fitxer.path)."))
+        // Tornar a importar no canvia (D11): «B», que no tenia Claude obert, pren la plantilla.
+        #expect(sortida.text.contains(" · 2 amb Claude (1 amb la seva ordre, 1 amb la plantilla) · 1 només terminal\n"))
+        #expect(!sortida.text.contains("queden només terminal"))
         #expect(sortida.text.contains("   1  claude --dangerously-skip-permissions --model opus --effort ultracode\n"))
 
         let carpeta = e.tmp.url("nova")
@@ -199,6 +221,8 @@ private struct Escenari {
         #expect(codi == 0)
         #expect(sortida.text.contains("Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir \(real.fitxer.path): "))
         #expect(sortida.text.contains("0 pestanyes salten els permisos"))
+        // Hi ha configuració, encara que no es pugui llegir: com si es tornés a importar, «B» pren la plantilla.
+        #expect(sortida.text.contains(" · 2 amb Claude (1 amb la seva ordre, 1 amb la plantilla) · 1 només terminal\n"))
         #expect(try Data(contentsOf: real.fitxer) == Data("{".utf8))
     }
 
@@ -285,7 +309,7 @@ private struct Escenari {
         #expect(codi3 == 0)
         #expect(valida.text.hasPrefix("""
             Configuració: \(carpeta.path)/configuracio.json
-            2 finestres · 3 pestanyes · 2 amb Claude · 1 només terminal
+            2 finestres · 3 pestanyes · 1 amb Claude · 2 només terminal
 
             """))
         #expect(valida.text.hasSuffix("\nResultat: 0 errors, 1 avís.\n"))

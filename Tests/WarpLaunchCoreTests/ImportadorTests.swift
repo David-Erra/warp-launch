@@ -83,7 +83,7 @@ private func lecturaComLaReal() -> LecturaWarp {
     /// seva conversa i la carpeta de la sessió.
     @Test func lesPestanyesImportadesRecordenElPaneILaConversa() throws {
         let lectura = lecturaComLaReal()
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanyes = importacio.configuracio.finestres.flatMap(\.pestanyes)
         #expect(importacio.vincles.count == 64)
         #expect(Set(importacio.vincles.keys) == Set(pestanyes.map(\.id)))
@@ -97,9 +97,9 @@ private func lecturaComLaReal() -> LecturaWarp {
     }
 
     @Test func laLecturaRealDona48AmbClaudeI16Sense() throws {
-        let importacio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         #expect(importacio.resum == ResumImportacio(finestres: 7, pestanyes: 64, ambSessio: 13, ambPlantilla: 35,
-                                                    senseClaude: 16, saltenPermisos: 48))
+                                                    senseClaude: 16, senseClaudeObert: 0, saltenPermisos: 48))
         #expect(importacio.resum.descripcio
             == "7 finestres · 64 pestanyes · 48 amb Claude (13 amb la seva ordre, 35 amb la plantilla) · 16 només terminal")
         let c = importacio.configuracio
@@ -128,8 +128,67 @@ private func lecturaComLaReal() -> LecturaWarp {
         #expect(Set(pestanyes.map(\.id) + c.finestres.map(\.id)).count == 71)
     }
 
+    /// En una configuració nova, les pestanyes on no corria Claude queden només terminal (D-P5a, en David, 07/11/2026).
+    /// Les que tenien Claude conserven la seva ordre, i les de `~` i les d'una carpeta que no existeix, com sempre.
+    @Test func unaConfiguracioNovaDeixaNomesTerminalLesQueNoTenienClaude() throws {
+        let importacio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .perOmissio,
+                                            senseSessio: .nomesTerminal, nouId: IdsDeProva().nou)
+        #expect(importacio.resum == ResumImportacio(finestres: 7, pestanyes: 64, ambSessio: 13, ambPlantilla: 0,
+                                                    senseClaude: 51, senseClaudeObert: 35, saltenPermisos: 13))
+        #expect(importacio.resum.descripcio
+            == "7 finestres · 64 pestanyes · 13 amb Claude, amb la seva ordre · 51 només terminal (35 sense Claude obert)")
+        #expect(importacio.compta(.nomesTerminal) == 35)
+        #expect(importacio.compta(.plantilla) == 0)
+        #expect(importacio.compta(.carpetaInici) == 11)
+        #expect(importacio.compta(.carpetaNoExisteix) == 5)
+        #expect(importacio.compta(.sessio) == 13)
+        #expect(importacio.configuracio.plantilla == .perOmissio)
+
+        let pestanyes = importacio.configuracio.finestres.flatMap(\.pestanyes)
+        #expect(pestanyes.filter { !$0.claude.activat }.allSatisfy { $0.claude == .nomesTerminal })
+        for pestanya in pestanyes where pestanya.claude.activat {
+            #expect(importacio.origens[pestanya.id] == .sessio)
+            #expect(OrdreClaude.text(try #require(try OrdreClaude.argv(pestanya.claude, repren: "id-1")))
+                == habitual.replacingOccurrences(of: "--continue", with: "--resume id-1"))
+        }
+        // Totes recorden el seu pane, també les que queden només terminal (fase 3.1).
+        #expect(importacio.vincles.count == 64)
+    }
+
+    /// Tornar a importar sobre una configuració que ja existeix no canvia: on no corria Claude, la plantilla (D11). Fora
+    /// d'aquestes pestanyes, les dues importacions són iguals; i, en una configuració nova, si s'hi activa Claude, ja té
+    /// les opcions de la plantilla.
+    @Test func tornarAImportarDonaLaPlantillaOnNoCorriaClaude() throws {
+        let nova = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals,
+                                      senseSessio: .nomesTerminal, nouId: IdsDeProva().nou)
+        let tornada = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals,
+                                         senseSessio: .plantilla, nouId: IdsDeProva().nou)
+        #expect(tornada.resum.ambPlantilla == 35 && tornada.resum.senseClaudeObert == 0)
+        #expect(nova.resum.ambPlantilla == 0 && nova.resum.senseClaudeObert == 35)
+
+        var apagada = ClaudePestanya.habituals
+        apagada.activat = false
+        let pestanyesNova = nova.configuracio.finestres.flatMap(\.pestanyes)
+        let pestanyesTornada = tornada.configuracio.finestres.flatMap(\.pestanyes)
+        #expect(pestanyesNova.map(\.id) == pestanyesTornada.map(\.id))
+        for (n, t) in zip(pestanyesNova, pestanyesTornada) {
+            #expect(n.titol == t.titol && n.carpeta == t.carpeta)
+            if tornada.origens[t.id] == .plantilla {
+                #expect(t.claude == .habituals)
+                #expect(nova.origens[n.id] == .nomesTerminal)
+                #expect(n.claude == apagada)
+            } else {
+                #expect(n == t)
+                #expect(nova.origens[n.id] == tornada.origens[t.id])
+            }
+        }
+        #expect(nova.configuracio.finestres.map(\.nom) == tornada.configuracio.finestres.map(\.nom))
+        #expect(nova.vincles == tornada.vincles)
+        #expect(nova.notes == tornada.notes)
+    }
+
     @Test func esDesaIEsTornaALlegirIgual() throws {
-        let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals,
+        let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
                                               nouId: IdsDeProva().nou).configuracio
         let llegida = try Configuracio.llegeix(try configuracio.json(), inici: inici)
         #expect(llegida.configuracio == configuracio)
@@ -137,7 +196,7 @@ private func lecturaComLaReal() -> LecturaWarp {
     }
 
     @Test func elsAvisosDeLaLecturaReal() throws {
-        let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals,
+        let configuracio = Importador.importa(lecturaComLaReal(), inici: inici, plantilla: .habituals, senseSessio: .plantilla,
                                               nouId: IdsDeProva().nou).configuracio
         let avisos = Validacio.avisos(configuracio, inici: inici) { !$0.contains("/documents/") }
         #expect(avisos.compta(.error) == 0)
@@ -154,7 +213,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
             PestanyaLlegida(posicio: 0, titol: "Botiga", color: nil, panes: [f.pane("\(inici)/botiga", claude: sessio)]),
         ])], sessionsSensePestanya: [], avisos: [])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanya = try #require(importacio.configuracio.finestres.first?.pestanyes.first)
         // Les opcions de la sessió, no les de la plantilla; continua (R4); el nom només el de `-n`.
         #expect(pestanya.claude == ClaudePestanya(model: "opus", continua: true, nom: "Botiga", modePermisos: "plan",
@@ -166,11 +225,19 @@ private func lecturaComLaReal() -> LecturaWarp {
     @Test func senseSessioLaPlantillaICapSaltDePermisosPerOmissio() throws {
         var f = Fabrica()
         let lectura = f.lectura([["p:GitHub/a", "~", "x:GitHub/perduda"]])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanyes = importacio.configuracio.finestres[0].pestanyes
         #expect(pestanyes.map(\.claude) == [.perOmissio, .nomesTerminal, .nomesTerminal])
         #expect(pestanyes.allSatisfy { !$0.claude.saltaPermisos })
         #expect(pestanyes.map { importacio.origens[$0.id] } == [.plantilla, .carpetaInici, .carpetaNoExisteix])
+
+        // En una configuració nova, la primera també queda només terminal (D-P5a); les altres dues, pel mateix motiu.
+        let nova = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, senseSessio: .nomesTerminal,
+                                      nouId: IdsDeProva().nou)
+        let pestanyesNova = nova.configuracio.finestres[0].pestanyes
+        #expect(pestanyesNova.map(\.claude) == [.nomesTerminal, .nomesTerminal, .nomesTerminal])
+        #expect(pestanyesNova.map { nova.origens[$0.id] } == [.nomesTerminal, .carpetaInici, .carpetaNoExisteix])
+        #expect(nova.resum.descripcio == "1 finestra · 3 pestanyes · 0 amb Claude · 3 només terminal (1 sense Claude obert)")
     }
 
     @Test func elsNomsDeFinestra() {
@@ -190,7 +257,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         var f = Fabrica()
         let lectura = f.lectura([["p:GitHub/Empresa/a"], ["p:GitHub/empresa/b"], ["~"], ["p:GitHub/empresa/c"],
                                  ["p:Finestra 3/d"]])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         #expect(importacio.configuracio.finestres.map(\.nom)
             == ["Empresa", "empresa 2", "Finestra 3", "empresa 3", "Finestra 3 2"])
         let avisos = Validacio.avisos(importacio.configuracio, inici: inici) { _ in true }
@@ -217,7 +284,7 @@ private func lecturaComLaReal() -> LecturaWarp {
             PestanyaLlegida(posicio: 2, titol: "Sense Claude", color: nil, panes: [f.pane("\(inici)/e"), f.pane("\(inici)/f")]),
             PestanyaLlegida(posicio: 3, titol: "Sense panes", color: nil, panes: []),
         ])], sessionsSensePestanya: [], avisos: [])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanyes = importacio.configuracio.finestres[0].pestanyes
         #expect(pestanyes.map(\.carpeta) == ["\(inici)/b", "\(inici)/c", "\(inici)/e"])
         #expect(importacio.notes.map(\.description) == [
@@ -234,7 +301,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
             PestanyaLlegida(posicio: 0, titol: "Botiga", color: nil, panes: [f.pane(inici, claude: sessio)]),
         ])], sessionsSensePestanya: [], avisos: [])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
         #expect(pestanya.carpeta == "\(inici)/GitHub/botiga")
         #expect(pestanya.claude.activat)
@@ -247,7 +314,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         var f = Fabrica()
         var lectura = f.lectura([["p:GitHub/a/x"], [], ["p:GitHub/b/y"]])
         lectura.finestres[1].pestanyes = [PestanyaLlegida(posicio: 0, titol: "Buida", color: nil, panes: [])]
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         #expect(importacio.configuracio.finestres.map(\.nom) == ["a", "b"])
         #expect(importacio.notes.map(\.description) == ["la finestra 2 de Warp no té cap pestanya de terminal: no s'importa"])
     }
@@ -259,7 +326,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
             PestanyaLlegida(posicio: 0, titol: "Botiga", color: nil, panes: [f.pane("\(inici)/GitHub/botiga", claude: sessio)]),
         ])], sessionsSensePestanya: [], avisos: [])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
         #expect(pestanya.carpeta == "\(inici)/GitHub/botiga")
         #expect(importacio.notes.map(\.description) == [
@@ -274,7 +341,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
             PestanyaLlegida(posicio: 0, titol: "A", color: nil, panes: [f.pane("\(inici)/a", claude: sessio)]),
         ])], sessionsSensePestanya: [], avisos: [])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
         #expect(try OrdreClaude.argv(pestanya.claude, repren: nil) == ["claude", "--dangerously-skip-permissions"])
         #expect(pestanya.claude.continua)
@@ -299,7 +366,7 @@ private func lecturaComLaReal() -> LecturaWarp {
             PestanyaLlegida(posicio: 2, titol: "T", color: nil,
                             panes: [f.pane("\(inici)/c", claude: f.sessio("\(inici)/c", ["claude", "-r"]))]),
         ])], sessionsSensePestanya: [], avisos: [])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         #expect(importacio.configuracio.finestres[0].pestanyes.map(\.claude) == Array(repeating: .perOmissio, count: 3))
         #expect(importacio.notes.map(\.description) == [
             "Finestra 1 › R: la sessió es va obrir amb «--resume» (una conversa concreta); es desa només que continua",
@@ -313,7 +380,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         fora.dinsDeWarp = false
         let perduda = f.sessio("\(inici)/b", ["claude"])
         let lectura = f.lectura([["p:GitHub/a", "p:a"]], sensePestanya: [fora, perduda])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         #expect(importacio.resum.pestanyes == 2)
         // La pestanya de la mateixa carpeta s'ha importat amb la plantilla, no amb les opcions de la sessió: es diu.
         #expect(importacio.notes.map(\.description) == [
@@ -326,7 +393,7 @@ private func lecturaComLaReal() -> LecturaWarp {
     @Test func laPlantillaEsCopiaANormalitzada() {
         var f = Fabrica()
         let plantilla = ClaudePestanya(model: "  ", esforc: " ULTRACODE ")
-        let importacio = Importador.importa(f.lectura([["p:a"]]), inici: inici, plantilla: plantilla, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(f.lectura([["p:a"]]), inici: inici, plantilla: plantilla, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         let esperada = ClaudePestanya(esforc: "xhigh", ultracode: true)
         #expect(importacio.configuracio.plantilla == esperada)
         #expect(importacio.configuracio.finestres[0].pestanyes[0].claude == esperada)
@@ -339,7 +406,7 @@ private func lecturaComLaReal() -> LecturaWarp {
         var plantilla = ClaudePestanya.habituals
         plantilla.nom = "feina"
         let lectura = f.lectura([["p:a", "p:b"]])
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: plantilla, nouId: IdsDeProva().nou)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: plantilla, senseSessio: .plantilla, nouId: IdsDeProva().nou)
         #expect(importacio.configuracio.plantilla.nom == "feina")
         let pestanyes = importacio.configuracio.finestres.flatMap(\.pestanyes)
         #expect(!pestanyes.isEmpty)

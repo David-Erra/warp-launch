@@ -429,9 +429,16 @@ public final class Editor {
         estat == .oberta ? configuracio.plantilla : .perOmissio
     }
 
+    /// Què reben les pestanyes que no tenien Claude obert: en una configuració nova, només terminal (D-P5a, en David,
+    /// 07/11/2026); en tornar a importar, Claude amb la plantilla, com fins ara (D11).
+    public var senseSessioPerImportar: Importador.SenseSessio {
+        estat == .oberta ? .plantilla : .nomesTerminal
+    }
+
     /// El que sortiria d'importar una lectura de Warp, per al full de previsualització. No canvia res.
     public func previsualitza(_ lectura: LecturaWarp) -> Importacio {
-        Importador.importa(lectura, inici: inici, plantilla: plantillaPerImportar, nouId: nouId)
+        Importador.importa(lectura, inici: inici, plantilla: plantillaPerImportar, senseSessio: senseSessioPerImportar,
+                           nouId: nouId)
     }
 
     /// «Crea» del full d'importació, quan encara no hi ha configuració: la desa de seguida.

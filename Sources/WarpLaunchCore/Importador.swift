@@ -3,8 +3,18 @@ import Foundation
 /// De la lectura de Warp a una configuració nova (R2, docs/disseny.md, «Importació»). És una funció pura: no toca el
 /// disc, i els id surten de `nouId`. La `inici` ha de ser canònica, com les carpetes de la lectura.
 public enum Importador {
+    /// Què reben les pestanyes on no hi corria Claude. Les de `~` i les d'una carpeta que no existeix queden sempre
+    /// sense Claude (D11).
+    public enum SenseSessio: Sendable, Equatable {
+        /// Una configuració nova: només terminal (D-P5a, en David, 07/11/2026). Si s'hi activa Claude, ja té les opcions
+        /// de la plantilla.
+        case nomesTerminal
+        /// Tornar a importar sobre una configuració que ja existeix: Claude, amb la plantilla (D11).
+        case plantilla
+    }
+
     public static func importa(_ lectura: LecturaWarp, inici: String, plantilla: ClaudePestanya,
-                               nouId: () -> UUID) -> Importacio {
+                               senseSessio: SenseSessio, nouId: () -> UUID) -> Importacio {
         let plantilla = plantilla.normalitzada()
         // La de cada pestanya, sense nom fix de sessió (decisió d'en David, 04/11/2026): si no, totes les pestanyes
         // importades sense sessió s'obririen amb el mateix nom. La de la configuració es queda tal com és.
@@ -58,6 +68,9 @@ public enum Importador {
                 } else if !principal.carpetaExisteix {
                     claude = desactivada(perPestanya)
                     origen = .carpetaNoExisteix
+                } else if senseSessio == .nomesTerminal {
+                    claude = desactivada(perPestanya)
+                    origen = .nomesTerminal
                 } else {
                     claude = perPestanya
                     origen = .plantilla
@@ -106,7 +119,8 @@ public enum Importador {
     }
 
     /// La plantilla, però sense Claude: a `~` o a una carpeta que no existeix, Claude no s'obre fins que se n'arregli la
-    /// carpeta (D11). En activar-lo, ja té les opcions de la plantilla.
+    /// carpeta (D11); i, en una configuració nova, on no hi corria (D-P5a). En activar-lo, ja té les opcions de la
+    /// plantilla.
     private static func desactivada(_ plantilla: ClaudePestanya) -> ClaudePestanya {
         var c = plantilla
         c.activat = false
@@ -164,6 +178,7 @@ public struct Importacio: Sendable, Equatable {
             ambSessio: ambClaude.filter { origens[$0.id] == .sessio }.count,
             ambPlantilla: ambClaude.filter { origens[$0.id] == .plantilla }.count,
             senseClaude: pestanyes.count - ambClaude.count,
+            senseClaudeObert: pestanyes.filter { origens[$0.id] == .nomesTerminal }.count,
             saltenPermisos: ambClaude.filter(\.claude.saltaPermisos).count)
     }
 }
@@ -172,8 +187,10 @@ public struct Importacio: Sendable, Equatable {
 public enum OrigenClaude: String, Sendable, Equatable {
     /// Hi corria una sessió: les opcions de la seva ordre.
     case sessio
-    /// No hi corria Claude: la plantilla.
+    /// No hi corria Claude, i es torna a importar: la plantilla (D11).
     case plantilla
+    /// No hi corria Claude, i la configuració és nova: només terminal (D-P5a).
+    case nomesTerminal
     /// A `~`: sense Claude (probablement Warp ha perdut la carpeta).
     case carpetaInici
     /// La carpeta ja no existeix: sense Claude.
@@ -248,23 +265,38 @@ public struct ResumImportacio: Sendable, Equatable {
     public var ambSessio: Int
     /// Pestanyes amb Claude que surten de la plantilla.
     public var ambPlantilla: Int
+    /// Pestanyes només terminal: les de `~`, les d'una carpeta que no existeix, les de `senseClaudeObert` i, si la
+    /// plantilla no obre Claude, les que la prenen.
     public var senseClaude: Int
+    /// D'aquestes, les que no tenien Claude obert, en una configuració nova (D-P5a). En tornar a importar, sempre 0:
+    /// aquestes pestanyes prenen la plantilla (`ambPlantilla`).
+    public var senseClaudeObert: Int
     /// Pestanyes amb Claude que salten els permisos (`--dangerously-skip-permissions`).
     public var saltenPermisos: Int
 
-    public init(finestres: Int, pestanyes: Int, ambSessio: Int, ambPlantilla: Int, senseClaude: Int, saltenPermisos: Int) {
+    public init(finestres: Int, pestanyes: Int, ambSessio: Int, ambPlantilla: Int, senseClaude: Int,
+                senseClaudeObert: Int, saltenPermisos: Int) {
         self.finestres = finestres
         self.pestanyes = pestanyes
         self.ambSessio = ambSessio
         self.ambPlantilla = ambPlantilla
         self.senseClaude = senseClaude
+        self.senseClaudeObert = senseClaudeObert
         self.saltenPermisos = saltenPermisos
     }
 
-    /// «7 finestres · 64 pestanyes · 48 amb Claude (13 amb la seva ordre, 35 amb la plantilla) · 16 només terminal».
+    /// En tornar a importar, «7 finestres · 64 pestanyes · 48 amb Claude (13 amb la seva ordre, 35 amb la plantilla) ·
+    /// 16 només terminal». En una configuració nova, la plantilla no hi surt: «7 finestres · 64 pestanyes · 13 amb
+    /// Claude, amb la seva ordre · 51 només terminal (35 sense Claude obert)» (D-P5a).
     public var descripcio: String {
-        "\(Plural.compta(finestres, "finestra", "finestres")) · \(Plural.compta(pestanyes, "pestanya", "pestanyes"))"
-            + " · \(ambSessio + ambPlantilla) amb Claude (\(ambSessio) amb la seva ordre, \(ambPlantilla) amb la plantilla)"
-            + " · \(senseClaude) només terminal"
+        let finestresIPestanyes = "\(Plural.compta(finestres, "finestra", "finestres")) · "
+            + Plural.compta(pestanyes, "pestanya", "pestanyes")
+        guard senseClaudeObert > 0, ambPlantilla == 0 else {
+            return finestresIPestanyes
+                + " · \(ambSessio + ambPlantilla) amb Claude (\(ambSessio) amb la seva ordre, \(ambPlantilla) amb la plantilla)"
+                + " · \(senseClaude) només terminal"
+        }
+        return finestresIPestanyes + (ambSessio == 0 ? " · 0 amb Claude" : " · \(ambSessio) amb Claude, amb la seva ordre")
+            + " · \(senseClaude) només terminal (\(senseClaudeObert) sense Claude obert)"
     }
 }

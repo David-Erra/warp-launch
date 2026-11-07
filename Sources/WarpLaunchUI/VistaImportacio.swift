@@ -89,6 +89,12 @@ struct VistaImportacio: View {
             }
             if let ordre = full.ordrePlantilla {
                 Section("Pestanyes que no tenien Claude obert") {
+                    // En una configuració nova, queden només terminal (D-P5a): es diu abans de l'ordre.
+                    if let nota = full.notaSenseClaudeObert {
+                        Text(nota)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     Text(ordre)
                         .font(.body.monospaced())
                         .textSelection(.enabled)
