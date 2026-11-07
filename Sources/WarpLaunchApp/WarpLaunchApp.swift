@@ -1,0 +1,335 @@
+import AppKit
+import SwiftUI
+import WarpLaunchCore
+import WarpLaunchObridor
+import WarpLaunchUI
+
+/// App de barra de menú (docs/disseny.md): l'editor, el menú de la icona i la Configuració. Llegeix Warp (en segon pla)
+/// i la configuració, i només escriu de Warp l'ajust de la restauració (D19). **Només obre res de Warp des del full de confirmació** (fase 3.1, `Obertura`): una finestra cada
+/// vegada, amb Warp ja obert.
+@main
+struct WarpLaunchApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegat
+
+    var body: some Scene {
+        let aplicacio = delegat.aplicacio
+
+        Window(WarpLaunch.nom, id: Aplicacio.idEditor) {
+            VistaEditor(editor: aplicacio.editor, warp: aplicacio.warp, inici: aplicacio.inici,
+                        carpetaDeProva: aplicacio.carpetaDeProva)
+                .background(AccesFinestra { aplicacio.activacio.adopta($0) })
+        }
+        .defaultSize(width: 900, height: 560)
+        .restorationBehavior(.disabled)
+        .commands {
+            OrdresEditor()
+            SidebarCommands()
+        }
+
+        Settings {
+            VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
+                              deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada)
+                .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
+        }
+        .windowResizability(.contentSize)
+
+        MenuBarExtra {
+            MenuIcona(aplicacio: aplicacio)
+        } label: {
+            Label(WarpLaunch.nom, systemImage: "macwindow.on.rectangle")
+        }
+    }
+}
+
+/// Tot el que viu tant com l'app.
+@MainActor
+final class Aplicacio {
+    static let idEditor = "editor"
+
+    let inici: String
+    let arguments: ArgumentsApp
+    let editor: Editor
+    let warp: EstatWarp
+    /// La restauració de sessió de Warp, sempre desactivada, i la foto de les finestres (D19). `nil` amb una carpeta de prova.
+    let refresc: RefrescWarp?
+    /// Els lligams de cada pestanya (`estat.json`, a la mateixa carpeta que la configuració).
+    let sessions: EstatSessions
+    /// Obrir una finestra a Warp (fase 3.1). `nil` sense carpeta.
+    let obertura: Obertura?
+    let activacio: Activacio
+    /// «Obre Warp Launch en iniciar sessió» (D3): l'interruptor de la Configuració.
+    let arrencada: ArrencadaSessio
+    /// Aquesta arrencada és la de l'inici de sessió (es decideix a `applicationDidFinishLaunching`).
+    var enIniciarSessio = false
+    /// Cada quant es torna a llegir Warp mentre l'app és en marxa (D18).
+    static let lecturaPeriodica: Duration = .seconds(60)
+
+    init() {
+        inici = FileManager.default.homeDirectoryForCurrentUser.path
+        arguments = ArgumentsApp(CommandLine.arguments, inici: inici)
+        let editor: Editor, sessions: EstatSessions
+        switch arguments.carpeta {
+        case let .real(carpeta), let .prova(carpeta):
+            editor = Editor(magatzem: MagatzemConfiguracio(carpeta: carpeta, inici: inici))
+            sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta))
+        case let .incorrecta(motiu):
+            editor = Editor(senseCarpeta: motiu)
+            sessions = EstatSessions(magatzem: nil)
+        }
+        self.editor = editor
+        self.sessions = sessions
+        let processos = ProcessosDelSistema()
+        let lector = Lector(processos: processos, inici: inici)
+        // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.
+        var refresc: RefrescWarp?
+        if case .real = arguments.carpeta {
+            let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)
+            refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { try ajust.valor() }, posa: { try ajust.posa($0) },
+                                                             warpObert: { processos.warpObert() },
+                                                             llegeixBase: { try lector.llegeix(base: .sempre) }))
+        }
+        self.refresc = refresc
+        // Amb l'ajust gestionat per l'app, la base només és la foto: les lectures de cada minut, i obrir, van pels processos,
+        // també durant un refresc o si l'ajust ha quedat activat.
+        let base: BaseWarp = refresc == nil ? .segonsAjust : .mai
+        let warp = EstatWarp(lector: { try lector.llegeix(base: base) })
+        warp.refresc = refresc
+        self.warp = warp
+        if case .incorrecta = arguments.carpeta {
+            obertura = nil
+        } else {
+            // L'única connexió amb l'obridor (`ObreWarp`) i amb la carpeta de Warp de debò.
+            obertura = Obertura(editor: editor, sessions: sessions, entorn: Obertura.Entorn(
+                llegeix: { await warp.llegeix() },
+                obre: { try await ObreWarp.obre($0) },
+                // Amb l'ajust activat, Warp restauraria les seves finestres en arrencar.
+                engegaWarp: { refresc?.tanca(); try await ObreWarp.engega() },
+                fitxers: FitxersLaunchWarp.real,
+                transcripcions: LectorTranscripcions(),
+                confianca: LectorConfianca(),
+                versioWarp: { AppWarp.real.versio },
+                inici: inici))
+        }
+        editor.obertura = obertura
+        editor.lligam = obertura == nil ? nil
+            : Lligam(editor: editor, sessions: sessions, inici: inici, llegeix: { await warp.llegeixAmbFinestres() })
+        // Els ítems d'inici de macOS, només amb la configuració de debò: una de prova no s'obre mai sola.
+        let arrencada: ArrencadaSessio
+        if case .real = arguments.carpeta {
+            arrencada = ArrencadaSessio(entorn: ServeiArrencada.entorn, motiuNoDisponible: ServeiArrencada.motiuNoDisponible)
+        } else {
+            arrencada = ArrencadaSessio(entorn: nil, motiuNoDisponible: "Amb una configuració de prova, l'app no s'obre sola.")
+        }
+        self.arrencada = arrencada
+        let transcripcions = LectorTranscripcions()
+        editor.conversaDe = { sessions.conversaAReprendre($0, transcripcions: transcripcions) }
+        editor.enImportar = { sessions.vincula($0.vincles) }
+        // Sense configuració, `estat.json` no s'escriu.
+        warp.enLlegir = { [obertura] lectura in
+            if editor.estat == .oberta { sessions.actualitza(amb: lectura, configuracio: editor.configuracio) }
+            obertura?.enLlegir(lectura)
+        }
+        activacio = Activacio(enAdoptarDesfer: { editor.usaUndoManager($0) },
+                              enAdoptarDesferConfiguracio: { editor.usaDesferPlantilla($0) },
+                              // El fitxer pot haver canviat fora mentre la Configuració era amagada.
+                              enMostrarConfiguracio: {
+                                  editor.comprovaCanviExtern()
+                                  // Es pot haver canviat a Configuració del Sistema.
+                                  arrencada.actualitza()
+                              },
+                              enTancarConfiguracio: { editor.desaSiCal() },
+                              enAmagar: {
+                                  // Un nom a mig escriure es desa: amb l'editor amagat, el camp no es veuria.
+                                  editor.acabaNom(desant: true)
+                                  // Un camp de l'inspector pot tenir el cursor: el que s'hi escrigui després és un
+                                  // altre pas de Desfés.
+                                  editor.acabaAgrupacio()
+                                  editor.desaSiCal()
+                              },
+                              enMostrar: { editor.enMostrar() })
+        editor.carrega()
+        sessions.carrega()
+        // Els fitxers temporals que hagin quedat d'una obertura a mig fer (només els propis, amb la marca).
+        obertura?.netejaEnArrencar()
+    }
+
+    /// Llegeix Warp en arrencar i, després, cada minut (D18). No obre ni toca res de Warp ni de Claude, llevat de tornar a
+    /// desactivar l'ajust de la restauració si és activat (D19).
+    func llegeixPeriodicament() async {
+        while !Task.isCancelled {
+            refresc?.vigila()
+            await warp.llegeix()
+            try? await Task.sleep(for: Self.lecturaPeriodica)
+        }
+    }
+
+    /// Per a l'editor: la carpeta, si és de prova.
+    var carpetaDeProva: String? {
+        if case let .prova(carpeta) = arguments.carpeta { Rutes.abreujada(carpeta.path, inici: inici) } else { nil }
+    }
+
+    /// Per a la Configuració: la carpeta, o per què no n'hi ha cap.
+    var carpetaDescrita: String {
+        switch arguments.carpeta {
+        case let .real(carpeta), let .prova(carpeta): Rutes.abreujada(carpeta.path, inici: inici)
+        case let .incorrecta(motiu): "Cap: \(motiu)"
+        }
+    }
+}
+
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    let aplicacio = Aplicacio()
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        aplicacio.activacio.enArrencar()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Aquí, i no a WillFinish: l'esdeveniment d'obertura (kAEOpenApplication) només és viu mentre AppKit el despatxa, i
+        // aquesta crida en surt. El temps compta també les estones en repòs (`CLOCK_MONOTONIC`, no `systemUptime`).
+        aplicacio.enIniciarSessio = InicDeSessio.es(
+            comElementDInici: ServeiArrencada.obertaComElementDInici,
+            segonsEncesa: TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000,
+            registrada: aplicacio.arrencada.obreSola)
+        Task { await aplicacio.llegeixPeriodicament() }
+        // D3: el full de «Obre-ho tot», quan Warp és a punt. Si no falta cap finestra, l'editor s'amaga.
+        if aplicacio.enIniciarSessio, let obertura = aplicacio.obertura {
+            let aplicacio = aplicacio
+            Task {
+                switch await obertura.enIniciarSessio() {
+                case .mostra: aplicacio.activacio.mostraEditor(obre: {})
+                case .amaga: aplicacio.activacio.amagaEditorSiNoSHaFetServir()
+                case .res: break
+                }
+            }
+        }
+    }
+
+    /// Tancar l'editor no tanca l'app: la icona de la barra de menú continua.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    /// Obrir l'app des d'Aplicacions o del Finder quan ja és oberta mostra l'editor.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        aplicacio.activacio.mostraEditor(obre: {})
+        return false
+    }
+
+    /// Desa abans de sortir. Si no es pot, és l'únic cas en què es demana confirmació. A mig obrir una finestra a Warp,
+    /// esborra el fitxer temporal abans de sortir (`Obertura.enSortir`).
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        aplicacio.editor.acabaNom(desant: true)
+        // Sempre, també si després es cancel·la. Durant l'alerta, cap refresc: l'app podria sortir amb l'ajust activat.
+        aplicacio.refresc?.atura()
+        if aplicacio.editor.desaSiCal() {
+            aplicacio.obertura?.enSortir()
+            return .terminateNow
+        }
+        aplicacio.activacio.posaAlDavant()
+        let alerta = NSAlert()
+        alerta.alertStyle = .warning
+        alerta.messageText = "No s'han pogut desar els canvis"
+        alerta.informativeText = "\(aplicacio.editor.errorDesat?.description ?? ""). Si surts ara, es perdran."
+        alerta.addButton(withTitle: "Cancel·la")
+        let surt = alerta.addButton(withTitle: "Surt sense desar")
+        surt.hasDestructiveAction = true
+        guard alerta.runModal() == .alertSecondButtonReturn else {
+            aplicacio.refresc?.repren()
+            return .terminateCancel
+        }
+        aplicacio.obertura?.enSortir()
+        return .terminateNow
+    }
+}
+
+/// Menú de la icona de la barra de menú (docs/disseny.md, «Menú de la icona»).
+private struct MenuIcona: View {
+    let aplicacio: Aplicacio
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
+
+    // Cada bloc en una `Section` sense títol, sense `Divider` solts: una `Section` amb títol seguida d'un `Divider` feia
+    // dos separadors seguits (revisió del pas 11).
+    var body: some View {
+        let editor = aplicacio.editor
+
+        Section {
+            Button("Mostra l'editor") { mostraEditor() }
+        }
+
+        if editor.estat == .oberta, !editor.configuracio.finestres.isEmpty {
+            Section("Finestres") {
+                // El full de confirmació surt a l'editor: no obre res fins que s'hi confirma.
+                Button("Obre-ho tot a Warp…") {
+                    mostraEditor()
+                    editor.demanaObreTot()
+                }
+                .disabled(!editor.potObrirTot)
+                ForEach(editor.configuracio.finestres) { finestra in
+                    Menu("\(finestra.nom) — \(finestra.resum)") {
+                        Button("Mostra a l'editor") {
+                            editor.lateral = .finestra(finestra.id)
+                            mostraEditor()
+                        }
+                        // El full de confirmació surt a l'editor: no obre res fins que s'hi confirma.
+                        Button("Obre a Warp…") {
+                            editor.lateral = .finestra(finestra.id)
+                            mostraEditor()
+                            editor.demanaObertura(finestra.id)
+                        }
+                        .disabled(!editor.potObrir(finestra.id))
+                    }
+                }
+            }
+        }
+
+        Section {
+            Text(aplicacio.warp.descripcio)
+            Button("Torna a llegir Warp") { Task { await aplicacio.warp.llegeixAmbFinestres() } }
+            if let avis = aplicacio.warp.avisFoto {
+                Label(avis, systemImage: "exclamationmark.triangle")
+            }
+            if let avis = aplicacio.refresc?.avis {
+                Label(avis, systemImage: "exclamationmark.triangle")
+            }
+        }
+
+        let avisos = editor.avisosMenu
+        if !avisos.isEmpty || aplicacio.arguments.carpeta != .real(Rutes.carpetaConfiguracio(inici: aplicacio.inici)) {
+            Section {
+                // Un clic obre l'editor, que diu què passa i com arreglar-ho.
+                ForEach(avisos, id: \.self) { avis in
+                    Button { mostraEditor() } label: {
+                        Label(avis.text, systemImage: "exclamationmark.triangle")
+                    }
+                }
+                switch aplicacio.arguments.carpeta {
+                case .real:
+                    EmptyView()
+                case let .prova(carpeta):
+                    Label("Configuració de prova: \(carpeta.path)", systemImage: "testtube.2")
+                case let .incorrecta(motiu):
+                    Label("Sense configuració: \(motiu)", systemImage: "exclamationmark.triangle")
+                }
+            }
+        }
+
+        Section {
+            Button("Configuració…") {
+                aplicacio.activacio.posaAlDavant()
+                openSettings()
+            }
+            .keyboardShortcut(",")
+            Button("Quant a \(WarpLaunch.nom)") {
+                aplicacio.activacio.posaAlDavant()
+                NSApp.orderFrontStandardAboutPanel(nil)
+            }
+            Button("Surt de \(WarpLaunch.nom)") { NSApp.terminate(nil) }
+                .keyboardShortcut("q")
+        }
+    }
+
+    private func mostraEditor() {
+        aplicacio.activacio.mostraEditor { openWindow(id: Aplicacio.idEditor) }
+    }
+}

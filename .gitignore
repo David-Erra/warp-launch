@@ -1,0 +1,32 @@
+# Python (prototip)
+__pycache__/
+*.pyc
+
+# Swift / SwiftPM (només a l'arrel)
+/.build/
+/.swiftpm/
+/build/
+/DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Claude Code (configuració personal, no compartida)
+/.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# Secrets i claus (el repo és públic): variables d'entorn, certificats i claus privades
+.env
+.env.*
+*.p12
+*.pfx
+*.key
+*.pem
+*.cer
+
+# Editors
+*.swp
+*~
+.vscode/
+.idea/

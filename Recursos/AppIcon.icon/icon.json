@@ -1,0 +1,35 @@
+{
+  "fill" : {
+    "automatic-gradient" : "srgb:0.29000,0.25000,0.75000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "principal.png",
+          "name" : "principal"
+        },
+        {
+          "glass" : true,
+          "image-name" : "fons.png",
+          "name" : "fons",
+          "opacity" : 0.55
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

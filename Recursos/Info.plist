@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Plantilla: scripts/build-app.sh substitueix __VERSIO__ pel contingut de VERSION. -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Warp Launch</string>
+	<key>CFBundleDisplayName</key>
+	<string>Warp Launch</string>
+	<key>CFBundleIdentifier</key>
+	<string>cat.davide.warp-launch</string>
+	<key>CFBundleExecutable</key>
+	<string>WarpLaunch</string>
+	<!-- Icona: Assets.car (macOS 26) i AppIcon.icns (reserva), si existeixen. Vegeu .claude/skills/app-icon. -->
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<!-- Categoria de l'app al Finder i a Launchpad. -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.developer-tools</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 David Erra</string>
+	<key>CFBundleShortVersionString</key>
+	<string>__VERSIO__</string>
+	<key>CFBundleVersion</key>
+	<string>__VERSIO__</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ca</string>
+	<!-- Amb ca.lproj, els menús del sistema (Edició, Finestra…) surten en català. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ca</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<!-- Pestanyes copiades a l'editor (PortaRetalls). Dades, mai text: enganxades a Warp no hi escriuen res. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>cat.davide.warp-launch.pestanyes</string>
+			<key>UTTypeDescription</key>
+			<string>Pestanyes de Warp Launch</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+	</array>
+	<!-- App de barra de menú: sense icona al Dock. -->
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>

@@ -1,0 +1,93 @@
+import Foundation
+import Observation
+import WarpLaunchCore
+
+/// La darrera lectura de Warp, en xifres, per al menú de la icona; i la lectura sencera per al full d'importació.
+/// Llegeix fora del fil principal (la base de Warp té un `busy_timeout` de 3 s). Només llegeix: no obre ni toca res de
+/// Warp ni de Claude.
+@MainActor
+@Observable
+public final class EstatWarp {
+    public enum Estat: Equatable {
+        case senseLlegir
+        case llegint
+        case llegit(ResumWarp)
+        case error(String)
+    }
+
+    public private(set) var estat: Estat = .senseLlegir
+    /// Si el que diu `descripcio` surt d'una foto que pot no ser el que hi ha obert (D19). Dura fins a la lectura següent.
+    public private(set) var avisFoto: String?
+    @ObservationIgnored private let lector: @Sendable () throws -> LecturaWarp
+    /// La lectura que s'està fent: qui torna a demanar-ne una mentrestant, l'espera i en rep el mateix resultat.
+    @ObservationIgnored private var enCurs: Task<Result<LecturaWarp, ErrorLectura>, Never>?
+    /// Després de cada lectura bona: l'app hi posa al dia els lligams de les pestanyes (`EstatSessions`).
+    @ObservationIgnored public var enLlegir: @MainActor (LecturaWarp) -> Void = { _ in }
+
+    /// Qui refresca la foto de les finestres (D19). `nil` si l'app no gestiona l'ajust de Warp (carpeta de prova).
+    @ObservationIgnored public var refresc: RefrescWarp?
+
+    /// Per què no s'ha pogut llegir Warp (sovint, el permís de Privacitat i seguretat).
+    public struct ErrorLectura: Error, Equatable, CustomStringConvertible {
+        public var description: String
+    }
+
+    /// - Parameter lector: la lectura; l'app hi passa `Lector(…).llegeix`, i les proves, una de falsa.
+    public init(lector: @escaping @Sendable () throws -> LecturaWarp) {
+        self.lector = lector
+    }
+
+    public var descripcio: String {
+        switch estat {
+        case .senseLlegir: "Warp: encara no s'ha llegit"
+        case .llegint: "Warp: llegint…"
+        case let .llegit(resum): resum.descripcio
+        case let .error(missatge): "Warp: no s'ha pogut llegir (\(missatge))"
+        }
+    }
+
+    /// Llegeix Warp. Si ja s'està llegint, espera aquella lectura i en torna el mateix resultat (també el motiu, si
+    /// falla: no s'ha de mirar `estat`, que potser encara no s'ha posat al dia). La lectura no es guarda: només les
+    /// xifres.
+    @discardableResult
+    public func llegeix() async -> Result<LecturaWarp, ErrorLectura> {
+        if let enCurs { return await enCurs.value }
+        estat = .llegint
+        let lector = self.lector
+        let tasca = Task.detached { () -> Result<LecturaWarp, ErrorLectura> in
+            do {
+                return .success(try lector())
+            } catch {
+                return .failure(ErrorLectura(description: String(describing: error)))
+            }
+        }
+        enCurs = tasca
+        let resultat = await tasca.value
+        enCurs = nil
+        switch resultat {
+        case let .success(lectura):
+            estat = .llegit(ResumWarp(lectura))
+            avisFoto = nil
+            enLlegir(lectura)
+        case let .failure(error): estat = .error(error.description)
+        }
+        return resultat
+    }
+
+    /// «Torna a llegir», importar i lligar (D19): també les finestres i els títols. Amb Warp obert, llegeix de Warp; amb
+    /// Warp tancat, l'última foto. Pot trigar fins a 30 s. La lectura de cada minut torna als terminals.
+    @discardableResult
+    public func llegeixAmbFinestres() async -> Result<LecturaWarp, ErrorLectura> {
+        guard let refresc else { return await llegeix() }
+        estat = .llegint
+        let resultat = await refresc.refresca()
+        switch resultat {
+        case let .success(lectura):
+            estat = .llegit(ResumWarp(lectura))
+            avisFoto = lectura.avisFoto
+            enLlegir(lectura)
+        case let .failure(error): estat = .error(error.description)
+        }
+        return resultat
+    }
+}

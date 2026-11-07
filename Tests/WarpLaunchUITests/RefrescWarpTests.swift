@@ -1,0 +1,297 @@
+import Foundation
+import Testing
+@testable import WarpLaunchCore
+@testable import WarpLaunchUI
+
+// D19: l'ajust de la restauració sempre desactivat, i la foto de les finestres. Tot fals: cap fitxer ni cap Warp de debò.
+
+private func foto(_ panes: [String], titol: String = "T") -> LecturaWarp {
+    LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: panes.enumerated().map { i, p in
+        PestanyaLlegida(posicio: i, titol: titol, color: nil, panes: [
+            PaneLlegit(uuid: p, carpeta: "/x", origenCarpeta: .pane, carpetaExisteix: true),
+        ])
+    })], sessionsSensePestanya: [], avisos: [])
+}
+
+private final class Mon: @unchecked Sendable {
+    private let pany = NSLock()
+    private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true)
+    private var lectura: @Sendable (Bool, Int) -> LecturaWarp = { _, _ in LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) }
+    var enEsperar: @Sendable (Int) -> Void = { _ in }
+
+    var ajust: Bool { get { pany.withLock { estat.ajust } } set { pany.withLock { estat.ajust = newValue } } }
+    var obert: Bool { get { pany.withLock { estat.obert } } set { pany.withLock { estat.obert = newValue } } }
+    var canvis: [Bool] { pany.withLock { estat.canvis } }
+    var esperes: Int { pany.withLock { estat.esperes } }
+    /// Quantes vegades més falla el pròxim `posa`.
+    var fallades: Int { get { pany.withLock { estat.fallades } } set { pany.withLock { estat.fallades = newValue } } }
+
+    /// `(ajust activat, segons passats)` → què hi ha a la base.
+    func base(_ cos: @escaping @Sendable (Bool, Int) -> LecturaWarp) { pany.withLock { lectura = cos } }
+
+    var entorn: RefrescWarp.Entorn {
+        RefrescWarp.Entorn(
+            ajust: { [self] in ajust },
+            posa: { [self] nou in
+                try pany.withLock {
+                    if estat.fallades > 0 {
+                        estat.fallades -= 1
+                        throw AjustRestauracio.Refusat(description: "acaba de canviar")
+                    }
+                    if estat.ajust != nou { estat.canvis.append(nou) }
+                    estat.ajust = nou
+                }
+            },
+            warpObert: { [self] in obert },
+            llegeixBase: { [self] in pany.withLock { lectura(estat.ajust, estat.esperes) } },
+            espera: { [self] _ in
+                let n = pany.withLock { estat.esperes += 1; return estat.esperes }
+                enEsperar(n)
+                try Task.checkCancellation()
+            })
+    }
+}
+
+/// Els terminals vius, com els diu la lectura.
+private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
+    var l = lectura
+    l.terminals = terminals.enumerated().map { TerminalViu(pid: Int32($0), carpeta: nil, pane: $1) }
+    return l
+}
+
+@MainActor
+@Suite struct RefrescWarpTests {
+    /// La foto és antiga fins que l'ajust porta 2 s activat: s'acaba tot just Warp desa, i deixa l'ajust desactivat.
+    @Test func quanWarpDesaEsDesactivaDeSeguida() async throws {
+        let mon = Mon()
+        mon.base { _, segons in amb(segons >= 2 ? foto(["aa", "bb"]) : foto(["aa"]), terminals: ["aa", "bb"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        let lectura = try await r.refresca().get()
+        #expect(lectura.finestres[0].pestanyes.count == 2)
+        #expect(lectura.avisos.isEmpty)
+        #expect(mon.canvis == [true, false])
+        #expect(mon.esperes == 2)
+        #expect(!mon.ajust)
+    }
+
+    /// Sense cap canvi i tot quadra: l'estona mínima, no els 30 s.
+    @Test func senseCanvisNomesLEstonaMinima() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        _ = try await RefrescWarp(entorn: mon.entorn).refresca().get()
+        #expect(mon.esperes == RefrescWarp.segonsMinim)
+        #expect(mon.canvis == [true, false])
+    }
+
+    /// Warp no desa: 30 s com a màxim, l'ajust acaba desactivat i la lectura ho avisa.
+    @Test func siWarpNoDesaAvisaAlsTrentaSegons() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa", "bb"]) }
+        let lectura = try await RefrescWarp(entorn: mon.entorn).refresca().get()
+        #expect(mon.esperes == RefrescWarp.segonsMaxim)
+        #expect(!mon.ajust)
+        #expect(lectura.avisos == [lectura.avisFinestresAntigues])
+    }
+
+    /// Warp tancat: es llegeix el que hi ha i no s'escriu res: amb l'ajust activat, en obrir-se restauraria les finestres.
+    @Test func ambWarpTancatLlegeixIlaFotoSenseEscriure() async throws {
+        let mon = Mon()
+        mon.obert = false
+        mon.base { _, _ in foto(["aa"]) }
+        let lectura = try await RefrescWarp(entorn: mon.entorn).refresca().get()
+        #expect(lectura.finestres.count == 1)
+        #expect(lectura.avisFoto == LecturaWarp.avisFotoWarpTancat)
+        #expect(lectura.avisos == [LecturaWarp.avisFotoWarpTancat])
+        #expect(mon.canvis.isEmpty && mon.esperes == 0)
+    }
+
+    /// Warp es tanca a mig refresc: es desactiva de seguida, sense esperar.
+    @Test func siWarpEsTancaAMigRefrescEsDesactiva() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa", "bb"]) }
+        mon.enEsperar = { [unowned mon] n in if n == 3 { mon.obert = false } }
+        let lectura = try await RefrescWarp(entorn: mon.entorn).refresca().get()
+        #expect(mon.esperes == 3 && !mon.ajust)
+        #expect(lectura.avisFoto == LecturaWarp.avisFotoWarpTancat)
+    }
+
+    /// Dos refrescos alhora són un de sol.
+    @Test func dosRefrescosAlhoraSonUnDeSol() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        async let a = r.refresca()
+        async let b = r.refresca()
+        _ = await (a, b)
+        #expect(mon.canvis == [true, false])
+    }
+
+    /// `vigila`: fora d'un refresc l'ajust es torna a desactivar (app penjada, núvol de Warp o a mà).
+    @Test func laVigilanciaDesactivaLAjust() {
+        let mon = Mon()
+        mon.ajust = true
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(!mon.ajust && r.avis == nil)
+        r.vigila()
+        #expect(mon.canvis == [false])
+    }
+
+    /// Durant un refresc no ha de desactivar l'ajust.
+    @Test func laVigilanciaNoToquaUnRefrescEnCurs() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let continua = AsyncStream<Void>.makeStream()
+        let comenca = AsyncStream<Void>.makeStream()
+        var entorn = mon.entorn
+        let primera = entorn.espera
+        entorn.espera = { d in
+            comenca.continuation.yield()
+            for await _ in continua.stream { break }
+            try await primera(d)
+        }
+        let bloquejat = RefrescWarp(entorn: entorn)
+        let tasca = Task { await bloquejat.refresca() }
+        for await _ in comenca.stream { break }
+        #expect(mon.ajust)
+        bloquejat.vigila()
+        #expect(mon.ajust, "el refresc és obert")
+        continua.continuation.finish()
+        _ = await tasca.value
+        #expect(!mon.ajust)
+    }
+
+    /// `tanca`, abans de sortir o d'engegar Warp: en acabar la crida ja és desactivat, sense esperar el refresc.
+    @Test func tancarDesactivaAlMoment() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa", "bb"]) }
+        let comenca = AsyncStream<Void>.makeStream()
+        var entorn = mon.entorn
+        let primera = entorn.espera
+        entorn.espera = { d in
+            comenca.continuation.yield()
+            try await primera(d)
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let r = RefrescWarp(entorn: entorn)
+        let tasca = Task { await r.refresca() }
+        for await _ in comenca.stream { break }
+        #expect(mon.ajust)
+        r.tanca()
+        #expect(!mon.ajust)
+        _ = await tasca.value
+        #expect(!mon.ajust)
+        #expect(mon.esperes < RefrescWarp.segonsMaxim)
+    }
+
+    /// Warp ha escrit el fitxer just abans: es torna a provar.
+    @Test func desactivarEsTornaAProvar() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.fallades = 2
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.tanca()
+        #expect(!mon.ajust && r.avis == nil)
+    }
+
+    /// Si no es pot desactivar, el menú ho ha de dir; i la vigilància ho torna a provar.
+    @Test func siNoEsPotDesactivarHoDiu() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.fallades = 3
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.tanca()
+        #expect(mon.ajust)
+        #expect(r.avis?.contains("No s'ha pogut desactivar") == true)
+        r.vigila()
+        #expect(!mon.ajust && r.avis == nil)
+    }
+
+    /// Si no es pot activar, es llegeix el que hi ha, sense esperar.
+    @Test func siNoEsPotActivarLlegeixElQueHiHa() async throws {
+        let mon = Mon()
+        mon.fallades = 1
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa", "bb"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        let lectura = try await r.refresca().get()
+        #expect(lectura.finestres.count == 1)
+        #expect(lectura.avisFoto == lectura.avisFinestresAntigues, "encara que no es pugui refrescar, ha de dir que és antiga")
+        #expect(mon.esperes == 0 && !mon.ajust)
+        #expect(r.avis?.contains("No es pot activar") == true)
+    }
+
+    /// Sense poder llegir la base (sense permís), activar l'ajust no serviria de res: 0 canvis, i l'error arriba.
+    @Test func senseLlegirLaBaseNoActiva() async {
+        let mon = Mon()
+        var entorn = mon.entorn
+        entorn.llegeixBase = { throw ErrorLectura.macOSNoDeixaLlegir }
+        let resultat = await RefrescWarp(entorn: entorn).refresca()
+        guard case .failure = resultat else { Issue.record("havia de fallar"); return }
+        #expect(mon.canvis.isEmpty && mon.esperes == 0)
+    }
+
+    /// Una alerta pot aturar la sortida: mentrestant, cap refresc activa l'ajust; si es cancel·la, tornen.
+    @Test func enAturarCapRefrescActiva() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.atura()
+        _ = await r.refresca()
+        #expect(mon.canvis.isEmpty)
+        r.repren()
+        _ = await r.refresca()
+        #expect(mon.canvis == [true, false])
+    }
+
+    /// `tanca` mentre el cicle llegeix la base d'abans: no ha d'activar l'ajust després.
+    @Test func tancarAbansDActivarNoActiva() async throws {
+        let mon = Mon()
+        let comenca = AsyncStream<Void>.makeStream()
+        let continua = AsyncStream<Void>.makeStream()
+        var entorn = mon.entorn
+        entorn.llegeixBase = {
+            comenca.continuation.yield()
+            let semafor = DispatchSemaphore(value: 0)
+            Task { for await _ in continua.stream { break }; semafor.signal() }
+            semafor.wait()
+            return amb(foto(["aa"]), terminals: ["aa"])
+        }
+        let r = RefrescWarp(entorn: entorn)
+        let tasca = Task { await r.refresca() }
+        for await _ in comenca.stream { break }
+        r.tanca()
+        continua.continuation.finish()
+        _ = await tasca.value
+        #expect(mon.canvis.isEmpty)
+    }
+
+    /// El menú diu que és una foto, i ho deixa de dir amb la lectura següent.
+    @Test func elMenuDiuQueEsUnaFoto() async throws {
+        let mon = Mon()
+        mon.obert = false
+        mon.base { _, _ in foto(["aa"]) }
+        let estat = EstatWarp(lector: { LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) })
+        estat.refresc = RefrescWarp(entorn: mon.entorn)
+        await estat.llegeixAmbFinestres()
+        #expect(estat.avisFoto == LecturaWarp.avisFotoWarpTancat)
+        await estat.llegeix()
+        #expect(estat.avisFoto == nil)
+    }
+
+    /// `EstatWarp`: sense refresc, llegeix com sempre; amb, en fa servir la lectura i avisa qui escolta.
+    @Test func estatWarpLlegeixAmbFinestres() async throws {
+        let senseRefresc = EstatWarp(lector: { amb(foto(["zz"]), terminals: []) })
+        #expect(try await senseRefresc.llegeixAmbFinestres().get().finestres[0].pestanyes[0].panes[0].uuid == "zz")
+
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let estat = EstatWarp(lector: { amb(foto(["zz"]), terminals: []) })
+        estat.refresc = RefrescWarp(entorn: mon.entorn)
+        var escoltades = 0
+        estat.enLlegir = { _ in escoltades += 1 }
+        #expect(try await estat.llegeixAmbFinestres().get().finestres[0].pestanyes[0].panes[0].uuid == "aa")
+        #expect(escoltades == 1)
+        #expect(estat.descripcio.hasPrefix("Warp: 1 finestra · 1 pestanya"))
+    }
+}
+

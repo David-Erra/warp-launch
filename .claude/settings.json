@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(~/.claude/sessions/**)",
+      "Edit(~/.claude/**/*.jsonl)",
+      "Edit(~/.claude/*.json)",
+      "Edit(~/.claude/CLAUDE.md)",
+      "Edit(~/.claude/hooks/**)",
+      "Edit(~/.claude/skills/**)",
+      "Edit(~/.claude/plugins/**)",
+      "Edit(~/.claude.json)",
+      "Edit(~/.warp/**)",
+      "Edit(~/Library/Group Containers/2BBY89MBSN.dev.warp/**)",
+      "Edit(~/Library/Application Support/dev.warp.Warp-Stable/**)",
+      "Edit(~/Library/Preferences/dev.warp.Warp-Stable.plist)",
+      "Edit(~/Library/LaunchAgents/**)",
+      "Edit(~/.config/espai-warp/**)",
+      "Edit(~/.config/warp-launch/**)",
+      "Bash(killall *)",
+      "Bash(pkill *)",
+      "Bash(osascript *)",
+      "Bash(launchctl bootstrap *)",
+      "Bash(launchctl load *)",
+      "Bash(launchctl enable *)",
+      "Bash(launchctl kickstart *)",
+      "Bash(claude agents *)",
+      "Bash(prototip/espai.py *)",
+      "Bash(./prototip/espai.py *)",
+      "Bash(python3 prototip/espai.py *)"
+    ]
+  }
+}

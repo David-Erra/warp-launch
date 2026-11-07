@@ -1,0 +1,1428 @@
+# Disseny de la fase 2 — l'editor
+
+Pla de la fase 2 (R2, R3, R4, R11; i el lloc de R12), del 03/11/2026. Surt de tres propostes (interfície,
+format de configuració i arquitectura), de la lectura crítica de la skill `mac-design` i d'una crítica del pla
+contra `CLAUDE.md`, l'especificació i el codi. Les preguntes obertes són al final; les decisions d'en David,
+a `especificacio.md`.
+
+Normes de disseny: `.claude/skills/mac-design/`. **Aquest document mana sobre la skill.**
+
+## 1. Interfície
+
+### Disposició
+
+Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb barra lateral i llista, més
+`.inspector` a la dreta.
+
+- **Barra lateral** (un nivell):
+  - «Per revisar» (`exclamationmark.triangle`, amb el nombre), només si hi ha avisos. Amb la lectura del
+    03/11/2026 en serien 16: 11 pestanyes a `~` i 5 amb una carpeta que ja no existeix.
+  - «Finestres»: una fila per finestra de Warp (`macwindow` i el nombre de pestanyes).
+- **Llista de pestanyes** (selecció múltiple). Cada fila: el nom, i a sota la carpeta abreujada o l'avís més greu.
+  A la dreta, un resum: «Opus · Molt alt · Ultracode», o «Només terminal».
+- **Inspector** (`Form` agrupat):
+  - **Pestanya:** nom i carpeta (amb «Tria…»).
+  - **Claude Code:** «Obre Claude Code en aquesta pestanya» (si està apagat, la resta queda desactivada), model,
+    esforç, ultracode, continua la conversa, nom fix de la sessió, salta els permisos i mode de permisos.
+    Les opcions que l'editor no entén surten en només lectura.
+  - **Ordre:** la línia de comanda que s'executarà, seleccionable, amb «Copia l'ordre».
+  - Amb diverses pestanyes seleccionades, només el bloc Claude, amb «Valors diversos».
+  - Sense cap pestanya seleccionada, la finestra: nom, xifres i «Obre a Warp…» (desactivat fins a la fase 3).
+- **Títol:** el nom de la finestra seleccionada. **Subtítol:** «23 pestanyes · 14 amb Claude · 2 avisos».
+- **Estats buits** (`ContentUnavailableView`):
+  - Sense configuració: «Importa de Warp…» i «Comença en blanc». No es llegeix ni s'escriu res fins al clic.
+  - Finestra sense pestanyes: «Nova pestanya…» i, si n'hi ha al porta-retalls, «Enganxa les pestanyes». El panell
+    no rep pestanyes arrossegades (no hi ha cap llista d'on treure-les, i una finestra buida no s'obre arrossegant):
+    s'hi porten deixant-les anar a la seva fila de la barra lateral, o amb «Mou a ▸».
+  - Cap finestra, i «Res per revisar».
+- **Cap focus en obrir** l'editor ni els fulls (modificador propi; `.noInitialFocus()` és de la plantilla de BAMA).
+
+### Arrossegar
+
+- Es pot arrossegar una pestanya, o diverses, per reordenar-les dins de la finestra o per moure-les a una altra
+  finestra deixant-les anar sobre la seva fila de la barra lateral (van al final).
+  - **Les dades no sempre arriben a la fila** (prova 7b): la càrrega del proveïdor es cancel·la (NSItemProvider -1000,
+    Cocoa 3072) i l'acció arriba amb 0 pestanyes. Llavors es mouen les de l'última pulsació, amb tres condicions:
+    - quines: les files per a les quals SwiftUI demana el proveïdor (`.itemProvider` → `comencaArrossegament`), que en
+      una pulsació són la fila premuda i cada fila arrossegada, en pocs ms (`Editor.pestanyesArrossegades`). No la
+      selecció: amb ⇧ o ⌘, AppKit la canvia abans d'arrossegar i SwiftUI encara no ho sap (binari, revisió);
+    - quan: es fixen mentre l'arrossegament passa per la fila (`onDropSessionUpdated` → `fixaPestanyesArrossegades`),
+      perquè un clic entre deixar anar i l'acció (~0,3 s) no les canviï;
+    - si: l'arrossegament és d'aquesta app (`DropSession.localSession`), en porta les mateixes
+      (`itemsCount`) i no s'arrossega una finestra. Si no, no es mou res. A la llista no es fan servir: la seva acció
+      no diu d'on ve l'arrossegament (i allà les dades arriben).
+- **Reordenar les finestres** (0.13.0, demanat per en David): arrossegant-ne la fila a la barra lateral (`onMove` al
+  `ForEach` de «Finestres», `Editor.reordenaFinestres` → `Configuracio.mouFinestres`), o amb «Mou amunt» i «Mou avall»
+  al menú contextual de la fila. Cada moviment és un sol pas de Desfés («Mou la finestra»); la finestra que es veu,
+  «Per revisar» i la selecció no canvien.
+  - La barra lateral i la llista de pestanyes són totes dues `List` amb `onMove`: perquè les posicions de l'una no
+    moguin res de l'altra, la fila d'una finestra porta un `.itemProvider` amb un `NSItemProvider` buit (no porta cap
+    dada) que posa la marca `Editor.arrossegantFinestres`. `reordenaFinestres` només mou amb la marca; `reordena`
+    (pestanyes) i obrir una finestra arrossegant, només sense. El `.itemProvider` d'una pestanya la treu.
+- **Obrir una finestra arrossegant (pas 10b),** com les carpetes del Finder: aturar-se 0,5 s sobre la fila d'una altra
+  finestra amb pestanyes (també des de «Per revisar») la mostra, i s'hi poden deixar anar en una posició concreta de
+  la llista. La seva fila també les accepta (van al final). Passar-hi per sobre sense aturar-s'hi no obre res.
+  - Una finestra buida no s'obre: només hi ha un lloc on posar-les (la seva fila), i a la prova 7, en obrir-la, la
+    llista d'origen desapareixia de la pantalla i no s'acceptava res enlloc (la pestanya tornava al seu lloc).
+  - Obrir no és cap pas de Desfés. Deixar-les anar sí, un de sol, que torna a la finestra i a la selecció d'abans
+    d'obrir-la. Si es cancel·la (Esc, o es deixen fora), es queda la finestra oberta i no canvia res.
+  - La `List` no ho fa sola (docs/fets-verificats.md): cada fila de finestra té `onDropSessionUpdated` (per fora de
+    `dropDestination`), i `Molla` hi engega un `Timer` de 50 ms als modes comuns i `.eventTracking`. Quan han passat
+    0,5 s, obre la finestra (`Editor.obreArrossegant`) si el cursor encara és dins de la fila (la `NSTableRowView`
+    que la conté, a la pantalla) i el botó encara és premut (`NSEvent.pressedMouseButtons`). Una altra fila torna a
+    començar el compte; sortir-ne, amollar o deixar-les anar l'atura.
+  - **Esc a mig arrossegament (pas 11).** SwiftUI no avisa la fila, i el cursor hi continua: abans del pas 11, la
+    finestra s'obria igualment. Ara hi ha dos senyals, sense comprovar a l'app (prova 8):
+    - si la fila deixa de ser la destinació d'AppKit (`NSTableRowView.isTargetForDropOperation`) després d'haver-ho
+      estat, no s'obre mentre duri. No s'atura: si a la vora de la fila AppKit proposa inserir entre files, en tornar
+      al mig (destinació un altre cop, després de més de 0,1 s) el compte torna a començar;
+    - si arriba un Esc a l'app (un monitor local de teclat, només mentre compta), s'atura.
+    Si no arriba cap dels dos, fa el mateix que abans. Cada canvi de la molla va al registre (`.notice`): compta, és o
+    deixa de ser la destinació, s'atura (amb el motiu) i obre.
+    - A la prova del pas 11, en David diu que amb Esc ja no s'obre. Però el senyal d'AppKit no hi arriba mai
+      («destinació vista false» als 7 comptes, també als 2 que obren), i el registre no té cap «s'atura (Esc)».
+      Quin camí l'atura està per veure: es mira a la prova 8, amb el registre de la 0.14.1. **Pla B**, si a la prova 8 no arriba cap senyal: aturar
+    la molla si fa més de 0,2 s que no arriba cap `dropConfiguration` (el registre en diu l'últim). No s'aplica ara:
+    si SwiftUI no el crida amb el cursor quiet, la molla no obriria mai.
+  - El retard és fix, el valor per defecte de macOS: la preferència del sistema (`com.apple.springing.delay`) no es
+    llegeix, perquè la prova de guarda no deixa fer servir `UserDefaults`.
+  - **Les posicions de l'altra finestra no poden moure res.** La `List` recorda les files arrossegades per la posició
+    que tenien (binari de SwiftUI): si la mateixa llista passés a mostrar una altra finestra, en deixar-les anar
+    `onMove` rebria posicions de la primera i mouria pestanyes que en David no ha tocat (o l'app petaria). Per això:
+    - cada cop que una finestra s'obre arrossegant, la llista de pestanyes és una altra (`.id(editor.generacioLlista)`):
+      com que no és la d'on surt l'arrossegament, SwiftUI hi fa servir el camí d'inserir,
+      `ForEach(...).dropDestination(for: PestanyaArrossegada.self) { arrossegades, index in }` (posat abans d'`onMove`),
+      i `Editor.deixaAnar(_:a:index:)` mou pels id, a la posició de la llista que es veu. Un clic no canvia la llista;
+    - i, a més, `Editor.reordena` no fa res mentre la finestra que es veu s'ha obert arrossegant (`abansDObrir`). Ho
+      treu el `.itemProvider` de la fila (un arrossegament nou), qualsevol canvi, Desfés o carregar. Ho prova
+      `unOnMoveDespresDObrirNoMouRes`.
+  - El cursor porta «+» en deixar-les a la llista de la finestra oberta: SwiftUI hi demana copiar (camí d'inserir).
+    L'editor sempre les mou.
+- Com (pas 10, comprovat a l'SDK de les CLT de macOS 27.2 el 04/11/2026):
+  - reordenar: `onMove` al `ForEach` de la llista d'una finestra. Les posicions són les de
+    `move(fromOffsets:toOffset:)`, que són les de `Configuracio.mouPestanyes` (una prova ho compara en 186 casos);
+  - cap a la barra lateral: `.itemProvider` a cada fila (conviu amb `onMove`, segons el binari de SwiftUI) i
+    `dropDestination(for:action:)` amb `DropSession` a la fila de cada finestra, sense `isEnabled` (prova 7b).
+    `dropConfiguration` decideix en cada arrossegament (`Editor.acceptaPestanyes`): `.move`, o `.forbidden` a la fila
+    de la finestra que es veu, tret que s'hagi obert arrossegant; `deixaAnar` ho torna a comprovar. El cursor no hi
+    porta el signe de prohibit (SwiftUI hi demana NSDragOperationNone);
+  - `.dragConfiguration`: dins de l'app, copiar i moure (la destinació sempre demana moure); cap a una altra app, res.
+    No està comprovat que SwiftUI l'apliqui a l'arrossegament d'una fila de `List` (l'SDK només en dona l'exemple
+    amb `draggable` i `dragContainer`): és una barrera més, no l'única;
+  - pla B, si a la prova 6 no es mouen totes les triades o `.itemProvider` trenca `onMove`: `dragContainer`,
+    `draggable(containerItemID:)` i `dragContainerSelection` (macOS 26). `reorderable()` i `reorderContainer`
+    són només de macOS 27.
+- El contingut arrossegat és un tipus propi (`cat.davide.warp-launch.pestanyes`, el mateix del porta-retalls, declarat
+  a `Info.plist` i conforme només a `public.data`), **mai text**:
+  si es deixés anar a Warp, hi enganxaria `claude --dangerously-skip-permissions …` al prompt.
+  - Amb visibilitat `.ownProcess` (a la fila, `NSItemProvider.registerDataRepresentation(…, visibility: .ownProcess)`):
+    cap altra app no el veu. `PestanyaArrossegada` només el llegeix (`DataRepresentation(importedContentType:)`): no
+    l'exporta mai, ni dins de l'app.
+  - La finestra del JSON porta la marca de l'execució de l'app (`PestanyaArrossegada.aquestProces`): el que arriba
+    d'una altra execució, que pot tenir els mateixos id, no mou res.
+- Res no surt de l'app: ni cap al Finder, ni `ShareLink`. Ho vigila la prova de guarda (secció 3).
+- Cada moviment és un sol pas de Desfés. Alternativa: «Mou a ▸», al menú contextual i a Pestanya › Mou a ▸.
+- A «Per revisar» no es reordena (cada secció és una part d'una finestra), però sí que es pot deixar anar a una fila,
+  obrir una finestra arrossegant i fer servir «Mou a ▸».
+
+### Ordres
+
+| Acció | Menú | Drecera | També |
+|---|---|---|---|
+| Nova finestra | Fitxer | ⌘N | fons de la barra lateral |
+| Nova pestanya… (demana la carpeta) | Fitxer | ⌘T | `plus` a la barra d'eines, menú contextual |
+| Duplica la pestanya / les pestanyes / la finestra (sense nom fix) | Fitxer | ⌘D | menú contextual |
+| Canvia el nom | Fitxer | cap al menú; Retorn a la llista i a la barra lateral | menú contextual |
+| Importa de Warp… / Torna a importar-ho tot de Warp… | Fitxer | — | estat buit |
+| Mostra el fitxer al Finder (el fitxer, o la carpeta si encara no n'hi ha) | Fitxer | — | Configuració |
+| Obre la finestra a Warp… | Fitxer | **cap** | desactivat fins a la fase 3, sempre amb confirmació |
+| Tanca / Tanca-ho tot | Fitxer | ⌘W / ⌥⌘W | les del sistema |
+| Desfés / Refés, amb el nom de l'acció | Edició | ⌘Z / ⇧⌘Z | — |
+| Retalla / Copia / Enganxa (pestanyes) | Edició | ⌘X / ⌘C / ⌘V a la llista; ⌘V també a la barra lateral | menú contextual; «Enganxa les pestanyes» a la fila de la finestra i a la finestra buida |
+| Elimina, sense confirmació | Edició | ⌫ | menú contextual |
+| Barra lateral, inspector | Visualització | ⌃⌘S, ⌥⌘I | botó de l'inspector |
+| Mou a ▸ («Cap altra finestra» si no n'hi ha) | Pestanya | — | menú contextual |
+| Activa / Desactiva Claude | Pestanya | — | menú contextual |
+| Copia l'ordre / Copia les ordres (text) | Pestanya | — | menú contextual i inspector |
+| Mou amunt / Mou avall (finestra) | — | cap | menú contextual de la fila; o arrossegar-la |
+| Configuració… / Surt de Warp Launch | Warp Launch | ⌘, / ⌘Q | — |
+
+- Una ordre que no s'aplica surt desactivada al menú i amagada al menú contextual. L'editor arriba als menús amb
+  `FocusedValue`, i la columna que té el focus (`columnaEditor`: la barra lateral o la llista) decideix què fan
+  Duplica i «Canvia el nom».
+- Cap ordre que canvia la configuració s'aplica amb el full d'importació o el diàleg de carpetes oberts.
+- ⌘D o «Mou a ▸» amb un nom a mig escriure: el nom i l'ordre són un sol pas de Desfés.
+- ⌘S no fa res: l'app desa sola, i no hi ha cap «Desa». El grup del sistema `.saveItem` no es toca, perquè també
+  porta «Tanca» i «Tanca-ho tot» (substituir-lo les treia, fins a la 0.13.0).
+
+### Menú de la icona de la barra de menú
+
+`MenuBarExtra` d'estil menú, amb un SF Symbol en mode plantilla, sempre visible.
+
+1. «Mostra l'editor».
+2. «Finestres»: una línia per finestra («empresa — 23 pestanyes, 14 amb Claude»). Obre l'editor amb aquella
+   finestra seleccionada. **Lloc de R12:** a la fase 3, cada finestra serà un submenú amb «Obre a Warp…».
+3. Què hi ha obert a Warp, i «Torna a llegir Warp».
+4. Si cal, els avisos: «La configuració té errors», «El fitxer ha canviat fora de l'app» o «No s'ha pogut desar».
+   Cada un és un botó que obre l'editor, que diu què passa i com arreglar-ho. Les pestanyes amb avisos no hi surten
+   (decisió d'en David, 04/11/2026). També «Configuració de prova: …» o «Sense configuració: …».
+5. «Configuració…», «Quant a Warp Launch» i «Surt de Warp Launch» (**només** tanca Warp Launch).
+
+Cada bloc és una `Section` sense títol (excepte «Finestres»), sense `Divider` solts: una `Section` amb títol seguida
+d'un `Divider` feia dos separadors seguits.
+
+### Dock i activació (R11)
+
+- `LSUIElement`. Quan es mostra l'editor o la Configuració, l'app passa a `.regular` (Dock, ⌘⇥ i menú principal)
+  i s'activa; quan s'amaguen totes dues, torna a `.accessory`.
+- **Tancar l'editor l'amaga** (`orderOut`), no el destrueix. Dues raons:
+  - BAMA va veure que tancar i tornar a obrir una `Window` de SwiftUI i després canviar l'estat bloquejava
+    AppKit (fet de BAMA, no verificat aquí: es comprova a la prova 1);
+  - la pila de Desfés és de la finestra, i amb `orderOut` no es perd. Si l'editor es destruís, una finestra
+    esborrada amb ⌫ ja seria a disc al cap d'1 s i no es podria desfer.
+- En arrencar, SwiftUI obre l'editor sol (és la primera escena). L'app passa a `.regular` a
+  `applicationWillFinishLaunching`, abans que Launch Services l'activi: quan la vista de l'editor arriba a la
+  finestra, encara no és visible (fets-verificats, «SwiftUI i AppKit»), i si s'esperava a veure-la, l'app es quedava
+  sense Dock, sense ⌘⇥ i sense menú principal (revisió del pas 4).
+- Obrir l'app des d'Apps o del Finder quan ja és oberta mostra l'editor (`applicationShouldHandleReopen`).
+- `applicationShouldTerminateAfterLastWindowClosed` retorna `false`.
+- `ca.lproj` al bundle, perquè els menús del sistema surtin en català.
+- Sense menú del Dock, dreceres globals, notificacions ni `@AppStorage`. La selecció la guarda l'`Editor`.
+
+### Avisos
+
+Els calcula una funció pura del core (`Validacio`). Sempre amb icona i text, mai només color. Tres gravetats: **info**
+(només a l'inspector), **avís** (triangle a la fila) i **error** (la pestanya no s'obriria com diu la configuració:
+no hi ha ordre, o Claude s'aturaria). El CLI en mostra els avisos i els errors.
+
+| Avís | Fila | Inspector |
+|---|---|---|
+| La carpeta no existeix | triangle i text | sota Carpeta, amb «Tria una carpeta…» |
+| La carpeta és `~` | «Carpeta d'inici: probablement Warp l'ha perduda» | el mateix |
+| Ultracode activat | — | «Comprova que el model l'admet i que tens els dynamic workflows activats» |
+| Ultracode amb un esforç que no és «Molt alt» i `--settings` com a ruta de fitxer | triangle | no es pot generar l'ordre |
+| «Salta els permisos» i un mode de permisos | triangle | «Amb "Salta els permisos", Claude no fa cas del mode» |
+| Un mode de permisos que Claude no té (2.1.318: `acceptEdits`, `auto`, `bypassPermissions`, `manual`, `dontAsk`, `plan`) | triangle | «Claude no arrencarà» |
+| `--settings` que va de `{` a `}` però no és JSON vàlid (gramàtica estricta, com `JSON.parse`) | triangle | «Claude no arrencarà: els settings no són JSON vàlid» |
+| Una opció que no és a la taula de Claude Code 2.1.318 | triangle | «Claude potser no l'entén»; si és d'una versió nova, cal posar al dia la taula. Si la segueix un text, l'avís diu que potser és el primer missatge |
+| Les altres opcions porten una opció amb camp propi, o un text que no és de cap opció | triangle | no es pot generar l'ordre |
+| Una opció d'un sol ús (`-w`, `--fork-session`, `--from-pr`, `--teleport`, `--rewind-files`…) | triangle | «es tornaria a fer a cada obertura» |
+| Noms de finestra repetits (sense distingir majúscules) | triangle | text |
+| Esforç desconegut | triangle | «Claude el deixa córrer i fa servir el de per defecte» (2.1.318 només avisa) |
+| Claude apagat en una pestanya importada sense Claude, amb la carpeta ja vàlida | — | botó «Activa Claude» (no s'activa sol: decisió d'en David). La configuració no diu quines pestanyes són importades: surt a totes les que no tenen Claude i tenen una carpeta vàlida |
+
+### Desviacions de mac-design
+
+| Regla | Què fem | Per què |
+|---|---|---|
+| 7, 8 (entrades: panell de captura, drecera global) | Només la icona de la barra de menú i obrir des d'Apps | No és cap requisit, i una drecera global pot xocar amb Warp |
+| 25 (UI optimista, sense confirmacions) | Editar: a l'instant, amb Desfés. Obrir Warp o Claude: sempre confirmació amb xifres | Obrir sessions no es pot desfer |
+| 35, 74 (arrossegar cap a fora, `ShareLink`) | Només dins de l'app | No exportar carpetes ni opcions de permisos |
+| 56 (revisar la captura) | Revisió visual feta per en David, o amb el seu OK | Regla 4 de CLAUDE.md |
+| 75 (tornar a obrir les finestres en rellançar) | L'editor no s'obre sol (`restorationBehavior(.disabled)`) | A la fase 3, l'app arrencarà en iniciar sessió |
+| 76 (TipKit) | Cap consell ni presentació | Una sola persona fa servir l'app |
+| `InspectorCommands()`, ⌃⌘I (SKILL.md, toolbars.md) | Ordre pròpia «Mostra/Amaga l'inspector», amb ⌥⌘I (la de Pages, Keynote i Numbers) | A macOS 27.2, ⌃⌘I no feia res amb cap de les dues (proves 3 i 4); el clic al menú, sí |
+| 68 (cada ordre també a la barra de menús) | «Mou amunt» i «Mou avall» de la finestra només al menú contextual i arrossegant | Un menú «Finestra» propi xocaria amb el del sistema, que en català es diu igual |
+
+## 2. Configuració
+
+### Fitxers (`~/.config/warp-launch/`)
+
+- `configuracio.json`: la configuració. És d'en David.
+- `estat.json`: el que l'app sap de Warp i de Claude (el pane i la sessió de cada pestanya). És de l'app.
+- `copies/configuracio-AAAAMMDD-HHMMSS-<motiu>[-N].json`: les 20 últimes còpies, amb els permisos del fitxer.
+  Només compten els fitxers amb aquest nom exacte: la resta de `copies/` (fitxers, carpetes o enllaços d'en David)
+  no es toca mai.
+
+### Format v1
+
+```json
+{
+  "versio" : 1,
+  "generador" : "Warp Launch 0.7.0",
+  "plantilla" : { "activat" : true, "continua" : true, "esforc" : "xhigh", "saltaPermisos" : true, "ultracode" : true },
+  "finestres" : [ {
+    "id" : "5C0E8A52-1F3B-4C9E-9A7D-0B6F2E4D8A11",
+    "nom" : "empresa",
+    "pestanyes" : [
+      { "id" : "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62", "titol" : "Botiga",
+        "carpeta" : "/Users/prova/GitHub/empresa/botiga",
+        "claude" : { "activat" : true, "continua" : true, "esforc" : "xhigh", "saltaPermisos" : true, "ultracode" : true } },
+      { "id" : "7A8B9C0D-…", "titol" : "Web Host", "carpeta" : "/Users/prova",
+        "claude" : { "activat" : false, "continua" : true, "esforc" : "xhigh", "saltaPermisos" : true, "ultracode" : true } }
+    ] } ]
+}
+```
+
+- **`id` propis** (UUID), perquè Warp renumera els seus cada vegada que desa.
+- **Carpeta absoluta i canònica.** Si s'escriu `~/…` a mà, s'accepta i es normalitza.
+- **Esforç i ultracode per separat.** `--effort ultracode` (i `"esforc": "ultracode"` escrit a mà) es desa com a
+  `xhigh` més `ultracode`. Si `--settings` és JSON i porta `"ultracode": true`, la clau passa al camp `ultracode`.
+  Un `false` s'hi queda si la pestanya no té ultracode: apaga el de la configuració de Claude d'en David.
+- **Continuar:** només es desa la intenció (`continua`). Com es continua (D7) ho decideix qui llança, i per
+  això D7 no ha canviat el format: es reprèn la conversa de la pestanya (`--resume <id>`) si l'app la sap, i si no,
+  se'n comença una de nova. **Mai `--continue`** (D7), tampoc a l'ordre que es mostra i es copia (D15, 0.15.0).
+- `controlRemot` té camp propi. La resta d'opcions que l'editor no entén van a `altres`, en ordre i literals.
+  `-c`, `-r` i `--session-id` no es desen: són de la sessió, no de la pestanya. El primer missatge tampoc:
+  s'enviaria de nou a cada obertura.
+  - `altres` només porta opcions senceres, amb els seus valors. Si hi ha una opció amb camp propi o un text que
+    no és de cap opció (un JSON editat a mà), no es pot generar l'ordre.
+- Els textos fets només d'espais són com si no hi fossin.
+- **Valors per defecte segurs** si el fitxer s'ha editat a mà:
+  - si falta el bloc `claude`, la pestanya és només terminal (`activat: false`) i surt l'avís «Claude sense configurar»;
+  - si el bloc és parcial: `saltaPermisos` false, `ultracode` false, `continua` true (R4);
+  - **cap descodificació no dona `saltaPermisos: true` si el JSON no ho diu.** La `plantilla` només s'aplica
+    quan l'app crea o importa una pestanya, i es copia (si després canvia, les pestanyes no canvien).
+- Les claus buides no s'escriuen (excepte `controlRemot: ""`, que vol dir sense nom). JSON amb claus ordenades i
+  sense escapar les barres, per poder-lo llegir i comparar. El que s'escriu ja és la forma canònica: tornar-lo a
+  llegir i a escriure dona els mateixos bytes.
+- **Una clau repetida dins d'un objecte és un error.** JSONSerialization i JSONDecoder es queden amb la primera, i
+  `jq` o Python amb l'última: en David podria veure `"saltaPermisos": false` amb `jq` i l'app llegir-hi `true`.
+- Només UTF-8 (amb BOM o sense). Una carpeta que no és absoluta, o que falta, dona un avís.
+- Una `versio` més nova que la de l'app: l'editor obre en només lectura. Tot canvi de format puja la versió,
+  porta una migració que no perd dades, i necessita l'OK d'en David (regla 11).
+
+### Desar
+
+- Desat automàtic 1 s després de l'últim canvi, i a l'instant en amagar l'editor o sortir.
+- Escriptura atòmica, en aquest ordre (`MagatzemConfiguracio.desa`):
+  1. Es torna a llegir el JSON nou per comprovar-lo.
+  2. Si el fitxer és només de lectura (permisos o bloquejat al Finder), no es fa res.
+  3. Fitxer temporal a la mateixa carpeta, amb els permisos del fitxer, i `fsync`.
+  4. Còpia, si cal.
+  5. `rename` sobre el fitxer (o sobre la destinació, si és un enllaç simbòlic, que es manté).
+  6. Només llavors s'esborren les còpies que sobren: un desat que falla no esborra mai cap còpia.
+- **Còpia** al primer desat de cada sessió de l'app, abans d'esborrar una finestra amb pestanyes i abans de tornar
+  a importar. També (motiu `fora`) quan el fitxer del disc no és com l'escriuria l'app (editat a mà, amb claus
+  desconegudes o sense id), perquè en desar se'n perdria alguna cosa. Si la còpia falla, no s'escriu. Si la còpia
+  més recent ja té els mateixos bytes, no se'n fa cap altra (els reintents no omplen `copies/`).
+- Un fitxer que no es pot llegir, o un enllaç trencat, és un error i no «no hi ha configuració»: si no, l'app en
+  crearia una de nova al damunt.
+- **Canvis fets fora de l'app:** abans de desar, es comparen els bytes del disc amb els últims que s'han llegit.
+  Si no coincideixen, no s'escriu i surt un bàner: «El fitxer ha canviat fora de l'app» amb «Torna a carregar».
+- Fitxer malmès: l'editor obre en només lectura i diu la línia i la columna.
+- **Llegir no escriu mai res,** ni crea la carpeta.
+- Si no es pot desar, ho diuen un bàner amb «Torna-ho a provar», el subtítol i el menú de la icona. Sortir amb
+  canvis sense desar és l'únic cas que demana confirmació.
+
+### Plantilla i Configuració (pas 11)
+
+- La `plantilla` (les opcions de Claude de les pestanyes noves i de les importades sense sessió) es canvia a la
+  finestra de Configuració (⌘,): les opcions, l'ordre que en surt amb els seus avisos, les «Altres opcions» (només
+  lectura) i el fitxer (carpeta, «Mostra al Finder», versió, i l'error de desat si n'hi ha).
+- **Dos Desfés que no es barregen.** El de la plantilla és el de la finestra de Configuració
+  (`Editor.desferPlantilla`); el de l'editor només desfà finestres, pestanyes i selecció. ⌘Z a la Configuració no
+  toca l'editor, ni al revés. Tornar a carregar els buida tots dos.
+- El nom de sessió de la plantilla, si n'hi ha (escrit a mà), no es copia mai a cap pestanya: totes tindrien el
+  mateix nom (decisió d'en David, 04/11/2026). La Configuració el mostra amb «(no s'aplica)», i l'ordre i els avisos
+  que hi surten són els de les pestanyes noves, sense el nom (`perAPestanyaNova`).
+- Sense configuració, la Configuració mostra la plantilla que tindrà la nova, la mateixa si s'importa de Warp que si es
+  comença en blanc (`plantillaVisible`).
+  Mentre es carrega o si el fitxer no es pot llegir, no en mostra cap: no se sap quina és.
+- **Plantilla d'importar segura (0.28.0, D11 revisada per en David el 07/11/2026):** sense fitxer, la plantilla d'importar és
+  `.perOmissio` (`claude` continuant la conversa, sense saltar els permisos ni ultracode), la mateixa que «Comença en blanc».
+  Abans era la d'en David (`.habituals`, que ara només és a les proves). Les opcions es trien a la plantilla (Configuració ›
+  «Pestanyes noves») o per pestanya a l'inspector. Una configuració que ja existeix conserva la seva plantilla.
+- Si la plantilla canvia amb el full d'importació obert, no es pot confirmar fins a tornar a llegir Warp: si no,
+  s'importaria amb una plantilla que el full no ha mostrat.
+- Tancar la Configuració desa; mostrar-la mira si el fitxer ha canviat fora.
+
+### Importació (R2)
+
+Una funció pura (`Importador.importa`): rep la lectura de Warp, la carpeta d'inici, la plantilla i un generador d'id,
+i no toca el disc.
+
+- **Finestres:** en l'ordre de la lectura; les que no tenen cap pestanya de terminal no s'importen (nota). Nom: la carpeta pare que reuneix més de la meitat de les pestanyes
+  (sense les de `~`), o «Finestra N». La carpeta d'inici i l'arrel no serveixen de nom. Els repetits (sense
+  distingir majúscules) porten « 2», « 3»… Es poden canviar a l'editor.
+- **Pestanyes:** només les de terminal, en l'ordre de la lectura (verificat per en David en una finestra).
+  Títol: el de Warp; si és buit, l'últim component de la carpeta; si la carpeta és `~`, «Pestanya N». Pane
+  principal: el primer amb Claude, o el primer. Una pestanya dividida en diversos panes dona una nota (D9).
+- **Claude** (decisió d'en David, D11; la plantilla d'importar és la segura des de la 0.28.0, vegeu «Plantilla i Configuració»):
+  - **amb sessió viva:** les opcions del seu argv, més `continua: true` (R4). El nom fix només si venia de `-n`;
+  - **sense sessió:** la plantilla;
+  - **a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
+    les opcions);
+  - **sessió viva en una pestanya a `~`:** la carpeta de la sessió, amb una nota. Si la pestanya és en una altra
+    carpeta que la de la sessió, mana la de la pestanya (el `cwd` de la sessió potser segueix els `cd` de Claude),
+    també amb una nota. Avui no n'hi ha cap: les 13 coincideixen;
+  - **sessió viva a `~` o en una carpeta que no existeix:** Claude activat, amb la seva ordre (D11: «les que ja
+    tenen Claude conserven la comanda llegida»), i l'avís de la carpeta. Avui no n'hi ha cap.
+- **Notes** (el full i el CLI les mostren): primer missatge descartat, sessió que reprenia una conversa concreta
+  (`--resume <id>`, `--session-id`), carpetes de la sessió i de la pestanya diferents, panes descartats,
+  finestres sense pestanyes de terminal i sessions sense pestanya. Aquestes no s'importen, i la nota diu quina
+  pestanya importada és a la mateixa carpeta: potser és la seva (dins de tmux, per exemple) i no en porta les
+  opcions.
+- **Xifres amb la lectura del 03/11/2026** (d'abans de la 0.28.0, amb la plantilla d'en David): 7 finestres (23, 17, 1,
+  2, 6, 11 i 4 pestanyes), 64 pestanyes. 48 amb Claude (13 amb la seva ordre i 35 amb la plantilla), totes amb
+  `--dangerously-skip-permissions`, i 16 sense. El full de previsualització ho deia amb aquestes xifres. Des de la
+  0.28.0, les 35 de la plantilla s'obren sense saltar els permisos.
+- **Quan:** mai sola. «Importa de Warp…» mostra un full de previsualització, i el fitxer s'escriu en prémer
+  «Crea». «Torna a importar-ho tot…» substitueix la configuració, amb còpia i Desfés.
+- **CLI:** `warp-launch importa` mostra el resultat sense escriure res. `--desa` exigeix `--config <carpeta>`:
+  la configuració real només es crea des de l'app. `--config` no pot ser la real, ni a través d'un enllaç, ni amb
+  altres majúscules, ni una carpeta de dins; si la carpeta ja té configuració, no la trepitja.
+
+## 3. Arquitectura
+
+- **`WarpLaunchCore`** (structs i enums `Sendable`, sense AppKit):
+  `Configuracio`, `Estat`, `OrdreClaude` (de la configuració a l'argv), `Importador`, `MagatzemConfiguracio`,
+  `Validacio` (avisos), les operacions d'edició (afegeix, elimina, duplica, mou) i la lògica del CLI
+  (`OrdreCLI.executa(args, lector:, magatzem:, sortida:) -> Int32`, perquè es pugui provar amb fixtures).
+- **`WarpLaunchUI`** (library nova, `@MainActor`): `Editor` (`@Observable`: configuració, selecció, Desfés amb
+  el nom de cada acció, desat diferit amb un rellotge injectat), les vistes i el tipus que s'arrossega.
+  Rep el lector i el magatzem injectats.
+- **`WarpLaunchApp`** (executable prim): escenes, `AppDelegate`, el coordinador d'activació (Dock) i
+  l'argument `--config <carpeta>`. Aquí no hi ha proves.
+- **`WarpLaunchCLI`:** només passa a `OrdreCLI` els valors reals.
+- **Concurrència:** la lectura de Warp fora del fil principal (té un `busy_timeout` de 3 s). El JSON, petit, al
+  fil principal.
+- **El magatzem no té ruta per defecte:** l'app i el CLI hi passen `~/.config/warp-launch/` o el `--config`.
+
+### Prova de guarda
+
+Una prova llegeix el codi del repo (`#filePath`) i falla si:
+- a `Sources/` hi ha `warp://`, `Process(`, `NSWorkspace` (excepte `NSWorkspace.shared.activateFileViewerSelecting(`,
+  «Mostra al Finder», que només pot ser a `Finder.swift`), `openURL`, `NSAppleScript`, `posix_spawn`, `system(`,
+  `SMAppService`, `LaunchAgents`, `UserDefaults`, `@AppStorage`, `NSRunningApplication`, `forceTerminate`,
+  `launchApplication`, `openApplication`, `kill(` o `killpg(` (regla 2: no tancar Warp ni Claude);
+- «Obre la finestra a Warp…» no és `.disabled(true)` o té drecera, o `Ordres.swift` substitueix `.saveItem` (es
+  perdrien ⌘W i ⌥⌘W);
+- a `Sources/` hi ha `ShareLink`, `ProxyRepresentation`, `FileRepresentation`, `CodableRepresentation`, `.onDrag`,
+  `NSFilePromiseProvider`, `suggestedFileName`, `registerObject` o `.register(` (el que s'arrossega no surt de
+  l'app); o `Arrossegar.swift` no té `visibility: .ownProcess` i `DataRepresentation(importedContentType:`, o hi surt
+  `visibility: .all`, `exportedContentType` o `DataRepresentation(contentType:`;
+- la fila d'una finestra de `VistaEditor.swift` té `isEnabled: editor.acceptaPestanyes`, o no decideix l'operació
+  amb `dropConfiguration` (`PaquetTests.laFilaDeLaFinestraDecideixEnArrossegar`);
+- a `Tests/` hi ha `Lector(` sense `rutaWarp:` (`Lector()` o `Lector(inici:)`), `ProcessosDelSistema`,
+  `rutaPerDefecte`, `carpetaPerDefecte`, `.config/warp-launch`, `homeDirectoryForCurrentUser`, `NSHomeDirectory`,
+  `NSApp`, `NSApplication`, `NSWindow`, `NSHostingView`, `NSPasteboard` o
+  `PortaRetallsSistema.enganxa/hiHaPestanyes/escriu` (el porta-retalls d'en David).
+
+Una altra prova comprova que cada expressió troba el que ha de trobar. Així les proves no poden llegir l'estat real,
+ni tocar el porta-retalls, ni fer sortir el procés de proves al Dock.
+
+## 4. Passos
+
+Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es verifica amb `swift build`,
+`scripts/test.sh` i, quan toca, `scripts/build-app.sh`. **Cap pas obre l'app, Warp ni Claude, si no diu «amb OK».**
+
+1. **`docs:` / `chore:`** Aquest document, la skill `mac-design`, la regla `deny` per a `~/.config/warp-launch/`
+   i els frameworks de macOS que es faran servir, a `CLAUDE.md`.
+2. **0.3.0 — format v1.** `Configuracio` i les seves proves: anada i tornada, un fitxer «golden», valors per defecte
+   segurs (`saltaPermisos` mai per omissió), `"esforc": "ultracode"`, id repetits o absents, claus desconegudes,
+   versió més nova.
+3. **0.4.0 — magatzem.** Escriptura atòmica, còpies (20; mai les d'altri), canvi extern, fitxer malmès, llegir no
+   escriu. Sempre en una carpeta temporal.
+4. **0.5.0 — esquelet de l'app.** Escenes, menú de la icona, editor amb la llista de finestres d'una configuració
+   (i «Nova finestra», per poder canviar l'estat), activació, amagar en tancar, `ca.lproj`, `--config` i la prova
+   de guarda. El menú de la icona diu quantes finestres i pestanyes té Warp (lectura en segon pla).
+   - Fet (0.5.0). «Comença en blanc» crea la configuració amb la plantilla segura (sense saltar permisos), fins
+     que en David la canviï a la Configuració (pas 11). «Importa de Warp…» surt desactivat fins al pas 6. El menú
+     de la icona diu «Configuració de prova: …» quan l'app s'obre amb `--config`, i l'editor també (a l'estat buit
+     i a sota de la barra lateral). Warp es llegeix en obrir l'app i amb «Torna a llegir Warp», no cada vegada que
+     es mostra l'editor.
+   - Revisió (abans de la prova 1): un `--config` mal escrit (`--confg`, ruta relativa, sense carpeta, repetit)
+     ja no torna a la configuració real: l'app s'obre sense cap configuració i diu per què. S'accepta
+     `--config=<carpeta>`, i `~/` es resol amb la carpeta d'inici. Una carpeta no absoluta ja no fa una còpia a
+     cada desat, i la còpia de sessió ja no es perd si el primer desat no canviava res.
+   - **Prova 1 feta (04/11/2026):** totes les comprovacions bé, amb 0.5.1; 20 cicles sense bloqueig. Corregit
+     pel camí: ⌘Z no feia res (l'editor ara fa servir el Desfés de la finestra), i macOS no deixava llegir Warp
+     (D12: certificat propi i permís a Arxius i carpetes; l'error ara diu què cal fer). L'app llegeix Warp amb
+     les mateixes xifres que el CLI. Falta veure que el permís duri en recompilar (a la propera versió).
+   - **Prova 1, amb OK:** en David obre `build/Warp Launch.app` amb `--config` a una carpeta temporal. S'obren
+     0 finestres de Warp i 0 sessions de Claude. Comprovacions: l'editor surt al davant; l'app és al Dock i a ⌘⇥,
+     amb els menús en català; en amagar l'editor desapareix del Dock; 20 vegades obrir, afegir una finestra,
+     amagar i tornar a obrir, sense bloqueig; obrir des del Finder mostra l'editor; ⌘, surt al davant; si macOS
+     demana permís per llegir les dades de Warp; «Surt» només tanca Warp Launch.
+5. **0.6.0 — ordre de Claude.** `OrdreClaude` i proves: per a cada combinació d'esforç, ultracode i `--settings`,
+   llegir l'ordre generada torna la mateixa configuració; la comanda d'en David dona les mateixes opcions.
+   - Fet (0.6.0). `OrdreClaude.argv(_:represa:)` i `OrdreClaude.text(_:)`; `ClaudePestanya(_ opcions:)` per
+     llegir-la de tornada (la farà servir la importació).
+     - L'habitual d'en David dona exactament `claude --dangerously-skip-permissions --effort ultracode --continue`.
+     - Ultracode: amb «Molt alt», l'àlies `--effort ultracode`; amb un altre esforç, `"ultracode": true` dins de
+       `--settings` (s'afegeix al JSON que hi hagi). Error si `--settings` és un fitxer (per a Claude, tot el que
+       no va de `{` a `}`), si no és un JSON vàlid o té claus repetides, o si ja hi ha `"ultracode"` amb un valor
+       que no és booleà.
+     - Continuar: només si la pestanya diu `continua`; `Represa.darrera` (`--continue`) o `.sessio(id o nom)`
+       (`--resume`). Ho tria qui llança (D7).
+     - **Canviat a la 0.15.0 (D7 i D15):** sense `Represa` ni `--continue`. `argv(_:repren:)` rep la conversa a totes
+       les crides, sense valor per defecte: amb `continua` i una conversa, `--resume <id>`; si no, una de nova.
+     - Un valor que comença per «-» va com a `--opcio=valor`. `--remote-control` sense nom va al final.
+     - El text porta cometes simples on calen, també davant d'un «=» inicial (zsh), i una prova el fa llegir
+       a zsh i a sh i comprova que en surt el mateix `argv`.
+   - **Revisió** (dos revisors i un verificador per troballa; 9 troballes confirmades, 5 descartades):
+     - `OpcionsClaude.analitza` llegeix com Claude Code: commander i la taula de les seves opcions
+       (`TaulaOpcionsClaude`, de la 2.1.318).
+       - Separa el primer missatge (`prompt`), que no es desa.
+       - Entén les variàdiques, `-cw`, `-nBotiga` i `--`.
+       - Marca les opcions desconegudes.
+       - Comparat amb el `parseOptions` del binari en 20.000 ordres (docs/fets-verificats.md).
+     - `--settings`: la regla JSON de Claude, i mana l'últim. `"ultracode"` només compta si és booleà, i un `false`
+       explícit no es perd.
+     - `altres` es comprova abans de generar l'ordre: opcions amb camp propi, textos i `--` hi donen error.
+     - Textos fets només d'espais, fora; `--resume` amb una sessió feta d'espais, error.
+     - **Queda per al pas 6:** l'avís de «Salta els permisos» amb un mode (Claude no fa cas del mode) i els altres
+       avisos nous de la taula. També cal dir, a la importació, si s'ha descartat un primer missatge.
+6. **0.7.0 — importació i avisos.** `Importador`, `Validacio`, `OrdreCLI` i `warp-launch importa`. Proves amb un
+   escenari de la mateixa forma que la lectura real (dona 48/16), sessió a `~`, sessions sense pestanya,
+   codis de sortida, `--desa` sense `--config`.
+   - La importació diu quan descarta el primer missatge d'una sessió.
+   - Opcions d'un sol ús, com `-w` (un worktree nou), `--fork-session` o `--from-pr`: a cada obertura en farien
+     un de nou. Avui cap sessió no en porta. Si n'apareix alguna, en David decideix si es descarten amb un avís.
+   - Fet (0.7.0). `Importador.importa`, `Validacio.avisos`, `OrdreCLI.executa` (la lògica del CLI, provada amb una
+     base de Warp de prova) i `warp-launch importa [--json] [--desa --config <carpeta>]` i
+     `warp-launch configuracio valida [--config <carpeta>]`. Codis de sortida: 0, 1 (no s'ha pogut llegir o
+     desar), 2 (la configuració, llegida o importada, té errors) i 64 (ús).
+     - Amb la lectura real del 04/11/2026: 7 finestres, 64 pestanyes, 48 amb Claude (13 de la seva ordre i 35 de
+       la plantilla) i 16 sense; les 48 amb `claude --dangerously-skip-permissions --effort ultracode --continue`.
+       16 avisos (11 a `~`, 5 carpetes que no existeixen), 0 errors i cap nota.
+     - Les opcions d'un sol ús es queden a `altres` amb un avís; si se n'han de treure, ho decideix en David
+       quan n'aparegui una.
+     - L'app encara no importa: el full d'importació és del pas 8.
+   - **Revisió** (un revisor; 4 troballes segures i 4 dubtoses, totes ateses):
+     - `importa --desa --config` podia escriure la configuració real mentre no existeix (a través d'un enllaç a
+       `~/.config` o de `/System/Volumes/Data`). Ara es fa canònic l'avantpassat que existeix, i es rebutgen `..`
+       i els enllaços trencats.
+     - `--settings` es valida amb la gramàtica estricta de JSON (`JSONEstricte`): `JSONSerialization` acceptava
+       comes finals, que aturen Claude.
+     - El text que segueix una opció desconeguda surt a l'avís: potser és un primer missatge.
+     - La carpeta de la sessió només substitueix la de la pestanya si aquesta és a `~` (com deia el disseny).
+     - Les notes de sessions sense pestanya diuen quina pestanya és a la mateixa carpeta; `importa` surt amb 2 si
+       hi ha errors.
+7. **0.8.0 — model de l'editor.** Operacions d'edició i `Editor`: fer, desfer i refer cada ordre amb el seu nom;
+   N canvis fan un sol desat; error i reintent; canvi extern.
+   - Fet (0.8.0). Operacions pures al core (`EdicioConfiguracio.swift`): afegir, eliminar, duplicar, canviar el
+     nom, moure i canviar pestanyes. L'`Editor` hi afegeix:
+     - la selecció de pestanyes (diverses), que es buida en canviar de finestra i segueix les pestanyes que es
+       mouen a una altra finestra;
+     - un pas de Desfés per ordre, amb el seu nom («Nova pestanya», «Elimina les pestanyes», «Mou la pestanya»,
+       «Canvia l'esforç»…). Desfer torna la configuració **i la selecció** d'abans. Una ordre que no canvia res no
+       en fa cap. Els canvis de text seguits d'un mateix camp (`agrupa`) en fan un de sol;
+     - els avisos de la configuració, al dia a cada canvi;
+     - les còpies: `esborrat` quan desapareix una finestra amb pestanyes (eliminar-la, o desfer-ne la creació) i
+       `importacio` en tornar a importar, a més de la de sessió. Si el canvi es desfà abans de desar, no en cal;
+     - el canvi extern: cada vegada que l'editor passa al davant, mira els bytes del fitxer. Sense canvis a l'app,
+       el torna a carregar (i el Desfés d'abans es perd); amb canvis, no toca res i surt el bàner;
+     - la importació: `previsualitza` (no escriu res), `crea(amb:)` quan no hi ha configuració (D11; la plantilla és
+       la segura, `.perOmissio`, des de la 0.28.0; abans, la d'en David) i `substitueix(amb:)` («Torna a importar»), amb
+       còpia i Desfés, que conserva la plantilla.
+   - Diferències amb el pas 4: «Nova finestra» va després de la seleccionada, no al final. Una pestanya nova a `~`
+     queda sense Claude, com a la importació.
+   - Les vistes que ho fan servir són dels passos 8 a 11.
+   - Revisió (agent independent, 04/11/2026): 12 troballes, cap de greu; 11 arreglades, amb prova:
+     - Les ordres (Duplica, Elimina) només actuen sobre les pestanyes seleccionades **que es veuen**. Si una part
+       de la selecció es mou a una altra finestra, deixa d'estar seleccionada. Moure a una finestra que no hi és
+       no fa res.
+     - Les còpies es decideixen en desar, comparant amb el que hi ha al disc: un canvi desfet abans de desar no en
+       demana cap, i la mateixa importació dues vegades en fa una.
+     - «Torna a importar» conserva la plantilla d'ara, encara que hagi canviat després de previsualitzar.
+     - L'agrupació de text es tanca en canviar la selecció, en canviar de Desfés i si una altra acció (un camp de
+       text) s'hi ha posat entremig. La clau inclou les pestanyes.
+     - En tornar a l'editor també es tornen a mirar les carpetes (avisos). El bàner «ha canviat fora» se'n va si el
+       fitxer torna a ser el que era.
+     - Una pestanya nova a `~` escrit d'una altra manera (`/Users/x/`) també queda sense Claude.
+   - Queda obert: importar i desfer moltes vegades seguides gasta 2 còpies per cicle (`importacio` i `esborrat`),
+     i al cap de 10 cicles les còpies d'abans de la sessió desapareixen. Només amb un ús molt insistent; si cal, el
+     magatzem pot deixar de copiar el que ja és a qualsevol còpia, no només a l'última.
+8. **0.9.0 — barra lateral i llista,** estats buits i full d'importació.
+   - Fet (0.9.0).
+     - **Barra lateral:** «Per revisar» amb el nombre (pestanyes amb un avís o un error a la fila; els d'informació
+       no hi compten) i les finestres, amb `macwindow`, el nombre de pestanyes i un triangle si el nom és repetit.
+       Menú contextual (Canvia el nom, Duplica, Elimina; al buit, Nova finestra), ⌫ i Retorn.
+     - **Llista:** selecció múltiple. Cada fila diu el nom, la carpeta (o l'avís més greu, amb icona i text) i el
+       resum de Claude («Molt alt · Ultracode», «Només terminal»). Menú contextual (Canvia el nom, Duplica,
+       Activa o Desactiva Claude, Elimina; al buit, Nova pestanya…), ⌫ i Retorn (canvia el nom). A «Per revisar»,
+       per finestres; una pestanya arreglada s'hi queda fins que se'n tria una altra.
+     - **Nova pestanya…** (`plus` a la barra d'eines): el diàleg de carpetes s'obre a la carpeta que conté la de
+       l'última pestanya seleccionada. Una finestra nova obre el nom per escriure'l.
+     - **Títol i subtítol:** «empresa», «23 pestanyes · 23 amb Claude · 2 avisos»; si no es pot desar, ho diu.
+     - **Estats buits:** sense configuració (Importa de Warp…, Comença en blanc), cap finestra, finestra sense
+       pestanyes (Nova pestanya…), «Res per revisar» i «Tria una finestra».
+     - **Full d'importació** (estat buit i Fitxer › «Importa de Warp…» o «Torna a importar-ho tot de Warp…»): torna a
+       llegir Warp i diu les xifres («7 finestres · 64 pestanyes», «48 amb Claude: 13 amb l'ordre de la seva sessió i
+       35 amb la plantilla», «16 només terminal: 11 a la carpeta d'inici i 5 amb una carpeta que ja no existeix»,
+       «48 salten els permisos», amb la plantilla d'en David d'abans de la 0.28.0), l'ordre de la plantilla, quantes
+       pestanyes sortiran a «Per revisar», les finestres i les notes. No escriu res fins a «Crea» o «Substitueix».
+   - Les ordres de la barra de menús (⌘T, ⌘D, Canvia el nom…) són del pas 11.
+   - **Revisió** (flux de 3 revisors i 3 verificadors, 04/11/2026): 17 troballes, 12 confirmades (10 de diferents),
+     cap de greu; totes arreglades, amb prova:
+     - El nom que s'escriu en una fila és a l'editor (`textDelNom`), i es desa si es comença el d'una altra fila, si
+       es crea una finestra, si l'editor s'amaga o si se surt de l'app. Si la fila desapareix (desfer, tornar a
+       importar, tornar a carregar), el camp es tanca.
+     - La barra lateral sempre té una fila triada: un clic al buit ja no la desmarca (abans, ⌫ hauria eliminat una
+       finestra que no semblava seleccionada).
+     - Eliminar la finestra recordada des de «Per revisar» ja no buida la selecció de la llista.
+     - Si el full s'obre mentre l'app ja llegeix Warp i la lectura falla, el full en diu el motiu (abans: «no s'ha
+       pogut llegir Warp»).
+     - Els avisos del fitxer editat a mà (`AvisFormat`, com «sense bloc «claude»») surten en un bàner, amb
+       «Mostra-les» i «D'acord». El full d'importació mostra també els avisos de la lectura, com el CLI.
+     - Textos en singular («1 salta els permisos», «1 pestanya sortirà a «Per revisar»», «Substitueix el que hi ha
+       ara (1 finestra i 1 pestanya)»). Sense finestres, la llista diu «Cap finestra» amb «Nova finestra».
+     - La prova de guarda també rebutja `Lector(inici:)` a les proves (llegiria Warp i Claude de debò).
+   - Descartades pels verificadors: el títol «Pestanyes que no tenien Claude obert» (D11: totes reben la
+     plantilla), què compta «N avisos» al subtítol (les files marcades) i el «cap focus en obrir», que es
+     comprova a la prova 2.
+   - **Prova 2, amb OK:** en David obre l'app amb `--config` a una carpeta temporal, importa de Warp i en revisa
+     les pantalles en clar i en fosc. S'obren 0 finestres de Warp i 0 sessions de Claude: només es llegeix Warp.
+   - **Prova 2 feta (04/11/2026, 0.9.0, `--config /tmp/warp-launch-prova2`):** l'estat buit, el full
+     d'importació, la barra lateral i la llista després de «Crea», i l'edició (Retorn, Escapada, ⌫ i ⌘Z, menú
+     contextual, clic al buit) funcionen. El mode fosc no s'ha mirat («no és important»). Warp havia canviat des
+     del matí: 6 finestres (23, 2, 17, 11, 4 i 6 pestanyes), 63 pestanyes, 48 amb Claude (3 amb la seva ordre i 45
+     amb la plantilla) i 15 a «Per revisar».
+9. **0.10.0 — inspector,** amb els camps de R4, la vista de l'ordre i l'edició de diverses pestanyes.
+   Amb «Salta els permisos» activat, el mode de permisos queda desactivat (Claude no en fa cas).
+   Cada camp de text passa `agrupa` amb el nom del camp, i crida `acabaAgrupacio()` en perdre el focus.
+   - **Fet (0.10.0, 04/11/2026).** Model a `EditorInspector.swift` (què es mostra, opcions, «Valors diversos», avisos
+     per camp, on s'obre «Tria…») i vista a `VistaInspector.swift`:
+     - Una pestanya: nom (buit = el de la carpeta) i carpeta (s'escriu amb `~`, i «Tria…» s'obre a la carpeta pare o a
+       la més propera que existeixi); el bloc de Claude; les opcions que l'editor no canvia (`--settings`,
+       `--remote-control` i les desconegudes), en només lectura; i l'ordre, seleccionable, amb «Copia l'ordre».
+     - Diverses pestanyes: només el bloc de Claude, sense el nom fix de la sessió (dues sessions amb el mateix nom es
+       confondrien). Els desplegables diuen «Valors diversos», i les caselles es veuen mixtes. Cada canvi és un sol
+       pas de Desfés per a totes.
+     - Cap pestanya: el nom i les xifres de la finestra, i «Obre a Warp…» desactivat fins a la fase 3.
+     - El model ofereix els àlies (Fable, Opus, Sonnet, Haiku) i el valor que ja hi hagi (un id complet es conserva).
+       Un id nou només es pot escriure al fitxer.
+     - «Activa Claude» és la casella «Obre Claude Code en aquesta pestanya» (l'avís «Claude és apagat» no surt a
+       l'inspector). Amb «Salta els permisos» i un mode, el desplegable queda desactivat i surt «Treu el mode de
+       permisos».
+     - Cada canvi de Claude deixa la pestanya normalitzada, com el fitxer i l'ordre. Conseqüència: un
+       `--settings '{"ultracode":false}'` importat se'n va en activar l'ultracode, i no torna en desactivar-lo
+       (avui cap pestanya en té).
+     - Avançat del pas 11: «Copia l'ordre» al menú contextual (amagat si no hi ha cap ordre), el botó de
+       l'inspector a la seva barra (sobre la columna) i l'ordre de l'inspector (ara ⌥⌘I: pas 9b). ⌘C copiava les
+       ordres com a text fins a la 0.11.0, que el fa servir per a les pestanyes.
+   - **Revisió** (flux de 3 revisors i 3 verificadors, 04/11/2026): 20 troballes, 18 confirmades (13 de diferents),
+     cap de greu; totes arreglades, amb prova si són del model:
+     - L'agrupació de text es tanca també en canviar de finestra o de «Per revisar», si el camp desapareix (una altra
+       selecció, amagar l'inspector) i en amagar l'editor.
+     - Un camp que torna a com era abans del pas (escriure i esborrar, o ⌘Z dins del camp) treu el pas, sense deixar
+       cap Refés. El nom de la finestra que se'n surt buit torna al d'abans (no a la primera lletra).
+     - Caselles en lloc d'interruptors: NSSwitch no té estat mixt.
+     - `.inspector` sobre el `NavigationSplitView`, i cada botó sobre la seva columna (mac-design).
+     - ⌘C i «Copia l'ordre» desactivats o amagats quan no hi ha cap ordre (també si l'ordre no es pot generar).
+     - Un model escrit «Opus» és l'àlies (abans sortia dues vegades). «Per revisar» buit diu «Res per revisar» també a
+       l'inspector. «Altres opcions» les mostra normalitzades, com l'ordre.
+   - **Prova 3 feta (04/11/2026, 0.10.0, `--config /tmp/warp-launch-prova2`):** l'inspector, l'ordre que canvia,
+     «Tria…» a «Per revisar», diverses pestanyes, el Desfés (⌘Z dins del camp, i un desplegable amb el cursor en
+     un camp) i cap focus en obrir funcionen. Dues coses no: ⌃⌘I no amagava l'inspector, i ⌘C (les ordres com a
+     text) «no ens serveix per copiar i enganxar pestanyes en l'editor. I vull que serveixi» (pas 9b).
+9b. **0.11.0 — copiar, retallar i enganxar pestanyes, i l'ordre de l'inspector** (demanat a la prova 3).
+   - **Fet (0.11.0, 04/11/2026).** ⌘C, ⌘X i ⌘V a la llista (⌘V també a la barra lateral, a la finestra triada), i
+     «Retalla», «Copia» i «Enganxa» al menú contextual. «Enganxa les pestanyes» també a la fila de la finestra i a
+     la finestra buida (on no hi ha cap llista que rebi ⌘V).
+     - El porta-retalls porta un tipus propi, `cat.davide.warp-launch.pestanyes` (JSON del format v1 amb una
+       finestra, `PortaRetalls`), conforme només a `public.data`: enganxat a VS Code o a Warp, no hi surt res
+       (decisió d'en David, 04/11/2026: «Que no surti res»).
+     - Enganxa després de l'última pestanya triada, o al final. Una copiada entra com «Duplica» (id nou, sense nom
+       fix); una retallada torna amb el seu id (és un moviment). Un nom fix que ja fa servir una altra pestanya no
+       s'enganxa. Cada acció és un pas de Desfés.
+     - Edició › Enganxa i «Enganxa» només miren els tipus del porta-retalls; el contingut es llegeix en enganxar.
+     - L'inspector té una ordre pròpia a Visualització, abans de «Mostra la barra lateral», amb ⌥⌘I.
+   - **Prova 4 (04/11/2026, 0.11.0 sense els arranjaments de la revisió):** ⌘C/⌘X/⌘V entre finestres, el menú
+     Edició, enganxar fora de l'app (no hi surt res) i ⌘C/⌘V als camps de text funcionen. ⌃⌘I, ni amb l'ordre
+     pròpia: el botó i el clic al menú sí. Per això ⌥⌘I.
+   - **Revisió** (flux de 3 revisors i 3 verificadors, 04/11/2026): 13 troballes, 8 confirmades; totes arreglades,
+     i 3 de descartades que reforcen la seguretat: el nom fix repetit en enganxar d'una altra configuració,
+     «Enganxa» a la finestra buida i a la fila, només els tipus en validar, l'ordre de l'inspector al costat de la
+     barra lateral i amb el títol correcte, aquesta documentació, la prova de text de l'ordre de l'inspector, la
+     prova que el tipus no és text, la prova de guarda (les proves no toquen el porta-retalls) i la prova de la
+     versió més nova.
+   - **Prova 5 feta (04/11/2026, 0.11.0):** ⌥⌘I, ⌃⌘S (barra lateral) i «Enganxa les pestanyes» a una finestra
+     nova funcionen. En David hi troba a faltar arrossegar pestanyes (reordenar-les i canviar-les de finestra):
+     és el pas 10.
+10. **0.12.0 — arrossegar i «Mou a».** Amb el tipus del porta-retalls. Demanat a la prova 5.
+   - **Fet (0.12.0, 04/11/2026).** Vegeu «Arrossegar» (secció 1). Abans de programar-lo, 4 agents van comprovar a
+     l'SDK i al binari de SwiftUI de macOS 27.2 com fer-ho, i el van compilar i provar fora del repo.
+     - Reordenar: una o diverses pestanyes, un sol pas («Mou la pestanya/les pestanyes»); les mogudes queden triades.
+     - Deixar-les a la fila d'una altra finestra, o «Mou a ▸»: van al final. Si es mou tota la selecció, l'editor la
+       segueix (pas 7); una fila no triada es mou sense canviar de finestra ni de selecció. A la fila de la finestra
+       que es veu no passa res. A «Per revisar», les que ja eren a la finestra de destinació es queden on són.
+     - «Mou a ▸» al menú contextual, amb les altres finestres; amagat si no n'hi ha cap. Si dues finestres es diuen
+       igual, porten el resum («a — 3 pestanyes · 3 amb Claude»).
+     - Un nom a mig escriure es desa en el mateix pas que el moviment (i que «Nova finestra»): amb el Desfés de la
+       finestra, que agrupa per esdeveniment, s'hi ajuntaria igualment.
+   - **Revisió** (flux de 3 revisors i verificadors, 04/11/2026): 20 troballes, 14 confirmades (10 de diferents),
+     totes arreglades: el nom a mig escriure (un sol pas), les que ja eren a la finestra a «Per revisar», «Mou a ▸»
+     sobre una fila no triada, els noms repetits a «Mou a ▸», la guarda (cada expressió provada, `.onDrag` amb
+     clausura) i la documentació (estat buit, `.dragConfiguration`, la prova de guarda i la numeració de les proves).
+   - **Prova 6, amb OK:** en David obre l'app amb `--config /tmp/warp-launch-prova2`. S'obren 0 finestres de Warp i
+     0 sessions de Claude.
+     - Reordenar 1 i 3 pestanyes no contigües; deixar-les a la fila d'una altra finestra (també amb ⌥ premut: no s'hi
+       ha de copiar res); omplir una finestra buida; «Mou a ▸»; «Per revisar».
+     - Després de cada moviment, ⌘Z i ⇧⌘Z fan un sol pas, i Edició diu «Desfés Mou la pestanya/les pestanyes».
+     - Arrossegar-les cap a una pestanya de Warp **sense Claude** (mai una amb una sessió viva), el Finder, TextEdit
+       i Notes: no hi ha d'entrar res. Si no n'entra res, no se sap quina barrera ho ha aturat
+       (`.dragConfiguration`, la llista o `.ownProcess`): només es dona per fet que no en surt res.
+   - **Prova 6 feta (04/11/2026, 0.12.0):** reordenar i desfer funcionen; «Mou a ▸» i omplir una finestra buida, també.
+     En David arrossega fins a la fila d'una altra finestra, però «la finestra no canvia i no puc deixar la pestanya en
+     un lloc de l'altra finestra»: és el pas 10b.
+10b. **0.13.0 — obrir la finestra arrossegant i deixar-les en una posició; reordenar les finestres.** Demanat a les
+   proves 6 i 7b. Fet.
+   - Vegeu «Arrossegar» (secció 1). Abans de programar-lo, 3 agents i un pla van comprovar al binari de SwiftUI i
+     d'AppKit de macOS 27.2 què fa la `List` si canvia de dades a mig arrossegament (docs/fets-verificats.md), i el
+     pla es va compilar i provar fora del repo (302 proves).
+   - **Prova 7, amb OK:** en David obre l'app amb `--config /tmp/warp-launch-prova2`. S'obren 0 finestres de Warp i
+     0 sessions de Claude. Les comprovacions són a la llista del pla (aturar-s'hi i deixar-les entre dues pestanyes,
+     passar-hi per sobre sense aturar-s'hi, Esc i deixar-les fora després d'obrir, A → B → A, finestra buida, «Per
+     revisar», la fila de la finestra oberta, reordenar com a la prova 6, ⌘Z i ⇧⌘Z, i que l'app no peti).
+   - **Prova 7 feta (04/11/2026, 0.13.0 abans de la revisió):** obrir i deixar-les entre dues pestanyes (1 i 3 no
+     contigües), passar-hi per sobre sense aturar-s'hi, Esc, A → B → A, «Per revisar» i reordenar funcionen. La
+     finestra buida, no: s'obria, però la pestanya no entrava ni al panell ni a la fila i tornava al seu lloc. Ara una
+     finestra buida no s'obre arrossegant (vegeu «Arrossegar»).
+   - **Prova 7b (04/11/2026):** a la fila d'una finestra nova (buida) la pestanya tampoc no s'hi queda, ni amb el
+     nom desat (Retorn) ni sense. A la fila de la finestra triada en obrir l'app, sí. El cursor no surt prohibit a la
+     fila de la finestra que es veu. El registre del sistema diu per què: la fila rep l'acció amb 0 pestanyes perquè
+     la càrrega del proveïdor es cancel·la (-1000/3072). Ara es mouen les desades en començar a arrossegar (vegeu
+     «Arrossegar»). En David també demana **reordenar les finestres** a la barra lateral: fet a la 0.13.0.
+   - **Revisió** (fluxos de 3 revisors i verificadors, 04/11/2026): 7 troballes confirmades del pas 10b (Esc abans de
+     0,5 s, el focus de la llista nova, la selecció a la fila de la finestra oberta, proves i documentació) i 9 de la
+     prova 7b (la causa de les 0 pestanyes, el registre, el cursor, proves de reordenar finestres i documentació).
+   - **Prova 7c, amb OK:** en David obre l'app amb `--config /tmp/warp-launch-prova2`. S'obren 0 finestres de Warp i
+     0 sessions de Claude. Abans, si cal, el registre en directe (`Registre.swift`).
+     - ⌘N i deixar una pestanya, i després dues de triades, a la fila de la finestra nova: s'hi queden, i ⌘Z les torna.
+     - Arrossegar una finestra amunt i avall a la barra lateral; «Mou amunt» i «Mou avall»; ⌘Z.
+     - Arrossegar una pestanya entre dues finestres de la barra lateral: no s'ha de moure cap finestra. Arrossegar una
+       finestra sobre la llista de pestanyes: no s'ha de moure cap pestanya.
+     - Obrir una finestra arrossegant i deixar-les a la llista: després, ↓ mou la selecció (el focus és a la llista).
+   - **Prova 7c feta (04/11/2026, 0.13.0):** els quatre punts funcionen. Al registre, dues pestanyes deixades a la fila
+     d'una finestra (una de nova i una d'oberta arrossegant) hi entren pel camí sense dades: «sense dades, local true,
+     1 elements, 1 fixades», i es mouen. La de dues pestanyes triades no hi surt.
+   - **Confirmat per en David (04/11/2026):** prémer Esc a mig arrossegament abans de 0,5 s, sense amollar el botó,
+     obria igualment la finestra de sota (no movia res). Arranjament al pas 11 (vegeu «Arrossegar»), sense comprovar a
+     l'app: es mira a la prova 8.
+11. **0.14.0 — menús, dreceres, menú de la icona i Configuració** (la plantilla). Fet.
+    - La plantilla es canvia des de la finestra de Configuració, que té el seu Desfés: `canviaPlantilla` el registra
+      en aquell, no en el de l'editor (vegeu «Plantilla i Configuració», secció 2).
+    - Les ordres de «Ordres» (secció 1): Fitxer, el menú Pestanya i Edició › Elimina desactivat sense res a eliminar.
+      ⌘W i ⌥⌘W tornen a ser-hi.
+    - El menú de la icona, amb els avisos com a botons. L'Esc a mig arrossegament (pas 10b).
+    - Abans de programar-lo, un flux de recerca (el binari de SwiftUI i d'AppKit de macOS 27.2) i un pla.
+    - **Revisió** (flux de 3 revisors i 3 verificadors, 04/11/2026): 8 troballes, 4 confirmades o plausibles, totes
+      arreglades: l'ordre de la Configuració sense el nom de sessió, cap plantilla amb el fitxer malmès, la molla que
+      no s'atura per sempre en perdre la destinació (a la vora de la fila) i un bloc mal posat a fets-verificats.
+    - **Prova del pas 11 feta (04/11/2026, 0.14.0):** en David obre l'app amb `--config /tmp/warp-launch-prova2`.
+      S'obren 0 finestres de Warp i 0 sessions de Claude. Funcionen els cinc punts:
+      1. Fitxer: ⌘T, ⌘D a la llista i a la barra lateral, «Canvia el nom» i ⌘W.
+      2. Pestanya: Mou a ▸, Activa i Desactiva Claude, Copia l'ordre.
+      3. Configuració: canviar l'esforç i ⌘Z allà; ⌘Z a l'editor no la toca; ⌘T fa servir la plantilla nova.
+      4. Menú de la icona, sense separadors doblats.
+      5. Arrossegar: Esc abans de 0,5 s no obre res; aturar-s'hi al mig i a les vores obre; dues pestanyes a una fila.
+    - Al registre de la prova hi ha 2 obertures als 0,5 s i una pestanya deixada a la fila d'una finestra oberta
+      arrossegant (pel camí sense dades, «1 elements, 1 fixades»), però cap Esc ni cap fila amb dues, i en David
+      confirma que les va provar a la mateixa sessió: **el registre desat no guarda totes les línies.** A la prova 8,
+      el registre en directe (`/usr/bin/log stream`), obert abans. En sortir d'una fila deia «fila cap»: corregit a
+      la 0.14.1.
+12. **0.26.0 — icona i paquet per a Aplicacions** (era la 0.15.0; en David va triar fer abans la fase 3.1). Icona (prevista amb nano-banana; dibuixada amb codi a la 0.26.1, vegeu sota): finestres en cascada sobre fons índigo,
+    `Info.plist` complet, `scripts/instal·la.sh` (copia a `/Applications`; si l'app és oberta, s'atura sense
+    tancar-la; diu com es desinstal·la).
+    - **Paquet fet (0.26.0, 05/11/2026):**
+      - `Info.plist` amb la categoria (eines de desenvolupament), el copyright i `CFBundleInfoDictionaryVersion`.
+      - `scripts/instal·la.sh`: per defecte, mode de prova (diu què copiaria); amb `--aplica`, copia l'app a
+        `/Applications` (regla 3: només amb l'OK d'en David).
+        - Abans de copiar, comprova l'identificador i la signatura.
+        - Si l'app és oberta, s'atura sense tancar-la.
+        - No toca una «Warp Launch.app» d'una altra app.
+        - Fa una còpia al costat i després la canvia, perquè si falla, la d'abans continua al seu lloc.
+        - No obre ni registra res, i en acabar diu com es desinstal·la.
+        - `WARP_LAUNCH_ORIGEN` i `WARP_LAUNCH_DESTI` per a les proves (`ScriptInstallaTests`, sempre en carpetes temporals).
+    - **Altres Macs (06/11/2026; decisió d'en David: compilada, des de GitHub):**
+      - `scripts/publica.sh`: compila, comprova la signatura «Warp Launch Dev» (el requisit amb el certificat, `certificate leaf`)
+        i publica la versió de `VERSION` a `David-Erra/warp-launch` com a `vX.Y.Z`, amb `WarpLaunch-X.Y.Z.zip` (`ditto`). Per
+        defecte, mode de prova; amb `--aplica`, regla 3 (OK cada vegada). Només des d'origin/main sense canvis, i una versió nova.
+      - `scripts/instal·la.sh --github`: la baixa amb `gh release download` (l'última, o `--versio`), només a Apple Silicon i
+        macOS 26, i només si porta el certificat d'en David. Després, el mateix camí de sempre (identificador, app oberta,
+        canvi atòmic) i li treu `com.apple.quarantine`, perquè no és signada per Apple. Es fa servir sense el repo:
+        `s="$(gh api … contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --aplica` (README.md). No
+        `bash <(…)`: si gh falla, bash executaria el JSON de l'error. Cal un compte d'administrador del Mac (sense sudo: gh hi
+        perdria la sessió).
+      - Revisió (3 revisors i 15 verificacions, 06/11/2026): 15 troballes confirmades, corregides amb prova: la comanda executava
+        l'error de gh; un compte que no és administrador fallava amb un «Permission denied» sense explicació; `--versio v0.27.3`;
+        una etiqueta que queda sense versió; les notes quan no es troba l'anterior; un requisit trencat es confonia amb una app
+        d'algú altre; la prova de la marca de baixada no la comprovava. Queda: qualsevol que pugui escriure al repo pot canviar
+        l'script que s'executa (el certificat només protegeix d'una compilació equivocada).
+      - Proves: `ScriptPublicaTests` (repo de git temporal amb un origin nu, `build-app.sh` i `gh` falsos) i les de `--github`
+        a `ScriptInstallaTests`.
+    - **Icona: feta el 06/11/2026, dibuixada amb codi** (decisió d'en David, perquè nano-banana respon 402, «prepayment
+      credits are depleted»). `swift scripts/icona-dibuixa.swift` escriu les dues capes de `Recursos/AppIcon.icon/Assets/`:
+      - `principal.png`, la finestra del davant (51 % de l'amplada), amb la barra de títol (tres punts buits i una franja
+        buida sota). Sense els punts semblava una targeta de crèdit;
+      - `fons.png`, dues finestres al darrere, amunt i a l'esquerra, separades per una franja buida (opacitat 0,55).
+      - Fons índigo (`automatic-gradient`, srgb 0,29 / 0,25 / 0,75). Revisada amb `scripts/icona-revisa.sh`: es llegeix en
+        clar, fosc, tenyit i transparent, i a 16 pt encara es veuen les finestres en cascada. En David la dona per bona el 06/11/2026.
+    - **Prova 8, amb OK,** amb configuració temporal: ⌘Z i ⇧⌘Z, les dreceres, el menú de la icona i la Configuració
+      del pas 11 (la plantilla, i ⌘Z a la Configuració, que no ha de desfer res a l'editor), clar i fosc, i mida
+      mínima. Es fa després del pas 12 (decisió d'en David, 04/11/2026). D'arrossegar, amb el registre
+      (`Registre.swift`) obert:
+      - Esc a mig arrossegament, abans de 0,5 s i sense amollar: no s'ha d'obrir res. El registre diu quin senyal hi
+        ha arribat;
+      - sense Esc, aturar-se 0,5 s al mig de la fila d'una altra finestra, i també a la vora de dalt i de baix, encara
+        l'obre, i s'hi poden deixar les pestanyes en una posició (com a la prova 7c).
+    - **Després, cadascun amb el seu OK:** crear la configuració real (fet el 05/11/2026, com a còpia de `provaL3`) i instal·lar a
+      `/Applications` (fet a la 0.27.0). Es desfà desactivant l'interruptor de l'inici de sessió (0.27.0) i esborrant l'app, `~/.config/warp-launch/`,
+      `~/Library/Preferences/cat.davide.warp-launch.plist`,
+      `~/Library/Saved Application State/cat.davide.warp-launch.savedState` i, si n'hi ha, el permís
+      (`tccutil reset All cat.davide.warp-launch`).
+13. **`docs:` fase 2 feta.** **Feta el 06/11/2026:** passos 1 a 12 (la icona, a la 0.26.1) i prova 8 (0.26.0); en David dona per
+    bona la icona.
+
+### Fora de la fase 2 (es mira després de la prova 8)
+
+Color de pestanya (D9), seguir un symlink de la configuració, diàleg de conflicte amb dues opcions, arrossegar
+carpetes des del Finder, dreceres ⌃⌘1–9 i ⌥⌘↑↓, cerca, copiar en deixar anar amb ⌥, fusionar una importació
+pestanya a pestanya, `configuracio mostra|ruta`, captures de pantalla automàtiques.
+
+## 5. Riscos
+
+| Risc | Com es detecta | Què fem |
+|---|---|---|
+| macOS demana permís per llegir les dades de Warp, i el torna a demanar a cada compilació (signatura ad hoc) | Prova 1 | Llegir només quan cal; si es repeteix, D12 (certificat autosignat) |
+| L'app de barra de menú no surt al davant, no té menú principal o es bloqueja en tornar a obrir l'editor | Prova 1 | `.regular` abans de mostrar i activar després; de reserva, una `NSWindow` pròpia |
+| Arrossegar falla sense error si el tipus no és a `Info.plist` | Una prova llegeix l'`Info.plist` del repo | Només es pot provar amb el `.app` |
+| La llista canvia de finestra a mig arrossegament: `onMove` amb posicions de l'altra finestra, o l'app peta | Proves del model (`unOnMoveDespresDObrirNoMouRes`); la llista, només a la prova 7 | `.id` a la llista i `reordena` bloquejat després d'obrir; si peta, la variant sense `onMove` |
+| La fila d'una finestra no s'obre arrossegant (la `List` no fa *spring loading*) | Prova 7 | `Molla`, a mà; si falla, «Mou a ▸» i deixar-les a la fila |
+| Les dades arrossegades no arriben a la fila (càrrega cancel·lada) i es mouen pestanyes que no s'han arrossegat | Proves del model (`DadesQueNoArribenTests`, amb els casos de ⇧, d'un clic després i d'una altra app); a l'app, prova 7c i el registre | Les files del proveïdor, fixades en passar per la fila, només amb sessió local i el mateix nombre; si falla, el pla B (`dragContainer`) |
+| Les posicions de la barra lateral mouen pestanyes, o les de la llista mouen finestres | Proves del model (`lesDuesLlistesNoEsBarregen`); prova 7c | La marca `arrossegantFinestres` |
+| El desat automàtic trepitja una edició a mà | Proves del canvi extern | Comparar bytes, bàner i còpies |
+| Una prova o el codi obre alguna cosa o llegeix l'estat real | Prova de guarda | Magatzem sense ruta per defecte; lector injectat |
+| Dues còpies de l'app (`build/` i `/Applications`) | `lsregister -dump` | Després d'instal·lar, obrir només la d'Aplicacions |
+| Claude Code canvia les seves opcions (canvia gairebé cada dia) i la taula de la 2.1.318 queda antiga | Avís d'opció desconeguda a la importació | Tornar a llegir les definicions del binari i comparar-ho amb el `parseOptions` del binari (docs/fets-verificats.md) |
+
+## 6. Respostes d'en David (03/11/2026)
+
+1. **`warp-launch importa` (sense desar) i `configuracio valida` sense demanar OK:** sí (regla 4 de `CLAUDE.md`).
+2. **Carpeta arreglada d'una pestanya importada sense Claude:** Claude no s'activa sol, sinó amb el botó «Activa Claude».
+3. **Ordre de les pestanyes:** el de `warp-launch llegeix` és el de la pantalla (comprovat en una finestra).
+4. **Icona:** finestres en cascada sobre fons índigo (pas 12).
+
+Del pas 11 (04/11/2026):
+
+5. **Menú de la icona:** no diu quantes pestanyes no s'obririen; els avisos de les pestanyes són a l'editor.
+6. **Nom de sessió de la plantilla:** no es copia mai a les pestanyes noves ni a les importades.
+7. **Prova 8:** després del pas 12.
+
+## 7. Fase 3.1: obrir una finestra a Warp (R12)
+
+Pla del 04/11/2026, fet amb la recerca del codi de Warp (master `abeaf2a`; instal·lat: 0.2026.10.21, amb la
+0.2026.11.03 ja baixada), del binari de Claude Code 2.1.318 i del repo a la 0.14.1. «Codi» vol dir llegit al codi o al
+binari, encara no provat en execució: cada prova real (L1 a L5) en confirma una part.
+
+**Decisions d'en David** (`docs/especificacio.md`): D5 (fitxer temporal), D7 (`--resume` de la conversa de cada
+pestanya; si no se sap, una de nova, mai `--continue`), D13 (només les pestanyes que falten), D15 (fora `--continue`
+de l'ordre que es mostra), D16 (un espai al davant, fora de l'historial), D17 (el CLI mostra per defecte; amb una opció
+explícita, també obre) i D18 (lectura cada 60 s).
+
+### Què triem quan la recerca no coincideix
+
+1. **`--resume <id>` des d'una altra carpeta:** el missatge «different directory» només surt al selector
+   (`onSelect`); `--resume <id>` busca a tots els projectes (binari: `N1e` → `TQ` → `Per` → `W6e`). Fins a L4, una
+   carpeta diferent és un avís, no un bloqueig.
+2. **`--resume` d'una conversa viva:** Claude només s'hi nega si la té un procés no interactiu. Si és interactiu, no
+   diu res i les dues pestanyes s'intercalen a la mateixa transcripció. **R9 l'ha de garantir l'app** sempre, abans
+   d'obrir. No es prova mai a propòsit. Els fets del 05/11/2026 no hi quadren del tot (vegeu `fets-verificats.md`, «`claude
+   --resume`»).
+3. **`cwd` amb `~` o buit:** Warp expandeix `~`, i amb una carpeta buida obre la seva per defecte i hi executa l'exec
+   (`launch_config.rs:270-276`, `pane_group/mod.rs:1390`). L'app només escriu rutes absolutes que existeixen.
+4. **Pane recordat que hi és però sense Claude:** compta com a pestanya oberta («oberta sense Claude»): R9 parla de
+   pestanyes.
+5. **Conversa nova:** `claude` sense id (no `--session-id`, no provat). La marca dona el `sessionId` en uns 2 s.
+
+### Flux
+
+1. «Obre la finestra a Warp…» (menú Fitxer, barra d'eines de la llista, menú contextual de la finestra a la barra
+   lateral, inspector sense pestanyes triades, submenú de la finestra al menú de la icona) només crida
+   `editor.demanaObertura(finestra)`. Desactivat si la configuració no és oberta, si la finestra no
+   té pestanyes, si ja hi ha una obertura en curs o si `estat.json` és d'una versió més nova.
+2. L'app desa la configuració; si no pot, no obre.
+3. Comprova si Warp és obert. Si no, el full ho diu, i «Obre» l'obrirà abans (0.22.0; vegeu «Sense la base de Warp»).
+4. Lectura nova: Warp, les sessions (també les no interactives), `estat.json`, les transcripcions i la confiança.
+5. `PlaObertura.calcula` (pura) dona el pla, i el full de confirmació el mostra amb xifres.
+6. «Obre N pestanyes» torna a llegir i recalcula. Si el pla ha canviat, no obre: torna a mostrar el full («Warp ha
+   canviat»).
+7. Desa el llançament `pendent` a `estat.json`, escriu el YAML (`O_EXCL`) i crida `ObreWarp.obre(url)`.
+8. Cada 0,5 s, fins a 30 s des que `obre` torna (i com a mínim una lectura), llegeix Warp i les sessions i busca
+   la finestra nova i les marques (`ConfirmacioObertura`). El que veu s'acumula (`Confirmacio.afegeix`).
+9. En quant veu la finestra o una marca, esborra el YAML (Warp ja l'ha copiat a memòria, `uri/mod.rs:227-250`), però
+   continua llegint fins que ha vist la finestra **i** el Claude de cada pestanya que n'ha de tenir, o fins als 30 s:
+   una marca sola no confirma la finestra, i les pestanyes de terminal només es lliguen per la finestra. Als 30 s
+   sense res, l'esborra igualment.
+10. Desa a `estat.json` el resultat (`confirmat` si s'ha vist la finestra; si no, `senseConfirmar`), el pane de cada
+    pestanya (de la finestra, per ordre, o de la marca, que mana) i la sessió de cada marca. Bàner: «S'ha obert
+    «empresa» a Warp: 9 pestanyes, 6 amb Claude», amb «Claude encara no ha arrencat a «Botiga»: mira-ho a Warp» si en
+    falta algun; «No s'ha pogut reconèixer la finestra nova… (s'ha vist Claude a 2 de 6 pestanyes)» si només s'han
+    vist marques; i «No s'ha pogut confirmar…» si no s'ha vist res.
+11. Si s'ha vist la finestra però no el Claude d'alguna pestanya que reprèn una conversa, la conversa queda «en curs»
+    (en memòria) fins que una lectura en vegi el Claude amb la marca, o 10 min. Mentrestant, una altra pestanya que
+    recordi la mateixa conversa compta com a oberta («una altra pestanya acaba de reprendre la seva conversa»), R9. La
+    pestanya que la reprèn no en queda afectada: si es torna a obrir, la reprèn (si en comencés una de nova, la
+    perdria).
+12. Si l'app surt a mig obrir (⌘Q, o es tanca la sessió de macOS), `applicationShouldTerminate` crida
+    `Obertura.enSortir`: esborra el YAML i desa el que ja s'ha vist (`confirmat` i els panes, si s'ha vist la finestra;
+    si no, `senseConfirmar`).
+
+### Fitxer temporal (0.15.0, fet)
+
+- **Carpeta:** `~/.warp/launch_configurations/`, l'única que llegeix Warp, també amb `--config`.
+- **Nom:** `warp-launch-<llançament>.yaml`, amb un UUID nou en minúscules. `name:` és el nom sense `.yaml`, i l'URL,
+  `warp://launch/warp-launch-<llançament>`: sense punts ni res a codificar, no pot coincidir amb cap configuració d'en
+  David ni activar el reintent sense extensió de Warp (`uri/mod.rs:746-811`).
+- **Marca:** primera línia `# warp-launch: temporal <llançament>`.
+- **Camps:** els obligatoris i `title` (buit: el nom de la carpeta). Sense `color`, `active_*`, `is_focused`,
+  `pane_mode` ni `tab_groups`.
+- **Escalars:** entre cometes dobles; només s'escapen `\` i `"`. Els caràcters de control C0, DEL i C1, U+2028,
+  U+2029, U+FEFF, U+FFFE i U+FFFF són un error, i la pestanya queda exclosa. Si falta un camp o un tipus és erroni,
+  Warp descarta tot el fitxer sense avisar (`util.rs:74-110`): per això el generador és propi i té una prova golden.
+  El 04/11/2026, PyYAML i el Psych de Ruby llegeixen el golden igual; yaml-rust (el de Warp), a L1.
+- **Ordre de cada pestanya:** amb Claude, una sola exec: ` WARP_LAUNCH_PESTANYA=<id pestanya> ` (amb l'espai del
+  davant, D16) seguit de `OrdreClaude.text(argv)`. Mai `export` ni `--continue`. Una pestanya de terminal no porta
+  `commands`.
+- **Les feines de l'agent (0.22.3, en David, 05/11/2026):** una pestanya en bypass (`saltaPermisos` o `modePermisos: bypassPermissions`) porta
+  també `CLAUDE_ENV_FILE=<carpeta de la configuració>/entorn-claude.sh`. El fitxer defineix una funció `claude` que afegeix
+  `--permission-mode bypassPermissions` si l'ordre comença amb `--bg` o `--background`; si l'agent en posa un altre, mana el seu. L'app l'escriu
+  abans d'obrir, i si no pot, no obre. Afegir el paràmetre a la línia de la pestanya no canviaria res: ja va en bypass, i les feines no l'hereten.
+  - **Una feina que ja existeix no el porta:** `--resume <id complet>` amb el seu `state.json` es desperta amb el mateix id i les opcions desades.
+    Amb el paràmetre, Claude en faria una còpia, i les còpies són el problema de sota. Una feina d'abans de la 0.22.3 amb `auto` desat continua en `auto`.
+  - **Una feina viva, en reprendre-la, fa una còpia en `auto`:** el camí bo és enviar-li un missatge, no reprendre-la.
+  - **No arriba** a `nohup claude --bg`, a un script, a `bash -c` ni a `claude -n x --bg`: la feina aniria en `auto`, com abans. Per arribar-hi caldria
+    un `claude` propi al `PATH`: es va descartar perquè un error podria fer que es cridés a si mateix. Tampoc arriba a les feines que engegui una feina.
+  - **No té efecte a les pestanyes obertes:** la variable només es llegeix en arrencar. Tampoc en un `claude` que en David obri a mà.
+
+```yaml
+# warp-launch: temporal 3f2a9c1e-0b7d-4e8f-9a6b-5c4d3e2f1a0b
+name: "warp-launch-3f2a9c1e-0b7d-4e8f-9a6b-5c4d3e2f1a0b"
+windows:
+  - tabs:
+      - title: "Botiga"
+        layout:
+          cwd: "/Users/prova/GitHub/empresa/botiga"
+          commands:
+            - exec: " WARP_LAUNCH_PESTANYA=9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62 claude --dangerously-skip-permissions --effort high --settings '{\"ultracode\":true}' --resume 1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d"
+      - title: "Web Host"
+        layout:
+          cwd: "/Users/prova/GitHub/web host"
+```
+
+**Quan s'esborra:** en veure la finestra nova o una marca; als 30 s sense res; si `obre` falla; en sortir de l'app a
+mig obrir; en arrencar l'app (els llançaments `pendent` d'`estat.json` no esborrats, i qualsevol `warp-launch-*.yaml`
+amb la marca de més de 2 min; aquests últims, també si `estat.json` no es pot fer servir). Només si el nom
+és propi, `lstat` diu fitxer normal, és a la carpeta injectada, la primera línia és la marca i la mida és la que
+es va escriure. Mentre existeix, Warp el pot mostrar a ⌃⌘L (watcher amb 500 ms de debounce): a L1 es mira que desaparegui.
+
+### `estat.json` (versió 1, de l'app)
+
+- A la carpeta de la configuració (amb `--config`, la de prova). No s'escriu si no hi ha configuració; no el crea mai
+  una lectura ni el CLI. Escriptura atòmica, sense còpies. Si és d'una versió més nova, es llegeix i l'app no obre res.
+
+```json
+{
+  "versio": 1,
+  "generador": "Warp Launch 0.17.0",
+  "pestanyes": {
+    "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62": {
+      "pane": "c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+      "sessio": "1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d",
+      "carpetaSessio": "/Users/prova/GitHub/empresa/botiga",
+      "origen": "marca",
+      "vista": "2026-11-04T20:31:00Z"
+    }
+  },
+  "llancaments": [
+    { "id": "3f2a9c1e-…", "fitxer": "warp-launch-3f2a9c1e-….yaml", "mida": 812, "creat": "…",
+      "finestra": "5C0E8A52-…", "pestanyes": ["9F4B2C7E-…"], "estat": "confirmat", "esborrat": true, "segons": 0.8 }
+  ]
+}
+```
+
+- **`origen`:** `importacio` (el pane, i la sessió si era viva), `llancament` (pane de la finestra confirmada),
+  `marca` (sessió amb la marca), `pane` (sessió vista al pane recordat).
+- **`llancaments`:** els 20 últims; per a les proves i per avisar si l'últim no es va confirmar.
+- **Pestanyes que ja no són a la configuració:** l'entrada es guarda 30 dies (`vista`), perquè el Desfés no perdi la
+  conversa.
+- **Quan s'escriu:** en crear la configuració o tornar a importar (es lliguen per pane **totes** les pestanyes; en
+  tornar a importar, s'hereta la `sessio` del mateix pane); abans d'escriure el YAML i després de confirmar; a cada
+  lectura si ha canviat alguna sessió (en arrencar, «Torna a llegir», cada 60 s amb D18, i abans d'obrir).
+- **Regles (`ActualitzaEstat.amb`):** una sessió viva amb la marca M dona a la pestanya M el pane i la sessió; una
+  sessió interactiva al pane P dona la sessió a la pestanya del pane P (així es recullen `/clear` i `/resume` fets a
+  mà); si la marca és d'una entrada que ja no és a la configuració (s'ha tornat a importar), es posen al dia l'entrada
+  i la pestanya del pane P; si Claude surt, la `sessio` es manté; dues pestanyes amb el mateix pane: el conserva la més
+  recent.
+
+### Pestanyes ja obertes (D13, R9): no s'obren, i el full diu per què
+
+| # | Condició (la primera que es compleix) | Text al full |
+|---|---|---|
+| 1 | Un `claude` viu porta `WARP_LAUNCH_PESTANYA` igual a l'id de la pestanya | «oberta a Warp (Claude)»; si és dins de Warp amb un pane que ja no hi és, «tancada fa menys d'1 min» |
+| 2 | El pane recordat és a `warp.sqlite` | «oberta a Warp» o «oberta a Warp, sense Claude» |
+| 3 | La `sessio` recordada és d'una sessió viva | «oberta a «empresa 2 › X»», «… fora de Warp», «… en segon pla», «… a Warp» (sense pane conegut), o «tancada fa menys d'1 min: espera i torna-ho a provar» (dins de Warp amb un pane que ja no hi és: el desfer tancar de 60 s) |
+| 4 | Una altra pestanya acaba de reprendre la `sessio` recordada i el seu Claude encara no s'ha vist (flux, 11) | «una altra pestanya acaba de reprendre la seva conversa» |
+
+- **Avisos que no bloquegen:** una pestanya sense lligam a la mateixa carpeta que una d'oberta («potser ja és oberta a
+  «empresa › Botiga»»; la carpeta no prova res: el 03/11, 34 de 64 panes eren a `~`); l'últim llançament de la finestra
+  va quedar sense confirmar o pendent fa menys de 10 min («mira Warp abans»), o va fallar («va fallar: si Warp n'ha
+  obert res, mira-ho abans»).
+- **«Tancada fa menys d'1 min» atura la finestra** (`Pla.motiuEspera`): si s'obrissin les altres pestanyes, la finestra
+  quedaria partida en dues. El full ho diu i «Obre» queda desactivat; el CLI ho diu amb ⏳. **Només si Warp restaura la
+  sessió:** sense la base no es pot saber, i és un avís (vegeu «Sense la base de Warp»).
+- **Error acceptat:** després d'un reinici l'uuid del pane potser canvia i la regla 2 falla (fase 3.3).
+- **Excloses (error al full):** la carpeta no existeix; l'ordre no es pot generar; un caràcter que el YAML no admet; un
+  error de `Validacio`.
+
+### Lligar amb Warp (0.21.0)
+
+Una configuració feta a mà, o creada abans de la 0.17.0 (com `prova2`, de la 0.14.0), no té lligams a `estat.json`:
+l'app no sap quines pestanyes ja són obertes, i en obrir una finestra les tornaria a obrir totes (el 05/11/2026,
+«Varis» hauria obert 22 pestanyes i 22 sessions noves). Tornar a importar-la no serveix: es perdrien els canvis fets a
+mà. **«Lliga amb Warp…»** (menú Fitxer) llegeix Warp i, per a cada pestanya sense lligam, proposa la pestanya de Warp
+on ja és oberta (`LligamWarp`). Només desa amb «Lliga» al full; no canvia la configuració, ni obre o tanca res.
+
+- **Ja lligada** (no es toca, i la seva pestanya de Warp no s'ofereix a cap altra): el seu pane és a Warp, o un Claude
+  viu porta la seva marca.
+- **Criteris, de més segur a menys:** la conversa recordada, viva en un pane (es lliga aquell pane, encara que la
+  pestanya estigui dividida); el títol i la carpeta; només el títol; només la carpeta (mai la d'inici). Els títols es
+  comparen sense espais als extrems ni majúscules. Cada pestanya es veu com a la importació: a la configuració, sense
+  títol, el nom de la carpeta (com el fitxer de Warp); a Warp, sense títol, el nom de la carpeta, i amb el pane a la
+  d'inici, la carpeta del seu Claude.
+- **On:** per a cada criteri, de més segur a menys, primer a la finestra de Warp de cada finestra de la configuració
+  (la que en té més pestanyes pel títol, comptant les ja lligades; si n'hi ha dues d'iguals, la carpeta desempata; si
+  encara, cap) i després a totes. La carpeta sola no lliga fora de la seva finestra, i un criteri feble a la finestra
+  no lliga una clau que comparteix una pendent d'una altra finestra.
+- **Només si és inequívoc:** si N pestanyes de la configuració i N de Warp comparteixen la clau, s'aparellen per
+  ordre; si no en són tantes com tantes, cap.
+- **El full:** les xifres (quantes per cada criteri, quantes amb Claude obert, les ja lligades i les de Warp que no
+  són de la configuració), cada finestra amb quantes de quantes i en quina finestra de Warp, les que s'han de
+  comprovar (només pel títol o per la carpeta), que es poden desmarcar, i les que no tenen parella.
+- **Què desa** (`ActualitzaEstat.lliga`, `origen` `importacio`: sense canvi de format): el pane; la conversa del
+  Claude viu del pane o, si no n'hi ha, la que la pestanya ja recordava (o la de l'entrada que tenia el pane). Un
+  pane, una pestanya: si una altra entrada el tenia, el perd.
+- **El full d'obrir** ho recorda: si hi ha pestanyes «potser ja obertes», diu que es cancel·li i es lligui abans.
+- **Límit:** de les pestanyes on Claude ja no corre, no se'n sap la conversa (la base de Warp no la desa: el
+  05/11/2026, 1 bloc de 628 contenia «--resume»), i en obrir-les en començaran una de nova.
+- **Comprovat amb les dades reals** (05/11/2026, `prova2` i `llegeix --json`, sense obrir l'app): 62 de 62 parelles,
+  47 pel títol i la carpeta, 15 només pel títol (a Warp, la carpeta d'inici o la d'abans d'arreglar-la); 9 amb Claude
+  viu; cada finestra de `prova2` cau sencera en una sola de Warp.
+
+### Conversa de les que s'obren (D7)
+
+**Decisió d'en David del 05/11/2026: sempre la més recent de la carpeta** (0.22.1). Abans, cada pestanya reprenia només la
+conversa recordada; el 05/11/2026, les 56 pestanyes per obrir n'haurien començat una de nova, perquè les recordades eren de
+l'obertura de les 10:20 i no tenien missatges.
+
+| `continua` | Hi ha una conversa recent a la carpeta | Conversa recordada | Resultat |
+|---|---|---|---|
+| no | — | — | Conversa nova |
+| sí | sí | — | `--resume <la més recent>`; info «reprèn la conversa més recent de la carpeta (fa 3 dies)», si no és la recordada |
+| sí | no | cap | Conversa nova; info «no se'n sap la conversa» |
+| sí | no | al projecte de la carpeta | `--resume <id>` |
+| sí | no | en un sol projecte, que no és el de la carpeta | `--resume <id>`; avís «la conversa és de <carpeta>; Claude la reprendrà aquí» (L4) |
+| sí | no | enlloc | Conversa nova; info «la conversa no tenia cap missatge» (si no, Claude sortiria amb 1) |
+| sí | no | en 2 o més projectes, cap del qual és el de la pestanya | Conversa nova; avís |
+
+- **Quines compten** (`LectorTranscripcions.recents`, 0.22.2): `<uuid>.jsonl` al projecte de la carpeta, el primer missatge de les
+  quals és de l'usuari i ve del terminal (`entrypoint: cli`, o cap a les versions antigues), i on Claude ha respost. No compten
+  `claude -p` (`sdk-cli`), Claude Desktop, que potser encara la té oberta, les que no tenen cap resposta, ni les feines en
+  segon pla de principi a fi.
+- **Quina és la més recent:** la de l'últim missatge al terminal, buscat des del final. No és la data del fitxer, perquè Claude
+  també l'escriu en tancar-se, i les línies d'una feina (`sessionKind`) no compten. Si no surt en els últims 4 MiB, la del
+  fitxer. Una feina es llegeix sencera: 71 ms en una carpeta amb una feina de 10 MB; en la pitjor de les 62 carpetes, 73 ms.
+- **Quines no s'agafen:** les vives (R9), en una pestanya, fora de Warp o en segon pla, i la d'un Claude aturat a preguntar si
+  confies en la carpeta, que encara no té sessió però sí `--resume` als arguments (`LecturaWarp.conversesArrencant`; un d'obert a
+  mà, sense marca, no es veu); la darrera vista en una altra pestanya de la configuració (a la mateixa carpeta, cadascuna es queda la seva); la que una altra pestanya acaba de reprendre; i la ja
+  represa en aquest llançament. Llavors s'agafa la següent.
+- **L'inspector i «Copia l'ordre»** diuen la mateixa conversa que el full, amb les vives de l'última lectura de Warp. Guarden les
+  converses de cada carpeta fins a la lectura següent (60 s com a molt), perquè l'inspector les demana a cada redibuix. No saben
+  què acaba de reprendre una altra pestanya; el full, sí.
+- **Comprovat amb les dades reals** (05/11/2026, només lectura): 56 de 56 pestanyes reprenen, 0 de noves; 62 carpetes
+  diferents; el càlcul triga 100 ms com a molt per finestra. Quatre converses passen de 200 MB: encara s'ha de veure quant
+  triguen a reprendre's, quanta memòria fan servir i si Claude hi fa alguna pregunta.
+- **Mai `--continue`; mai el mateix id en dues pestanyes del mateix llançament, ni un id que una altra pestanya acaba de
+  reprendre** (regla 4 de «ja obertes»). Si la recordada es repeteix: la segona, nova, amb avís.
+- **Projecte d'una carpeta:** `~/.claude/projects/<carpeta amb tot el que no és [A-Za-z0-9] canviat per ->`, seguint
+  l'enllaç (144 de `-Users-<usuari>-GitHub-*` són enllaços a `…Documents-GitHub-*`). Més de 200 caràcters: Claude hi
+  posa un hash, i es busca a tots els projectes que no són enllaços, com Claude (`W6e`).
+- **`--fork-session` a `altres`:** a més de l'avís d'opció d'un sol ús, «crearà una còpia».
+- **Confiança:** si `~/.claude.json` no té `hasTrustDialogAccepted` per a la carpeta o una carpeta pare, avís «Claude
+  preguntarà si confies en la carpeta: la pestanya esperarà una tecla». A la carpeta d'inici no es desa mai. Fitxer
+  il·legible: cap avís.
+
+### El full de confirmació
+
+- **Xifres:** «S'obrirà 1 finestra nova de Warp amb 9 pestanyes: 6 amb Claude (4 reprenen la seva conversa, 2 en
+  comencen una de nova) i 3 només terminal · unes 3 GB · ja obertes: 14 · no s'obriran: 1». 0,5 GB per sessió (el
+  03/11, mitjana de 508 MB). Més de 10 sessions: «totes s'engegaran alhora».
+- **Contingut:** llistes per grup amb el motiu de cada pestanya, la versió de Warp i el YAML en un desplegable.
+- **Botons:** «Cancel·la» (Esc) i «Obre 9 pestanyes», sense drecera i sense ser el botó per defecte. Si no n'hi ha cap
+  per obrir: «Totes les pestanyes ja són obertes», amb «D'acord».
+
+### Seguretat
+
+**Prova de guarda:**
+- `warp://` només en una línia, `URL(string: "warp://launch/" + nom)` a `WarpLaunchCore/LaunchConfigWarp.swift`
+  (0.15.0, fet). `URLLlancament` té l'`init` intern: fora del core no se'n pot fer cap.
+- `NSWorkspace`: `activateFileViewerSelecting(` a `Finder.swift`, i un sol `NSWorkspace.shared.open(`, a l'obridor
+  (`ObreWarp`), que rep un `URLLlancament`, obre amb `/Applications/Warp.app` després de comprovar que el bundle és
+  `dev.warp.Warp-Stable`, i descarta el valor que retorna (`NSRunningApplication` continua prohibit). Amb D17 el fa
+  servir també el CLI: l'obridor va en un mòdul que comparteixen tots dos, i continua sent una sola crida.
+- `launch_configurations` només a `WarpLaunchCore/FitxersLaunchWarp.swift`, i `removeItem`/`unlink` només dins
+  d'`esborra`.
+- `.confirma(` només a `WarpLaunchUI/FullObertura.swift`. Els botons «Obre…» només criden `demanaObertura(`, sense
+  `keyboardShortcut` (substitueix `obreAWarpEsDesactivatISenseDrecera`).
+- Es mantenen les altres prohibicions (`Process(`, `openURL`, `NSRunningApplication`, `kill(`…). Warp obert: `sysctl`.
+- A `Tests/`, a més: `NSWorkspace`, `openURL`, `ObreWarp`, `FitxersLaunchWarp.real`, `\.warp/`,
+  `launch_configurations`, `\.claude\.json` i `\.claude/projects` (`Process(` només al helper de zsh).
+- Cap `argv` de `PlaObertura` no porta `--continue` ni `-c`, i el YAML no porta mai `export`.
+
+**CLI (D17):** `warp-launch obre <nom o número de finestra> [--config <carpeta>] [--json]`.
+- **Per defecte, mode de prova:** llegeix la configuració, `estat.json`, Warp, les sessions, les transcripcions i la
+  confiança; mostra el pla, el nom del fitxer, l'URL i el YAML exactes; la primera línia diu «Mode de prova: no s'ha
+  escrit ni obert res». No escriu res, tampoc `estat.json`. Codis de sortida 0, 1, 2 i 64.
+- **Amb una opció explícita (`--obre`),** fa el mateix que el full de confirmació: torna a calcular el pla, escriu,
+  obre, confirma i esborra, i diu el resultat. Si no hi ha res per obrir, no fa res. **Claude no
+  la fa servir mai sense l'OK d'en David per a cada prova** (regla 1).
+
+**Què no fa mai:** tancar, reiniciar o forçar la sortida de Warp ni tancar-ne pestanyes o finestres; matar Claude o
+enviar-li senyals; obrir res sense confirmació (el full o `--obre`), tampoc Warp; obrir dues finestres alhora;
+escriure o esborrar a `~/.warp/` res que no sigui un `warp-launch-<uuid>.yaml` propi amb la marca; escriure a
+`~/.claude/` o `~/.claude.json` (només en llegeix `sessions/`, el nom dels `projects/*/<id>.jsonl` i
+`projects.*.hasTrustDialogAccepted`); fer servir `--continue` o reprendre una conversa viva.
+
+### Passos
+
+Com a la fase 2: cada `feat:` porta proves, el bump de `VERSION` i `WarpLaunch.versio`, i passa `swift build` i
+`scripts/test.sh`. Fixtures sempre generats a la prova. **Cap pas obre res fins a la prova L1.**
+
+1. **0.15.0 — l'ordre i el fitxer temporal (core, pur).** Fet (04/11/2026). `argv(_:repren:)` sense `Represa` ni
+   `--continue` (D15), `liniaExec` (D16), `YAMLWarp.escalar`, `LaunchConfigWarp` (`genera`, `comprova`, `marca`,
+   `esNomPropi`, `FitxerLaunch`, `URLLlancament`). Proves: golden, escalars, errors per camp, i zsh llegint la línia
+   del YAML.
+2. **0.16.0 — llegir el que cal per obrir (core).** Fet (04/11/2026). `SessioClaude.marca` (de
+   `WARP_LAUNCH_PESTANYA`, validat amb `UUID(uuidString:)`); `LecturaWarp.sessionsNoInteractives` i `warpObert`;
+   `FontProcessos.pids(nom:)` amb `sysctl KERN_PROC_UID` i `warpObert()` (l'app d'Aplicacions sense arguments);
+   `LectorTranscripcions` (`.aLaCarpeta | .altres([String]) | .enlloc`) i `LectorConfianca`. `warp-launch llegeix`
+   diu si Warp és obert, les sessions en segon pla i la marca de cada sessió.
+3. **0.17.0 — `estat.json` i lligams.** Fet (04/11/2026). `EstatApp`, `ActualitzaEstat.amb` i `.vincula`,
+   `MagatzemEstat` (l'escriptura atòmica passa a `EscripturaAtomica`), `Importacio.vincles`, `EstatSessions` (cada
+   lectura de Warp, també la de cada 60 s, D18), i l'inspector amb «Conversa: reprèn 1b2c3d4e» o «nova»; «Copia
+   l'ordre» amb `--resume <id>` si se sap (D15).
+   - **Canvis sobre el pla:** l'entrada d'una pestanya esborrada porta `foraDesDe` (es treu als 30 dies), perquè
+     `vista` només canvia quan canvia el lligam (si no, s'escriuria cada minut). Les dates van a segons sencers. Dues
+     pestanyes amb el mateix pane només es resolen entre les de la configuració: les esborrades conserven el seu, i
+     un Desfés de «Torna a importar» les torna amb el pane. Un `estat.json` malmès bloqueja com una versió més nova:
+     l'app no el trepitja i no obrirà res; l'inspector no diu el temps («fa 2 h»), que no se sap sense llegir la
+     transcripció.
+4. **0.18.0 — el pla, la confirmació i `warp-launch obre` en mode de prova.** Fet (04/11/2026). `PlaObertura`,
+   `ConfirmacioObertura` (una finestra amb tots els panes nous, el mateix nombre de pestanyes i els mateixos títols i
+   carpetes en ordre; o una sessió amb la marca començada després de `desDe` − 5 s) i l'ordre del CLI.
+   - **Canvis sobre el pla:** els avisos de la validació (gravetat «avís») també surten al full, com l'opció d'un sol
+     ús al costat de «--fork-session». «Potser ja és oberta» no es mira a la carpeta d'inici. La confirmació no
+     descarta una finestra si Warp no ha desat el títol o si la carpeta encara és la d'inici (la shell no l'ha dit):
+     L1 dirà què escriu Warp; amb dues finestres que encaixen, no se'n tria cap. El CLI posa al dia els lligams amb
+     la lectura només en memòria, com faria l'app abans de calcular; mostra el nom del fitxer, no la ruta (arriba amb
+     `FitxersLaunchWarp`, a la 0.23.0); `--obre` dona un error d'ús fins a la 0.24.0. Codis: 0, 1 (no es pot llegir
+     la configuració, Warp o `estat.json`), 2 (alguna pestanya no s'obriria) i 64.
+5. **0.19.0 — escriure i esborrar el fitxer temporal (core).** Fet (04/11/2026). `FitxersLaunchWarp` (`escriu` amb
+   `O_EXCL`, 0644 i `fsync`; `esborra` amb totes les comprovacions; `neteja`) i les regles noves de la guarda.
+   - **Detalls:** no crea mai la carpeta de Warp (si no hi és, error). `escriu` també porta `O_NOFOLLOW`, i si falla a
+     mig escriure, treu el fitxer només si és el mateix inode que acaba de crear. `neteja(llancaments:ara:)` torna el
+     resultat per llançament, per posar-lo al dia a `estat.json`; als fitxers propis que no hi són no els pot mirar la
+     mida, només la marca i l'edat (`mtime`). La guarda: `launch_configurations` només en aquest fitxer, un sol
+     `unlink(`, cap `removeItem`, `rename`, `createDirectory`, `O_TRUNC` ni `.write(to:`; i a les proves, cap ruta
+     de debò de Warp ni de Claude. `warp-launch obre` encara mostra el nom del fitxer i no la ruta (la 0.24.0).
+6. **0.20.0 — l'app obre.** Fet (04/11/2026); provat a Warp a L1 (05/11/2026). `Obertura` (`.cap`, `.preparant`,
+   `.confirmant`, `.obrint`, `.fet`, `.error`; una sola alhora; registre `obertura` sense noms ni carpetes),
+   `FullObertura`, les ordres, el submenú del menú de la icona, el bàner i l'obridor. Proves amb un llançador fals.
+   **Abans de L1, una revisió amb revisors i verificadors.** Feta el 04/11/2026 (4 revisors i 4 verificadors): 25
+   troballes, 16 confirmades (10 de diferents), corregides a la **0.20.1**:
+   - L'espera s'acabava amb la primera marca, i les pestanyes de terminal quedaven sense pane: a L3 o L4 s'haurien
+     tornat a obrir. Ara la marca esborra el fitxer, però s'espera la finestra i el Claude de cada pestanya; la marca
+     també reconeix la finestra on és, encara que els títols no coincideixin.
+   - Una finestra feta a mà (sense títol i a l'inici) es podia prendre per la nostra: ara cal un títol o una carpeta
+     que coincideixi.
+   - Una pestanya amb marca tancada fa menys d'1 minut es donava per oberta i la finestra es partia: ara és «tancada
+     fa poc», i la finestra no s'obre fins que passi.
+   - Després de «Torna a importar», la marca antiga s'enduia el `/clear`: ara arriba també a la pestanya del pane.
+   - Dues obertures seguides podien reprendre la mateixa conversa abans que se'n vegi el Claude: ara queda «en curs»
+     10 min.
+   - Sortir a mig obrir deixava el YAML a Warp fins a la pròxima arrencada: ara s'esborra en sortir. En arrencar amb
+     un `estat.json` que no es pot fer servir, els fitxers propis vells també s'esborren.
+   - Els 30 s compten des que `obre` torna; un llançament amb error també avisa; un llançament nou que no es pot desar
+     no queda a la memòria; `.preparant` porta l'id de la petició (dues finestres amb el mateix nom).
+   - **Segona revisió (05/11/2026, 2 revisors i 2 verificadors), 0.20.2:** 6 troballes confirmades. La conversa «en
+     curs» feia començar una conversa nova a la mateixa pestanya i n'oblidava la de debò, i no es treia en veure el
+     Claude: ara només afecta les altres pestanyes (compten com a obertes), només si s'ha vist la finestra, i es treu
+     en veure el Claude. `enSortir` desa la finestra i els panes ja vistos. Una sessió dins de Warp sense pane conegut
+     ja no atura la finestra (podria ser per hores). Un llançament amb error té un avís propi. El bàner i els avisos
+     diuen el nom de la carpeta d'una pestanya sense títol.
+   - **Com ha quedat:** els estats són `.cap`, `.preparant`, `.confirmant`, `.obrint` (comprovant, obrint, esperant)
+     i `.noEsPot` (abans d'escriure res, al full amb «D'acord»); el resultat d'obrir (`.fet` o error) és un bàner a
+     dalt de la llista. L'obridor és un mòdul propi, `WarpLaunchObridor` (`ObreWarp`), que només connecta l'app; el
+     llegirà també el CLI a la 0.24.0. L'id del llançament es tria en preparar el full: el YAML de «Detalls» és
+     exactament el que s'escriurà, i si en confirmar el fitxer o les pestanyes per obrir no són iguals, es torna al
+     full («Warp ha canviat»). Les sessions amb la marca les recull cada lectura (`EstatWarp.enLlegir`); en
+     confirmar, l'app hi afegeix el pane de cada pestanya de la finestra nova (`ActualitzaEstat.ambPanes`). En
+     arrencar, `netejaEnArrencar` esborra els fitxers propis que hagin quedat. Guarda: una sola crida a
+     `NSWorkspace.shared.open(`, a `ObreWarp`; `ObreWarp.obre(` i `FitxersLaunchWarp.real` només a l'app; i els botons
+     «Obre…» només demanen el full, sense drecera.
+6b. **0.21.0 — «Lliga amb Warp…».** Fet (05/11/2026). En David vol fer L3 amb una còpia de `prova2`, que no té
+   lligams: `LligamWarp`, `ActualitzaEstat.lliga`, `Lligam` i `FullLligam`, l'ordre al menú Fitxer i l'avís al full
+   d'obrir (vegeu «Lligar amb Warp»). **Revisió** (3 revisors i 3 verificadors): 3 troballes confirmades, corregides
+   abans de desar. Un criteri feble a la finestra podia prendre la pestanya que coincidia del tot amb una altra
+   finestra de la configuració; la conversa d'una pestanya dividida lligava el primer pane; i les pestanyes de Warp no
+   es veien com a la importació (sense títol, o amb el pane a la carpeta d'inici).
+6f. **0.22.3 — les feines dels agents, en bypass.** Fet (05/11/2026). Vegeu «Les feines de l'agent» a l'ordre de cada pestanya. Amb les dades reals i Warp
+   buit, calculat sense escriure res: 62 de 62 línies porten la variable, 62 reprenen, 0 excloses, cap conversa repetida, la línia més llarga fa
+   261 bytes i el fitxer més gran, 9.359. Prova real feta el 05/11/2026 amb la 0.22.3: en David reobre les finestres i, des d'una pestanya, 1 feina nova surt en bypass i rep i contesta un missatge sola (`fets-verificats.md`).
+6e. **0.22.2 — correccions de la revisió de la 0.22.1 i l'script.** Fet (05/11/2026). 2 revisors i 4 verificadors: 3 confirmades, 1
+   refutada i 5 sense verificar. Set corregides; la vuitena, el text de la regla 7, depèn de D19. Les 62 pestanyes, comparades amb les dades reals: només en canvia una, que deixa de reprendre una conversa
+   buida. **L'script fa una sola lectura**, es nega amb `WARP_SETTINGS` buit i ja no crea res a `~/.warp/`.
+6d. **0.22.1 — la conversa més recent de la carpeta (D7, revisada).** Fet (05/11/2026). Vegeu «Conversa de les que s'obren».
+6c. **0.22.0 — saber què hi ha obert sense la base de Warp, i obrir Warp si és tancat.** Fet (05/11/2026). En David desactiva
+   la restauració de sessió i Warp deixa de desar les finestres (vegeu «Sense la base de Warp»). `LectorAjustosWarp` i
+   `FontProcessos.terminalsDeWarp`; `LecturaWarp.terminals` i `warpDesaFinestres`; el pla i la confirmació amb els
+   terminals; `Confirmacio.vista`; `ObreWarp.engega`, `Fase.engegant` i `Proposta.warpTancat`; la importació i «Lliga» ho
+   refusen. Una guarda deixa `openApplication` només a l'obridor. **Abans del commit, una revisió amb 3 revisors i 6
+   verificadors** (05/11/2026): 15 problemes diferents, 13 corregits amb la seva prova. Els més importants: el full
+   no avisava que la finestra es pot partir, el bàner fals tornava amb una pestanya a la carpeta d'inici, els terminals
+   acabaven l'espera amb la restauració activada (es perdien panes), Warp s'engegava sense avisar si es tancava amb el full
+   obert, i el full quedava blocat si `openApplication` no tornava. Els 2 que queden: la pestanya de terminal que no es
+   reconeix (vegeu «Els límits») i reactivar la restauració, sense provar.
+6g. **0.23.0 — l'app gestiona `restore_session` (D19).** Vegeu «Sense la base de Warp». Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, la foto quadra amb els 62 terminals (`docs/fets-verificats.md`).
+7. **0.24.0 — el CLI obre amb `--obre` (D17).** Fet (05/11/2026), sense prova real. Els passos d'obrir després de la confirmació
+   (desar el llançament, escriure el fitxer, obrir, esperar la finestra, esborrar i lligar) passen d'`Obertura` a
+   `ExecucioObertura` (core), que fan servir l'app i el CLI; també l'espera de l'arrencada de Warp. El CLI depèn de
+   `WarpLaunchObridor`. Decisions d'en David (05/11/2026): **amb l'app oberta, `--obre` no fa res** (tots dos escriurien
+   `estat.json`: es busca un procés `WarpLaunch`), i **si Warp és tancat, l'obre**, n'espera l'arrencada i torna a calcular;
+   si el que s'obriria ha canviat, no obre res (no hi ha full per tornar a confirmar). Sense `--json`. Codi 1 si no s'ha vist
+   tot obert. La guarda: `ExecucioObertura` és l'única que escriu el fitxer i crida l'obridor; el CLI només l'arriba a cridar
+   amb `--obre`, i només hi crea `MagatzemEstat`.
+   Revisió (3 revisors i 3 verificadors, 05/11/2026): 7 defectes confirmats, corregits. Al CLI: amb `--obre` no admet
+   `--warp` ni `--sessions` (el pla sortiria d'una base de prova i s'obriria al Warp de debò); el pla i l'espera de Warp
+   surten de seguida, no en acabar; **Ctrl-C** a mig obrir esborra el fitxer temporal i desa el llançament; si Warp s'ha
+   obert, els errors no diuen «no s'ha obert res»; i sense res per obrir, el text no diu «ja obertes» si n'hi ha d'excloses.
+   A l'app, el registre torna a dir per què no s'ha pogut esborrar el fitxer, i «escrit … obre» surt quan toca.
+8. **`docs:` fase 3.1 feta,** després de L5 i de l'OK d'en David, i llavors el push.
+
+El pas 12 de la fase 2 (icona) passa a la 0.26.0 (la icona, finalment, a la 0.26.1); la prova 8 continua anant després.
+
+## 8. Fase 3.2: obrir-ho tot (0.25.0, D4)
+
+«Obre-ho tot a Warp…» (menú Fitxer i menú de la icona) demana un sol full per tornar a obrir totes les finestres que falten.
+Decisions d'en David (05/11/2026): **totes de cop**; si una falla, **les altres continuen** i el resum ho diu; **una casella per
+finestra**, totes marcades.
+
+- **Model:** `Obertura` (extensió a `ObreTot.swift`). Estats `preparantTot`, `confirmantTot(PropostaTot)` i `obrintTot`. Una
+  sola obertura alhora, d'una finestra o de totes.
+- **El pla:** llegeix Warp un cop (`llegeixPerObrir`) i calcula cada finestra amb pestanyes en ordre (`planifica`). Les
+  converses que reprèn una finestra passen a `EntradaObertura.jaRepreses` de les següents: dues pestanyes no reprenen mai la
+  mateixa conversa (R9). Una finestra es pot marcar si té pestanyes per obrir, no ha d'esperar i el fitxer es pot generar.
+- **«Obre N finestres»** (`confirmaIObreTot`, sense drecera ni botó per defecte): torna a llegir i a calcular amb els mateixos
+  ids; si alguna marcada ha canviat, torna al full. Si Warp és tancat, l'obre un cop. Després, una tasca per finestra amb
+  `ExecucioObertura` (com una sola), totes alhora i amb una lectura de Warp compartida (0,4 s). `enSortir` esborra tots els
+  fitxers en curs.
+- **Pestanyes sense marca** (només de terminal, o abans que arrenqui Claude): es reconeixen per la carpeta. Amb diverses
+  finestres alhora, el terminal que pren una finestra no compta per a cap altra fins que acaben totes, i un terminal reconegut
+  només per la carpeta no fa esborrar el fitxer (`Confirmacio.segura`). Límit: si dues finestres en tenen a la mateixa carpeta,
+  l'app encara pot lligar-ne una a la finestra de l'altra (cap Claude no queda repetit).
+- **En marcar o desmarcar,** es tornen a calcular els plans amb la mateixa lectura i els mateixos llançaments: les converses
+  d'una finestra desmarcada queden lliures per a les altres.
+- **Revisió** (3 revisors i 3 verificadors, 05/11/2026): 5 defectes confirmats, corregits (els dos d'aquí dalt; la finestra buida
+  de Warp es diu un sol cop; el resum diu quantes pestanyes van amb Claude; i la prova de «totes de cop» ara ho comprova).
+- **Prova real feta el 06/11/2026 amb la 0.26.0:** 1 finestra de 6, 2 pestanyes i 2 sessions, confirmada en 0,6 s (`docs/fets-verificats.md`).
+
+### La foto de les finestres (0.23.0, D19)
+
+`RefrescWarp` (UI, sense res de debò: la connexió és a l'app) i `AjustRestauracio` (core, les comprovacions de `warp-restauracio.sh`). Només amb la carpeta `.real`.
+
+- **L'ajust sempre és `false`:** `vigila()` en arrencar i cada 60 s; `tanca()` en sortir i abans d'engegar Warp.
+- **Quan en David ho demana** («Torna a llegir Warp», importar i lligar; fins a la 0.27.3, també cada 5 min), **amb Warp obert:** posa `true`, cada segon llegeix la base i acaba quan **quadra amb els terminals vius** (tants panes com terminals, i tots els coneguts hi
+  són) i ha canviat, o quadra i han passat 5 s. Màxim 30 s, o si Warp es tanca. Warp no té temporitzador: si no passa res, no desa, i per això no n'hi ha prou amb esperar un canvi.
+- **Lectures:** les de cada minut i les d'obrir, sempre `.mai` (processos), també durant un refresc o si l'ajust ha quedat activat: així la base antiga no canvia res a mitja obertura. `EstatWarp.llegeixAmbFinestres`, per a «Torna a llegir Warp», importar i lligar: Warp obert, refresca; Warp
+  tancat, `.sempre` sense escriure res. Sense poder llegir la base, no s'activa res. Si no quadra o Warp és tancat, l'avís (`avisFoto`) surt als fulls d'importar i de lligar i al menú, que a la lectura següent torna als terminals.
+- **Sortir:** `atura()`: desactiva i, mentre una alerta pot aturar la sortida, cap cicle torna a activar. Si es cancel·la, `repren()`.
+- **Riscos que queden:** si l'app mor a mig refresc o Warp es reinicia molt de pressa dins d'un refresc (de 5 a 30 s), Warp arrencaria amb l'ajust activat i restauraria les finestres. No s'ha mesurat quan llegeix l'ajust en arrencar: cal revisar-ho a la fase 3.3.
+- **La foto és la base de Warp:** es manté encara que Warp es reiniciï amb l'ajust desactivat (05/11/2026: encara hi havia 5 finestres i 57 pestanyes d'abans). No hi ha cap fitxer nou.
+
+### Sense la base de Warp (0.22.0)
+
+Amb `general.restore_session = false`, Warp no desa les finestres i `warp.sqlite` és d'abans (fets-verificats). `Lector` ni
+la llegeix: `finestres` és buit i `warpDesaFinestres` és `false`. Si la restauració és activa, tot és com abans.
+
+**D'on surt què hi ha obert:** dels terminals vius (`TerminalViu`): els fills de `stable terminal-server`, amb la carpeta del
+shell i, dels seus fills, el pane i la marca.
+
+| Ordre | Si… | La pestanya és |
+|---|---|---|
+| 1 | Una sessió viva porta la seva marca | «oberta a Warp, amb Claude» |
+| 2 | Un procés viu porta la seva marca, sense sessió (Claude arrenca o s'ha aturat a preguntar) | «oberta a Warp, amb Claude» |
+| 3 | Un procés viu porta el pane recordat | «oberta a Warp», amb Claude o sense |
+| 4 | La seva conversa és viva | «la seva conversa és oberta a Warp», fora de Warp o en segon pla |
+| 5 | A la seva carpeta, que no és la d'inici, hi ha un terminal sense Claude, o un Claude sense marca en un pane que cap pestanya recorda | **s'obre, amb un avís** |
+
+La regla 5 només avisa: pot ser una pestanya on Claude n'ha sortit, un Claude obert a mà o un terminal qualsevol, i no se'n pot
+saber el títol. Una pestanya de més es veu i es tanca; una que no s'obre perquè «ja és oberta» no es trobaria enlloc, que és el
+que va passar.
+
+**La confirmació:** un terminal nou per pestanya (`Confirmacio.vista`), que no hi fos abans d'obrir: el que porta la marca, o,
+mentre Claude no ha arrencat, el de la seva carpeta (un per pestanya; la d'inici, llevat que l'app acabi d'engegar Warp, perquè
+hi ha la finestra buida). Un Claude aturat a preguntar es veu pel procés: la finestra es confirma, i el bàner diu que encara no
+ha arrencat. **Amb la restauració activada, els terminals no compten:** mana la base, com abans. Un shell restaurat tard
+semblaria nou, i sense la finestra no se sabrien els panes de les pestanyes de terminal.
+
+**Una finestra acabada de tancar:** els processos no distingeixen una pestanya oberta d'una que Warp manté 60 s per poder-la
+desfer. Per això no es pot bloquejar (`motiuEspera` és sempre `nil`): una finestra oberta a la qual falta una pestanya es veu
+igual, i s'ha de poder obrir (D13). Si hi ha pestanyes vives, el full diu «si les acabes de tancar, espera 1 minut» i, si
+n'obriria només una part, que la finestra quedarà partida (`.potserTancadaFaPoc`).
+
+**Els límits, que es queden:**
+- No se sap en quina finestra és cada terminal.
+- Una pestanya tancada a mà semblarà oberta 1 minut, i durant aquest minut la finestra es pot partir (el full ho avisa).
+- No es pot importar ni lligar res de Warp, i una pestanya feta a mà que no sigui a la configuració no l'obre mai ningú.
+- **Una pestanya de terminal no es reconeix** (un shell sense fills no porta ni marca ni pane): cada «Obre» en fa una altra, amb
+  un avís llevat que sigui a la carpeta d'inici. Una pestanya on Claude n'ha sortit també es torna a obrir, però una sola vegada
+  (la còpia ja porta la marca), i és el que es vol: recupera la conversa. El 05/11/2026, 0 de les 62 pestanyes són de terminal.
+  Arreglar-ho demana desar el pid i l'hora d'inici del shell a `estat.json`, un camp nou que ha d'aprovar en David.
+- Si es torna a activar la restauració, la base torna a manar: no s'ha provat quant triga Warp a posar-la al dia.
+
+**Warp tancat.** Abans, «Obre Warp primer». Ara el full ho diu i el botó «Obre» l'obre (`ObreWarp.engega`), n'espera l'arrencada
+(fins a 30 s, i 2 s de marge), i torna a calcular el pla: si Warp ha restaurat alguna pestanya, torna al full («Warp ha canviat»).
+Només després escriu el fitxer. Demanar el full no obre res. Si Warp no restaura la sessió, obre també una finestra buida, que
+l'app no pot tancar: ho diuen el full i el bàner.
+- **El full es queda obert i Warp es tanca:** «Obre» no l'engega, torna al full, i ho diu. El segon «Obre» l'engega.
+- **`openApplication` no s'espera** (un diàleg del sistema el podria aturar, i «Cancel·la» està desactivat): corre apart, i el
+  límit és el dels 30 s.
+- **Warp restaura la sessió i totes les pestanyes hi són:** el full no diu «ja obertes», sinó que Warp és tancat i les
+  restaurarà, sense Claude, i no ofereix obrir res.
+
+### Proves reals (cadascuna amb l'OK d'en David)
+
+**Abans de cada prova:** la versió de Warp (`PlistBuddy … CFBundleShortVersionString`); `ls
+~/.warp/launch_configurations | grep warp-launch` ha de sortir buit; el registre en directe (`/usr/bin/log stream
+--level debug --style compact --predicate 'subsystem == "cat.davide.warp-launch"'`); Claude compila amb
+`scripts/build-app.sh` i en David obre l'app. De Warp, només en David tanca res, i a mà.
+
+- **L1. Una pestanya de terminal.** `--config /tmp/warp-launch-provaL1`: 1 finestra «Prova L1» amb 1 pestanya a
+  `…/warp-launch/docs`, Claude desactivat. **S'obren 1 finestra de Warp, 1 pestanya i 0 sessions de Claude.** Es mira:
+  el full; la finestra nova al davant; si macOS demana permisos; el temps fins a «confirmat» (registre i `warp.log`);
+  que el fitxer desaparegui i ⌃⌘L no el mostri; `estat.json` amb el pane; i que tornar a obrir digui «Totes les
+  pestanyes ja són obertes» (**amb la restauració desactivada, no ho pot dir:** una pestanya de terminal no es reconeix, i
+  tornar a obrir en fa una altra). Es desfà: en David tanca la finestra; `rm -r /tmp/warp-launch-provaL1`.
+  **Feta el 05/11/2026 amb la 0.20.2** (4 obertures, 3 amb Claude; resultats a `docs/fets-verificats.md`). Warp accepta
+  el fitxer i l'app confirma en 0,6 s. Desmenteix D16: la línia surt a `~/.zsh_history` i a `commands`. En David
+  troba a faltar «Obre a Warp…» a l'editor: la 0.20.3 l'afegeix a la barra d'eines de la llista i al menú contextual
+  de la finestra.
+- **L2. Una conversa nova.** `--config /tmp/warp-launch-provaL2`: «L2 Claude» a l'arrel del repo (esforç «Alt»,
+  ultracode i continuar, sense conversa: `--settings '{"ultracode":true}'`, amb `\"` al YAML) i «L2 terminal» a
+  `docs/`. **S'obren 1 finestra, 2 pestanyes i 1 sessió de Claude nova (unes 0,5 GB).** Es mira: l'`argv` exacte i la
+  marca (`llegeix --json`); `estat.json`; l'ordre dels panes; que la línia no surti a `~/.zsh_history` ni a `commands`
+  (D16); que no surti el diàleg de confiança; el títol. En David escriu «prova L2» a Claude. La finestra queda oberta.
+- **L3 amb les finestres d'en David** (canviada el 05/11/2026: en David la vol fer amb `prova2`, abans que L2).
+  `--config /tmp/warp-launch-provaL3`, una còpia de `prova2` (6 finestres, 62 pestanyes, totes amb Claude). (a) «Lliga
+  amb Warp…»: el full ha de dir 62 de 62 (47 i 15) i 9 amb Claude obert; «Lliga». (b) «Obre a Warp…» a cada
+  finestra: «Totes les pestanyes ja són obertes». **(a) i (b) no obren res.** (c) En David tanca a mà una pestanya amb
+  Claude viu (no la d'aquesta sessió, a «Principal»), espera 1 min i fa «Obre a Warp…» a la seva finestra: «1 reprèn
+  la seva conversa», la resta ja obertes. **S'obren 1 finestra, 1 pestanya i 1 sessió de Claude (la mateixa
+  conversa).** Es mira: el mateix `sessionId`, cap diàleg ni «different directory», i `estat.json`. Es desfà: en David
+  tanca la finestra nova si vol; `rm -r /tmp/warp-launch-provaL3` (`prova2` no es toca).
+  **El 05/11/2026, en David fa una altra cosa:** tanca totes les finestres i les torna a obrir des de l'app, sense
+  lligar: 6 finestres, 62 pestanyes, 62 sessions, totes confirmades, però cap conversa represa i 17 Claude aturats a
+  «Varis» (`docs/fets-verificats.md`). (a), (b) i (c) queden per fer. **Corregit a la 0.21.1:** l'avís de confiança compara les
+  rutes del fitxer tal com són, sense fer-les canòniques (n'avisava de 5 de 17), i `LecturaPerObrirTests` ho comprova.
+- **L3 original, reprendre la conversa** (configuració de L2). (a) Amb la finestra oberta: «Totes ja obertes». (b) En David
+  tanca la finestra i espera 1 min; «1 reprèn la seva conversa, 1 terminal». **S'obren 1 finestra, 2 pestanyes i 1
+  sessió de Claude (la mateixa conversa).** Es mira: el mateix `sessionId`, «prova L2» a la conversa, cap diàleg ni
+  «different directory», i el porta-retalls intacte. (c, opcional) `/clear` i «Torna a llegir Warp»: id nou a
+  `estat.json`. Es desfà: en David tanca la finestra; `rm -r /tmp/warp-launch-provaL2`.
+- **L4. Una finestra oberta en part (D13).** 3 pestanyes (una amb Claude, dues de terminal). **Primer: 1 finestra, 3
+  pestanyes i 1 sessió.** En David tanca una pestanya de terminal i espera 1 min; «2 ja obertes, 1 falta». **Segon: 1
+  finestra amb 1 pestanya i 0 sessions.** **Amb la restauració desactivada surt una altra cosa:** una pestanya de terminal no
+  es reconeix, així que són «1 ja oberta, 2 a obrir»: **1 finestra amb 2 pestanyes i 0 sessions**, i una d'aquestes és una
+  còpia de la que seguia oberta. Opcional, amb un altre OK: `--resume` des d'una altra carpeta (**1
+  finestra, 1 pestanya, 1 sessió represa**).
+- **L5. Una finestra real.** Abans, amb el seu OK, «Importa de Warp…» crea la configuració real. En David tanca a mà
+  una finestra petita i espera 1 min. **S'obren 1 finestra, N pestanyes i fins a N sessions (el full diu el nombre
+  exacte).** Es mira: que cada conversa es reprengui, els diàlegs de converses llargues, el temps i la memòria.
+- **CLI `--obre` (0.24.0):** la seva pròpia prova, amb OK, com L1.
+- **Estat (06/11/2026):**
+  - **L1:** feta el 05/11/2026.
+  - **L3 amb les finestres d'en David:** (a) i (b) no s'han fet. El 05/11/2026, en lloc de lligar, en David torna a obrir les 6
+    finestres de `provaL3` (17 Claude aturats per la confiança, corregit a la 0.21.1). La (c), el 06/11/2026 amb la 0.26.0: 1 pestanya
+    que reprèn la seva conversa, 21 ja obertes, confirmada en 0,6 s.
+  - **L4:** una finestra oberta en part, el 06/11/2026 amb la 0.26.0, correcta segons en David (el registre no en té cap línia).
+  - **La configuració real, sencera:** el 06/11/2026, després del primer reinici, 62 pestanyes, totes amb Claude. No està comprovat
+    si cada pestanya va reprendre la seva conversa.
+  - **Sense fer:** L2, la L3 original, L5 tal com és escrita i la del CLI `--obre`.
+
+### Preguntes obertes i on es resolen
+
+| Pregunta | Prova |
+|---|---|
+| Warp troba un fitxer escrit just abans, sense esperar el watcher; yaml-rust llegeix els escalars com PyYAML | L1 |
+| Quant triga de `open` a la finestra a `warp.sqlite` (d'aquí, els 30 s); esborrar el fitxer no hi afecta | L1 |
+| La finestra és nova i al davant; macOS no demana permisos | L1 |
+| ⌃⌘L deixa de mostrar el fitxer quan s'esborra | L1 |
+| La marca arriba a `KERN_PROCARGS2`, i `'{"ultracode":true}'` arriba intacte | L2 |
+| L'espai del davant evita `~/.zsh_history` i `commands` (D16); si no, es diu i es treu | L2 |
+| Els panes nous surten a `warp.sqlite` en l'ordre del YAML | L2 i L5 |
+| `--resume <id>` manté l'id, sense diàlegs i sense tocar el porta-retalls | L3 |
+| `sessions/<pid>.json` s'esborra quan el procés acaba; `/clear` canvia l'id amb el mateix pid | L3 |
+| D13 amb una pestanya tancada; confirmació d'una finestra d'1 pestanya | L4 |
+| `--resume` des d'una altra carpeta | L4 (opcional) |
+| Diàlegs en reprendre converses llargues | L5 |
+| 15 pestanyes o més alhora | 3.2 (D4) |
+| Warp tancat; l'uuid del pane després d'un reinici | 3.3 (el reinici el fa en David) |
+| Reprendre una conversa `bg` viva; dues pestanyes amb el mateix id | No es proven: l'app no ho permet |
+
+### Riscos
+
+| Risc | Què fem |
+|---|---|
+| El fitxer s'esborra abans que Warp el llegeixi | S'esborra només en confirmar o als 30 s; L1 mesura el temps |
+| Un YAML que Warp descarta sense avisar | Generador propi amb golden; L1 i `warp.log` |
+| Una conversa oberta en dues pestanyes alhora (s'intercalen) | Regles de «ja oberta»; mai el mateix id dues vegades |
+| L'actualització de Warp ja baixada canvia el comportament | Mirar la versió abans de cada prova |
+| Les launch configurations són *legacy* a Warp i poden desaparèixer | Es mira a cada actualització de Warp; si deixen de funcionar, es torna a plantejar D5 amb en David |
+
+## 9. Fase 3.3: obrir-se en iniciar sessió (0.27.0, D3)
+
+**Decisió d'en David (06/11/2026):** en iniciar sessió, l'app s'obre sola i mostra el full de «Obre-ho tot a Warp…», amb totes
+les finestres que falten marcades; **no obre res fins que hi fa clic.**
+
+- **L'interruptor:** «Obre Warp Launch en iniciar sessió», a la Configuració (secció «En iniciar sessió»). És l'únic camí que
+  afegeix l'app als ítems d'inici de macOS (regla 3): l'app no s'hi afegeix mai sola.
+  - Fa servir `SMAppService.mainApp` (`ServeiArrencada`, l'únic fitxer amb `SMAppService`): és la mateixa llista que
+    Configuració del Sistema › General › Ítems d’inici de sessió, i es desfà amb l'interruptor o des d'allà.
+  - Descartat un agent de `launchd` (`SMAppService.agent`): diria segur que l'arrencada és la de l'inici de sessió, però
+    desactivar-lo amb l'app en marxa la tancaria, potser a mig obrir.
+  - Només amb la configuració de debò, i només amb l'app a `/Applications` (els ítems d'inici apunten al fitxer de l'app;
+    des de `build/`, cada compilació el canviaria). Si no, l'interruptor diu per què. Desactivar sempre es pot.
+  - Si macOS no l'obrirà sola (falta aprovar-la, o s'ha desactivat a Configuració del Sistema), la secció ho diu, amb
+    «Mostra Ítems d’inici de sessió…», i no compta com a activada per mostrar el full.
+- **Com sap que és l'inici de sessió** (`InicDeSessio`): l'app és als ítems d'inici i, a més, macOS diu que l'ha obert com a
+  element d'inici (`keyAELaunchedAsLogInItem`), o el Mac s'ha encès fa menys de 10 minuts (comptant les estones en repòs). Pendent d'aprovar a Configuració del
+  Sistema no compta. No està comprovat que macOS ho
+  digui amb `SMAppService.mainApp`: per això també compta el temps. Obrir l'app a mà just després d'encendre el Mac també
+  mostra el full, que no obre res sense el clic.
+- **Què fa** (`Obertura.enIniciarSessio`): prepara de seguida el full de «Obre-ho tot». Si Warp és tancat, el full ho diu i
+  l'obrirà amb el clic; si Warp s'obre sol abans del clic, el clic ho torna a mirar i no l'engega dues vegades.
+  - Fins a la 0.27.1 esperava Warp fins a 2 minuts (Warp també era als ítems d'inici). El 06/11/2026 en David el treu dels
+    ítems d'inici i pregunta per què ha d'esperar: l'app no pot saber si Warp s'obrirà sol (`settings.toml` no té
+    `login_item`, i `AppAddedAsLoginItem` continua dient `true`), així que ja no espera (0.27.2).
+  - Si no falta cap finestra, no hi ha full, i l'editor (que SwiftUI obre sol en arrencar) s'amaga, llevat que s'hi hagi fet
+    algun canvi o hi hagi un full.
+  - Si mentrestant en David ha obert un altre full o una altra obertura, no la trepitja ni amaga res.
+  - Si la configuració o `estat.json` no es poden fer servir, l'editor es queda al davant amb el motiu.
+- **Revisió** (3 revisors i 9 verificacions, 06/11/2026): 9 troballes confirmades, totes corregides. Les principals: l'editor
+  podia amagar un full que en David feia servir; l'esdeveniment d'element d'inici es llegia massa d'hora (només és viu a
+  `applicationDidFinishLaunching`); «pendent d'aprovar» comptava com a activada; el temps no comptava les estones en repòs
+  (ara `CLOCK_MONOTONIC`); el nom del tauler és «Ítems d’inici de sessió» (corregit a la 0.27.1 amb la captura d'en David);
+  i les guardes eren fàcils de saltar.
+- **Prova real (amb l'OK d'en David):** copiar l'app a `/Applications`, activar l'interruptor, i reiniciar el Mac (el reinici el
+  fa en David). Es mira: que l'app s'obri sola, quant triga el full, si macOS demana aprovació, i el registre
+  (`en iniciar sessió`). Es desfà amb l'interruptor.
+  - **Primer reinici (06/11/2026, 0.27.2):** l'app s'obre sola i prepara el full «6 finestres de 6» en 2 s, però Warp també
+    s'obre sol i restaura 6 finestres i 62 pestanyes sense Claude. En David tanca Warp i fa clic: l'app obre les 62 pestanyes, totes
+    amb Claude. Detall a `docs/fets-verificats.md`, «Primer reinici amb l'arrencada en iniciar sessió». Canvis de la 0.27.3: la foto
+    de Warp (D19) només quan en David la demana, i el full diu quantes pestanyes de Warp no reconeix (`PropostaTot.terminalsDesconeguts`).
+  - **Falta:** un reinici amb la 0.27.3 (l'opció de Warp que l'obre en iniciar sessió, «Start Warp at login», sempre ha estat desactivada, diu en David el
+    07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
+    registra, i amb el Mac encès fa menys de 10 minuts el full surt igualment.
