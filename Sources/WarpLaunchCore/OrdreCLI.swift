@@ -121,9 +121,9 @@ public enum OrdreCLI {
               --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma).
           warp-launch --versio
 
-        Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre, el nom de les
-        transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica, també
-        l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,
+        Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de
+        les transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,
+        també l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,
         excepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).
         Codis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot
         obert; amb obre, també si Warp Preview no deixa obrir res; amb diagnostica, alguna comprovació ha donat

@@ -221,7 +221,7 @@ public enum Diagnostic {
         let anon = Anonimitzador(inici: entorn.inici, usuari: entorn.usuari, actiu: anonimitza)
         let installacio = entorn.warp()
         let claude = processosClaude(entorn.processos)
-        let sessions = llegeixSessions(entorn.carpetaSessions)
+        let sessions = llegeixSessions(entorn.carpetaSessions, processos: entorn.processos)
         let consentiment = llegeixConsentiment(entorn.carpetaConfiguracio)
         var comprovacions = [
             terminals(entorn, installacio, claude, anon),
@@ -247,15 +247,26 @@ public enum Diagnostic {
         var pare: Int32?
     }
 
-    /// Tots els processos `claude` de l'usuari. No n'hi ha prou amb el nom (`p_comm`): el del binari de Claude Code és la
-    /// seva versió (`2.1.319`, 07/11/2026, `ps -o ucomm`). Es miren tots, com `InfoProces.esClaude`.
+    /// Tots els processos de Claude Code de l'usuari. No n'hi ha prou amb el nom (`p_comm`): el del binari de Claude Code
+    /// és la seva versió (`2.1.319`, 07/11/2026, `ps -o ucomm`). Es miren tots, com `InfoProces.esClaude`, però només
+    /// compten els que corren com a Claude Code (`esClaudeCode`).
     static func processosClaude(_ processos: any FontProcessos) -> [ProcesClaude] {
         let arbre = processos.fills()
         let pids = Set(arbre.keys).union(arbre.values.joined())
         return pids.sorted().compactMap { pid in
-            guard pid > 1, let info = processos.proces(pid), info.esClaude else { return nil }
+            guard pid > 1, let info = processos.proces(pid), esClaudeCode(info) else { return nil }
             return ProcesClaude(pid: pid, info: info, pare: processos.pare(pid))
         }
+    }
+
+    /// El binari de Claude Code corre com a Claude Code (`argv[0]` és `claude`, o el binari mateix), i no com una de les
+    /// eines que porta a dins. El 07/11/2026 (`ps`, 2.1.319), el mateix binari corria com a `ugrep -G --ignore-files …`
+    /// quan Claude cerca: fill del shell de l'eina Bash de Claude, amb el pane de la pestanya a l'entorn i sense fitxer de
+    /// sessió. No és cap sessió.
+    static func esClaudeCode(_ info: InfoProces) -> Bool {
+        guard info.esClaude, let primer = info.argv.first else { return false }
+        let nom = (primer as NSString).lastPathComponent
+        return nom == "claude" || nom == (info.executable as NSString).lastPathComponent
     }
 
     struct LecturaSessions {
@@ -264,10 +275,17 @@ public enum Diagnostic {
         var valids: [Int32: LectorSessions.FitxerSessio] = [:]
         /// El nom dels fitxers `.json` que no són de sessió.
         var invalids: [String] = []
+        /// El procés de cada fitxer vàlid que encara corre. Els altres són d'un procés que ja ha acabat.
+        var vius: [Int32: InfoProces] = [:]
+
+        /// Els fitxers dels processos vius que `LectorSessions` llegeix com a Claude (`InfoProces.esClaude`).
+        var deClaude: [LectorSessions.FitxerSessio] {
+            valids.filter { vius[$0.key]?.esClaude == true }.sorted { $0.key < $1.key }.map(\.value)
+        }
     }
 
-    /// Els fitxers de `~/.claude/sessions`, amb el format que llegeix `LectorSessions`.
-    static func llegeixSessions(_ carpeta: URL) -> LecturaSessions {
+    /// Els fitxers de `~/.claude/sessions`, amb el format que llegeix `LectorSessions`, i el procés de cadascun.
+    static func llegeixSessions(_ carpeta: URL, processos: any FontProcessos) -> LecturaSessions {
         guard let fitxers = try? FileManager.default.contentsOfDirectory(at: carpeta, includingPropertiesForKeys: nil) else {
             return LecturaSessions(llegible: false)
         }
@@ -276,6 +294,7 @@ public enum Diagnostic {
             if let dades = try? Data(contentsOf: fitxer),
                let sessio = try? JSONDecoder().decode(LectorSessions.FitxerSessio.self, from: dades) {
                 lectura.valids[sessio.pid] = sessio
+                if let info = processos.proces(sessio.pid) { lectura.vius[sessio.pid] = info }
             } else {
                 lectura.invalids.append(fitxer.lastPathComponent)
             }
@@ -378,20 +397,40 @@ public enum Diagnostic {
             return Comprovacio(.sessionsClaude, .error, "\(processos) running, but \(carpeta) can't be read. Claude Code "
                 + "may have moved its session files. \(efecte)")
         }
-        let senseFitxer = claude.filter { sessions.valids[$0.pid] == nil }
+        // Claude escriu el fitxer després de la pregunta de confiança (docs/fets-verificats.md, 05/11/2026): sense fitxer, en
+        // una carpeta on Claude no confia, encara espera la tecla. No vol dir que Claude Code hagi canviat res.
+        let confianca = carpetesConfiades(e)
+        let esperen = claude.filter { c in
+            guard sessions.valids[c.pid] == nil, let confianca, let carpeta = e.processos.carpeta(c.pid) else { return false }
+            return !confianca.confiada(carpeta)
+        }
+        let senseFitxer = claude.filter { c in sessions.valids[c.pid] == nil && !esperen.contains { $0.pid == c.pid } }
+        let notaConfianca = esperen.isEmpty ? "" : " \(Plural.compta(esperen.count, "process has", "processes have")) no "
+            + "session file yet, in a folder Claude Code doesn't trust: probably waiting for the trust question ("
+            + llista(esperen.map { "pid \($0.pid)" }) + ")."
         let fitxers = Plural.compta(sessions.valids.count + sessions.invalids.count, "session file", "session files")
-        if !claude.isEmpty, senseFitxer.count == claude.count {
-            return Comprovacio(.sessionsClaude, .error, "None of the \(processos) has a valid session file in \(carpeta) "
-                + "(\(fitxers); \(llista(senseFitxer.map { descripcio($0, anon) }))). Claude Code may have changed the "
-                + "format or the place of its session files. \(efecte)")
+        if !senseFitxer.isEmpty, senseFitxer.count == claude.count - esperen.count {
+            return Comprovacio(.sessionsClaude, .error, "None of the "
+                + "\(Plural.compta(senseFitxer.count, "claude process", "claude processes")) has a valid session file in "
+                + "\(carpeta) (\(fitxers); \(llista(senseFitxer.map { descripcio($0, anon) }))). Claude Code may have "
+                + "changed the format or the place of its session files. \(efecte)" + notaConfianca)
         }
 
         let desconeguts = sessions.valids.values.filter { !LectorSessions.tipusConeguts.contains($0.kind ?? "") }
             .sorted { $0.pid < $1.pid }
+        // Un fitxer d'un procés viu que no sembla Claude: `LectorSessions` el descarta («ara és un altre procés»). Si Claude
+        // Code canviés la ruta o el nom del binari, l'app no veuria cap sessió.
+        let descartats = sessions.vius.filter { !$0.value.esClaude }.sorted { $0.key < $1.key }
         var problemes: [String] = []
         if !senseFitxer.isEmpty {
             problemes.append("\(Plural.compta(senseFitxer.count, "process has", "processes have")) no valid session file ("
                 + llista(senseFitxer.map { descripcio($0, anon) }) + ")")
+        }
+        if !descartats.isEmpty {
+            problemes.append("\(Plural.compta(descartats.count, "session file belongs", "session files belong")) to a "
+                + "running process Warp Launch doesn't see as claude (" + llista(descartats.map { pid, info in
+                    "pid \(pid), «\(anon.ruta(info.executable))»"
+                }) + ")")
         }
         if !sessions.invalids.isEmpty {
             let noms = sessions.invalids.map { anon.actiu && !Self.esNomDeSessio($0) ? anon.forma($0) : $0 }
@@ -406,12 +445,22 @@ public enum Diagnostic {
         guard problemes.isEmpty else {
             return Comprovacio(.sessionsClaude, .avis, "\(processos), \(fitxers) in \(carpeta): "
                 + problemes.joined(separator: "; ") + ". Claude Code may have changed its session files; a process that has "
-                + "just started may not have written its file yet.")
+                + "just started may not have written its file yet." + notaConfianca)
         }
-        let perTipus = Dictionary(grouping: sessions.valids.values, by: { $0.kind ?? "" }).mapValues(\.count)
+        let perTipus = Dictionary(grouping: sessions.deClaude, by: { $0.kind ?? "" }).mapValues(\.count)
             .sorted { $0.key < $1.key }.map { "\($0.value) \($0.key)" }
-        return Comprovacio(.sessionsClaude, .be, "\(processos), each with its session file in \(carpeta)"
-            + (perTipus.isEmpty ? "." : " (\(perTipus.joined(separator: ", ")))."))
+        let ambFitxer = esperen.isEmpty ? "\(processos), each with its session file"
+            : "\(Plural.compta(claude.count - esperen.count, "claude process", "claude processes")) with a session file"
+        return Comprovacio(.sessionsClaude, .be, "\(ambFitxer) in \(carpeta)"
+            + (perTipus.isEmpty ? "." : " (\(perTipus.joined(separator: ", "))).") + notaConfianca)
+    }
+
+    /// Les carpetes on Claude Code confia (`~/.claude.json`). Sense el fitxer, Claude no confia en cap; si no s'entén,
+    /// `nil`: no se sap.
+    private static func carpetesConfiades(_ e: EntornDiagnostic) -> Confianca? {
+        e.confianca.llegeix(inici: e.inici)
+            ?? (FileManager.default.fileExists(atPath: e.confianca.ruta.path) ? nil
+                : Confianca(confiades: [], inici: Rutes.canonica(e.inici)))
     }
 
     /// `1234.json`: el nom que Claude dona als fitxers de sessió.
@@ -579,7 +628,8 @@ public enum Diagnostic {
     }
 
     static func versioClaude(_ sessions: LecturaSessions, _ anon: Anonimitzador) -> Comprovacio {
-        let fitxers = Array(sessions.valids.values)
+        // Només els dels processos vius: el fitxer d'un Claude que no ha pogut acabar bé pot ser d'una versió d'abans.
+        let fitxers = sessions.deClaude
         guard !fitxers.isEmpty else {
             return Comprovacio(.versioClaude, .be, "No Claude Code session is running: the version is unknown.")
         }
@@ -735,11 +785,12 @@ struct Anonimitzador: Sendable {
         return String(resultat)
     }
 
-    /// Un text qualsevol (el detall d'una comprovació, o el missatge d'un error): les rutes entre «» o que comencen per la
-    /// carpeta d'inici o per `~/`, anonimitzades, i el nom d'usuari, fora.
+    /// Un text qualsevol (el detall d'una comprovació, o el missatge d'un error): les rutes entre «» (també les relatives,
+    /// com la destinació d'un enllaç: tot el que hi porta una `/`) o que comencen per la carpeta d'inici o per `~/`,
+    /// anonimitzades, i el nom d'usuari, fora.
     func text(_ text: String) -> String {
         guard actiu else { return text }
-        var resultat = substitueix(#"«([/~][^»]*)»"#, a: text) { "«" + ruta($0) + "»" }
+        var resultat = substitueix(#"«([^»]*/[^»]*)»"#, a: text) { "«" + ruta($0) + "»" }
         for inici in inicis {
             resultat = substitueix(NSRegularExpression.escapedPattern(for: inici) + #"(?=$|[/\s«»"'“”,;:()])"#, a: resultat) {
                 _ in "~"

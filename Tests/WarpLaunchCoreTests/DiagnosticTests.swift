@@ -173,7 +173,86 @@ private struct MacDeProva {
         #expect(c.resultat == .avis)
         #expect(c.detall.contains("1 process has no valid session file (pid 102, «daemon»)"))
         #expect(c.detall.contains("1 file isn't a session file Warp Launch can read (104.json)"))
-        #expect(c.detall.contains("1 session has an unknown kind (pid 103: supervisor; known: bg, daemon-worker, interactive)"))
+        #expect(c.detall.contains("1 session has an unknown kind (pid 103: supervisor; known: bg, daemon, daemon-worker, "
+            + "interactive)"))
+    }
+
+    /// El dimoni escriu un fitxer de `kind` `daemon`, que Claude Code 2.1.317–2.1.319 accepta. I el binari de Claude també
+    /// corre com a `ugrep` quan Claude cerca (07/11/2026, `ps`): fill del shell de l'eina Bash, amb el pane a l'entorn i
+    /// sense fitxer. Cap dels dos no és cap problema, ni compta com un `claude` d'un terminal de Warp.
+    @Test func elDimoniIElUgrepDeClaudeNoSonProblemes() throws {
+        var mac = try MacDeProva()
+        let binari = "/Users/prova/.local/share/claude/versions/2.1.317"
+        mac.processos.processos[102] = (InfoProces(executable: binari, argv: ["claude", "daemon", "run"]), 1)
+        try escriuSessio(a: mac.sessions, pid: 102, sessionId: "s-102", cwd: mac.inici, kind: "daemon")
+        mac.processos.processos[104] = (InfoProces(executable: "/bin/zsh", argv: ["/bin/zsh", "-c", "grep -r x ."]), 101)
+        mac.processos.processos[105] = (InfoProces(executable: binari, argv: ["ugrep", "-G", "--ignore-files", "--hidden"],
+                                                   entorn: ["WARP_TERMINAL_SESSION_UUID": uuidDeProva("a")]), 104)
+        let informe = mac.diagnostic()
+        let sessions = try #require(informe.comprovacio(.sessionsClaude))
+        #expect(sessions.resultat == .be, "\(sessions.detall)")
+        #expect(sessions.detall == "2 claude processes, each with its session file in \(mac.sessions.path) "
+            + "(1 daemon, 1 interactive).")
+        let terminals = try #require(informe.comprovacio(.terminalsWarp))
+        #expect(terminals.detall.hasSuffix("; 1 claude process runs in Warp terminals (with WARP_TERMINAL_SESSION_UUID)."))
+    }
+
+    /// Claude escriu el fitxer després de la pregunta de confiança: un `claude` sense fitxer, en una carpeta on no confia,
+    /// l'espera (docs/fets-verificats.md, 05/11/2026). No és cap error, encara que no n'hi hagi cap altre.
+    @Test func unClaudeQueEsperaLaPreguntaDeConfiancaNoEsUnError() throws {
+        var mac = try MacDeProva()
+        try FileManager.default.removeItem(at: mac.sessions.appending(path: "101.json"))
+        mac.processos.carpetes[101] = try mac.tmp.carpeta("Users/maria.prova/Nova")
+        let nota = "1 process has no session file yet, in a folder Claude Code doesn't trust: probably waiting for the "
+            + "trust question (pid 101)."
+        let espera = try mac.comprovacio(.sessionsClaude)
+        #expect(espera.resultat == .be, "\(espera.detall)")
+        #expect(espera.detall.hasSuffix(nota))
+        // Sense la configuració de Claude, Claude no confia en cap carpeta: també l'espera.
+        let configuracio = try Data(contentsOf: mac.claudeJSON)
+        try FileManager.default.removeItem(at: mac.claudeJSON)
+        #expect(try mac.comprovacio(.sessionsClaude).resultat == .be)
+        // Si la configuració de Claude no s'entén, no se sap: és com sempre.
+        try mac.escriu("[]", a: mac.claudeJSON)
+        #expect(try mac.comprovacio(.sessionsClaude).resultat == .error)
+        try configuracio.write(to: mac.claudeJSON)
+
+        // Un altre, en una carpeta de confiança i sense fitxer: aquest sí que és l'error.
+        mac.processos.claude(102, argv: ["claude"], uuid: uuidDeProva("b"))
+        mac.processos.carpetes[102] = mac.projecte
+        let error = try mac.comprovacio(.sessionsClaude)
+        #expect(error.resultat == .error)
+        #expect(error.detall.hasPrefix("None of the 1 claude process has a valid session file"))
+        #expect(error.detall.contains("pid 102, no arguments"))
+        #expect(error.detall.hasSuffix(nota))
+    }
+
+    /// Un fitxer de sessió d'un procés viu que l'app no veu com a `claude` (Claude Code ha canviat la ruta o el nom del
+    /// binari): `LectorSessions` el descarta, i l'app no veuria cap sessió.
+    @Test func unFitxerDUnProcesQueNoSemblaClaudeEsUnAvis() throws {
+        var mac = try MacDeProva()
+        mac.processos.processos[101]?.info = InfoProces(executable: "/opt/anthropic/bin/cc", argv: ["cc", "--resume"],
+                                                        entorn: ["WARP_TERMINAL_SESSION_UUID": uuidDeProva("a")])
+        let c = try mac.comprovacio(.sessionsClaude)
+        #expect(c.resultat == .avis)
+        #expect(c.detall.contains("0 claude processes, 1 session file in \(mac.sessions.path): 1 session file belongs to a "
+            + "running process Warp Launch doesn't see as claude (pid 101, «/opt/anthropic/bin/cc»)"))
+    }
+
+    /// La versió i els tipus, només dels fitxers dels processos vius: el d'un Claude que no ha pogut acabar bé pot ser d'una
+    /// versió d'abans.
+    @Test func elFitxerDUnProcesQueJaHaAcabatNoCompta() throws {
+        let mac = try MacDeProva()
+        try escriuSessio(a: mac.sessions, pid: 200, sessionId: "s-200", cwd: mac.projecte, kind: "bg")
+        let fitxer = mac.sessions.appending(path: "200.json")
+        var json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: fitxer)) as? [String: Any])
+        json["version"] = "2.1.300"
+        try JSONSerialization.data(withJSONObject: json).write(to: fitxer)
+        let informe = mac.diagnostic()
+        let versio = try #require(informe.comprovacio(.versioClaude))
+        #expect(versio.resultat == .be)
+        #expect(versio.detall.hasPrefix("Claude Code 2.1.317 (1 session), from the session files"))
+        #expect(try #require(informe.comprovacio(.sessionsClaude)).detall.hasSuffix("(1 interactive)."))
     }
 
     @Test func senseCarpetaDeSessionsAmbClaudeEsUnError() throws {
@@ -399,6 +478,21 @@ private struct MacDeProva {
         #expect(consentiment.contains("«~/Aaaaa/AaaaaaAaaaaa/aaaaa.aaaaa/preferencies.json»"), "\(consentiment)")
     }
 
+    /// `preferencies.json` és un enllaç trencat amb una destinació relativa: el missatge de l'error la porta entre «», i no
+    /// comença per `/` ni per `~`.
+    @Test func lInformeAnonimitzatTreuLesRutesRelatives() throws {
+        let mac = try MacDeProva()
+        let preferencies = mac.configuracio.appending(path: Preferencies.nomFitxer)
+        try FileManager.default.removeItem(at: preferencies)
+        try FileManager.default.createSymbolicLink(atPath: preferencies.path,
+                                                   withDestinationPath: "../Carpeta Secreta/preferencies.json")
+        #expect(mac.diagnostic().text.contains("Carpeta Secreta"), "la prova ha de tenir què treure")
+        let informe = mac.diagnostic(anonimitza: true)
+        #expect(!informe.text.contains("Secreta"), "\(informe.text)")
+        #expect(try #require(informe.comprovacio(.restauracio)).detall
+            .contains("«../Aaaaaaa Aaaaaaa/preferencies.json»"))
+    }
+
     @Test func laFormaDelsNoms() {
         let anon = Anonimitzador(inici: "/Users/joan", usuari: "joan", actiu: true)
         #expect(anon.forma("GitHub-Personal 2") == "AaaAaa-Aaaaaaaa 0")
@@ -412,6 +506,9 @@ private struct MacDeProva {
         #expect(anon.text("a /Users/joan/x b; joan, joanet i Joan") == "a ~/a b; <user>, joanet i Joan")
         // Un punt al final és de la frase, no del nom.
         #expect(anon.text("a /Users/joan/.claude/sessions. B") == "a ~/.claude/sessions. B")
+        // Entre «», també una ruta relativa (la destinació d'un enllaç); sense `/`, no és cap ruta.
+        #expect(anon.text("a «../Carpeta Secreta/prefs.json» i «settings.toml»")
+            == "a «../Aaaaaaa Aaaaaaa/aaaaa.aaaa» i «settings.toml»")
         let inactiu = Anonimitzador(inici: "/Users/joan", usuari: "joan", actiu: false)
         #expect(inactiu.text("/Users/joan/x joan") == "/Users/joan/x joan")
     }
@@ -458,6 +555,8 @@ private struct MacDeProva {
         #expect(codiUs == OrdreCLI.Codi.us)
         #expect(us.errors.contains("opció desconeguda per a diagnostica: «--desa»"))
         #expect(OrdreCLI.ajuda.contains("warp-launch diagnostica [--json] [--anonimitza]"))
+        // L'ajuda diu què llegeix: també les transcripcions i les carpetes de confiança de Claude.
+        #expect(OrdreCLI.ajuda.contains("amb obre i diagnostica, el nom de\n"))
     }
 
     /// El diagnòstic només llegeix: no escriu cap fitxer, tampoc `preferencies.json` (la carpeta queda com era).
