@@ -28,6 +28,7 @@ public enum Informe {
                                                  : "Warp és tancat.")
         case nil: break
         }
+        if let preview = lectura.warpPreview { linies.append("⚠ \(preview.text)") }
         if !lectura.sessionsNoInteractives.isEmpty {
             let tipus = Set(lectura.sessionsNoInteractives.map(\.tipus)).sorted().joined(separator: ", ")
             linies.append("Sessions de Claude en segon pla: \(lectura.sessionsNoInteractives.count) (\(tipus)).")

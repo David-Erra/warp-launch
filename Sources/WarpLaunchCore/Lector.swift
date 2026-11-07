@@ -18,6 +18,9 @@ public struct Lector: Sendable {
     public var rutaAjustos: URL?
     public var carpetaSessions: URL
     public var processos: any FontProcessos
+    /// On és Warp Stable, i si hi ha Warp Preview (D-P12, 0.29.2). Es mira a cada lectura: Warp es pot instal·lar o moure
+    /// amb l'app oberta. L'app i el CLI hi posen `TrobaWarp.delSistema` (l'obridor); les proves, una de fixa.
+    public var warp: @Sendable () -> InstallacioWarp
     /// Carpeta d'inici de l'usuari. Un pane amb aquesta carpeta probablement l'ha perduda en restaurar-se.
     public var inici: String
 
@@ -26,13 +29,19 @@ public struct Lector: Sendable {
                 carpetaSessions: URL = LectorSessions.carpetaPerDefecte,
                 // Sense valor per defecte: una prova que se l'oblidés llegiria els processos de debò.
                 processos: any FontProcessos,
+                // Tampoc: les proves hi han de posar una instal·lació fixa, i l'app i el CLI, la de macOS.
+                warp: @escaping @Sendable () -> InstallacioWarp,
                 inici: String = FileManager.default.homeDirectoryForCurrentUser.path) {
         self.rutaWarp = rutaWarp
         self.rutaAjustos = rutaAjustos
         self.carpetaSessions = carpetaSessions
         self.processos = processos
+        self.warp = warp
         self.inici = inici
     }
+
+    /// Si Warp Stable és obert (el de `warp`), sense llegir res més.
+    public func warpObert() -> Bool { processos.warpObert(executable: warp().executable) }
 
     public func llegeix(base: BaseWarp = .segonsAjust) throws -> LecturaWarp {
         // Si Warp no desa les finestres, la base és d'abans: ni es llegeix.
@@ -82,9 +91,12 @@ public struct Lector: Sendable {
                 })
         }
         sessions.removeAll { lligades.contains($0.pid) }
+        let warp = self.warp()
+        let obert = processos.warpObert(executable: warp.executable)
         return LecturaWarp(finestres: finestres, sessionsSensePestanya: sessions, avisos: avisos,
-                           sessionsNoInteractives: noInteractives, warpObert: processos.warpObert(),
-                           terminals: processos.terminalsDeWarp(), warpDesaFinestres: desaFinestres)
+                           sessionsNoInteractives: noInteractives, warpObert: obert,
+                           terminals: processos.terminalsDeWarp(executable: warp.executable), warpDesaFinestres: desaFinestres,
+                           warpPreview: warp.preview(processos, stableObert: obert))
     }
 
     /// Carpeta del pane. Si Warp hi té la carpeta d'inici, sovint és perquè l'ha perduda en restaurar-se:

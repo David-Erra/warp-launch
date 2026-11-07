@@ -6,23 +6,32 @@ import WarpLaunchCore
 /// **Només s'hi arriba després de la confirmació** (el full, o `--obre` amb l'OK d'en David).
 public enum ObreWarp {
     public enum ErrorObrir: Error, Equatable, CustomStringConvertible {
-        /// A `/Applications/Warp.app` no hi ha Warp (o no és el de debò): no s'obre res.
+        /// No s'ha trobat Warp Stable (ni el que diu macOS ni el d'Aplicacions), o no és el de debò: no s'obre res.
         case senseWarp
+        /// Només hi ha Warp Preview, que encara no és compatible (D-P12, 0.29.2): no s'obre res.
+        case nomesPreview
         case obrir(String)
 
         public var description: String {
             switch self {
-            case .senseWarp: "a Aplicacions no hi ha Warp (\(AppWarp.identificador))"
+            case .senseWarp: "no s'ha trobat Warp Stable (\(AppWarp.identificador)) en aquest Mac"
+            case .nomesPreview: WarpPreview.nomesPreview.text
             case let .obrir(error): error
             }
         }
     }
 
-    /// Demana a Warp que obri el fitxer. Sempre amb l'app d'Aplicacions, i no amb la que el sistema tingui per a les
-    /// URL de Warp. No espera la finestra: això ho fa `ConfirmacioObertura`.
+    /// L'app de Warp Stable que es pot obrir, o per què no n'hi ha cap.
+    private static func app(_ warp: InstallacioWarp) throws(ErrorObrir) -> AppWarp {
+        guard warp.app.esWarp else { throw warp.executablePreview == nil ? .senseWarp : .nomesPreview }
+        return warp.app
+    }
+
+    /// Demana a Warp que obri el fitxer. Sempre amb l'app de Warp Stable (`TrobaWarp`, la que l'app mira si és oberta), i
+    /// no amb la que el sistema tingui per a les URL de Warp. No espera la finestra: això ho fa `ConfirmacioObertura`.
     @MainActor
-    public static func obre(_ url: URLLlancament, app: AppWarp = .real) async throws(ErrorObrir) {
-        guard app.esWarp else { throw .senseWarp }
+    public static func obre(_ url: URLLlancament, warp: InstallacioWarp = TrobaWarp.delSistema()) async throws(ErrorObrir) {
+        let app = try app(warp)
         let configuracio = NSWorkspace.OpenConfiguration()
         configuracio.activates = true
         configuracio.addsToRecentItems = false
@@ -34,10 +43,11 @@ public enum ObreWarp {
     }
 
     /// Obre Warp, sense cap fitxer: si restaura la sessió, cal veure què ha restaurat abans de demanar-li res. Sempre l'app
-    /// d'Aplicacions. No diu res de si ha acabat d'arrencar: això ho mira `Obertura`, que tampoc no espera que aquesta crida torni.
+    /// de Warp Stable (`TrobaWarp`). No diu res de si ha acabat d'arrencar: això ho mira `Obertura`, que tampoc no espera
+    /// que aquesta crida torni.
     @MainActor
-    public static func engega(app: AppWarp = .real) async throws(ErrorObrir) {
-        guard app.esWarp else { throw .senseWarp }
+    public static func engega(warp: InstallacioWarp = TrobaWarp.delSistema()) async throws(ErrorObrir) {
+        let app = try app(warp)
         let configuracio = NSWorkspace.OpenConfiguration()
         configuracio.activates = true
         configuracio.addsToRecentItems = false

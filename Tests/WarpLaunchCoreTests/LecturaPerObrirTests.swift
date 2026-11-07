@@ -56,7 +56,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
 @Suite struct WarpObertTests {
     /// Amb l'app de Warp i el seu `terminal-server` (`ProcessosFalsos.ambWarp`): obert.
     @Test func ambLAppEsObert() throws {
-        #expect(ProcessosFalsos.ambWarp().warpObert())
+        #expect(ProcessosFalsos.ambWarp().warpObert(executable: ProcessosFalsos.executableWarp))
         let e = try LectorTests.Escenari()
         let lectura = try e.lector.llegeix()
         #expect(lectura.warpObert == true)
@@ -75,7 +75,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
         copia.processos[72] = (InfoProces(executable: "/Users/prova/Downloads/Warp.app/Contents/MacOS/stable",
                                           argv: ["/Users/prova/Downloads/Warp.app/Contents/MacOS/stable"]), 1)
         for processos in [nomesServidor, cli, copia, ProcessosFalsos()] {
-            #expect(!processos.warpObert())
+            #expect(!processos.warpObert(executable: ProcessosFalsos.executableWarp))
         }
         let e = try LectorTests.Escenari { processos, _ in processos.processos[40] = nil }
         let lectura = try e.lector.llegeix()

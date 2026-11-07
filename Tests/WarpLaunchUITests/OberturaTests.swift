@@ -47,6 +47,13 @@ private func senseBase(_ terminals: [TerminalViu], sessions: [SessioClaude] = []
                 warpDesaFinestres: false)
 }
 
+/// D-P12: Warp Preview no deixa obrir res (`LecturaWarp.warpPreview`), amb Warp Stable tancat.
+private func ambPreview(_ preview: WarpPreview) -> LecturaWarp {
+    var lectura = senseBase([], warpObert: false)
+    lectura.warpPreview = preview
+    return lectura
+}
+
 /// Els terminals de la finestra nova: el de T1, amb la marca del seu Claude, i el de T2, només terminal.
 private let terminalsNous = [TerminalViu(pid: 601, carpeta: "/x/t1", pane: pane("n"), marca: id(1), claude: true),
                              TerminalViu(pid: 602, carpeta: "/x/t2")]
@@ -781,6 +788,36 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(try Data(contentsOf: b.carpeta.appending(path: "config").appending(path: EstatApp.nomFitxer)) == text)
     }
 
+    // MARK: Warp Preview (D-P12, 0.29.2)
+
+    /// Amb Warp Preview obert i Warp Stable no, o només amb Warp Preview, el full no surt: ho diu, i no obre res, tampoc
+    /// Warp Stable.
+    @Test func ambWarpPreviewHoDiuINoObreRes() async throws {
+        for preview in [WarpPreview.obert, .nomesPreview] {
+            let b = try Banc()
+            b.lectures = [ambPreview(preview)]
+            await b.obertura.demana(id(100))
+            #expect(b.obertura.estat == .noEsPot(preview.text))
+            if case let .noEsPot(text) = b.obertura.estat {
+                #expect(text.hasPrefix("Warp Preview encara no és compatible: cal Warp Stable."))
+            }
+            #expect(b.engegades == 0 && b.urls.isEmpty && b.fitxersWarp.isEmpty && b.estatAlDisc.llancaments.isEmpty)
+        }
+    }
+
+    /// Si Warp Preview s'obre (i Warp Stable es tanca) amb el full a la vista, «Obre» ho torna a mirar i no obre res.
+    @Test func siWarpPreviewSObreAmbElFullNoObreRes() async throws {
+        let b = try Banc()
+        b.lectures = [senseBase([])]
+        await b.obertura.demana(id(100))
+        #expect(b.proposta != nil)
+        b.lectures = [ambPreview(.obert)]
+        b.llegides = 0
+        await b.obertura.confirmaIObre()
+        #expect(b.obertura.estat == .noEsPot(WarpPreview.obert.text))
+        #expect(b.engegades == 0 && b.urls.isEmpty && b.fitxersWarp.isEmpty && b.estatAlDisc.llancaments.isEmpty)
+    }
+
     /// Les ordres de l'editor només demanen el full.
     @Test func lEditorNomesDemanaElFull() async throws {
         let b = try Banc()
@@ -1051,6 +1088,20 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         b.lectures = [senseBase([]), senseBase([]), obertesTotes([(id(1), "/x/t1", 601), (id(11), "/x/u1", 701)])]
         await b.obertura.confirmaIObreTot()
         #expect(b.engegades == 0 && b.urls.count == 2)
+    }
+
+    /// D-P12: amb Warp Preview, «Obre-ho tot» no surt, i en iniciar sessió es mostra per què, sense obrir res.
+    @Test func ambWarpPreviewDiuPerQue() async throws {
+        let b = try Banc(configuracio: duesFinestres)
+        b.lectures = [ambPreview(.obert)]
+        #expect(await b.obertura.enIniciarSessio() == .mostra)
+        #expect(b.obertura.estat == .noEsPot(WarpPreview.obert.text))
+        #expect(b.urls.isEmpty && b.fitxersWarp.isEmpty && b.engegades == 0)
+        b.obertura.cancela()
+        b.lectures = [ambPreview(.nomesPreview)]
+        await b.obertura.demanaTot()
+        #expect(b.obertura.estat == .noEsPot(WarpPreview.nomesPreview.text))
+        #expect(b.urls.isEmpty && b.fitxersWarp.isEmpty && b.engegades == 0)
     }
 
     /// Totes les finestres ja són obertes: cap full, i l'editor es pot amagar.

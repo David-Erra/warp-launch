@@ -35,26 +35,27 @@ public protocol FontProcessos: Sendable {
 }
 
 extension FontProcessos {
-    /// L'executable de l'app de Warp que obre l'app (`ObreWarp`). El mateix binari fa de `terminal-server` i de CLI.
-    public static var executableWarp: String { "/Applications/Warp.app/Contents/MacOS/stable" }
-
-    /// Warp és obert: corre l'app de `/Applications` sense cap argument, com l'obre macOS (el 04/11/2026, `ps`). Amb
-    /// arguments és el seu `terminal-server` o el CLI (`--help`, subcomandes).
-    public func warpObert() -> Bool {
-        pids(nom: "stable").contains { pid in
-            guard let info = proces(pid), info.executable == Self.executableWarp else { return false }
-            return info.argv.count <= 1
+    /// Els processos d'un binari: el nom que en sap el sistema (`p_comm`, tallat a 16 caràcters) i la ruta exacta.
+    private func processos(executable: String) -> [(pid: Int32, info: InfoProces)] {
+        let nom = String((executable as NSString).lastPathComponent.prefix(16))
+        return pids(nom: nom).compactMap { pid in
+            guard let info = proces(pid), info.executable == executable else { return nil }
+            return (pid, info)
         }
     }
 
-    /// Els terminals vius de Warp: els fills del seu `terminal-server`, un per pane. No depèn de `warp.sqlite`, i és el
-    /// que hi ha ara mateix. Del shell només se'n sap el pid i la carpeta (el seu entorn surt buit): el pane i la marca
-    /// surten dels seus fills, que els hereten (docs/fets-verificats.md, 05/11/2026).
-    public func terminalsDeWarp() -> [TerminalViu] {
-        let servidors = pids(nom: "stable").filter { pid in
-            guard let info = proces(pid), info.executable == Self.executableWarp else { return false }
-            return info.argv.contains("terminal-server")
-        }
+    /// Warp és obert: corre l'app sense cap argument, com l'obre macOS (el 04/11/2026, `ps`). Amb arguments és el seu
+    /// `terminal-server` o el CLI (`--help`, subcomandes). `executable`: el binari de l'app que s'obriria
+    /// (`InstallacioWarp.executable`, 0.29.2); una còpia de Warp en una altra carpeta no compta.
+    public func warpObert(executable: String) -> Bool {
+        processos(executable: executable).contains { $0.info.argv.count <= 1 }
+    }
+
+    /// Els terminals vius de Warp: els fills del seu `terminal-server` (el de `executable`), un per pane. No depèn de
+    /// `warp.sqlite`, i és el que hi ha ara mateix. Del shell només se'n sap el pid i la carpeta (el seu entorn surt buit):
+    /// el pane i la marca surten dels seus fills, que els hereten (docs/fets-verificats.md, 05/11/2026).
+    public func terminalsDeWarp(executable: String) -> [TerminalViu] {
+        let servidors = processos(executable: executable).filter { $0.info.argv.contains("terminal-server") }.map(\.pid)
         guard !servidors.isEmpty else { return [] }
         let arbre = fills()
         return servidors.flatMap { arbre[$0] ?? [] }.sorted().compactMap { shell in

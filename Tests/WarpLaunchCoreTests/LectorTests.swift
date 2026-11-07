@@ -58,7 +58,7 @@ struct LectorTests {
 
             try modifica(&processos, sessions)
             lector = Lector(rutaWarp: base.url, rutaAjustos: tmp.url("settings.toml"), carpetaSessions: sessions,
-                            processos: processos, inici: inici)
+                            processos: processos, warp: { .perOmissio }, inici: inici)
         }
     }
 
@@ -133,7 +133,7 @@ struct LectorTests {
         try base.paneTerminal(10, pestanya: 1, uuid: uuidDeProva("a"), cwd: inici)
         try base.bloc(uuid: uuidDeProva("a"), pwd: inici + "/GitHub/web-moguda", hora: "2026-11-01 10:00:00.000000")
         let lector = Lector(rutaWarp: base.url, rutaAjustos: tmp.url("settings.toml"), carpetaSessions: tmp.url("sessions"),
-                            processos: ProcessosFalsos(), inici: inici)
+                            processos: ProcessosFalsos(), warp: { .perOmissio }, inici: inici)
         let lectura = try lector.llegeix()
         let pane = lectura.finestres[0].pestanyes[0].panes[0]
         #expect(pane.carpeta == inici + "/GitHub/web-moguda")

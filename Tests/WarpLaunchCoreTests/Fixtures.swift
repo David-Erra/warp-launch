@@ -106,6 +106,9 @@ func uuidDeProva(_ lletra: Character) -> String { String(repeating: lletra, coun
 
 /// Processos inventats: pid → (info, pare).
 struct ProcessosFalsos: FontProcessos {
+    /// El binari de Warp Stable d'Aplicacions (`InstallacioWarp.perOmissio`): el de `ambWarp`.
+    static let executableWarp = "/Applications/Warp.app/Contents/MacOS/stable"
+
     var processos: [Int32: (info: InfoProces, pare: Int32)] = [:]
     var carpetes: [Int32: String] = [:]
 

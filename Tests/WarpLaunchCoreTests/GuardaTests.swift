@@ -36,9 +36,10 @@ private func aparicions(de expressions: [String], a fitxers: [(ruta: String, tex
 /// (`activateFileViewerSelecting`, a `Finder.swift`), que selecciona el fitxer en una finestra del Finder, i l'obridor
 /// de la fase 3.1 (`ObreWarp`, vegeu `nomesLObridorObreWarp`). De les URL de Warp, només la de llançament (D5), i en un
 /// sol lloc (`nomesHiHaLURLDeLlancament`).
+private let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
 private let prohibidesCodi = [
     #"warp://(?!launch/")"#, #"\bProcess\("#,
-    #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#, #"openURL"#,
+    workspace, #"openURL"#,
     #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
     #"@AppStorage"#,
     // Tancar o matar Warp o Claude (regla 2), o obrir apps. La paraula `openApplication` només pot ser a l'obridor, per
@@ -47,6 +48,26 @@ private let prohibidesCodi = [
 ]
 
 private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
+
+/// D-P12 (excepcions limitades, 0.29.2): on és Warp només ho pregunta `TrobaWarp`, amb aquesta sola crida i l'identificador
+/// que li passa `InstallacioWarp.troba` (`nomesTrobaWarpPreguntaOnEsWarp`). A la resta del codi, `workspace` la prohibeix.
+private let trobaWarp = "Sources/WarpLaunchObridor/TrobaWarp.swift"
+private let workspaceTrobaWarp = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\)|\.shared\.urlForApplication\(withBundleIdentifier: \$0\))"#
+
+/// Les expressions de `prohibidesCodi` que valen per a un fitxer de `Sources`: totes, menys les excepcions, cadascuna en
+/// un sol fitxer. `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`).
+private func prohibidesCodi(a ruta: String) -> [String] {
+    switch ruta {
+    case serveiArrencada: prohibidesCodi.filter { $0 != #"SMAppService"# }
+    case trobaWarp: prohibidesCodi.map { $0 == workspace ? workspaceTrobaWarp : $0 }
+    default: prohibidesCodi
+    }
+}
+
+/// Les línies del codi que poden obrir, tancar o registrar res, amb les expressions de cada fitxer.
+private func obrenOTanquen(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    try codi.flatMap { try aparicions(de: prohibidesCodi(a: $0.ruta), a: [$0]) }
+}
 
 /// El que s'arrossega no surt de l'app: ni fitxers, ni text, ni `ShareLink`.
 private let prohibidesArrossegar = [
@@ -58,9 +79,7 @@ private let prohibidesArrossegar = [
     @Test func elCodiNoObreResNiRegistraArrencades() throws {
         let codi = try fitxers("Sources")
         #expect(codi.count > 10, "no s'ha trobat el codi a \(arrel.path)")
-        // `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`).
-        let trobades = try aparicions(de: prohibidesCodi, a: codi.filter { $0.ruta != serveiArrencada })
-            + aparicions(de: prohibidesCodi.filter { $0 != #"SMAppService"# }, a: codi.filter { $0.ruta == serveiArrencada })
+        let trobades = try obrenOTanquen(codi)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
 
         // D19 i D-P4 (0.29.0): el refresc de l'ajust de Warp només el crea `ConsentimentRestauracio`, un sol cop i només amb
@@ -130,6 +149,75 @@ private let prohibidesArrossegar = [
         #expect(!consentiments.isEmpty && consentiments.allSatisfy { $0.hasPrefix("\(preferencies):") }, "\(consentiments)")
     }
 
+    /// D-P12 (0.29.2): on és Warp només ho pregunta `TrobaWarp`, amb una sola crida, i només per als dos identificadors de
+    /// Warp (`InstallacioWarp.troba`). Només el fan servir l'app i el CLI (també `ObreWarp`, per defecte), cap prova.
+    @Test func nomesTrobaWarpPreguntaOnEsWarp() throws {
+        let codi = try fitxers("Sources")
+        func linies(_ text: String) -> [String] {
+            codi.flatMap { f in
+                f.text.split(separator: "\n").filter { $0.contains(text) }
+                    .map { "\(f.ruta): \($0.trimmingCharacters(in: .whitespaces))" }
+            }
+        }
+        // Qualsevol aparició de la paraula, també en un comentari.
+        #expect(linies("urlForApplication") == [
+            "\(trobaWarp): cerca: { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })",
+        ])
+        // Ni cap altra manera de demanar on és una app.
+        let altres = try aparicions(de: [#"urlsForApplications"#, #"URLForApplication"#, #"LSCopyApplicationURLs"#,
+                                         #"fullPathForApplication"#, #"absolutePathForAppBundle"#, #"NSMetadataQuery"#], a: codi)
+        #expect(altres.isEmpty, "\(altres)")
+        let troba = try #require(codi.first { $0.ruta == trobaWarp }).text
+        #expect(troba.contains("InstallacioWarp.troba(aplicacions: AppWarp.rutaPerDefecte,\n"))
+        #expect(troba.components(separatedBy: "NSWorkspace").count == 2, "una sola crida a NSWorkspace")
+        #expect(linies("InstallacioWarp.troba(").map { $0.prefix(trobaWarp.count) } == [Substring(trobaWarp)])
+        // La llista fixa: `troba` només demana els dos identificadors de Warp.
+        #expect(linies("cerca(").sorted() == [
+            "Sources/WarpLaunchCore/AppWarp.swift: let preview = cerca(AppWarp.identificadorPreview).map(AppWarp.init(url:)).flatMap { $0.esPreview ? $0 : nil }",
+            "Sources/WarpLaunchCore/AppWarp.swift: let trobada = cerca(AppWarp.identificador).map(AppWarp.init(url:)).flatMap { $0.esWarp ? $0 : nil }",
+        ])
+        // Fora dels comentaris.
+        #expect(Set(linies("TrobaWarp.delSistema").filter { !$0.contains(": //") }.map { String($0.prefix { $0 != ":" }) }) == [
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCLI/main.swift", "Sources/WarpLaunchObridor/ObreWarp.swift",
+        ])
+        // L'app i el CLI llegeixen Warp on és de debò: el lector de cadascun en porta la crida.
+        #expect(linies("Lector(processos:").sorted() == [
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)",
+            "Sources/WarpLaunchCLI/main.swift: let lector = Lector(processos: processos, warp: TrobaWarp.delSistema)",
+        ])
+    }
+
+    /// La crida de `TrobaWarp` (D-P12) només val en aquell fitxer: a qualsevol altre, la guarda falla. I en aquell, només
+    /// aquella crida: cap altra de `NSWorkspace`, ni la mateixa amb un altre identificador.
+    @Test func laCridaDeTrobaWarpNomesValAlSeuFitxer() throws {
+        let codi = try fitxers("Sources")
+        #expect(try obrenOTanquen(codi).isEmpty)
+        let crida = "        cerca: { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })"
+        for ruta in ["Sources/WarpLaunchCore/AppWarp.swift", "Sources/WarpLaunchObridor/ObreWarp.swift",
+                     "Sources/WarpLaunchObridor/Altre.swift", "Sources/WarpLaunchApp/WarpLaunchApp.swift", serveiArrencada,
+                     "Sources/WarpLaunchCLI/main.swift", "Sources/WarpLaunchUI/Finder.swift", "TrobaWarp.swift"] {
+            #expect(try obrenOTanquen(codi + [(ruta: ruta, text: crida)]) == ["\(ruta):1: «\(workspace)»"], "\(ruta)")
+        }
+        #expect(try obrenOTanquen([(ruta: trobaWarp, text: crida)]).isEmpty)
+        let altres = [(ruta: trobaWarp, text: """
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal")
+            NSWorkspace.shared.urlsForApplications(withBundleIdentifier: $0)
+            NSWorkspace.shared.launchApplication("Warp")
+            NSWorkspace.shared.urlForApplication(toOpen: url)
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0); NSWorkspace.shared.hideOtherApplications()
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0 + "x")
+            """)]
+        #expect(try obrenOTanquen(altres) == [
+            "\(trobaWarp):1: «\(workspaceTrobaWarp)»", "\(trobaWarp):2: «\(workspaceTrobaWarp)»",
+            "\(trobaWarp):3: «\(workspaceTrobaWarp)»", "\(trobaWarp):3: «launchApplication»",
+            "\(trobaWarp):4: «\(workspaceTrobaWarp)»", "\(trobaWarp):5: «\(workspaceTrobaWarp)»",
+            "\(trobaWarp):6: «\(workspaceTrobaWarp)»",
+        ])
+        // La resta de la llista hi continua valent: l'excepció només canvia l'expressió de `NSWorkspace`.
+        #expect(prohibidesCodi(a: trobaWarp).count == prohibidesCodi.count)
+        #expect(Set(prohibidesCodi(a: trobaWarp)).symmetricDifference(prohibidesCodi) == [workspace, workspaceTrobaWarp])
+    }
+
     /// La foto de Warp (D19) només es refresca quan en David ho demana, mai sola (0.27.3, 06/11/2026): l'únic que crida
     /// `refresca()` és la lectura amb finestres, que fan «Torna a llegir Warp», importar i lligar.
     @Test func laFotoNomesEsFaQuanEsDemana() throws {
@@ -195,6 +283,8 @@ private let prohibidesArrossegar = [
             // Fase 3.1: res que obri Warp, ni les carpetes de debò de Warp i de Claude.
             #"NSWorkspace"#, #"openURL"#, #"ObreWarp"#, #"FitxersLaunchWarp\.real"#, #"\.warp/"#, #"launch_configurations"#,
             #"\.claude\.json"#, #"\.claude/projects"#,
+            // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
+            #"TrobaWarp"#, #"urlForApplication"#, #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#, #"perOmissio\.app(?![A-Za-z0-9_])"#,
         ]
         let trobades = try aparicions(de: prohibides, a: proves)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
@@ -254,6 +344,15 @@ private let prohibidesArrossegar = [
             "mostra.swift:1: «\\.accepta\\(»", "mostra.swift:4: «\\.acceptat\\(»", "mostra.swift:4: «\\.restauracio\\s*=(?!=)»",
             "mostra.swift:5: «\\.migrat\\b»", "mostra.swift:6: «\\.migrat\\b»",
         ])
+        // D-P12: `troba` només amb una carpeta temporal.
+        let troba = #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
+        #expect(try aparicions(de: [troba, #"perOmissio\.app(?![A-Za-z0-9_])"#], a: [(ruta: "mostra.swift", text: """
+            InstallacioWarp.troba(aplicacions: AppWarp.rutaPerDefecte, cerca: c)
+            InstallacioWarp.troba(aplicacions: url, cerca: c)
+            InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: c)
+            InstallacioWarp.perOmissio.app.versio
+            InstallacioWarp.perOmissio.executable
+            """)]) == ["mostra.swift:1: «\(troba)»", "mostra.swift:2: «\(troba)»", "mostra.swift:4: «perOmissio\\.app(?![A-Za-z0-9_])»"])
         // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
         let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
         #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)

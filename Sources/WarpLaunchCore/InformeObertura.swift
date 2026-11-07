@@ -13,6 +13,8 @@ enum InformeObertura {
         var finestres: Int
         var configuracio: URL
         var warpObert: Bool?
+        /// Warp Preview no deixa obrir res (D-P12, 0.29.2).
+        var warpPreview: WarpPreview? = nil
         /// `nil` si no hi ha cap pestanya per obrir.
         var fitxer: FitxerLaunch?
         /// L'error del fitxer, si n'hi ha d'obrir però no es pot generar.
@@ -31,6 +33,7 @@ enum InformeObertura {
         case false?: linies.append("Warp és tancat: primer s'obriria Warp.")
         case nil: linies.append("No se sap si Warp és obert.")
         }
+        if let preview = d.warpPreview { linies.append("✗ \(preview.text) No s'obriria res.") }
         linies.append(pla.xifres.text)
         if let motiu = pla.motiuEspera { linies.append("⏳ \(motiu)") }
 
@@ -103,6 +106,8 @@ enum InformeObertura {
         var configuracio: String
         var finestra: Finestra
         var warpObert: Bool?
+        /// Per què Warp Preview no deixa obrir res (D-P12, 0.29.2).
+        var warpPreview: String?
         var resum: String
         /// Per què encara no s'ha d'obrir (`Pla.motiuEspera`).
         var espera: String?
@@ -121,7 +126,7 @@ enum InformeObertura {
         let valor = JSON(
             configuracio: d.configuracio.path,
             finestra: .init(id: pla.finestra.id, nom: pla.finestra.nom, numero: d.numero),
-            warpObert: d.warpObert, resum: x.text, espera: pla.motiuEspera,
+            warpObert: d.warpObert, warpPreview: d.warpPreview?.text, resum: x.text, espera: pla.motiuEspera,
             xifres: .init(pestanyes: x.pestanyes, ambClaude: x.ambClaude, reprenen: x.reprenen, noves: x.noves,
                           terminal: x.terminal, jaObertes: x.jaObertes, excloses: x.excloses, memoriaGB: x.memoriaGB),
             obertes: pla.obertes.map {

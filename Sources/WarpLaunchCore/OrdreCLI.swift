@@ -115,7 +115,8 @@ public enum OrdreCLI {
         transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. No obre ni tanca res,
         excepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).
         Codis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot
-        obert); 2 la configuració (llegida o importada) té errors, o alguna pestanya no s'obriria; 64 ús incorrecte.
+        obert; amb obre, també si Warp Preview no deixa obrir res); 2 la configuració (llegida o importada) té
+        errors, o alguna pestanya no s'obriria; 64 ús incorrecte.
         """
     }
 
@@ -442,13 +443,16 @@ public enum OrdreCLI {
 
         let dades = InformeObertura.Dades(pla: p.pla, numero: p.numero, finestres: p.configuracio.finestres.count,
                                           configuracio: p.fitxerConfiguracio, warpObert: p.lectura.warpObert,
-                                          fitxer: fitxer, errorFitxer: errorFitxer, inici: p.inici)
+                                          warpPreview: p.lectura.warpPreview, fitxer: fitxer, errorFitxer: errorFitxer,
+                                          inici: p.inici)
         if p.o.json {
             guard let json = try? InformeObertura.json(dades) else { throw .fallida("no s'ha pogut generar el JSON") }
             sortida.escriu(String(decoding: json, as: UTF8.self))
         } else {
             sortida.text += InformeObertura.text(dades)
         }
+        // Amb `--obre`, no s'obriria res: com si no es pogués obrir.
+        if p.lectura.warpPreview != nil { return Codi.fallida }
         return p.pla.excloses.isEmpty && errorFitxer == nil ? Codi.correcte : Codi.configuracioAmbErrors
     }
 
@@ -486,11 +490,14 @@ public enum OrdreCLI {
             throw .fallida("l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. "
                 + "No s'ha obert res.")
         }
+        // D-P12: amb Warp Preview, ni s'obre Warp ni s'escriu res.
+        if let preview = p.lectura.warpPreview { throw .fallida("\(preview.text) No s'ha obert res.") }
         let id = p.pla.finestra.id
         func dades(_ p: PlaCLI, fitxer: FitxerLaunch?) -> InformeObertura.Dades {
             InformeObertura.Dades(pla: p.pla, numero: p.numero, finestres: p.configuracio.finestres.count,
-                                  configuracio: p.fitxerConfiguracio, warpObert: p.lectura.warpObert, fitxer: fitxer,
-                                  errorFitxer: nil, inici: p.inici, capcalera: "S'obre a Warp (--obre).")
+                                  configuracio: p.fitxerConfiguracio, warpObert: p.lectura.warpObert,
+                                  warpPreview: p.lectura.warpPreview, fitxer: fitxer, errorFitxer: nil, inici: p.inici,
+                                  capcalera: "S'obre a Warp (--obre).")
         }
         guard p.pla.motiuEspera == nil else {
             sortida.text += InformeObertura.text(dades(p, fitxer: nil))

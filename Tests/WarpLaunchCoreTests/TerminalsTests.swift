@@ -52,7 +52,7 @@ private func id(_ n: Int) -> UUID { UUID(uuidString: String(format: "00000000-00
         p.claude(102, argv: ["claude"], uuid: nil, dinsDeWarp: false, entorn: [OrdreClaude.variableMarca: id(2).uuidString])
         p.processos[302] = (InfoProces(executable: "/bin/sh", argv: ["sh"], entorn: [OrdreClaude.variableMarca: id(3).uuidString]), 301)
 
-        #expect(p.terminalsDeWarp() == [
+        #expect(p.terminalsDeWarp(executable: ProcessosFalsos.executableWarp) == [
             TerminalViu(pid: 200, carpeta: "/x/t2"),
             TerminalViu(pid: 300, pane: uuidDeProva("b")),
             TerminalViu(pid: 1101, carpeta: "/x/t1", pane: uuidDeProva("a"), marca: id(1), claude: true, conversa: "x"),
@@ -61,22 +61,22 @@ private func id(_ n: Int) -> UUID { UUID(uuidString: String(format: "00000000-00
 
     /// Sense Warp no n'hi ha cap; ni són de Warp els d'un altre programa que es digui igual.
     @Test func nomesElsDelTerminalServerDeWarp() {
-        #expect(ProcessosFalsos().terminalsDeWarp().isEmpty)
+        #expect(ProcessosFalsos().terminalsDeWarp(executable: ProcessosFalsos.executableWarp).isEmpty)
         var p = ProcessosFalsos()
         p.processos[50] = (InfoProces(executable: "/tmp/stable", argv: ["/tmp/stable", "terminal-server"]), 1)
         p.processos[51] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
-        #expect(p.terminalsDeWarp().isEmpty)
+        #expect(p.terminalsDeWarp(executable: ProcessosFalsos.executableWarp).isEmpty)
         // L'app de Warp no és el seu `terminal-server`: un procés que pengi de l'app no és cap terminal.
         var q = ProcessosFalsos.ambWarp()
         q.processos[41] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 40)
-        #expect(q.terminalsDeWarp().isEmpty)
+        #expect(q.terminalsDeWarp(executable: ProcessosFalsos.executableWarp).isEmpty)
     }
 
     /// Una marca que no és un UUID no és cap marca.
     @Test func unaMarcaEstranyaNoCompta() {
         var p = ProcessosFalsos.ambWarp()
         p.claude(101, argv: ["claude"], uuid: nil, entorn: [OrdreClaude.variableMarca: "no-es-un-uuid"])
-        #expect(p.terminalsDeWarp() == [TerminalViu(pid: 1101, claude: true)])
+        #expect(p.terminalsDeWarp(executable: ProcessosFalsos.executableWarp) == [TerminalViu(pid: 1101, claude: true)])
     }
 }
 
@@ -104,7 +104,7 @@ struct LecturaSenseFinestresTests {
             processos.claude(101, argv: ["claude"], uuid: uuidDeProva("c"), entorn: [OrdreClaude.variableMarca: id(1).uuidString])
             processos.carpetes[1101] = a
             lector = Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"), carpetaSessions: sessions,
-                            processos: processos, inici: inici)
+                            processos: processos, warp: { .perOmissio }, inici: inici)
         }
     }
 

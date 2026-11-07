@@ -92,7 +92,7 @@ final class Aplicacio {
         self.editor = editor
         self.sessions = sessions
         let processos = ProcessosDelSistema()
-        let lector = Lector(processos: processos, inici: inici)
+        let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)
         // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.
         // D-P4: `ConsentimentRestauracio` només crida `creaEntornRefresc` (i només llavors es crea l'ajust) amb el
         // consentiment acceptat.
@@ -106,7 +106,7 @@ final class Aplicacio {
                                               try preferencies.posaRestauracio(nou, valor: { try ajust.valor() },
                                                                                posa: { try ajust.posa($0) })
                                           },
-                                          warpObert: { processos.warpObert() },
+                                          warpObert: { lector.warpObert() },
                                           llegeixBase: { try lector.llegeix(base: .sempre) })
             }
         }
@@ -130,7 +130,7 @@ final class Aplicacio {
                 fitxers: FitxersLaunchWarp.real,
                 transcripcions: LectorTranscripcions(),
                 confianca: LectorConfianca(),
-                versioWarp: { AppWarp.real.versio },
+                versioWarp: { TrobaWarp.delSistema().app.versio },
                 inici: inici))
         }
         editor.obertura = obertura

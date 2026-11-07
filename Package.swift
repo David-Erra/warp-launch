@@ -18,7 +18,7 @@ let package = Package(
         // Model de l'editor i vistes SwiftUI. No toca NSApp: es pot provar.
         .target(name: "WarpLaunchUI", dependencies: ["WarpLaunchCore"]),
         // L'única crida que fa obrir alguna cosa a Warp (fase 3.1): la fan servir l'app i el CLI (`obre --obre`, D17).
-        // Cap prova no en depèn.
+        // També hi ha l'única pregunta a macOS d'on és Warp (`TrobaWarp`, D-P12). Cap prova no en depèn.
         .target(name: "WarpLaunchObridor", dependencies: ["WarpLaunchCore"]),
         // App de barra de menú, prima: escenes, activació i Dock (s'empaqueta amb scripts/build-app.sh).
         .executableTarget(name: "WarpLaunchApp", dependencies: ["WarpLaunchCore", "WarpLaunchUI", "WarpLaunchObridor"]),

@@ -35,7 +35,7 @@ private struct Escenari {
         processos.claude(101, argv: argv, uuid: uuidDeProva("a"))
 
         let lector = Lector(rutaWarp: base.url, rutaAjustos: tmp.url("settings.toml"), carpetaSessions: sessions,
-                            processos: processos, inici: inici)
+                            processos: processos, warp: { .perOmissio }, inici: inici)
         let ids = IdsDeProva()
         entorn = EntornCLI(lector: lector, inici: inici, carpetaReal: real,
                            transcripcions: LectorTranscripcions(carpeta: tmp.url("projects")),
@@ -49,7 +49,22 @@ private struct Escenari {
     }
 
     func existeix(_ url: URL) -> Bool { FileManager.default.fileExists(atPath: url.path) }
+
+    /// D-P12: el mateix, amb Warp Preview obert (pid 90) i Warp Stable instal·lat però tancat (sense l'app, pid 40).
+    func ambPreview() throws -> EntornCLI {
+        var entorn = self.entorn
+        var processos = try #require(entorn.lector.processos as? ProcessosFalsos)
+        processos.processos[40] = nil
+        processos.processos[90] = (InfoProces(executable: binariPreview, argv: [binariPreview]), 1)
+        entorn.lector.processos = processos
+        var warp = InstallacioWarp.perOmissio
+        warp.executablePreview = binariPreview
+        entorn.lector.warp = { [warp] in warp }
+        return entorn
+    }
 }
+
+private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/preview"
 
 @Suite struct OrdreCLITests {
     @Test func ajudaIVersio() throws {
@@ -498,6 +513,36 @@ private struct Escenari {
         #expect(!e.existeix(e.real))
     }
 
+    /// D-P12: amb Warp Preview obert i Warp Stable tancat, `llegeix` i `obre` ho diuen, i `obre` surt amb 1 (amb `--obre`,
+    /// no s'obriria res). No s'escriu res.
+    @Test func ambWarpPreviewLlegeixIObreHoDiuen() throws {
+        let e = try Escenari()
+        let carpeta = try ambConfiguracio(e)
+        let entorn = try e.ambPreview()
+        let abans = try instantania(e)
+        func executa(_ args: String...) -> (Int32, Sortida) {
+            var sortida = Sortida()
+            return (OrdreCLI.executa(args, entorn: entorn, sortida: &sortida), sortida)
+        }
+        let avis = "Warp Preview encara no és compatible: cal Warp Stable. Ara és obert Warp Preview, i Warp Stable no: "
+            + "obre Warp Stable i torna-ho a provar."
+        let (codiLlegeix, llegeix) = executa("llegeix")
+        #expect(codiLlegeix == 0)
+        #expect(llegeix.text.contains("Warp és tancat: són les finestres que restaurarà en obrir-se.\n⚠ \(avis)\n"), "\(llegeix.text)")
+
+        let (codi, sortida) = executa("obre", "feina", "--config", carpeta.path)
+        #expect(codi == 1)
+        #expect(sortida.text.contains("Warp és tancat: primer s'obriria Warp.\n✗ \(avis) No s'obriria res.\n"), "\(sortida.text)")
+        let (codiJSON, json) = executa("obre", "feina", "--json", "--config", carpeta.path)
+        #expect(codiJSON == 1)
+        let objecte = try #require(try JSONSerialization.jsonObject(with: Data(json.text.utf8)) as? [String: Any])
+        #expect(objecte["warpPreview"] as? String == avis)
+        #expect(try instantania(e) == abans)
+        // Sense Warp Preview, el JSON no en diu res.
+        let (_, net) = e.executa("obre", "feina", "--json", "--config", carpeta.path)
+        #expect(try #require(try JSONSerialization.jsonObject(with: Data(net.text.utf8)) as? [String: Any])["warpPreview"] == nil)
+    }
+
     /// Un `estat.json` malmès o d'una versió més nova: l'app no obriria res, i el CLI no el toca.
     @Test func obreAmbUnEstatQueNoEsPotLlegir() throws {
         let e = try Escenari()
@@ -676,6 +721,24 @@ private struct NoEngega: Error, CustomStringConvertible {
         #expect(o.mostrat.contains("Warp és tancat: l'obro"))
         #expect(sortida.errors.contains("no s'ha pogut obrir Warp: macOS no l'obre"), "\(sortida.errors)")
         #expect(o.engegades == 1 && o.urls.isEmpty && o.fitxersWarp.isEmpty)
+        #expect(try Data(contentsOf: carpeta.appending(path: EstatApp.nomFitxer)) == estat)
+    }
+
+    /// D-P12: amb Warp Preview obert i Warp Stable tancat, `--obre` no obre Warp Stable, ni escriu res: ho diu.
+    @Test func ambWarpPreviewNoObreRes() async throws {
+        let e = try Escenari()
+        let carpeta = try configuracio(e)
+        let o = try ObridorFals(e)
+        var entorn = try e.ambPreview()
+        let rellotge = o.rellotge
+        entorn.ara = { rellotge.ara }
+        let estat = try Data(contentsOf: carpeta.appending(path: EstatApp.nomFitxer))
+        var sortida = Sortida()
+        let codi = await OrdreCLI.executa(["obre", "1", "--obre", "--config", carpeta.path], entorn: entorn,
+                                          obridor: o.obridor, sortida: &sortida)
+        #expect(codi == 1)
+        #expect(sortida.errors == "warp-launch: \(WarpPreview.obert.text) No s'ha obert res.\n", "\(sortida.errors)")
+        #expect(o.mostrat.isEmpty && o.engegades == 0 && o.urls.isEmpty && o.fitxersWarp.isEmpty)
         #expect(try Data(contentsOf: carpeta.appending(path: EstatApp.nomFitxer)) == estat)
     }
 
