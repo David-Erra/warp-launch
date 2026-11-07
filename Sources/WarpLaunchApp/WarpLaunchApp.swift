@@ -35,7 +35,8 @@ struct WarpLaunchApp: App {
             PortaConsentiment(consentiment: aplicacio.consentiment, carpetaDeProva: aplicacio.carpetaDeProva,
                               surt: { NSApp.terminate(nil) }) {
                 VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
-                                  deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada)
+                                  deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada,
+                                  diagnostic: aplicacio.copiaDiagnostic)
             }
             .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
         }
@@ -70,6 +71,8 @@ final class Aplicacio {
     let activacio: Activacio
     /// «Obre Warp Launch en iniciar sessió» (D3): l'interruptor de la Configuració.
     let arrencada: ArrencadaSessio
+    /// Pla A4: «Copia el diagnòstic», a la Configuració, amb el mateix Warp i Claude que llegeix l'app. Només llegeix.
+    let copiaDiagnostic: CopiaDiagnostic
     /// Aquesta arrencada és la de l'inici de sessió (es decideix a `applicationDidFinishLaunching`).
     var enIniciarSessio = false
     /// Cada quant es torna a llegir Warp mentre l'app és en marxa (D18).
@@ -78,13 +81,15 @@ final class Aplicacio {
     init() {
         inici = FileManager.default.homeDirectoryForCurrentUser.path
         arguments = ArgumentsApp(CommandLine.arguments, inici: inici)
-        let editor: Editor, sessions: EstatSessions, preferencies: MagatzemPreferencies?
+        let editor: Editor, sessions: EstatSessions, preferencies: MagatzemPreferencies?, carpeta: URL?
         switch arguments.carpeta {
-        case let .real(carpeta), let .prova(carpeta):
-            editor = Editor(magatzem: MagatzemConfiguracio(carpeta: carpeta, inici: inici))
-            sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta))
-            preferencies = MagatzemPreferencies(carpeta: carpeta)
+        case let .real(c), let .prova(c):
+            carpeta = c
+            editor = Editor(magatzem: MagatzemConfiguracio(carpeta: c, inici: inici))
+            sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: c))
+            preferencies = MagatzemPreferencies(carpeta: c)
         case let .incorrecta(motiu):
+            carpeta = nil
             editor = Editor(senseCarpeta: motiu)
             sessions = EstatSessions(magatzem: nil)
             preferencies = nil
@@ -93,6 +98,9 @@ final class Aplicacio {
         self.sessions = sessions
         let processos = ProcessosDelSistema()
         let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)
+        let entornDiagnostic = EntornDiagnostic(lector: lector, carpetaConfiguracio: carpeta,
+                                                transcripcions: LectorTranscripcions(), confianca: LectorConfianca())
+        copiaDiagnostic = CopiaDiagnostic(diagnostic: { Diagnostic.executa(entornDiagnostic, anonimitza: $0) })
         // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.
         // D-P4: `ConsentimentRestauracio` només crida `creaEntornRefresc` (i només llavors es crea l'ajust) amb el
         // consentiment acceptat.

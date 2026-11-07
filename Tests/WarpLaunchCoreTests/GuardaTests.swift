@@ -69,9 +69,10 @@ private func obrenOTanquen(_ codi: [(ruta: String, text: String)]) throws -> [St
     try codi.flatMap { try aparicions(de: prohibidesCodi(a: $0.ruta), a: [$0]) }
 }
 
-/// Pla A4: a les proves, els lectors de Claude només amb una ruta.
+/// Pla A4: a les proves, els lectors de Claude només amb una ruta, i «Copia el diagnòstic» només amb un porta-retalls fals.
 private let lectorTranscripcions = #"\bLectorTranscripcions\((?!carpeta:)"#
 private let lectorConfianca = #"\bLectorConfianca\((?!ruta:)"#
+private let copiaDiagnostic = #"\bCopiaDiagnostic\((?![^\n]*escriu:)"#
 
 /// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, executi o toqui el porta-retalls. Sense `\b`: amb les
 /// regles d'Unicode, `default.moveItem` o `Darwin.open` no hi tenen cap límit de paraula.
@@ -305,19 +306,23 @@ private let prohibidesArrossegar = [
             #"\.claude\.json"#, #"\.claude/projects"#,
             // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
             #"TrobaWarp"#, #"urlForApplication"#, #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#, #"perOmissio\.app(?![A-Za-z0-9_])"#,
-            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude).
-            lectorTranscripcions, lectorConfianca,
+            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude), i
+            // «Copia el diagnòstic», sempre amb un porta-retalls fals (a la mateixa línia).
+            lectorTranscripcions, lectorConfianca, copiaDiagnostic,
         ]
         let trobades = try aparicions(de: prohibides, a: proves)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
     }
 
-    /// Pla A4: el diagnòstic només llegeix (`Diagnostic.swift`).
+    /// Pla A4: el diagnòstic només llegeix (`Diagnostic.swift`), i el porta-retalls només l'escriu el clic al botó: l'únic
+    /// `CopiaDiagnostic` és el de l'app.
     @Test func elDiagnosticNomesLlegeix() throws {
         let codi = try fitxers("Sources")
         let diagnostic = try #require(codi.first { $0.ruta == "Sources/WarpLaunchCore/Diagnostic.swift" })
         let trobades = try aparicions(de: escriuen, a: [diagnostic])
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        let copies = try aparicions(de: [#"\bCopiaDiagnostic\("#], a: codi)
+        #expect(copies.count == 1 && copies[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift:"), "\(copies)")
         // Cada expressió troba la seva línia.
         let mostra = [(ruta: "mostra.swift", text: """
             try magatzem.desa(p)
@@ -415,13 +420,16 @@ private let prohibidesArrossegar = [
             InstallacioWarp.perOmissio.app.versio
             InstallacioWarp.perOmissio.executable
             """)]) == ["mostra.swift:1: «\(troba)»", "mostra.swift:2: «\(troba)»", "mostra.swift:4: «perOmissio\\.app(?![A-Za-z0-9_])»"])
-        // Pla A4: els lectors de Claude.
-        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca], a: [(ruta: "mostra.swift", text: """
+        // Pla A4: els lectors de Claude i «Copia el diagnòstic».
+        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca, copiaDiagnostic], a: [(ruta: "mostra.swift", text: """
             LectorTranscripcions()
             LectorTranscripcions(carpeta: tmp.url("p"))
             LectorConfianca()
             LectorConfianca(ruta: tmp.url("c"))
-            """)]) == ["mostra.swift:1: «\(lectorTranscripcions)»", "mostra.swift:3: «\(lectorConfianca)»"])
+            CopiaDiagnostic(diagnostic: d)
+            CopiaDiagnostic(diagnostic: d, escriu: { _ in })
+            """)]) == ["mostra.swift:1: «\(lectorTranscripcions)»", "mostra.swift:3: «\(lectorConfianca)»",
+                       "mostra.swift:5: «\(copiaDiagnostic)»"])
         // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
         let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
         #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)

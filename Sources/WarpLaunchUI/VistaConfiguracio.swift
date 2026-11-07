@@ -2,19 +2,22 @@ import SwiftUI
 import WarpLaunchCore
 
 /// La finestra de Configuració (⌘,; docs/disseny.md, pas 11): la plantilla de les pestanyes noves, l'ordre que en
-/// surt i el fitxer. Un sol panell, d'amplada fixa i alçada del contingut (settings.md de mac-design). Els canvis de
+/// surt, el fitxer i el diagnòstic (pla A4). Un sol panell, d'amplada fixa i alçada del contingut (settings.md de mac-design). Els canvis de
 /// la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`), no al de l'editor.
 public struct VistaConfiguracio: View {
     @Bindable var editor: Editor
     let carpeta: String
     let deProva: Bool
     let arrencada: ArrencadaSessio
+    /// Pla A4: «Copia el diagnòstic».
+    let diagnostic: CopiaDiagnostic
 
-    public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio) {
+    public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio, diagnostic: CopiaDiagnostic) {
         self.editor = editor
         self.carpeta = carpeta
         self.deProva = deProva
         self.arrencada = arrencada
+        self.diagnostic = diagnostic
     }
 
     public var body: some View {
@@ -31,6 +34,7 @@ public struct VistaConfiguracio: View {
             }
             seccioArrencada
             seccioFitxer
+            seccioDiagnostic
         }
         .formStyle(.grouped)
         .frame(width: 520)
@@ -163,6 +167,36 @@ public struct VistaConfiguracio: View {
                 }
             }
             LabeledContent("Versió", value: WarpLaunch.versio)
+        }
+    }
+
+    /// Pla A4: l'informe per a una issue de GitHub, al porta-retalls (`CopiaDiagnostic`). Per defecte, l'anonimitzat; el
+    /// complet, al menú del botó.
+    private var seccioDiagnostic: some View {
+        Section {
+            LabeledContent {
+                Menu("Copia el diagnòstic") {
+                    Button("Copia el diagnòstic complet") { Task { await diagnostic.copia(anonimitzat: false) } }
+                } primaryAction: {
+                    Task { await diagnostic.copia(anonimitzat: true) }
+                }
+                .menuStyle(.button)
+                .fixedSize()
+                .disabled(diagnostic.calculant)
+            } label: {
+                Text("Informe per a una issue a GitHub")
+                if let copiat = diagnostic.copiat {
+                    Text(copiat)
+                }
+            }
+        } header: {
+            Text("Diagnòstic")
+        } footer: {
+            Text("Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al "
+                + "porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de "
+                + "les carpetes; el complet, sí.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
