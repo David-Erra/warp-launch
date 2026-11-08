@@ -704,9 +704,17 @@ public enum Diagnostic {
         let quan = !consentiment.acceptat ? "when it manages the setting (with consent and the real configuration folder)"
             : e.configuracioDeProva ? "only with the real configuration folder, not with a test one (--config)"
             : "within a minute while it's running"
-        // Sense el fitxer, només el crea amb Warp obert i amb algun terminal (ronda 5, `Lector.warpHaAcabatDArrencar`).
+        // Sense el fitxer, només el crea amb Warp obert i amb algun terminal (ronda 5, `Lector.warpHaAcabatDArrencar`): com
+        // és Warp ara, pels processos (només lectura), perquè es vegi quin cas és. No diu que Warp restaurarà res: potser és
+        // tancat, i potser no té cap finestra desada.
         let ambWarpObert = "but only when Warp is open with a terminal (when Warp starts without settings.toml, it first "
             + "moves its older settings into it, and it wouldn't if the file were already there)"
+        func warpAra() -> String {
+            let executable = e.warp().executable
+            return !e.processos.warpObert(executable: executable) ? "Warp is closed now."
+                : e.processos.warpHaAcabatDArrencar(executable: executable) ? "Warp is open now, with a terminal."
+                : "Warp is open now, with no terminal yet."
+        }
         // Com l'app (`AjustRestauracio.llegeix`, només lectura): un enllaç, una carpeta que no ho és o un text que no és
         // UTF-8, l'app no els pot fer servir, i el diagnòstic no ha de dir que hi afegirà la línia.
         let lectura: AjustRestauracio.Lectura
@@ -719,15 +727,18 @@ public enum Diagnostic {
         let text: String
         switch lectura {
         case .senseFitxer:
-            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) doesn't exist: \(deSerie) Warp "
-                + "Launch creates it with only restore_session = false \(quan), \(ambWarpObert). " + deConsentiment.1)
+            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) doesn't exist yet: Warp only "
+                + "writes it once a setting is changed, and until then uses its default for restore_session, on. Warp Launch "
+                + "creates it with only restore_session = false \(quan), \(ambWarpObert). \(warpAra()) " + deConsentiment.1)
         case .senseCarpeta:
-            // Warp Launch no crea la carpeta de Warp (regla 7: només la línia).
+            // Warp Launch no crea la carpeta de Warp (regla 7: només la línia). Sense la carpeta, Warp no ha obert mai cap
+            // finestra: no hi ha res per restaurar.
             return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0),
                                "\(anon.ruta(ruta.deletingLastPathComponent().path)) doesn't exist: Warp hasn't been opened "
-                                   + "yet for this user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has "
-                                   + "created it, Warp Launch adds restore_session = false \(quan), \(ambWarpObert). "
-                                   + deConsentiment.1)
+                                   + "yet for this user, and has no windows to restore. Warp Launch doesn't create Warp's "
+                                   + "folder: once Warp has created it, Warp Launch turns restore_session off \(quan); if "
+                                   + "there's no settings.toml yet, it creates one with only restore_session = false, "
+                                   + "\(ambWarpObert). \(warpAra()) " + deConsentiment.1)
         case let .fitxer(_, llegit, _):
             text = llegit
         }

@@ -458,7 +458,7 @@ private struct MacDeProva {
     /// Sense la línia (0.31.2, decisió A): Warp fa servir el valor de sèrie (activat), i Warp Launch l'hi afegeix quan
     /// gestiona l'ajust, amb el permís i la configuració de debò. Si no s'hi pot afegir, és un error, amb el motiu.
     @Test func senseLaLiniaDiuElValorDeSerieIQueLAppLAfegeix() throws {
-        let mac = try MacDeProva()
+        var mac = try MacDeProva()
         let deSerie = "Warp uses its default, on (after a restart, it restores its own windows, without Claude)."
         try mac.escriu("[general]\nx = 1\n", a: mac.ajustos)
         let senseLinia = try mac.comprovacio(.restauracio)
@@ -479,23 +479,35 @@ private struct MacDeProva {
         #expect(noEsPot.detall.hasPrefix("\(mac.ajustos.path) has no restore_session: \(deSerie) Warp Launch can't add it "
             + "to this file (reason, in Catalan: ««restore_session» no hi és, i no s'hi pot afegir: a la línia 1, «general» "
             + "és una clau, no una taula [general]»), and won't change it."), "\(noEsPot.detall)")
-        // Sense el fitxer, el crea, però només amb Warp obert i amb algun terminal (ronda 5); sense la carpeta de Warp, Warp
-        // no s'ha obert mai, i no la crea. El diagnòstic no escriu res.
+        // Sense el fitxer, el crea, però només amb Warp obert i amb algun terminal (ronda 5): diu com és Warp ara. No diu
+        // que Warp restaurarà res. Sense la carpeta de Warp, Warp no s'ha obert mai, i no la crea. El diagnòstic no escriu
+        // res.
         try FileManager.default.removeItem(at: mac.ajustos)
         let senseFitxer = try mac.comprovacio(.restauracio)
         #expect(senseFitxer.resultat == .avis)
-        #expect(senseFitxer.detall.hasPrefix("\(mac.ajustos.path) doesn't exist: \(deSerie) Warp Launch creates it with only "
-            + "restore_session = false within a minute while it's running, but only when Warp is open with a terminal (when "
-            + "Warp starts without settings.toml, it first moves its older settings into it, and it wouldn't if the file "
-            + "were already there)."), "\(senseFitxer.detall)")
+        let creaQuan = "Warp Launch creates it with only restore_session = false within a minute while it's running, but only "
+            + "when Warp is open with a terminal (when Warp starts without settings.toml, it first moves its older settings "
+            + "into it, and it wouldn't if the file were already there)."
+        #expect(senseFitxer.detall == "\(mac.ajustos.path) doesn't exist yet: Warp only writes it once a setting is changed, "
+            + "and until then uses its default for restore_session, on. \(creaQuan) Warp is open now, with a terminal. "
+            + "Consent given on 2026-11-04.", "\(senseFitxer.detall)")
+        #expect(!senseFitxer.detall.contains("restores") && !senseFitxer.detall.contains("Claude"))
+        // Warp encara arrencant (sense cap terminal), i tancat.
+        mac.processos.processos = mac.processos.processos.filter { $0.value.pare != 50 }
+        #expect(try mac.comprovacio(.restauracio).detall.contains("\(creaQuan) Warp is open now, with no terminal yet. "))
+        mac.processos = ProcessosFalsos()
+        #expect(try mac.comprovacio(.restauracio).detall.contains("\(creaQuan) Warp is closed now. Consent given on "))
+        #expect(!FileManager.default.fileExists(atPath: mac.ajustos.path))
         let carpetaWarp = mac.ajustos.deletingLastPathComponent()
         try FileManager.default.removeItem(at: carpetaWarp)
         let senseCarpeta = try mac.comprovacio(.restauracio)
         #expect(senseCarpeta.resultat == .avis)
-        #expect(senseCarpeta.detall.hasPrefix("\(carpetaWarp.path) doesn't exist: Warp hasn't been opened yet for this "
-            + "user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has created it, Warp Launch adds "
-            + "restore_session = false within a minute while it's running, but only when Warp is open with a terminal"),
-                "\(senseCarpeta.detall)")
+        #expect(senseCarpeta.detall == "\(carpetaWarp.path) doesn't exist: Warp hasn't been opened yet for this user, and "
+            + "has no windows to restore. Warp Launch doesn't create Warp's folder: once Warp has created it, Warp Launch "
+            + "turns restore_session off within a minute while it's running; if there's no settings.toml yet, it creates "
+            + "one with only restore_session = false, but only when Warp is open with a terminal (when Warp starts without "
+            + "settings.toml, it first moves its older settings into it, and it wouldn't if the file were already there). "
+            + "Warp is closed now. Consent given on 2026-11-04.", "\(senseCarpeta.detall)")
         #expect(!FileManager.default.fileExists(atPath: carpetaWarp.path))
         #expect(try !mac.comprovacio(.restauracio, anonimitza: true).detall.contains("maria.prova"))
         // Sense el permís, quan el gestioni.
