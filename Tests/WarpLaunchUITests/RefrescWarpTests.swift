@@ -265,6 +265,89 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(mon.canvis.isEmpty)
     }
 
+    // MARK: - Deixar de fer servir Warp Launch (0.31.0, decisió 3)
+
+    /// `retira` posa l'ajust al valor d'abans, i després res no el toca: ni la vigilància de cada minut, ni sortir de l'app
+    /// (encara que la sortida es cancel·li), ni un refresc, que llegeix la base tal com és.
+    @Test func retirarPosaElValorIDespresNoElTocaRes() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        try r.retira(posant: true)
+        #expect(mon.ajust && mon.canvis == [true])
+        r.vigila()
+        r.tanca()
+        r.atura()
+        r.repren()
+        r.vigila()
+        let lectura = try await r.refresca().get()
+        #expect(lectura.finestres.count == 1)
+        #expect(mon.ajust && mon.canvis == [true] && mon.esperes == 0)
+        try r.retira(posant: false)
+        #expect(mon.canvis == [true], "un sol cop")
+    }
+
+    /// Sense valor (l'app no l'havia canviat mai), no s'escriu res, i després tampoc.
+    @Test func retirarSenseValorNoEscriu() {
+        let mon = Mon()
+        mon.ajust = true
+        let r = RefrescWarp(entorn: mon.entorn)
+        try? r.retira(posant: nil)
+        r.vigila()
+        r.tanca()
+        #expect(mon.ajust && mon.canvis.isEmpty)
+    }
+
+    /// A mig refresc (l'ajust activat uns segons): s'atura, i en acabar no el desactiva.
+    @Test func retirarAturaElRefrescEnCurs() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa", "bb"]) }
+        let comenca = AsyncStream<Void>.makeStream()
+        let continua = AsyncStream<Void>.makeStream()
+        var entorn = mon.entorn
+        let primera = entorn.espera
+        entorn.espera = { d in
+            comenca.continuation.yield()
+            for await _ in continua.stream { break }
+            try await primera(d)
+        }
+        let r = RefrescWarp(entorn: entorn)
+        let tasca = Task { await r.refresca() }
+        for await _ in comenca.stream { break }
+        #expect(mon.ajust && mon.canvis == [true])
+        try r.retira(posant: true)
+        continua.continuation.finish()
+        _ = await tasca.value
+        #expect(mon.ajust && mon.canvis == [true], "el cicle no l'ha tornat a desactivar")
+        #expect(mon.esperes == 1)
+    }
+
+    /// Si no es pot posar, no ha canviat res, i el refresc continua com abans.
+    @Test func siNoEsPotRetirarContinuaComAbans() {
+        let mon = Mon()
+        mon.fallades = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        #expect(throws: AjustRestauracio.Refusat.self) { try r.retira(posant: true) }
+        #expect(!mon.ajust && mon.canvis.isEmpty)
+        mon.ajust = true
+        r.vigila()
+        #expect(!mon.ajust, "la vigilància continua")
+    }
+
+    /// Si el permís no s'ha pogut retirar, l'ajust torna a quedar desactivat de seguida, i el refresc continua.
+    @Test func desferLaRetiradaTornaADesactivar() {
+        let mon = Mon()
+        let r = RefrescWarp(entorn: mon.entorn)
+        try? r.retira(posant: true)
+        r.desfesRetirada()
+        #expect(!mon.ajust && mon.canvis == [true, false])
+        mon.ajust = true
+        r.vigila()
+        #expect(!mon.ajust)
+        r.desfesRetirada()
+        #expect(mon.canvis == [true, false, false], "sense retirada, res a desfer")
+    }
+
     /// El menú diu que és una foto, i ho deixa de dir amb la lectura següent.
     @Test func elMenuDiuQueEsUnaFoto() async throws {
         let mon = Mon()

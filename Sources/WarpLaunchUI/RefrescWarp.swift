@@ -13,7 +13,8 @@ import WarpLaunchCore
 /// Obrir finestres no en depèn: es fa pels processos (`Obertura`).
 ///
 /// **Només amb el consentiment de l'usuari (D-P4, 0.29.0):** l'únic que el crea és `ConsentimentRestauracio`, quan s'ha
-/// acceptat.
+/// acceptat. **«Deixa de fer servir Warp Launch» (0.31.0) el retira** (`retira`): torna l'ajust com era i, a partir d'aquí,
+/// no el toca mai més, tampoc en sortir de l'app.
 @MainActor
 @Observable
 public final class RefrescWarp {
@@ -49,6 +50,9 @@ public final class RefrescWarp {
     @ObservationIgnored private var enCurs: Task<Resultat, Never>?
     /// L'app està sortint: cap cicle pot tornar a activar l'ajust (`atura`).
     @ObservationIgnored private var aturat = false
+    /// «Deixa de fer servir Warp Launch» (`retira`): ni la vigilància de cada minut, ni cap cicle, ni sortir de l'app no
+    /// toquen l'ajust. Només `desfesRetirada` el torna a fals.
+    @ObservationIgnored private var retirat = false
 
     public init(entorn: Entorn) {
         self.entorn = entorn
@@ -68,7 +72,7 @@ public final class RefrescWarp {
     /// Cada minut i en arrencar: l'ajust ha de ser desactivat si no hi ha cap refresc. Pot ser activat si l'app es va penjar
     /// a mig refresc, si el núvol de Warp hi ha tornat a posar un valor antic o si s'ha activat a mà.
     public func vigila() {
-        guard enCurs == nil else { return }
+        guard enCurs == nil, !retirat else { return }
         do {
             if try entorn.ajust() {
                 Registre.refresc.notice("l'ajust era activat fora d'un refresc: es desactiva")
@@ -100,13 +104,46 @@ public final class RefrescWarp {
         aturat = false
     }
 
+    /// «Deixa de fer servir Warp Launch» (0.31.0, decisió 3 d'en David): posa l'ajust a `valor` (el d'abans de l'app, o el
+    /// de sèrie de Warp) o, amb `nil`, el deixa com és; i, a partir d'aquí, l'app no el toca mai més: ni la vigilància de
+    /// cada minut, ni un refresc (el que estigui en curs s'atura), ni sortir de l'app (`tanca`, `atura`). L'única crida que
+    /// el posa a un valor que no és el d'un refresc.
+    ///
+    /// Si no es pot posar, no ha canviat res: el refresc continua com abans (la vigilància el tornarà a desactivar), i llança
+    /// l'error. Sincrònic, al fil principal: cap cicle no pot canviar l'ajust entre la retirada i l'escriptura.
+    public func retira(posant valor: Bool?) throws {
+        guard !retirat else { return }
+        retirat = true
+        enCurs?.cancel()
+        guard let valor else { return }
+        do {
+            try entorn.posa(valor)
+        } catch {
+            retirat = false
+            throw error
+        }
+        Registre.refresc.notice("retirat: l'ajust torna a \(valor ? "activat" : "desactivat", privacy: .public)")
+    }
+
+    /// Si la retirada no s'ha pogut acabar (el permís no s'ha pogut retirar): el refresc torna a gestionar l'ajust, i el
+    /// desactiva de seguida.
+    public func desfesRetirada() {
+        guard retirat else { return }
+        retirat = false
+        desactiva()
+    }
+
     private func cicle() async -> Resultat {
+        // Retirat: la base tal com és, sense activar res.
+        guard !retirat else { return avisant(await base(), warpTancat: !entorn.warpObert()) }
         guard entorn.warpObert() else { return avisant(await base(), warpTancat: true) }
         // Sense poder llegir la base (per exemple, sense permís), activar l'ajust no serviria de res.
         let inicial = await base()
         guard case let .success(lecturaAbans) = inicial else { return inicial }
-        // `tanca` pot haver arribat durant la lectura, i Warp pot haver-se tancat.
-        guard !aturat, !Task.isCancelled, entorn.warpObert() else { return avisant(inicial, warpTancat: !entorn.warpObert()) }
+        // `tanca` o `retira` poden haver arribat durant la lectura, i Warp pot haver-se tancat.
+        guard !aturat, !retirat, !Task.isCancelled, entorn.warpObert() else {
+            return avisant(inicial, warpTancat: !entorn.warpObert())
+        }
         let abans = lecturaAbans.fotoFinestres
         do {
             try entorn.posa(true)
@@ -137,8 +174,9 @@ public final class RefrescWarp {
         return .success(lectura)
     }
 
-    /// Warp l'escriu en calent: si acaba de canviar, es torna a provar de seguida.
+    /// Warp l'escriu en calent: si acaba de canviar, es torna a provar de seguida. Retirat, res.
     private func desactiva() {
+        guard !retirat else { return }
         var darrer: (any Error)?
         for _ in 0..<3 {
             do {
