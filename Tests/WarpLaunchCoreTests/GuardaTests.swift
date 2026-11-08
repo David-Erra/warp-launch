@@ -87,14 +87,16 @@ private let cridaRename = #"(^|[^A-Za-z0-9_])rename\("#
 private let cridaMkdir = #"(^|[^A-Za-z0-9_])mkdir\("#
 /// Les altres maneres d'esborrar, moure o crear un fitxer o una carpeta, de C i de `FileManager` (revisió de la 0.31.2).
 /// Com a paraula, sense demanar el parèntesi (`let f = rmdir` també hi surt), i amb tota la família (`renameatx_np`,
-/// `removefileat`). `remove(` de C, no: no es distingeix de `llista.remove(at:)`. Valen per a la carpeta de Warp
-/// (`prohibidesCarpetaWarp`) i per al diagnòstic (`escriuen`), que només miren el seu fitxer: el `renamex_np` de l'ajust
-/// (`nomesLAjustCreaElFitxerDeWarp`) no hi té res a veure.
+/// `removefileat`). `remove` de C també, sense un punt davant (`remove(ruta)`) o amb el mòdul (`Darwin.remove(`): un
+/// mètode d'un valor (`llista.remove(at:)`) sempre en té un. Valen per a la carpeta de Warp (`prohibidesCarpetaWarp`) i per
+/// al diagnòstic (`escriuen`), que només miren el seu fitxer: el `renamex_np` de l'ajust (`nomesLAjustCreaElFitxerDeWarp`)
+/// no hi té res a veure.
 private let altresEsborrenOMouen = [
     #"(^|[^A-Za-z0-9_])rmdir(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])unlinkat(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])renameat(x_np)?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])renamex_np(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])mkdirat(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])trashItem(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])removefile(at)?(?![A-Za-z0-9_])"#,
+    #"((^|[^A-Za-z0-9_.])|(^|[^A-Za-z0-9_])(Darwin|Foundation)\.)remove(?![A-Za-z0-9_])"#,
 ]
 /// Les altres maneres de crear, sobreescriure o enllaçar un fitxer, de C i de `FileManager` (revisió de la 0.31.2): `fopen` i
 /// `freopen`, `openat`, `creat(` (la variable `creat` de `FitxersLaunchWarp`, no), `truncate` i `ftruncate`, `copyfile` i
@@ -893,6 +895,7 @@ private let prohibidesArrossegar = [
             Darwin.mkdirat(AT_FDCWD, r, 0o755)
             try FileManager.default.trashItem(at: u, resultingItemURL: nil)
             removefile(r, nil, removefile_flags_t(REMOVEFILE_RECURSIVE))
+            remove(r)
             let f = fopen(r, "w")
             let fd = Darwin.openat(AT_FDCWD, r, O_WRONLY)
             let fd = creat(r, 0o644)
@@ -1099,7 +1102,8 @@ private let prohibidesArrossegar = [
             """)]) == ["mostra.swift:1: «\(cridaUnlink)»", "mostra.swift:2: «\(cridaUnlink)»", "mostra.swift:3: «\(cridaRename)»",
                        "mostra.swift:4: «\(cridaMkdir)»"])
         // Les altres maneres d'esborrar, moure o crear (revisió de la 0.31.2), també amb el mòdul i sense cridar-les. Un nom
-        // que només s'hi assembla, `remove(at:)` i les funcions de l'estat de `removefile`, que no esborren res, no.
+        // que només s'hi assembla, `remove(at:)` d'un valor (també a la línia següent) i les funcions de l'estat de
+        // `removefile`, que no esborren res, no.
         let altresManeres = [(ruta: "mostra.swift", text: """
             rmdir(ruta)
             Darwin.unlinkat(AT_FDCWD, ruta, 0)
@@ -1111,7 +1115,13 @@ private let prohibidesArrossegar = [
             removefile(r, nil, removefile_flags_t(REMOVEFILE_RECURSIVE))
             Darwin.removefileat(fd, r, nil, 0)
             let esborra = rmdir
+            guard remove(ruta) == 0 else { return }
+            _ = Foundation.remove(r)
+            let treu = Darwin.remove
             llista.remove(at: 0)
+                .remove(x)
+            noms.removeAll()
+            let n = MeuDarwin.remove(r)
             func rmdirs() {}
             let trashItems = 0
             removefile_state_free(estat)
@@ -1123,14 +1133,15 @@ private let prohibidesArrossegar = [
             "mostra.swift:1: «\(noves[0])»", "mostra.swift:2: «\(noves[1])»", "mostra.swift:3: «\(noves[2])»",
             "mostra.swift:4: «\(noves[2])»", "mostra.swift:5: «\(noves[3])»", "mostra.swift:6: «\(noves[4])»",
             "mostra.swift:7: «\(noves[5])»", "mostra.swift:8: «\(noves[6])»", "mostra.swift:9: «\(noves[6])»",
-            "mostra.swift:10: «\(noves[0])»",
+            "mostra.swift:10: «\(noves[0])»", "mostra.swift:11: «\(noves[7])»", "mostra.swift:12: «\(noves[7])»",
+            "mostra.swift:13: «\(noves[7])»",
         ])
         // Les dues guardes que les fan servir troben les mateixes línies, i cap de les altres.
         func linies(_ expressions: [String]) throws -> [Int] {
             Set(try aparicions(de: expressions, a: altresManeres).compactMap { Int($0.split(separator: ":")[1]) }).sorted()
         }
-        #expect(try linies(prohibidesCarpetaWarp) == Array(1...10))
-        #expect(try linies(escriuen) == Array(1...10))
+        #expect(try linies(prohibidesCarpetaWarp) == Array(1...13))
+        #expect(try linies(escriuen) == Array(1...13))
         // Les altres maneres de crear, sobreescriure o enllaçar (revisió de la 0.31.2), també amb el mòdul i sense cridar-les.
         // Un nom que només s'hi assembla, la variable `creat` de `FitxersLaunchWarp` i les funcions de l'estat de `copyfile`,
         // no.
