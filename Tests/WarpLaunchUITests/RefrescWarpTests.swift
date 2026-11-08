@@ -1,9 +1,18 @@
 import Foundation
+import Observation
 import Testing
 @testable import WarpLaunchCore
 @testable import WarpLaunchUI
 
 // D19: l'ajust de la restauració sempre desactivat, i la foto de les finestres. Tot fals: cap fitxer ni cap Warp de debò.
+
+/// Quantes vegades ha canviat el que s'observa (`withObservationTracking`).
+private final class Comptador: @unchecked Sendable {
+    private let pany = NSLock()
+    private var n = 0
+    var valor: Int { pany.withLock { n } }
+    func suma() { pany.withLock { n += 1 } }
+}
 
 private func foto(_ panes: [String], titol: String = "T") -> LecturaWarp {
     LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: panes.enumerated().map { i, p in
@@ -444,17 +453,36 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
 
     // MARK: - Sense `settings.toml`, i amb Warp tancat o encara arrencant (ronda 5)
 
-    /// Si l'ajust no crea el fitxer perquè Warp és tancat o encara arrenca, no és cap error: cap avís, queda pendent, i la
-    /// vigilància següent ho torna a provar.
+    /// Si l'ajust no crea el fitxer perquè Warp és tancat o encara arrenca, no és cap error: cap avís, queda pendent, el menú
+    /// ho diu (`nota`) i se n'assabenta (s'observa), i la vigilància següent ho torna a provar.
     @Test func senseElFitxerIAmbWarpTancatQuedaPendentSenseAvis() {
         let mon = Mon()
         mon.ajust = true
         mon.quanSObriWarp = 1
         let r = RefrescWarp(entorn: mon.entorn)
+        let canvis = Comptador()
+        withObservationTracking { _ = r.nota } onChange: { canvis.suma() }
         r.vigila()
+        #expect(canvis.valor == 1, "el menú ho ha de veure")
         #expect(mon.ajust && mon.posats == 1 && r.avis == nil && r.pendent == .quanSObriWarp && r.desactivacioPendent)
+        #expect(r.nota == RefrescWarp.notaSenseFitxer)
         r.vigila()
-        #expect(!mon.ajust && mon.posats == 2 && r.avis == nil && r.pendent == nil)
+        #expect(!mon.ajust && mon.posats == 2 && r.avis == nil && r.pendent == nil && r.nota == nil)
+    }
+
+    /// La nota diu que Warp encara no té fitxer d'ajustos i que Warp Launch hi desactivarà la restauració quan Warp sigui
+    /// obert. No diu que Warp restaurarà res: potser és tancat, i potser no té cap finestra desada. Si `settings.toml`
+    /// acabava de canviar, cap nota: es torna a provar d'aquí a pocs segons.
+    @Test func laNotaDiuLaVeritat() {
+        #expect(RefrescWarp.notaSenseFitxer == "Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, "
+            + "Warp Launch hi desactivarà la restauració de sessió en menys d'un minut.")
+        #expect(!RefrescWarp.notaSenseFitxer.contains("restaurarà") && !RefrescWarp.notaSenseFitxer.contains("Claude"))
+        let mon = Mon()
+        mon.ajust = true
+        mon.mesTardDesactivar = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(r.pendent == .acabaDeCanviar && r.nota == nil && r.avis == nil)
     }
 
     /// Al final d'un refresc, si l'ajust no ha creat el fitxer perquè Warp s'ha tancat, no es torna a provar cada segon: no
