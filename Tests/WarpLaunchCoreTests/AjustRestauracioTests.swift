@@ -469,7 +469,7 @@ final class ArrencadaWarpDeProva: @unchecked Sendable {
     /// Decisió 2 (08/11/2026): compta com a recent de 2 s enrere a 2 s endavant. De fa 1 s i de d'aquí a 1 s (Warp el podria
     /// estar escrivint, amb el rellotge una mica desfasat), no s'hi escriu res. De fa 3 s, sí. De d'aquí a 1 hora, també: el
     /// rellotge del Mac ha anat enrere, i Warp no l'escriu ara; l'app no s'ha d'aturar fins que l'hora torni a passar la data.
-    @Test(arguments: [(1.0, true), (-1.0, true), (-3600.0, false), (3.0, false)])
+    @Test(arguments: [(1.0, true), (-1.0, true), (1.9, true), (-1.9, true), (2.1, false), (-2.1, false), (-3600.0, false), (3.0, false)])
     func recentEsDe2sEnrereA2sEndavant(fa segons: TimeInterval, recent: Bool) throws {
         let b = try Banc()
         try b.rellotge.modificat(b.fitxer, fa: segons)
