@@ -23,9 +23,25 @@ private let text = """
 /// `text` sense la taula `[general]`.
 private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item = true\nrestore_session = false\n\n", with: "")
 
+/// L'hora de l'ajust a les proves (0.31.3): fixa, i un minut després de crear el banc, perquè els fitxers que s'hi escriuen
+/// no acabin de canviar. Les proves de l'escriptura prudent la mouen, sense esperar res.
+final class RellotgeDeProva: @unchecked Sendable {
+    private let pany = NSLock()
+    private var valor = Date() + 60
+
+    var ara: Date { get { pany.withLock { valor } } set { pany.withLock { valor = newValue } } }
+    var funcio: @Sendable () -> Date { { [self] in ara } }
+
+    /// Posa la data de modificació del fitxer a fa `segons` (negatiu: del futur).
+    func modificat(_ fitxer: URL, fa segons: TimeInterval) throws {
+        try FileManager.default.setAttributes([.modificationDate: ara - segons], ofItemAtPath: fitxer.path)
+    }
+}
+
 @Suite struct AjustRestauracioTests {
     private struct Banc {
         let tmp: CarpetaTemporal
+        let rellotge = RellotgeDeProva()
         var ajust: AjustRestauracio
         var fitxer: URL { ajust.ruta }
 
@@ -33,7 +49,8 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         init(_ contingut: String? = text) throws {
             tmp = try CarpetaTemporal()
             let temporal = try tmp.carpeta("tmp")
-            ajust = AjustRestauracio(ruta: tmp.url("settings.toml"), carpetaTemporal: URL(filePath: temporal))
+            ajust = AjustRestauracio(ruta: tmp.url("settings.toml"), carpetaTemporal: URL(filePath: temporal),
+                                     rellotge: rellotge.funcio)
             if let contingut { try Data(contingut.utf8).write(to: tmp.url("settings.toml")) }
         }
 
@@ -45,10 +62,10 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     @Test func nomesCanviaElValorDeLaLinia() throws {
         let b = try Banc()
         #expect(try b.ajust.valor() == false)
-        #expect(try b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .escrit)
         #expect(b.contingut == text.replacingOccurrences(of: "restore_session = false", with: "restore_session = true"))
         #expect(try b.ajust.valor() == true)
-        #expect(try b.ajust.posa(false))
+        #expect(try b.ajust.posa(false) == .escrit)
         #expect(b.contingut == text)
         #expect(b.temporals.isEmpty)
     }
@@ -56,14 +73,14 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     @Test func siJaTeElValorNoEscriu() throws {
         let b = try Banc()
         let abans = try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.systemFileNumber] as? Int
-        #expect(try !b.ajust.posa(false))
+        #expect(try b.ajust.posa(false) == .jaHiEra)
         #expect(try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.systemFileNumber] as? Int == abans)
     }
 
     @Test func conservaElsPermisosIElComentari() throws {
         let b = try Banc("[general]\nrestore_session = false # true o false\n")
         try FileManager.default.setAttributes([.posixPermissions: 0o640], ofItemAtPath: b.fitxer.path)
-        #expect(try b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .escrit)
         #expect(b.contingut == "[general]\nrestore_session = true # true o false\n")
         #expect(try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.posixPermissions] as? Int == 0o640)
     }
@@ -110,7 +127,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         let b = try Banc(contingut)
         let abans = try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.systemFileNumber] as? Int
         #expect(try b.ajust.valor() == true)
-        #expect(try !b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .jaHiEra)
         #expect(b.contingut == contingut)
         #expect(try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.systemFileNumber] as? Int == abans)
         #expect(b.temporals.isEmpty)
@@ -139,11 +156,11 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     ])
     func desactivarSenseLiniaLAfegeix(contingut: String, esperat: String) throws {
         let b = try Banc(contingut)
-        #expect(try b.ajust.posa(false))
+        #expect(try b.ajust.posa(false) == .escrit)
         #expect(b.contingut == esperat)
         #expect(try b.ajust.valor() == false)
-        #expect(try !b.ajust.posa(false))
-        #expect(try b.ajust.posa(true))
+        #expect(try b.ajust.posa(false) == .jaHiEra)
+        #expect(try b.ajust.posa(true) == .escrit)
         #expect(b.contingut == esperat.replacingOccurrences(of: "restore_session = false", with: "restore_session = true"))
         #expect(b.temporals.isEmpty)
     }
@@ -152,7 +169,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     @Test func conservaLaMarcaDOrdreDeBytes() throws {
         let contingut = "\u{FEFF}a = 1\n[general]\nrestore_session = false\n"
         let b = try Banc(contingut)
-        #expect(try b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .escrit)
         #expect(try Data(contentsOf: b.fitxer) == Data(contingut.replacingOccurrences(of: "false", with: "true").utf8))
     }
 
@@ -161,7 +178,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         let b = try Banc("[general]\nx = 1\n")
         try FileManager.default.setAttributes([.posixPermissions: 0o640], ofItemAtPath: b.fitxer.path)
         #expect(setxattr(b.fitxer.path, "cat.davide.prova", "x", 1, 0, 0) == 0)
-        #expect(try b.ajust.posa(false))
+        #expect(try b.ajust.posa(false) == .escrit)
         #expect(b.contingut == "[general]\nrestore_session = false\nx = 1\n")
         #expect(try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.posixPermissions] as? Int == 0o640)
         #expect(getxattr(b.fitxer.path, "cat.davide.prova", nil, 0, 0, 0) == 1)
@@ -199,7 +216,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         #expect(b.contingut == contingut)
         #expect(b.temporals.isEmpty)
         #expect(try b.ajust.valor() == true)
-        #expect(try !b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .jaHiEra)
         guard case let .senseLinia(.failure(motiu)) = try AjustRestauracio.analitza(contingut).lloc else {
             Issue.record("s'hi afegiria la línia: \(contingut)")
             return
@@ -212,9 +229,9 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     @Test func senseFitxerElCreaNomesAmbLaLinia() throws {
         let b = try Banc(nil)
         #expect(try b.ajust.valor() == true)
-        #expect(try !b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .jaHiEra)
         #expect(!FileManager.default.fileExists(atPath: b.fitxer.path))
-        #expect(try b.ajust.posa(false))
+        #expect(try b.ajust.posa(false) == .escrit)
         #expect(b.contingut == "[general]\nrestore_session = false\n")
         #expect(try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.posixPermissions] as? Int == 0o644)
         #expect(try b.ajust.valor() == false)
@@ -229,7 +246,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         let temporal = try tmp.carpeta("tmp")
         let ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: URL(filePath: temporal))
         #expect(try ajust.valor() == true)
-        #expect(try !ajust.posa(true))
+        #expect(try ajust.posa(true) == .jaHiEra)
         #expect(throws: AjustRestauracio.Refusat(description: "Warp encara no s'ha obert mai en aquest usuari: no hi ha la "
             + "carpeta «\(tmp.url("warp").path)», i Warp Launch no la crea", warpMaiObert: true)) { try ajust.posa(false) }
         #expect(!FileManager.default.fileExists(atPath: tmp.url("warp").path))
@@ -246,24 +263,25 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         #expect(try String(contentsOf: tmp.url("warp"), encoding: .utf8) == "x")
     }
 
-    /// Si Warp escriu el fitxer entre la lectura i l'escriptura, no es trepitja: ni en canviar la línia, ni en afegir-la.
+    /// Si Warp escriu el fitxer entre la lectura i l'escriptura, no es trepitja: ni en canviar la línia, ni en afegir-la. No
+    /// és cap error (0.31.3): es torna a provar més tard.
     @Test(arguments: [(text, true), ("[general]\nx = 1\n", false)])
     func unFitxerQueCanviaMentrestantNoEsTrepitja(contingut: String, nou: Bool) throws {
         var b = try Banc(contingut)
         let deWarp = contingut + "de_warp = 1\n"
         let fitxer = b.fitxer
         b.ajust.ganxoDeProva = { try? Data(deWarp.utf8).write(to: fitxer) }
-        #expect(throws: AjustRestauracio.Refusat(description: "«\(fitxer.path)» acaba de canviar")) { try b.ajust.posa(nou) }
+        #expect(try b.ajust.posa(nou) == .mesTard)
         #expect(b.contingut == deWarp)
         #expect(b.temporals.isEmpty)
     }
 
-    /// Si Warp crea el fitxer entre la lectura i l'escriptura, no es trepitja (`RENAME_EXCL`).
+    /// Si Warp crea el fitxer entre la lectura i l'escriptura, no es trepitja (`RENAME_EXCL`), i es torna a provar més tard.
     @Test func unFitxerQueApareixMentrestantNoEsTrepitja() throws {
         var b = try Banc(nil)
         let fitxer = b.fitxer
         b.ajust.ganxoDeProva = { try? Data("de_warp = 1\n".utf8).write(to: fitxer) }
-        #expect(throws: AjustRestauracio.Refusat(description: "«\(fitxer.path)» acaba d'aparèixer")) { try b.ajust.posa(false) }
+        #expect(try b.ajust.posa(false) == .mesTard)
         #expect(b.contingut == "de_warp = 1\n")
         #expect(b.temporals.isEmpty)
     }
@@ -289,7 +307,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     @Test func conservaElsAtributsEstesos() throws {
         let b = try Banc()
         #expect(setxattr(b.fitxer.path, "cat.davide.prova", "x", 1, 0, 0) == 0)
-        #expect(try b.ajust.posa(true))
+        #expect(try b.ajust.posa(true) == .escrit)
         #expect(getxattr(b.fitxer.path, "cat.davide.prova", nil, 0, 0, 0) == 1)
     }
 
@@ -297,10 +315,89 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
     @Test(arguments: [(text, true), ("[general]\nx = 1\n", false)])
     func enUnAltreVolumNoEscriu(contingut: String, nou: Bool) throws {
         let b = try Banc(contingut)
-        let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"))
+        let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"), rellotge: b.rellotge.funcio)
         #expect(throws: AjustRestauracio.Refusat(description: "la carpeta temporal no és al mateix volum que "
             + "«\(b.fitxer.path)»")) { try ajust.posa(nou) }
         #expect(b.contingut == contingut)
+    }
+
+    // MARK: - Escriptura prudent (0.31.3)
+
+    /// Canviar la línia, inserir-la i inserir la taula: amb un fitxer que ha canviat fa 1 s (Warp el podria estar escrivint),
+    /// ni se'n diu el valor ni s'hi escriu res, i no és cap error. Quan fa 3 s que ha canviat, sí.
+    @Test(arguments: [(text, true), ("[general]\nx = 1\n", false), ("x = 1\n", false)])
+    func siHaCanviatFa1sNoEscriuIHoTornaAProvar(contingut: String, nou: Bool) throws {
+        let b = try Banc(contingut)
+        try b.rellotge.modificat(b.fitxer, fa: 1)
+        let abans = try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.systemFileNumber] as? Int
+        #expect(try b.ajust.valor() == nil)
+        #expect(try b.ajust.posa(nou) == .mesTard)
+        #expect(b.contingut == contingut)
+        #expect(try FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.systemFileNumber] as? Int == abans)
+        #expect(b.temporals.isEmpty)
+        // Més tard, sense que ningú l'hagi tornat a tocar: fa 3 s.
+        b.rellotge.ara += 2
+        #expect(try b.ajust.valor() == !nou)
+        #expect(try b.ajust.posa(nou) == .escrit)
+        #expect(try b.ajust.valor() == nou)
+    }
+
+    /// Un fitxer que ha canviat fa 3 s ja no és recent: s'hi escriu.
+    @Test func siHaCanviatFa3sEscriu() throws {
+        let b = try Banc()
+        try b.rellotge.modificat(b.fitxer, fa: 3)
+        #expect(try b.ajust.valor() == false)
+        #expect(try b.ajust.posa(true) == .escrit)
+        #expect(b.contingut == text.replacingOccurrences(of: "restore_session = false", with: "restore_session = true"))
+    }
+
+    /// Un fitxer buit que ha canviat fa poc pot ser Warp a mig escriure: ni el valor ni cap escriptura (tampoc activar-lo,
+    /// que no escriuria res). Buit i antic, és buit de debò: s'hi posa la taula.
+    @Test func unFitxerBuitRecentNoEsTocaIAnticSi() throws {
+        let b = try Banc("")
+        try b.rellotge.modificat(b.fitxer, fa: 1)
+        #expect(try b.ajust.valor() == nil)
+        #expect(try b.ajust.posa(true) == .mesTard)
+        #expect(try b.ajust.posa(false) == .mesTard)
+        #expect(b.contingut == "")
+        #expect(b.temporals.isEmpty)
+        try b.rellotge.modificat(b.fitxer, fa: 3)
+        #expect(try b.ajust.valor() == true)
+        #expect(try b.ajust.posa(false) == .escrit)
+        #expect(b.contingut == "[general]\nrestore_session = false\n")
+    }
+
+    /// Una data del futur (el rellotge del Mac ha anat enrere) també compta com a recent.
+    @Test func unaDataDelFuturCompta() throws {
+        let b = try Banc()
+        try b.rellotge.modificat(b.fitxer, fa: -10)
+        #expect(try b.ajust.valor() == nil)
+        #expect(try b.ajust.posa(true) == .mesTard)
+        #expect(b.contingut == text)
+    }
+
+    /// La data recent del fitxer que acaba de posar l'ajust no compta (si no, un refresc no el podria tornar a desactivar fins
+    /// passats 2 s), també des d'una còpia de l'ajust, com les de l'app. Si després hi escriu Warp, encara que sigui el mateix
+    /// text, ja no és seu.
+    @Test(arguments: [text, nil])
+    func laDataRecentDelQueHaPosatLAjustNoCompta(contingut: String?) throws {
+        let b = try Banc(contingut)
+        let copia = b.ajust
+        #expect(try b.ajust.posa(false) == (contingut == nil ? .escrit : .jaHiEra))
+        #expect(try b.ajust.posa(true) == .escrit)
+        let posat = b.contingut
+        b.rellotge.ara = try #require(FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.modificationDate] as? Date) + 0.5
+        #expect(try copia.valor() == true)
+        #expect(try copia.posa(false) == .escrit)
+        b.rellotge.ara = try #require(FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.modificationDate] as? Date) + 0.5
+        #expect(try b.ajust.posa(true) == .escrit)
+        #expect(b.contingut == posat)
+
+        try Data(posat.utf8).write(to: b.fitxer)
+        b.rellotge.ara = try #require(FileManager.default.attributesOfItem(atPath: b.fitxer.path)[.modificationDate] as? Date) + 0.5
+        #expect(try b.ajust.valor() == nil)
+        #expect(try copia.posa(false) == .mesTard)
+        #expect(b.contingut == posat)
     }
 }
 

@@ -724,7 +724,7 @@ public enum Diagnostic {
                                "\(anon.ruta(ruta.deletingLastPathComponent().path)) doesn't exist: Warp hasn't been opened "
                                    + "yet for this user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has "
                                    + "created it, Warp Launch adds restore_session = false \(quan). " + deConsentiment.1)
-        case let .fitxer(_, llegit):
+        case let .fitxer(_, llegit, _):
             text = llegit
         }
         let analisi: AjustRestauracio.Analisi

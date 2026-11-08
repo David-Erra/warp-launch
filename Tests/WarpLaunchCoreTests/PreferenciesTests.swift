@@ -90,7 +90,7 @@ private func noms(_ tmp: CarpetaTemporal) throws -> [String] {
         var ajust = true
         var posats: [Bool] = []
         func posa(_ nou: Bool) throws {
-            try magatzem.posaRestauracio(nou, valor: { ajust }, posa: { posats.append($0); ajust = $0 })
+            try magatzem.posaRestauracio(nou, valor: { ajust }, posa: { posats.append($0); ajust = $0; return .escrit })
         }
 
         try posa(true)
@@ -109,7 +109,7 @@ private func noms(_ tmp: CarpetaTemporal) throws -> [String] {
         let magatzem = MagatzemPreferencies(carpeta: carpeta(tmp))
         try Data(#"{"versio": 9}"#.utf8).write(to: magatzem.fitxer)
         var ajust = true
-        try magatzem.posaRestauracio(false, valor: { ajust }, posa: { ajust = $0 })
+        try magatzem.posaRestauracio(false, valor: { ajust }, posa: { ajust = $0; return .escrit })
         #expect(!ajust)
         #expect(try String(contentsOf: magatzem.fitxer, encoding: .utf8) == #"{"versio": 9}"#)
     }
@@ -121,10 +121,27 @@ private func noms(_ tmp: CarpetaTemporal) throws -> [String] {
         struct NoEsPot: Error {}
         var posats = 0
         #expect(throws: NoEsPot.self) {
-            try magatzem.posaRestauracio(false, valor: { throw NoEsPot() }, posa: { _ in posats += 1 })
+            try magatzem.posaRestauracio(false, valor: { throw NoEsPot() }, posa: { _ in posats += 1; return .escrit })
         }
         #expect(posats == 0)
         #expect(try noms(tmp).isEmpty)
+    }
+
+    /// Si `settings.toml` acaba de canviar (0.31.3), el valor llegit podria ser el d'un fitxer buit o a mitges: no es desa
+    /// com el d'abans ni es canvia l'ajust, i no és cap error. Quan es torna a provar, sí.
+    @Test func siLAjustAcabaDeCanviarNoEsDesaNiEsToca() throws {
+        let tmp = try CarpetaTemporal()
+        try Data("{}".utf8).write(to: tmp.url(EstatApp.nomFitxer))
+        let magatzem = MagatzemPreferencies(carpeta: carpeta(tmp))
+        var valor: Bool? = nil
+        var posats: [Bool] = []
+        #expect(try magatzem.posaRestauracio(false, valor: { valor }, posa: { posats.append($0); return .escrit }) == .mesTard)
+        #expect(posats.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: magatzem.fitxer.path))
+        valor = false
+        #expect(try magatzem.posaRestauracio(true, valor: { valor }, posa: { posats.append($0); return .escrit }) == .escrit)
+        #expect(posats == [true])
+        #expect(try magatzem.carrega() == Preferencies(restauracio: .migrat, restauracioOriginal: false))
     }
 
     /// Un fitxer d'una versió més nova no es trepitja.
@@ -258,7 +275,7 @@ private func noms(_ tmp: CarpetaTemporal) throws -> [String] {
         try magatzem.retira(ara: t0 + 60)
         #expect(try !magatzem.recordaRestauracioOriginal(false))
         var ajust = false
-        try magatzem.posaRestauracio(true, valor: { ajust }, posa: { ajust = $0 })
+        try magatzem.posaRestauracio(true, valor: { ajust }, posa: { ajust = $0; return .escrit })
         #expect(try magatzem.carrega() == Preferencies(restauracio: .retirat(t0 + 60)))
 
         try magatzem.accepta(ara: t0 + 120)

@@ -269,10 +269,14 @@ public struct MagatzemPreferencies: Sendable {
     }
 
     /// Canvia l'ajust de Warp (`posa`), i abans del primer canvi de l'app en desa el valor que hi havia (`valor`). Si no
-    /// es pot desar, l'ajust es canvia igualment: és més important que quedi desactivat.
-    public func posaRestauracio(_ nou: Bool, valor: () throws -> Bool, posa: (Bool) throws -> Void) throws {
-        let actual = try valor()
+    /// es pot desar, l'ajust es canvia igualment: és més important que quedi desactivat. Si `settings.toml` acaba de canviar
+    /// (`valor` torna `nil`, `AjustRestauracio.valor`), no es desa ni es canvia res: el valor llegit podria ser el d'un
+    /// fitxer buit o a mitges, i el d'abans quedaria mal desat.
+    @discardableResult
+    public func posaRestauracio(_ nou: Bool, valor: () throws -> Bool?,
+                                posa: (Bool) throws -> AjustRestauracio.Escriptura) throws -> AjustRestauracio.Escriptura {
+        guard let actual = try valor() else { return .mesTard }
         if actual != nou { _ = try? recordaRestauracioOriginal(actual) }
-        try posa(nou)
+        return try posa(nou)
     }
 }

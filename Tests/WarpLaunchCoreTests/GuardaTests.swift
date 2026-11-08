@@ -556,9 +556,13 @@ private let prohibidesArrossegar = [
             return llocs.count == textos.count && llocs == llocs.sorted()
         }
 
-        // L'ajust: un refresc l'activa i el desactiva; només la retirada el posa al valor que li donen, després d'aturar-se.
-        #expect(try linies(rutaRefresc, #"entorn\.posa\("#) == ["try entorn.posa(valor)", "try entorn.posa(true)",
-                                                                 "try entorn.posa(false)"])
+        // L'ajust: un refresc l'activa i el desactiva; només la retirada el posa al valor que li donen, després d'aturar-se. Si
+        // `settings.toml` acaba de canviar, cap no hi escriu res (0.31.3).
+        #expect(try linies(rutaRefresc, #"entorn\.posa\("#) == [
+            "guard try entorn.posa(valor) != .mesTard else { throw MesTard() }",
+            "guard try entorn.posa(true) != .mesTard else {",
+            "if try entorn.posa(false) == .mesTard {",
+        ])
         let refresc = try text(rutaRefresc)
         let inici = try #require(refresc.range(of: "    public func retira(posant valor: Bool?) throws {\n"))
         let fi = try #require(refresc[inici.upperBound...].range(of: "\n    }\n"))

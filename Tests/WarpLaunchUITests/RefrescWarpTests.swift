@@ -15,7 +15,8 @@ private func foto(_ panes: [String], titol: String = "T") -> LecturaWarp {
 
 private final class Mon: @unchecked Sendable {
     private let pany = NSLock()
-    private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true)
+    private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true, posats: 0,
+                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0)
     private var lectura: @Sendable (Bool, Int) -> LecturaWarp = { _, _ in LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) }
     var enEsperar: @Sendable (Int) -> Void = { _ in }
 
@@ -25,21 +26,52 @@ private final class Mon: @unchecked Sendable {
     var esperes: Int { pany.withLock { estat.esperes } }
     /// Quantes vegades més falla el pròxim `posa`.
     var fallades: Int { get { pany.withLock { estat.fallades } } set { pany.withLock { estat.fallades = newValue } } }
+    /// Quantes vegades més el pròxim `posa` torna `.mesTard`, sense canviar res (0.31.3: `settings.toml` acaba de canviar).
+    var mesTard: Int { get { pany.withLock { estat.mesTard } } set { pany.withLock { estat.mesTard = newValue } } }
+    /// Com `mesTard`, però només per desactivar-lo.
+    var mesTardDesactivar: Int {
+        get { pany.withLock { estat.mesTardDesactivar } } set { pany.withLock { estat.mesTardDesactivar = newValue } }
+    }
+    /// Quantes vegades més el pròxim `ajust` torna `nil` (0.31.3).
+    var ajustMesTard: Int {
+        get { pany.withLock { estat.ajustMesTard } } set { pany.withLock { estat.ajustMesTard = newValue } }
+    }
+    /// Cada crida a `posa`, també les que no canvien res.
+    var posats: Int { pany.withLock { estat.posats } }
 
     /// `(ajust activat, segons passats)` → què hi ha a la base.
     func base(_ cos: @escaping @Sendable (Bool, Int) -> LecturaWarp) { pany.withLock { lectura = cos } }
 
     var entorn: RefrescWarp.Entorn {
         RefrescWarp.Entorn(
-            ajust: { [self] in ajust },
+            ajust: { [self] in
+                pany.withLock {
+                    guard estat.ajustMesTard == 0 else {
+                        estat.ajustMesTard -= 1
+                        return nil
+                    }
+                    return estat.ajust
+                }
+            },
             posa: { [self] nou in
                 try pany.withLock {
+                    estat.posats += 1
                     if estat.fallades > 0 {
                         estat.fallades -= 1
-                        throw AjustRestauracio.Refusat(description: "acaba de canviar")
+                        throw AjustRestauracio.Refusat(description: "no s'ha pogut escriure")
                     }
-                    if estat.ajust != nou { estat.canvis.append(nou) }
+                    if estat.mesTard > 0 {
+                        estat.mesTard -= 1
+                        return .mesTard
+                    }
+                    if !nou, estat.mesTardDesactivar > 0 {
+                        estat.mesTardDesactivar -= 1
+                        return .mesTard
+                    }
+                    let canvia = estat.ajust != nou
+                    if canvia { estat.canvis.append(nou) }
                     estat.ajust = nou
+                    return canvia ? .escrit : .jaHiEra
                 }
             },
             warpObert: { [self] in obert },
@@ -283,6 +315,64 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         continua.continuation.finish()
         _ = await tasca.value
         #expect(mon.canvis.isEmpty)
+    }
+
+    // MARK: - Si `settings.toml` acaba de canviar (0.31.3)
+
+    /// Si no se sap el valor (el fitxer acaba de canviar), la vigilància no hi escriu res ni avisa de res; d'aquí a un
+    /// minut, sí.
+    @Test func laVigilanciaNoFaResSiNoSeSapElValor() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.ajustMesTard = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(mon.ajust && mon.posats == 0 && r.avis == nil && !r.desactivacioPendent)
+        r.vigila()
+        #expect(!mon.ajust && mon.canvis == [false] && r.avis == nil)
+    }
+
+    /// Si en desactivar-lo el fitxer acaba de canviar, no és cap error: cap avís, i no es torna a provar de seguida (no
+    /// serviria), sinó amb la vigilància següent.
+    @Test func siEnDesactivarAcabaDeCanviarHoTornaAProvarSenseAvis() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.mesTard = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(mon.ajust && mon.posats == 1 && r.avis == nil && r.desactivacioPendent)
+        r.vigila()
+        #expect(!mon.ajust && mon.posats == 2 && r.avis == nil && !r.desactivacioPendent)
+        // Sortint de l'app, tampoc no avisa.
+        mon.ajust = true
+        mon.mesTard = 1
+        r.tanca()
+        #expect(mon.ajust && r.avis == nil && r.desactivacioPendent)
+    }
+
+    /// Un refresc no activa l'ajust si el fitxer acaba de canviar: sense avís de l'ajust, sense esperar, i la lectura diu
+    /// que la foto pot ser antiga.
+    @Test func siEnActivarAcabaDeCanviarNoActivaNiAvisa() async throws {
+        let mon = Mon()
+        mon.mesTard = 1
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa", "bb"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        let lectura = try await r.refresca().get()
+        #expect(lectura.avisFoto == lectura.avisFinestresAntigues)
+        #expect(mon.canvis.isEmpty && mon.esperes == 0 && mon.posats == 1 && r.avis == nil)
+    }
+
+    /// «Restaura Warp i surt…»: si el fitxer acaba de canviar, no hi escriu res, ho diu (l'ha demanat l'usuari), i el refresc
+    /// continua com abans.
+    @Test func siEnRetirarAcabaDeCanviarNoCanviaRes() {
+        let mon = Mon()
+        mon.mesTard = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        #expect(throws: RefrescWarp.MesTard()) { try r.retira(posant: true) }
+        #expect(!mon.ajust && mon.canvis.isEmpty)
+        mon.ajust = true
+        r.vigila()
+        #expect(!mon.ajust, "la vigilància continua")
     }
 
     // MARK: - Deixar de fer servir Warp Launch (0.31.0, decisió 3)

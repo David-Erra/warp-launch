@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Mira i canvia la línia `restore_session` de `[general]` al `settings.toml` de Warp (D19). És l'única cosa de Warp que
 /// l'app pot escriure (regla 7 de CLAUDE.md). Amb la línia, fa les mateixes comprovacions que `scripts/warp-restauracio.sh`
@@ -11,6 +12,16 @@ import Foundation
 /// línia: just després de la capçalera `[general]`; si no n'hi ha, la taula, abans de la primera subtaula `[general.x]` o al
 /// final; i, sense el fitxer, el crea només amb això. Activar-lo no escriu res, perquè ja ho és. Tot el que és ambigu es
 /// refusa sense tocar res, i la carpeta de Warp no es crea mai.
+///
+/// **Escriptura prudent (0.31.3, 08/11/2026).** Warp té `settings.toml` sencer a la memòria i, a cada canvi d'un ajust,
+/// l'escriu sencer i no d'un sol cop: el buida i l'hi torna a escriure (docs/fets-verificats.md, 08/11/2026). Una lectura en
+/// aquell moment el pot veure buit o a mitges, i escriure a partir d'aquí en perdria els altres ajustos. Per això, si el
+/// fitxer ha canviat fa menys de 2 s (`segonsRecent`), no se n'analitza res ni s'hi escriu res: no és cap error, sinó
+/// «torna-ho a provar més tard» (`Escriptura.mesTard`, i `valor()` torna `nil`). Un fitxer buit, igual: buit i recent pot
+/// ser Warp a mig escriure; buit i antic és buit de debò, i s'hi pot escriure. L'única data recent que no compta és la del
+/// fitxer que acaba de posar aquest mateix ajust, si encara és igual (`escrit`): si no, un refresc no podria tornar a
+/// desactivar l'ajust fins passats 2 s, ni en sortir de l'app. I just abans del `rename`, el fitxer encara ha de ser el que
+/// s'ha llegit.
 public struct AjustRestauracio: Sendable {
     public struct Refusat: Error, Equatable, CustomStringConvertible {
         public var description: String
@@ -19,61 +30,90 @@ public struct AjustRestauracio: Sendable {
         public var warpMaiObert = false
     }
 
+    /// Què ha fet `posa`.
+    public enum Escriptura: Equatable, Sendable {
+        /// Ja tenia aquest valor: no s'hi ha escrit res.
+        case jaHiEra
+        case escrit
+        /// `settings.toml` acaba de canviar, o ha canviat mentre es preparava el nou (Warp el podria estar escrivint): no
+        /// s'hi ha escrit res. No és cap error: cal tornar-ho a provar més tard (`RefrescWarp` ho fa sense avisar).
+        case mesTard
+    }
+
     public var ruta: URL
     /// On es prepara el fitxer nou: fora de la carpeta de Warp, perquè no hi quedi res, i al mateix volum.
     public var carpetaTemporal: URL
+    /// L'hora d'ara, per saber si el fitxer acaba de canviar. Les proves en donen una de fixa; l'app, la de sèrie (la guarda
+    /// `lAjustDeWarpNomesLEscriuLApp` en fixa la línia).
+    let rellotge: @Sendable () -> Date
     /// Només per a les proves: el que fa Warp entre la lectura i l'escriptura (escriure el fitxer, o crear-lo).
     var ganxoDeProva: (@Sendable () -> Void)?
+    /// El fitxer que aquest ajust ha posat l'últim cop, compartit entre les còpies: si encara hi és igual (el mateix `stat` i
+    /// el mateix contingut), la data recent és seva, i no de Warp.
+    private let escrit = OSAllocatedUnfairLock<Escrit?>(initialState: nil)
 
-    public init(ruta: URL, carpetaTemporal: URL = FileManager.default.temporaryDirectory) {
+    public init(ruta: URL, carpetaTemporal: URL = FileManager.default.temporaryDirectory,
+                rellotge: @escaping @Sendable () -> Date = { Date() }) {
         self.ruta = ruta
         self.carpetaTemporal = carpetaTemporal
+        self.rellotge = rellotge
     }
 
     /// La línia que s'hi escriu quan no hi és.
     static let liniaNova = "restore_session = false"
 
+    /// Si el fitxer ha canviat fa menys d'aquesta estona, Warp el podria estar escrivint: no s'hi escriu res. Una data del
+    /// futur (el rellotge del Mac ha anat enrere) també compta com a recent.
+    static let segonsRecent: TimeInterval = 2
+
     /// El valor que fa servir Warp: el de la línia, o, sense, el de sèrie. També sense el fitxer i sense la carpeta de
     /// Warp: «Restaura Warp i surt…» llegeix el valor abans de posar-lo (`Preferencies.posaRestauracio`), i ha de poder
-    /// acabar.
-    public func valor() throws(Refusat) -> Bool {
+    /// acabar. `nil` si el fitxer acaba de canviar (`segonsRecent`): el que s'ha llegit podria ser buit o a mitges, i cal
+    /// tornar-ho a mirar més tard.
+    public func valor() throws(Refusat) -> Bool? {
         switch try llegeix() {
         case .senseCarpeta, .senseFitxer: Preferencies.restauracioDeSerie
-        case let .fitxer(_, text): try Self.analitza(text).valor
+        case let .fitxer(dades, text, identitat): acabaDeCanviar(identitat, dades) ? nil : try Self.analitza(text).valor
         }
     }
 
-    /// Posa el valor. Torna si ha canviat res. Si Warp ha escrit o creat el fitxer mentrestant, no toca res i ho diu.
+    /// Posa el valor. Si el fitxer acaba de canviar, o si Warp l'escriu o el crea mentrestant, no toca res i torna `.mesTard`.
     @discardableResult
-    public func posa(_ nou: Bool) throws(Refusat) -> Bool {
+    public func posa(_ nou: Bool) throws(Refusat) -> Escriptura {
         switch try llegeix() {
         case .senseCarpeta:
-            guard !nou else { return false }
+            guard !nou else { return .jaHiEra }
             // No es crea: seria la carpeta de Warp abans que Warp, i l'excepció de la regla 7 és només la línia.
             throw Refusat(description: "Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta "
                 + "«\(ruta.deletingLastPathComponent().path)», i Warp Launch no la crea", warpMaiObert: true)
         case .senseFitxer:
-            guard !nou else { return false }
-            try crea(Data("[general]\n\(Self.liniaNova)\n".utf8))
-            return true
-        case let .fitxer(dades, text):
+            guard !nou else { return .jaHiEra }
+            return try crea(Data("[general]\n\(Self.liniaNova)\n".utf8))
+        case let .fitxer(dades, text, identitat):
+            // Abans d'analitzar-lo: buit o a mitges, el text no diu res de cert.
+            guard !acabaDeCanviar(identitat, dades) else { return .mesTard }
             let analisi = try Self.analitza(text)
-            guard analisi.valor != nou else { return false }
+            guard analisi.valor != nou else { return .jaHiEra }
             let resultat = switch analisi.lloc {
             case let .linia(numero): Self.canvia(text, linia: numero, a: nou)
             // Sense la línia, el valor és `true`: aquí només s'hi arriba per desactivar-lo.
             case let .senseLinia(afegida): try afegida.get()
             }
-            try substitueix(dades, per: Data(resultat.utf8))
-            return true
+            return try substitueix(dades, per: Data(resultat.utf8))
         }
+    }
+
+    /// Si el fitxer ha canviat fa menys de `segonsRecent` (també si és buit), i no és el que hi ha posat aquest ajust.
+    private func acabaDeCanviar(_ identitat: Identitat, _ dades: Data) -> Bool {
+        guard rellotge().timeIntervalSince(identitat.modificat) < Self.segonsRecent else { return false }
+        return escrit.withLock { $0 } != Escrit(identitat: identitat, dades: dades)
     }
 
     // MARK: - Escriure
 
     /// Substitueix el fitxer d'un sol cop (`rename`), amb els permisos i els atributs estesos de l'original, si encara és
-    /// el que s'ha llegit.
-    private func substitueix(_ dades: Data, per resultat: Data) throws(Refusat) {
+    /// el que s'ha llegit (si no, `.mesTard`).
+    private func substitueix(_ dades: Data, per resultat: Data) throws(Refusat) -> Escriptura {
         var fitxer = stat(), carpeta = stat()
         guard stat(ruta.path, &fitxer) == 0, stat(carpetaTemporal.path, &carpeta) == 0 else {
             throw Refusat(description: "no es pot mirar on és «\(ruta.path)»")
@@ -87,23 +127,28 @@ public struct AjustRestauracio: Sendable {
         // Els atributs estesos de l'original, com `cp -p` a l'script. Si no es pot, no és motiu per aturar res.
         copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))
         ganxoDeProva?()
-        // Warp l'escriu en calent: el que s'acaba de llegir encara ha de ser el que hi ha.
+        let nou = try identitatPreparada(temporal)
+        // Warp l'escriu en calent: el que s'acaba de llegir encara ha de ser el que hi ha. Si no, Warp l'acaba d'escriure: no
+        // és cap error, i es torna a provar més tard.
         guard (try? Data(contentsOf: ruta)) == dades else {
             try? FileManager.default.removeItem(at: temporal)
-            throw Refusat(description: "«\(ruta.path)» acaba de canviar")
+            return .mesTard
         }
         guard rename(temporal.path, ruta.path) == 0 else {
             let codi = String(cString: strerror(errno))
             try? FileManager.default.removeItem(at: temporal)
             throw Refusat(description: "no s'ha pogut escriure «\(ruta.path)»: \(codi)")
         }
+        escrit.withLock { $0 = Escrit(identitat: nou, dades: resultat) }
+        return .escrit
     }
 
     /// Crea el fitxer, que no hi era, amb 0644. Si Warp el crea mentrestant, no es trepitja: el de la carpeta temporal es
     /// posa al seu lloc d'un sol cop, i només si encara no hi ha res (si no, `EEXIST`). Crear-lo directament a la seva
     /// ruta no serviria: Warp vigila la carpeta, i en podria llegir un de buit o a mitges. Un enllaç dur deixaria un segon
-    /// nom a la carpeta temporal fins a esborrar-lo, i no tots els volums en deixen fer.
-    private func crea(_ resultat: Data) throws(Refusat) {
+    /// nom a la carpeta temporal fins a esborrar-lo, i no tots els volums en deixen fer. Si Warp l'ha creat, `.mesTard`:
+    /// la propera vegada s'hi afegirà la línia, si cal, quan faci més de 2 s que ha canviat.
+    private func crea(_ resultat: Data) throws(Refusat) -> Escriptura {
         var carpeta = stat(), temporals = stat()
         guard stat(ruta.deletingLastPathComponent().path, &carpeta) == 0, stat(carpetaTemporal.path, &temporals) == 0 else {
             throw Refusat(description: "no es pot mirar on és «\(ruta.path)»")
@@ -113,12 +158,27 @@ public struct AjustRestauracio: Sendable {
         }
         let temporal = try prepara(resultat, permisos: 0o644)
         ganxoDeProva?()
+        let nou = try identitatPreparada(temporal)
         guard renamex_np(temporal.path, ruta.path, UInt32(RENAME_EXCL)) == 0 else {
             let codi = errno
             try? FileManager.default.removeItem(at: temporal)
-            throw Refusat(description: codi == EEXIST ? "«\(ruta.path)» acaba d'aparèixer"
-                : "no s'ha pogut crear «\(ruta.path)»: \(String(cString: strerror(codi)))")
+            guard codi != EEXIST else { return .mesTard }
+            throw Refusat(description: "no s'ha pogut crear «\(ruta.path)»: \(String(cString: strerror(codi)))")
         }
+        escrit.withLock { $0 = Escrit(identitat: nou, dades: resultat) }
+        return .escrit
+    }
+
+    /// El `stat` del fitxer nou, abans de posar-lo al seu lloc: `rename` no en canvia l'inode, la mida ni la data. Després,
+    /// ja podria ser el de Warp.
+    private func identitatPreparada(_ temporal: URL) throws(Refusat) -> Identitat {
+        var info = stat()
+        guard lstat(temporal.path, &info) == 0 else {
+            let codi = String(cString: strerror(errno))
+            try? FileManager.default.removeItem(at: temporal)
+            throw Refusat(description: "no es pot mirar el fitxer preparat: \(codi)")
+        }
+        return Identitat(info)
     }
 
     /// El fitxer nou, sencer i sincronitzat, a la carpeta temporal.
@@ -139,7 +199,34 @@ public struct AjustRestauracio: Sendable {
         case senseCarpeta
         /// La carpeta hi és, i el fitxer no: Warp no hi ha desat cap ajust.
         case senseFitxer
-        case fitxer(dades: Data, text: String)
+        /// La `identitat` és la de després de llegir-lo: si Warp l'ha buidat abans o durant la lectura, la data ho diu.
+        case fitxer(dades: Data, text: String, identitat: Identitat)
+    }
+
+    /// El que diu `lstat` del fitxer: el volum, l'inode, la mida i la data de modificació (`st_mtimespec`). Si Warp hi
+    /// escriu, canvien la data i potser la mida; si algú el substitueix, l'inode.
+    struct Identitat: Equatable, Sendable {
+        var volum: Int64
+        var inode: UInt64
+        var mida: Int64
+        var segons: Int
+        var nanosegons: Int
+
+        init(_ info: stat) {
+            volum = Int64(info.st_dev)
+            inode = UInt64(info.st_ino)
+            mida = Int64(info.st_size)
+            segons = Int(info.st_mtimespec.tv_sec)
+            nanosegons = Int(info.st_mtimespec.tv_nsec)
+        }
+
+        var modificat: Date { Date(timeIntervalSince1970: TimeInterval(segons) + TimeInterval(nanosegons) / 1_000_000_000) }
+    }
+
+    /// El fitxer que ha posat aquest ajust, tal com l'ha posat.
+    private struct Escrit: Equatable, Sendable {
+        var identitat: Identitat
+        var dades: Data
     }
 
     private func llegeix() throws(Refusat) -> Lectura {
@@ -174,7 +261,13 @@ public struct AjustRestauracio: Sendable {
         guard let dades = try? Data(contentsOf: ruta), let text = String(validating: dades, as: UTF8.self) else {
             throw Refusat(description: "no es pot llegir «\(ruta.path)»")
         }
-        return .fitxer(dades: dades, text: text)
+        // Després de llegir-lo, i no abans: si Warp l'ha buidat abans de la lectura o durant, la data ja és la d'ara.
+        var despres = stat()
+        guard lstat(ruta.path, &despres) == 0 else {
+            throw Refusat(description: "no es pot mirar «\(ruta.path)»: \(String(cString: strerror(errno)))")
+        }
+        guard despres.st_mode & S_IFMT == S_IFREG else { throw Refusat(description: "«\(ruta.path)» no és un fitxer normal") }
+        return .fitxer(dades: dades, text: text, identitat: Identitat(despres))
     }
 
     // MARK: - Analitzar

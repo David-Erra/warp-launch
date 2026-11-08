@@ -1031,7 +1031,7 @@ private func lecturaVariada() -> LecturaWarp {
 
         // Amb el refresc (la configuració de debò): Warp tancat, i la foto no té finestres.
         let warp = EstatWarp(lector: { llegida })
-        warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in }, warpObert: { false },
+        warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in .jaHiEra }, warpObert: { false },
                                                               llegeixBase: { llegida }, espera: { _ in }))
         let deDebo = try #require(FullImportacio(editor: existent, warp: warp))
         await deDebo.llegeix()
@@ -1051,7 +1051,7 @@ private func lecturaVariada() -> LecturaWarp {
         let llegida = lectura
         func ambRefresc() -> EstatWarp {
             let warp = EstatWarp(lector: { llegida })
-            warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in }, warpObert: { false },
+            warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in .jaHiEra }, warpObert: { false },
                                                                   llegeixBase: { llegida }, espera: { _ in }))
             return warp
         }

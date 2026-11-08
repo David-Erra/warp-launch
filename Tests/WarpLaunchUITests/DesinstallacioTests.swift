@@ -33,10 +33,11 @@ private final class Carpeta {
 /// L'ajust de Warp, fals. Com el de l'app, el primer canvi desa a `preferencies.json` el valor que hi havia.
 private final class AjustFals: @unchecked Sendable {
     private let pany = NSLock()
-    private var estat: (valor: Bool, posats: [Bool], fallades: Int, falladesDesactivar: Int)
+    private var estat: (valor: Bool, posats: [Bool], fallades: Int, falladesDesactivar: Int, mesTard: Int,
+                        mesTardDesactivar: Int)
 
     init(_ valor: Bool) {
-        estat = (valor, [], 0, 0)
+        estat = (valor, [], 0, 0, 0, 0)
     }
 
     /// Canviat a mà, a Warp.
@@ -48,6 +49,12 @@ private final class AjustFals: @unchecked Sendable {
     /// Com `fallades`, però només per desactivar-lo.
     var falladesDesactivar: Int {
         get { pany.withLock { estat.falladesDesactivar } } set { pany.withLock { estat.falladesDesactivar = newValue } }
+    }
+    /// Quantes vegades més el pròxim `posa` torna `.mesTard`, sense escriure res (0.31.3: `settings.toml` acaba de canviar).
+    var mesTard: Int { get { pany.withLock { estat.mesTard } } set { pany.withLock { estat.mesTard = newValue } } }
+    /// Com `mesTard`, però només per desactivar-lo.
+    var mesTardDesactivar: Int {
+        get { pany.withLock { estat.mesTardDesactivar } } set { pany.withLock { estat.mesTardDesactivar = newValue } }
     }
 
     func entorn(_ magatzem: MagatzemPreferencies) -> RefrescWarp.Entorn {
@@ -64,8 +71,17 @@ private final class AjustFals: @unchecked Sendable {
                             estat.falladesDesactivar -= 1
                             throw AjustRestauracio.Refusat(description: "«settings.toml» acaba de canviar")
                         }
+                        if estat.mesTard > 0 {
+                            estat.mesTard -= 1
+                            return .mesTard
+                        }
+                        if !nou, estat.mesTardDesactivar > 0 {
+                            estat.mesTardDesactivar -= 1
+                            return .mesTard
+                        }
                         estat.posats.append(nou)
                         estat.valor = nou
+                        return .escrit
                     }
                 })
             },
@@ -363,6 +379,26 @@ private final class Mon {
         #expect(!mon.ajust.valor, "la vigilància continua")
     }
 
+    /// 0.31.3: si `settings.toml` acaba de canviar, «Restaura Warp i surt…» no hi escriu res, ho diu (l'ha demanat l'usuari) i
+    /// no surt. Es pot tornar a provar.
+    @Test func siAcabaDeCanviarNoRetiraResINoSurt() throws {
+        let mon = try Mon(ajust: true)
+        let c = mon.consentiment()
+        c.accepta()
+        try #require(c.refresc).vigila()
+        let d = mon.desinstallacio(c)
+        d.demana()
+        mon.ajust.mesTard = 1
+        d.confirma()
+        #expect(d.error == "No s'ha pogut tornar l'ajust de Warp com era: «settings.toml» de Warp acaba de canviar (torna-ho a "
+            + "provar d'aquí a uns segons). L'ajust i el permís no han canviat.", "\(d.error ?? "")")
+        #expect(!mon.ajust.valor && mon.ajust.posats == [false] && mon.sortides == 0 && c.estat == .acceptat)
+        #expect(try mon.preferencies == Preferencies(restauracio: .acceptat(t0), restauracioOriginal: true))
+        d.demana()
+        d.confirma()
+        #expect(mon.ajust.valor && mon.sortides == 1 && c.estat == .retirat)
+    }
+
     /// Si l'app no es pot treure dels ítems d'inici, no fa res més.
     @Test func siNoEsPotTreureDelsItemsDIniciNoFaResMes() throws {
         let mon = try Mon(ajust: true)
@@ -421,6 +457,7 @@ private final class Mon {
 @MainActor
 private final class MonSenseLinia {
     let tmp: Carpeta
+    let rellotge = RellotgeDeProva()
     let ajust: AjustRestauracio
     let items = ItemsDInici()
     var sortides = 0
@@ -431,7 +468,7 @@ private final class MonSenseLinia {
         try FileManager.default.createDirectory(at: tmp.url("tmp"), withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: tmp.url("config"), withIntermediateDirectories: true)
         if carpetaWarp { try FileManager.default.createDirectory(at: tmp.url("warp"), withIntermediateDirectories: true) }
-        ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: tmp.url("tmp"))
+        ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: tmp.url("tmp"), rellotge: rellotge.funcio)
         if let contingut { try Data(contingut.utf8).write(to: ajust.ruta) }
         if migrat { try Data("{}".utf8).write(to: tmp.url("config").appending(path: MagatzemConfiguracio.nomFitxer)) }
     }
@@ -489,6 +526,51 @@ extension Carpeta {
         #expect(mon.contingut == "[general]\nrestore_session = true\nlogin_item = true\n")
         #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .retirat(t0)))
         #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+    }
+
+    /// 0.31.3: amb un `settings.toml` que ha canviat fa 1 s (Warp el podria estar escrivint), en acceptar el permís la
+    /// vigilància no hi escriu res, ni desa com a valor d'abans el que hi ha llegit, ni avisa de res; un refresc tampoc no
+    /// activa res. Quan fa 3 s, la vigilància hi afegeix la línia.
+    @Test func siAcabaDeCanviarLaVigilanciaHoTornaAProvarSenseAvis() async throws {
+        let mon = try MonSenseLinia("[general]\nlogin_item = true\n")
+        try mon.rellotge.modificat(mon.ajust.ruta, fa: 1)
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(refresc.avis == nil, "\(refresc.avis ?? "")")
+        _ = await refresc.refresca()
+        #expect(refresc.avis == nil, "\(refresc.avis ?? "")")
+        #expect(mon.contingut == "[general]\nlogin_item = true\n")
+        #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .acceptat(t0)))
+
+        mon.rellotge.ara += 2
+        refresc.vigila()
+        #expect(refresc.avis == nil, "\(refresc.avis ?? "")")
+        #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
+        #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .acceptat(t0), restauracioOriginal: true))
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+    }
+
+    /// 0.31.3: el que l'app acaba de posar no compta com a recent. Just després que la vigilància hi afegeixi la línia,
+    /// «Restaura Warp i surt…» la pot tornar a activar, i desfer-ho la pot tornar a desactivar, sense esperar 2 s.
+    @Test func elQueAcabaDePosarLAppNoComptaComARecent() throws {
+        let mon = try MonSenseLinia("[general]\nlogin_item = true\n")
+        func modificat() throws -> Date {
+            try #require(FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.modificationDate] as? Date)
+        }
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
+        mon.rellotge.ara = try modificat() + 0.5
+        try refresc.retira(posant: true)
+        #expect(mon.contingut == "[general]\nrestore_session = true\nlogin_item = true\n")
+        mon.rellotge.ara = try modificat() + 0.5
+        refresc.desfesRetirada()
+        #expect(refresc.avis == nil && !refresc.desactivacioPendent)
+        #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
     }
 
     /// Sense el fitxer, la vigilància el crea només amb la línia.

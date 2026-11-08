@@ -46,6 +46,7 @@ private final class AjustFals: @unchecked Sendable {
                         estat.posats.append(nou)
                         estat.valor = nou
                     }
+                    return .escrit
                 })
             },
             warpObert: { true },
