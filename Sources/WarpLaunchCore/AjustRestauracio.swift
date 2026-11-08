@@ -43,7 +43,8 @@ public struct AjustRestauracio: Sendable {
         case jaHiEra
         case escrit
         /// `settings.toml` acaba de canviar, o ha canviat mentre es preparava el nou (Warp el podria estar escrivint): no
-        /// s'hi ha escrit res. No és cap error: cal tornar-ho a provar més tard (`RefrescWarp` ho fa sense avisar).
+        /// s'hi ha escrit res. No és cap error: cal tornar-ho a provar més tard (`RefrescWarp` ho fa sense avisar, fins que en
+        /// fa més de 5 minuts seguits).
         case mesTard
         /// No hi ha `settings.toml`, i ara no es pot crear (`potCrearElFitxer`: Warp és tancat o encara arrenca): no es crea,
         /// perquè Warp no se salti la migració d'arrencada (ronda 5). No és cap error: cal tornar-ho a provar més tard

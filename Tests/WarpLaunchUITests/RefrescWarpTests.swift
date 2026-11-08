@@ -25,7 +25,8 @@ private func foto(_ panes: [String], titol: String = "T") -> LecturaWarp {
 private final class Mon: @unchecked Sendable {
     private let pany = NSLock()
     private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true, posats: 0,
-                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0, quanSObriWarp: 0, warpMaiObert: 0)
+                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0, quanSObriWarp: 0, warpMaiObert: 0,
+                         ara: Date(timeIntervalSince1970: 1_793_750_400))
     private var lectura: @Sendable (Bool, Int) -> LecturaWarp = { _, _ in LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) }
     var enEsperar: @Sendable (Int) -> Void = { _ in }
 
@@ -52,6 +53,8 @@ private final class Mon: @unchecked Sendable {
     var quanSObriWarp: Int {
         get { pany.withLock { estat.quanSObriWarp } } set { pany.withLock { estat.quanSObriWarp = newValue } }
     }
+    /// L'hora del refresc (decisió 3, 08/11/2026): la mou la prova, sense esperar.
+    var ara: Date { get { pany.withLock { estat.ara } } set { pany.withLock { estat.ara = newValue } } }
     /// Quantes vegades més desactivar-lo refusa perquè no hi ha la carpeta de Warp (`Refusat.warpMaiObert`, 0.31.2).
     var warpMaiObert: Int {
         get { pany.withLock { estat.warpMaiObert } } set { pany.withLock { estat.warpMaiObert = newValue } }
@@ -106,7 +109,8 @@ private final class Mon: @unchecked Sendable {
                 let n = pany.withLock { estat.esperes += 1; return estat.esperes }
                 enEsperar(n)
                 try Task.checkCancellation()
-            })
+            },
+            rellotge: { [self] in ara })
     }
 }
 
@@ -481,6 +485,83 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         let r = RefrescWarp(entorn: mon.entorn)
         await r.tancaEsperant()
         #expect(mon.esperes == 0 && mon.posats == 1 && r.pendent == .quanSObriWarp && r.avis == nil)
+    }
+
+    // MARK: - Si `settings.toml` no para de canviar (decisió 3, 08/11/2026)
+
+    /// Si fa més de 5 minuts seguits que l'ajust no es pot desactivar perquè `settings.toml` no para de canviar (unes vegades
+    /// no se'n sap el valor, i d'altres no s'hi pot escriure), el menú ho diu (s'observa). Fins als 5 minuts, cap avís. Quan
+    /// es pot desactivar, l'avís marxa.
+    @Test func siFaMesDe5MinutsQueNoEsPotDesactivarAvisa() async {
+        let mon = Mon()
+        mon.ajust = true
+        mon.mesTardDesactivar = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(mon.ajust && r.pendent == .acabaDeCanviar && r.avis == nil)
+        // Cada minut: un cop no se'n sap el valor, i l'altre no s'hi pot escriure. Al minut 5 just, encara res.
+        for minut in 1...5 {
+            mon.ara += 60
+            if minut.isMultiple(of: 2) { mon.mesTardDesactivar = 1 } else { mon.ajustMesTard = 1 }
+            r.vigila()
+            #expect(mon.ajust && r.pendent == .acabaDeCanviar && r.avis == nil, "minut \(minut)")
+        }
+        // També abans d'engegar Warp: els reintents de cada segon tampoc no reinicien el compte.
+        mon.mesTardDesactivar = RefrescWarp.segonsTornaAProvar + 1
+        await r.tancaEsperant()
+        #expect(r.avis == nil)
+        let canvis = Comptador()
+        withObservationTracking { _ = r.avis } onChange: { canvis.suma() }
+        mon.ara += 1
+        mon.ajustMesTard = 1
+        r.vigila()
+        #expect(canvis.valor == 1, "el menú ho ha de veure")
+        #expect(r.avis == RefrescWarp.avisNoParaDeCanviar && r.pendent == .acabaDeCanviar && r.nota == nil)
+        #expect(mon.ajust && mon.canvis.isEmpty)
+        // Continua igual mentre no es pot, i marxa quan es pot.
+        mon.ara += 60
+        mon.mesTardDesactivar = 1
+        r.vigila()
+        #expect(r.avis == RefrescWarp.avisNoParaDeCanviar)
+        mon.ara += 60
+        r.vigila()
+        #expect(!mon.ajust && mon.canvis == [false] && r.avis == nil && r.pendent == nil)
+    }
+
+    /// Els 5 minuts són seguits: si entremig s'ha pogut desactivar, es tornen a comptar des de la vegada següent que no es pot.
+    @Test func elsCincMinutsSonSeguits() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.mesTardDesactivar = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        mon.ara += 4 * 60
+        r.vigila()
+        #expect(!mon.ajust && r.pendent == nil && r.avis == nil)
+        mon.ara += 60
+        mon.ajust = true
+        mon.mesTardDesactivar = 1
+        r.vigila()
+        mon.ara += 4 * 60
+        mon.ajustMesTard = 1
+        r.vigila()
+        #expect(r.avis == nil, "fa 4 minuts, i no 9")
+        mon.ara += 2 * 60
+        mon.ajustMesTard = 1
+        r.vigila()
+        #expect(r.avis == RefrescWarp.avisNoParaDeCanviar)
+        // Ja era desactivat (l'ha desactivat un altre): l'avís també marxa.
+        mon.ajust = false
+        r.vigila()
+        #expect(r.avis == nil && r.pendent == nil)
+    }
+
+    /// L'avís diu el que se sap: que el fitxer no para de canviar i que no s'hi pot desactivar la restauració, i que ho
+    /// continua provant. No diu qui l'escriu, ni que Warp restaurarà res (potser ja era desactivada).
+    @Test func lAvisDiuLaVeritat() {
+        #expect(RefrescWarp.avisNoParaDeCanviar == "El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot "
+            + "desactivar la restauració de sessió. Ho continua provant cada minut.")
+        #expect(!RefrescWarp.avisNoParaDeCanviar.contains("restaurarà") && RefrescWarp.segonsAvisMesTard == 300)
     }
 
     // MARK: - Sense `settings.toml`, i amb Warp tancat o encara arrencant (ronda 5)

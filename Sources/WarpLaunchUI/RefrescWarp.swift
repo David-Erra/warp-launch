@@ -19,7 +19,8 @@ import WarpLaunchCore
 /// **Si `settings.toml` acaba de canviar (0.31.3):** Warp el podria estar escrivint, i l'ajust no hi escriu res
 /// (`AjustRestauracio.Escriptura.mesTard`). No és cap error: la vigilància de cada minut ho torna a provar, sense cap avís, i
 /// al final d'un refresc es torna a provar cada segon uns quants cops (`segonsTornaAProvar`), perquè l'ajust quedi activat
-/// tan poca estona com es pugui.
+/// tan poca estona com es pugui. Si fa més de 5 minuts seguits que no es pot desactivar per això, el menú ho diu
+/// (`avisNoParaDeCanviar`, decisió 3 d'en David, 08/11/2026).
 ///
 /// **Sense `settings.toml`, i amb Warp tancat o encara arrencant (ronda 5):** l'ajust no el crea
 /// (`AjustRestauracio.Escriptura.quanSObriWarp`), perquè Warp no se salti la migració d'arrencada. Tampoc no és cap error:
@@ -39,16 +40,21 @@ public final class RefrescWarp {
         /// `false`).
         public var llegeixBase: @Sendable () throws -> LecturaWarp
         public var espera: @Sendable (Duration) async throws -> Void
+        /// L'hora d'ara, per saber quanta estona fa que l'ajust no es pot desactivar (`segonsAvisMesTard`). Les proves en donen
+        /// una de fixa i la mouen, sense esperar; l'app, la de sèrie.
+        public var rellotge: @Sendable () -> Date
 
         public init(ajust: @escaping @Sendable () throws -> Bool?,
                     posa: @escaping @Sendable (Bool) throws -> AjustRestauracio.Escriptura,
                     warpObert: @escaping @Sendable () -> Bool, llegeixBase: @escaping @Sendable () throws -> LecturaWarp,
-                    espera: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
+                    espera: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) },
+                    rellotge: @escaping @Sendable () -> Date = { Date() }) {
             self.ajust = ajust
             self.posa = posa
             self.warpObert = warpObert
             self.llegeixBase = llegeixBase
             self.espera = espera
+            self.rellotge = rellotge
         }
     }
 
@@ -61,6 +67,10 @@ public final class RefrescWarp {
     /// Al final d'un refresc, si `settings.toml` acabava de canviar: quants cops es torna a provar de desactivar l'ajust,
     /// d'un en un segon. Els 2 s d'`AjustRestauracio.segonsRecent`, i un de marge.
     public static let segonsTornaAProvar = 3
+    /// Si fa més d'aquesta estona seguida que l'ajust no es pot desactivar perquè `settings.toml` no para de canviar
+    /// (`Pendent.acabaDeCanviar`), el menú ho diu (`avisNoParaDeCanviar`, decisió 3 d'en David, 08/11/2026). Abans, res: es
+    /// torna a provar sol. Com que la vigilància és de cada minut, l'avís surt entre els 5 i els 6 minuts.
+    public static let segonsAvisMesTard: TimeInterval = 5 * 60
 
     /// «Restaura Warp i surt…» no ha pogut posar l'ajust: `settings.toml` acabava de canviar, i no s'hi ha escrit res.
     public struct MesTard: Error, Equatable, CustomStringConvertible {
@@ -79,7 +89,8 @@ public final class RefrescWarp {
     /// Per què l'última vegada no s'ha pogut desactivar l'ajust, sense que sigui cap error (no hi ha `avis`).
     public enum Pendent: Equatable, Sendable {
         /// `settings.toml` acabava de canviar (`AjustRestauracio.Escriptura.mesTard`): l'ajust pot haver quedat activat. Al
-        /// final d'un refresc es torna a provar cada segon; si no, amb la vigilància de cada minut.
+        /// final d'un refresc es torna a provar cada segon; si no, amb la vigilància de cada minut. Si en fa més de 5 minuts
+        /// seguits, l'avís (`avisNoParaDeCanviar`).
         case acabaDeCanviar
         /// No hi ha `settings.toml`, i Warp és tancat o encara arrenca (`.quanSObriWarp`): l'ajust és activat (el de sèrie
         /// de Warp), i la vigilància de cada minut crearà el fitxer quan Warp sigui obert amb algun terminal. El menú ho diu
@@ -123,8 +134,16 @@ public final class RefrescWarp {
     public static let notaWarpMaiObert = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, "
         + "ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la "
         + "restauració de sessió en menys d'un minut."
+    /// Si fa més de 5 minuts seguits que l'ajust no es pot desactivar perquè `settings.toml` no para de canviar (decisió 3).
+    /// No diu qui l'escriu (pot ser Warp o un altre programa), ni que Warp restaurarà res: potser l'ajust ja era desactivat,
+    /// i l'app no ho pot saber mentre el fitxer canvia. Desapareix quan es pot desactivar.
+    public static let avisNoParaDeCanviar = "El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot "
+        + "desactivar la restauració de sessió. Ho continua provant cada minut."
     @ObservationIgnored private let entorn: Entorn
     @ObservationIgnored private var enCurs: Task<Resultat, Never>?
+    /// Des de quan l'ajust no es pot desactivar perquè `settings.toml` no para de canviar: des que `pendent` ha passat a
+    /// `.acabaDeCanviar`, sense haver estat res més entremig. Només val mentre `pendent` és `.acabaDeCanviar`.
+    @ObservationIgnored private var mesTardDes: Date?
     /// L'app està sortint: cap cicle pot tornar a activar l'ajust (`atura`).
     @ObservationIgnored private var aturat = false
     /// «Deixa de fer servir Warp Launch» (`retira`): ni la vigilància de cada minut, ni cap cicle, ni sortir de l'app no
@@ -159,8 +178,10 @@ public final class RefrescWarp {
                 pendent = nil
                 avis = nil
             case .none:
-                // No és cap error: d'aquí a un minut es torna a mirar, sense avís.
+                // No és cap error: d'aquí a un minut es torna a mirar, sense avís. Si l'ajust ja s'havia de desactivar i fa
+                // més de 5 minuts que no es pot, l'avís.
                 Registre.refresc.notice("settings.toml acaba de canviar: es torna a mirar d'aquí a un minut")
+                avisaSiNoParaDeCanviar()
             }
         } catch {
             avis = "No es pot mirar la restauració de sessió de Warp: \(error)"
@@ -290,10 +311,10 @@ public final class RefrescWarp {
     }
 
     /// Si `settings.toml` acaba de canviar, no s'hi escriu res, i no és cap error: tornar-ho a provar de seguida no serviria
-    /// (`AjustRestauracio.segonsRecent`), i ho fa la vigilància de cada minut, sense avís. Sense el fitxer i amb Warp tancat
-    /// o encara arrencant, tampoc (`Pendent.quanSObriWarp`, amb la `nota`): l'avís que hi hagués ja no val (la carpeta de
-    /// Warp hi és). Sense la carpeta de Warp, tampoc (`Pendent.warpMaiObert`, amb la `nota`). Un error es torna a provar de
-    /// seguida, fins a tres cops. Retirat, res.
+    /// (`AjustRestauracio.segonsRecent`), i ho fa la vigilància de cada minut, sense avís fins als 5 minuts seguits
+    /// (`avisaSiNoParaDeCanviar`). Sense el fitxer i amb Warp tancat o encara arrencant, tampoc (`Pendent.quanSObriWarp`,
+    /// amb la `nota`): l'avís que hi hagués ja no val (la carpeta de Warp hi és). Sense la carpeta de Warp, tampoc
+    /// (`Pendent.warpMaiObert`, amb la `nota`). Un error es torna a provar de seguida, fins a tres cops. Retirat, res.
     private func desactiva() {
         guard !retirat else { return }
         var darrer: (any Error)?
@@ -301,8 +322,10 @@ public final class RefrescWarp {
             do {
                 switch try entorn.posa(false) {
                 case .mesTard:
+                    if pendent != .acabaDeCanviar { mesTardDes = entorn.rellotge() }
                     pendent = .acabaDeCanviar
                     Registre.refresc.notice("settings.toml acaba de canviar: l'ajust es desactivarà més tard")
+                    avisaSiNoParaDeCanviar()
                     return
                 case .quanSObriWarp:
                     pendent = .quanSObriWarp
@@ -330,6 +353,16 @@ public final class RefrescWarp {
         } else {
             avis = nil
         }
+    }
+
+    /// Decisió 3 d'en David (08/11/2026): si fa més de `segonsAvisMesTard` seguits que l'ajust no es pot desactivar perquè
+    /// `settings.toml` no para de canviar, l'avís al menú. Quan es pot desactivar (o passa qualsevol altra cosa), `desactiva`
+    /// i `vigila` el treuen o el canvien.
+    private func avisaSiNoParaDeCanviar() {
+        guard pendent == .acabaDeCanviar, let mesTardDes, avis != Self.avisNoParaDeCanviar,
+              entorn.rellotge().timeIntervalSince(mesTardDes) > Self.segonsAvisMesTard else { return }
+        avis = Self.avisNoParaDeCanviar
+        Registre.refresc.error("fa més de 5 minuts que settings.toml no para de canviar: l'ajust no es pot desactivar")
     }
 
     /// Fora del fil principal: la base té un `busy_timeout` de 3 s.
