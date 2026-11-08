@@ -124,11 +124,16 @@ private let altresCreenOSobreescriuen = [
     #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
 ]
 /// Les altres maneres d'obrir o de crear un fitxer o una carpeta que no es diuen `open(`, `creat(` o `mkdir(`, de C i de
-/// CoreFoundation: `openx_np` (amb `O_WRONLY`, escriuria sobre un fitxer que ja hi és, i `write(` de C no surt enlloc);
+/// CoreFoundation: `openx_np` (amb `O_WRONLY`, escriuria sobre un fitxer que ja hi és amb el `write(` de C, que
+/// `FitxersLaunchWarp` fa servir per al fitxer que acaba de crear);
 /// `mkstemp`, `mkstemps`, `mkostemp`, `mkostemps` i `mkdtemp`; `mkdirx_np`, `mkpath_np` i `mkpathat_np`; `mkfifo`,
 /// `mkfifoat`, `mkfifox_np`, `mknod` i `mknodat`; i `CFWriteStreamCreateWithFile`. Com a paraula, també amb el mòdul i sense
 /// cridar-les. Valen per al diagnòstic (`escriuen`), per a la carpeta de Warp (`prohibidesCarpetaWarp`) i per a l'ajust
 /// (`nomesLAjustCreaElFitxerDeWarp`): cap dels tres no en fa servir cap.
+/// El `write` de C i els seus germans (`pwrite`, `writev` i `pwritev`), com a paraula, també amb el mòdul i sense cridar-los;
+/// el mètode `.write(` d'un valor (ja a `escriuen` i a `escriuenDirectament`), no. Al diagnòstic i a l'ajust, que no en fan
+/// servir cap: amb un descriptor obert d'una altra manera, escriurien a un fitxer.
+private let cridaWriteDeC = #"((^|[^A-Za-z0-9_.])|(^|[^A-Za-z0-9_])(Darwin|Foundation)\.)p?writev?(?![A-Za-z0-9_])"#
 private let altresObrenOCreen = [
     #"(^|[^A-Za-z0-9_])openx_np(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])(mko?stemps?|mkdtemp)(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])(mkdirx_np|mkpath(at)?_np)(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])mk(fifo|nod)(at|x_np)?(?![A-Za-z0-9_])"#,
@@ -247,7 +252,7 @@ private let escriuen = [
     #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
     #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
     #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#, cridaMkdir,
-] + altresEsborrenOMouen + altresCreenOSobreescriuen + altresCanvienAtributs + altresObrenOCreen
+] + altresEsborrenOMouen + altresCreenOSobreescriuen + altresCanvienAtributs + altresObrenOCreen + [cridaWriteDeC]
 
 /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
 /// - posar l'ajust de Warp a un valor que no és el d'un refresc: només `RefrescWarp.retira` (`entorn.posa(`, que fins ara
@@ -932,8 +937,10 @@ private let prohibidesArrossegar = [
                           creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
                           #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#,
                           #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#] + escriuenDirectament
-            + altresCanvienAtributs + esborrenOMouen + altresObrenOCreen
+            + altresCanvienAtributs + esborrenOMouen + altresObrenOCreen + [cridaWriteDeC]
         #expect(try aparicions(de: noFaLAjust, a: [ajust]).isEmpty)
+        #expect(try aparicions(de: noFaLAjust, a: [(ruta: rutaAjustRestauracio, text: "let n = pwrite(fd, p, mida, 0)")])
+            == ["\(rutaAjustRestauracio):1: «\(cridaWriteDeC)»"])
         #expect(try aparicions(de: noFaLAjust, a: [(ruta: rutaAjustRestauracio, text: "let fd = mkstemp(&plantilla)")])
             == ["\(rutaAjustRestauracio):1: «\(altresObrenOCreen[1])»"])
         // Cada línia, la seva expressió de `esborrenOMouen`; el `renamex_np` de crear-lo, el `rename` de substituir-lo i un
@@ -1117,6 +1124,7 @@ private let prohibidesArrossegar = [
             mkpath_np(r, 0o755)
             mkfifo(r, 0o644)
             let s = CFWriteStreamCreateWithFile(nil, u as CFURL)
+            let n = write(fd, p, mida)
             """)]
         #expect(mostra[0].text.split(separator: "\n").count == escriuen.count, "una línia per expressió")
         #expect(try aparicions(de: escriuen, a: mostra)
@@ -1506,6 +1514,17 @@ private let prohibidesArrossegar = [
             let mkstempLater = 0
             let mknods = 0
             """)]
+        // El `write` de C, també amb el mòdul i sense cridar-lo; el mètode d'un valor i un nom que s'hi assembla, no.
+        #expect(try aparicions(de: [cridaWriteDeC], a: [(ruta: "mostra.swift", text: """
+            let n = write(fd, p, mida)
+            Darwin.pwrite(fd, p, mida, 0)
+            let escriu = writev
+            _ = Foundation.pwritev(fd, v, n, 0)
+            try d.write(to: u)
+            FileHandle.standardError.write(d)
+            let r = rewrite(x)
+            let writeLater = 0
+            """)]) == (1...4).map { "mostra.swift:\($0): «\(cridaWriteDeC)»" })
         let obrenOCreen = altresObrenOCreen
         let familiaObren = [0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4]
         #expect(try aparicions(de: obrenOCreen, a: obrenOCreenMostra)
