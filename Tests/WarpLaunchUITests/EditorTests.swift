@@ -1105,7 +1105,8 @@ private func lecturaVariada() -> LecturaWarp {
             let llegida = lectura
             let text = LecturaWarp.senseBase(warpObert: obert)
             #expect(text == "Warp encara no ha desat cap finestra en aquest usuari: "
-                + (obert ? "torna-ho a provar d'aquí a uns segons." : "obre'l un cop i torna-ho a provar."))
+                + (obert ? "si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons."
+                    : "obre'l un cop i torna-ho a provar."))
             func ambRefresc() -> EstatWarp {
                 let warp = EstatWarp(lector: { llegida })
                 warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in .jaHiEra },

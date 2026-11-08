@@ -460,7 +460,8 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(LecturaWarp.senseBase(warpObert: false)
             == "Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar.")
         #expect(LecturaWarp.senseBase(warpObert: true)
-            == "Warp encara no ha desat cap finestra en aquest usuari: torna-ho a provar d'aquí a uns segons.")
+            == "Warp encara no ha desat cap finestra en aquest usuari: "
+                + "si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons.")
         for obert in [false, true] {
             #expect(!LecturaWarp.senseBase(warpObert: obert).contains("restauració"))
         }

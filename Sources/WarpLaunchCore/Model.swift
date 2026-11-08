@@ -38,10 +38,12 @@ public struct LecturaWarp: Codable, Sendable, Equatable {
 
     /// Per què no es pot importar ni lligar res sense la base de Warp (`warpSenseBase`). L'app i el CLI (`llegeix`, `importa`
     /// i `obre`) diuen el mateix. No parla de la restauració de sessió: de sèrie és activada, i qui no ha obert mai Warp no
-    /// l'ha desactivada. Amb Warp obert, potser encara arrenca (no s'ha vist quan crea la base); amb Warp tancat, que s'obri.
+    /// l'ha desactivada. Amb Warp obert, potser encara arrenca (no s'ha vist quan crea la base): esperar només serveix si
+    /// s'acaba d'obrir (decisió 4 d'en David, 08/11/2026). Amb Warp tancat, que s'obri.
     public static func senseBase(warpObert: Bool) -> String {
         "Warp encara no ha desat cap finestra en aquest usuari: "
-            + (warpObert ? "torna-ho a provar d'aquí a uns segons." : "obre'l un cop i torna-ho a provar.")
+            + (warpObert ? "si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons."
+                : "obre'l un cop i torna-ho a provar.")
     }
 
     /// Les sessions interactives de Claude vives, lligades o no a una pestanya de Warp.

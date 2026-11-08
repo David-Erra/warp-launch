@@ -715,6 +715,8 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
             }
         }
         #expect(LecturaWarp.senseBase(warpObert: false).hasSuffix(": obre'l un cop i torna-ho a provar."))
+        #expect(LecturaWarp.senseBase(warpObert: true)
+            .hasSuffix(": si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons."))
 
         // Una base triada a mà: no és la de Warp, i no se sap si Warp hi ha desat res.
         let triada = e.tmp.url("triada.sqlite")
