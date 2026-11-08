@@ -142,9 +142,9 @@ private let altresObrenOCreen = [
 /// `acl_delete_def_file`), que també en canvien els permisos; i `CFURLSetResourcePropertyForKey` i
 /// `CFURLSetResourcePropertiesForKeys`, els d'`URL` amb un altre nom. Com a paraula, també amb el mòdul i sense cridar-les;
 /// les que només llegeixen (`getxattr`, `listxattr`, `getattrlist`, `attributesOfItem`, `resourceValues`, `acl_get_file`,
-/// `CFURLCopyResourcePropertyForKey`) i les que només canvien una ACL a la memòria (`acl_set_permset`), no. Valen per al diagnòstic (`escriuen`), per a l'ajust
-/// (`nomesLAjustCreaElFitxerDeWarp`) i per a la carpeta de Warp, on només hi ha la crida que posa 0644 al fitxer que
-/// `FitxersLaunchWarp` acaba de crear (`canvienAtributsAFitxersLaunchWarp`).
+/// `CFURLCopyResourcePropertyForKey`) i les que només canvien una ACL a la memòria (`acl_set_permset`), no. Valen per a tot
+/// `Sources`, amb les dues úniques excepcions de `canvienAtributsPermesos` (`canvienAtributsForaDeLloc`), i també per al
+/// diagnòstic (`escriuen`) i per a l'ajust (`nomesLAjustCreaElFitxerDeWarp`), que tenen la seva pròpia llista.
 private let altresCanvienAtributs = [
     #"(^|[^A-Za-z0-9_])(f|l)?chmod(at|x_np)?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])(f|l)?chown(at)?(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])(f|l)?chflags(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])setAttributes(?![A-Za-z0-9_])"#,
@@ -157,11 +157,44 @@ private let altresCanvienAtributs = [
 /// L'única crida de `FitxersLaunchWarp` que canvia els permisos d'un fitxer: la del que acaba de crear amb `O_EXCL`, pel seu
 /// descriptor, abans d'escriure-hi. Una altra, també amb el mòdul o amb una ruta, ja hi surt (`canvienAtributs`).
 private let canvienAtributsAFitxersLaunchWarp = ["if fchmod(fd, 0o644) != 0 {"]
+/// Decisió 7 (ronda 6): les dues úniques crides de `Sources` que canvien els permisos d'un fitxer, cadascuna al seu fitxer i
+/// sobre el que la mateixa funció acaba de crear amb `O_EXCL`, pel seu descriptor (`permisosDelFitxerAcabatDeCrear`): la de
+/// `EscripturaAtomica.creaFitxerNou` (els permisos que li demanen) i la de `FitxersLaunchWarp` (0644).
+private let rutaEscripturaAtomica = "Sources/WarpLaunchCore/EscripturaAtomica.swift"
+private let rutaFitxersLaunchWarp = "Sources/WarpLaunchCore/FitxersLaunchWarp.swift"
+private let obreAEscripturaAtomica = "let fd = open(url.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, mode_t(0o600))"
+private let canvienAtributsAEscripturaAtomica = [
+    "guard fchmod(fd, mode_t(permisos & 0o7777)) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }",
+]
+private let canvienAtributsPermesos = [
+    rutaEscripturaAtomica: canvienAtributsAEscripturaAtomica, rutaFitxersLaunchWarp: canvienAtributsAFitxersLaunchWarp,
+]
 /// Les línies que canvien els permisos o els atributs d'un fitxer (`altresCanvienAtributs`), sense els espais del principi.
 private func canvienAtributs(_ text: String) throws -> [String] {
     let regs = try altresCanvienAtributs.map { try Regex($0) }
     return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { linia in regs.contains { linia.contains($0) } }
+}
+/// Les línies de `Sources` que canvien els permisos o els atributs d'un fitxer i no són les de `canvienAtributsPermesos` al
+/// seu fitxer: qualsevol altra crida a qualsevol fitxer, una de les dues a un altre fitxer, o la mateixa dues vegades. Com
+/// `canvienAtributs`, també en un comentari: cap línia de `Sources` no les esmenta.
+private func canvienAtributsForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    try codi.flatMap { f -> [String] in
+        var sobren = try canvienAtributs(f.text)
+        for permesa in canvienAtributsPermesos[f.ruta] ?? [] {
+            if let i = sobren.firstIndex(of: permesa) { sobren.remove(at: i) }
+        }
+        return sobren.map { "\(f.ruta): \($0)" }
+    }
+}
+/// La crida que canvia els permisos és després de l'`open` que crea el fitxer amb `O_EXCL`, i entremig no hi ha cap altra
+/// funció ni cap altre `fd`: amb el descriptor d'un fitxer que ja hi era, en canviaria els permisos.
+private func permisosDelFitxerAcabatDeCrear(_ text: String, obre: String, permisos: String) -> Bool {
+    guard let creat = text.range(of: obre), let crida = text.range(of: permisos), creat.upperBound <= crida.lowerBound else {
+        return false
+    }
+    let entremig = text[creat.upperBound..<crida.lowerBound]
+    return !entremig.contains("func ") && !entremig.contains("fd =")
 }
 /// A `FitxersLaunchWarp`, a més de l'única crida que esborra (`cridaUnlink`), res que sobreescrigui, esborri, mogui o creï
 /// carpetes: tampoc `createFile` (que sobreescriu el que hi ha), cap `.write(` (també `toFile:`), un `FileHandle` per
@@ -2006,15 +2039,74 @@ private let prohibidesArrossegar = [
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
         #expect(try obertures(fitxer.text) == obrenAFitxersLaunchWarp)
         #expect(try canvienAtributs(fitxer.text) == canvienAtributsAFitxersLaunchWarp)
-        // I és la del fitxer que `escriu` acaba de crear: entre l'`open` amb `O_EXCL` i el `fchmod`, cap altra funció ni cap
-        // altre `fd`. A `comencaAmbLaMarca`, el descriptor de només lectura també deixaria canviar els permisos d'un fitxer
-        // que ja hi era.
-        let creat = try #require(fitxer.text.range(of: obrenAFitxersLaunchWarp[0]))
-        let permisos = try #require(fitxer.text.range(of: canvienAtributsAFitxersLaunchWarp[0]))
-        #expect(creat.upperBound < permisos.lowerBound)
-        if creat.upperBound < permisos.lowerBound {
-            let entremig = fitxer.text[creat.upperBound..<permisos.lowerBound]
-            #expect(!entremig.contains("func ") && !entremig.contains("fd ="), "\(entremig)")
+        // I és la del fitxer que `escriu` acaba de crear. A `comencaAmbLaMarca`, el descriptor de només lectura també deixaria
+        // canviar els permisos d'un fitxer que ja hi era.
+        #expect(permisosDelFitxerAcabatDeCrear(fitxer.text, obre: obrenAFitxersLaunchWarp[0],
+                                               permisos: canvienAtributsAFitxersLaunchWarp[0]))
+    }
+
+    /// Decisió 7 (ronda 6): a tot `Sources`, només dues crides canvien els permisos o els atributs d'un fitxer, cadascuna al seu
+    /// lloc i sobre el fitxer que la mateixa funció acaba de crear (`canvienAtributsPermesos`). L'ajust de Warp no en fa servir
+    /// cap: els permisos del fitxer nou els posa `EscripturaAtomica.creaFitxerNou`, i els atributs estesos, l'únic `copyfile`
+    /// (`nomesLAjustCreaElFitxerDeWarp`).
+    @Test func nomesDuesCridesCanvienElsPermisosIElsAtributs() throws {
+        let codi = try fitxers("Sources")
+        #expect(codi.count > 10, "no s'ha trobat el codi a \(arrel.path)")
+        let trobades = try canvienAtributsForaDeLloc(codi)
+        #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        #expect(try codi.filter { !(try canvienAtributs($0.text)).isEmpty }.map(\.ruta).sorted()
+            == [rutaEscripturaAtomica, rutaFitxersLaunchWarp])
+        let escriptura = try #require(codi.first { $0.ruta == rutaEscripturaAtomica }).text
+        #expect(try canvienAtributs(escriptura) == canvienAtributsAEscripturaAtomica)
+        #expect(permisosDelFitxerAcabatDeCrear(escriptura, obre: obreAEscripturaAtomica, permisos: canvienAtributsAEscripturaAtomica[0]))
+        #expect(escriptura.contains("static func creaFitxerNou(_ dades: Data, a url: URL, permisos: Int) throws {\n        \(obreAEscripturaAtomica)\n"))
+
+        // La mostra: una línia de cada família, a qualsevol fitxer, també als de les dues excepcions, surt.
+        let mostra = [
+            "chmod(r, 0o777)", "Darwin.fchmod(fd, 0o600)", "chmodx_np(r, seguretat)", "let canvia = lchown", "chown(r, 0, 0)",
+            "chflags(r, UInt32(UF_IMMUTABLE))", "try FileManager.default.setAttributes([.posixPermissions: 0o777], ofItemAtPath: r)",
+            "try url.setResourceValues(valors)", "exchangedata(a, b, 0)", "setxattr(r, nom, valor, mida, 0, 0)",
+            "Darwin.fremovexattr(fd, nom, 0)", "setattrlist(r, &llista, &dades, mida, 0)", "utimes(r, nil)", "futimens(fd, &temps)",
+            "acl_set_file(r, ACL_TYPE_EXTENDED, acl)", "CFURLSetResourcePropertyForKey(u as CFURL, kCFURLIsHiddenKey, kCFBooleanTrue, nil)",
+            "_ = CFURLSetResourcePropertiesForKeys(u as CFURL, valors as CFDictionary, nil)",
+        ]
+        let altres = [rutaAjustRestauracio, "Sources/WarpLaunchCore/Diagnostic.swift", rutaRefresc, rutaAppPrincipal,
+                      "Sources/WarpLaunchCLI/main.swift", "Sources/WarpLaunchObridor/ObreWarp.swift", "Sources/WarpLaunchUI/Altre.swift"]
+        for ruta in altres + [rutaEscripturaAtomica, rutaFitxersLaunchWarp] {
+            for linia in mostra {
+                #expect(try canvienAtributsForaDeLloc([(ruta: ruta, text: linia)]) == ["\(ruta): \(linia)"], "\(ruta): \(linia)")
+            }
+        }
+        // Les dues crides: al seu fitxer, no; a l'altre o a qualsevol altre, sí. La mateixa dues vegades, la segona surt.
+        let (atomica, launch) = (canvienAtributsAEscripturaAtomica[0], canvienAtributsAFitxersLaunchWarp[0])
+        #expect(try canvienAtributsForaDeLloc([(ruta: rutaEscripturaAtomica, text: atomica)]).isEmpty)
+        #expect(try canvienAtributsForaDeLloc([(ruta: rutaFitxersLaunchWarp, text: launch)]).isEmpty)
+        #expect(try canvienAtributsForaDeLloc([(ruta: rutaEscripturaAtomica, text: launch)]) == ["\(rutaEscripturaAtomica): \(launch)"])
+        #expect(try canvienAtributsForaDeLloc([(ruta: rutaFitxersLaunchWarp, text: atomica)]) == ["\(rutaFitxersLaunchWarp): \(atomica)"])
+        for ruta in altres {
+            for linia in [atomica, launch] {
+                #expect(try canvienAtributsForaDeLloc([(ruta: ruta, text: linia)]) == ["\(ruta): \(linia)"], "\(ruta): \(linia)")
+            }
+        }
+        #expect(try canvienAtributsForaDeLloc([(ruta: rutaEscripturaAtomica, text: atomica + "\n" + atomica)])
+            == ["\(rutaEscripturaAtomica): \(atomica)"])
+        // Amb el mòdul, amb altres permisos o sense cridar-la, tampoc; una crida que només llegeix i un altre nom, no.
+        for altra in ["guard Darwin.fchmod(fd, mode_t(permisos & 0o7777)) == 0 else { throw e }", "guard fchmod(fd, mode_t(permisos)) == 0 else { throw e }",
+                      "if fchmod(fd, 0o666) != 0 {", "let canvia = fchmod"] {
+            #expect(try canvienAtributsForaDeLloc([(ruta: rutaEscripturaAtomica, text: atomica + "\n" + altra)])
+                == ["\(rutaEscripturaAtomica): \(altra)"], "\(altra)")
+        }
+        #expect(try canvienAtributsForaDeLloc([(ruta: rutaAjustRestauracio, text: """
+            let permisos = try FileManager.default.attributesOfItem(atPath: r)[.posixPermissions]
+            let mida = getxattr(r, nom, nil, 0, 0, 0)
+            copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))
+            let chmodBits = 0o644
+            """)]).isEmpty)
+        // Sobre el fitxer que s'acaba de crear: abans de crear-lo, amb un altre `fd`, en una altra funció o sense l'`open`, no.
+        let (obre, crida) = ("let fd = open(r, O_CREAT | O_EXCL)", "fchmod(fd, 0o644)")
+        #expect(permisosDelFitxerAcabatDeCrear("\(obre)\nguard fd >= 0 else { return }\n\(crida)", obre: obre, permisos: crida))
+        for dolenta in ["\(crida)\n\(obre)", "\(obre)\nlet fd = altre()\n\(crida)", "\(obre)\nfunc altra() {\n\(crida)", crida, obre] {
+            #expect(!permisosDelFitxerAcabatDeCrear(dolenta, obre: obre, permisos: crida), "\(dolenta)")
         }
     }
 
