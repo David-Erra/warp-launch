@@ -1140,6 +1140,45 @@ private func lecturaVariada() -> LecturaWarp {
         }
     }
 
+    /// Warp Preview obert, i un Warp Stable instal·lat que encara no s'ha obert mai (sense la seva base): el full no diu
+    /// «obre'l un cop», que no s'entendria amb un Warp obert, sinó el text de Warp Preview (el del full d'obrir i el CLI), que
+    /// demana obrir Warp Stable, i l'altra opció. Amb una carpeta de prova i amb la configuració de debò. No crea res.
+    @Test func ambWarpPreviewObertISenseLaBaseDiuQueCalObrirWarpStable() async throws {
+        let tmp = try Temporal()
+        var lectura = lecturaVariada()
+        lectura.finestres = []
+        lectura.warpDesaFinestres = false
+        lectura.warpObert = false
+        lectura.warpPreview = .obert
+        lectura.warpSenseBase = true
+        let llegida = lectura
+        func ambRefresc() -> EstatWarp {
+            let warp = EstatWarp(lector: { llegida })
+            warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in .jaHiEra }, warpObert: { false },
+                                                                  llegeixBase: { llegida }, espera: { _ in }))
+            return warp
+        }
+
+        let nova = Editor(magatzem: tmp.magatzem, retardDesat: nil)
+        nova.carrega()
+        for warp in [EstatWarp(lector: { llegida }), ambRefresc()] {
+            let crea = try #require(FullImportacio(editor: nova, warp: warp))
+            await crea.llegeix()
+            #expect(crea.estat == .senseFinestres(WarpPreview.obert.text
+                + " Si no, tria «Comença en blanc» i afegeix-hi les pestanyes."), "refresc: \(warp.refresc != nil)")
+            #expect(!crea.potConfirmar && !crea.confirma())
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmp.magatzem.carpeta.path))
+
+        let existent = try editorAmbMostra(tmp)
+        for warp in [EstatWarp(lector: { llegida }), ambRefresc()] {
+            let substitueix = try #require(FullImportacio(editor: existent, warp: warp))
+            await substitueix.llegeix()
+            #expect(substitueix.estat == .senseFinestres(WarpPreview.obert.text + " La configuració no canvia."),
+                    "refresc: \(warp.refresc != nil)")
+        }
+    }
+
     /// «Substitueix» amb una lectura sense cap finestra de terminal deixaria buida la configuració, i Retorn el prem.
     @Test func noSubstitueixPerUnaConfiguracioBuida() async throws {
         let tmp = try Temporal()

@@ -98,6 +98,7 @@ public final class EstatWarp {
 enum MotiuSenseFinestres: Equatable {
     /// No hi ha cap Warp Stable (0.31.1: cap Warp, o només Warp Preview), i la lectura no n'ha llegit la base
     /// (`Lector.llegeixDeLApp`): el text del full d'obrir (`WarpPreview.text`), amb la configuració de debò i amb una de prova.
+    /// També amb Warp Preview obert i un Warp Stable sense la seva base (`.obert` i `LecturaWarp.warpSenseBase`).
     case senseWarp(WarpPreview)
     /// Warp Stable hi és, però la seva base no (`LecturaWarp.warpSenseBase`): Warp encara no hi ha desat res, com en un
     /// usuari de macOS on no s'ha obert mai. No és per l'ajust: de sèrie, Warp desa les finestres. Amb una carpeta de prova i
@@ -114,8 +115,9 @@ enum MotiuSenseFinestres: Equatable {
     /// l'ajust (`EstatWarp.refresc`).
     init?(_ lectura: LecturaWarp, ambRefresc: Bool) {
         guard lectura.warpDesaFinestres == false else { return nil }
-        // Amb Warp Preview obert, Warp Stable hi és, i la lectura és la de sempre.
-        if let preview = lectura.warpPreview, preview != .obert {
+        // Amb Warp Preview obert, Warp Stable hi és, i la lectura és la de sempre. Si Warp Stable, però, encara no hi ha desat
+        // res (`warpSenseBase`), el text de Warp Preview, com el CLI: «obre'l» no s'entendria amb un Warp obert.
+        if let preview = lectura.warpPreview, preview != .obert || lectura.warpSenseBase == true {
             self = .senseWarp(preview)
         } else if lectura.warpSenseBase == true {
             self = .senseBase(warpObert: lectura.warpObert == true)

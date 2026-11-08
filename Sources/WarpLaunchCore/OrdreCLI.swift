@@ -703,9 +703,14 @@ public enum OrdreCLI {
                 throw .fallida("\(motiu.text) Tampoc no hi ha la base de Warp (\(ruta)).")
             }
             // Amb Warp Stable, Warp encara no hi ha desat res: el text de l'app (`LecturaWarp.senseBase`). Una base triada
-            // a mà que no hi és, l'error de sempre: no és que Warp no hi hagi desat res.
+            // a mà que no hi és, l'error de sempre: no és que Warp no hi hagi desat res. Amb Warp Preview obert i Warp Stable
+            // tancat, el text de Warp Preview, com l'app (`MotiuSenseFinestres`): «obre'l» no s'entendria amb un Warp obert.
             if lector.rutaWarp == entorn.lector.rutaWarp {
-                throw .fallida(LecturaWarp.senseBase(warpObert: lector.warpObert()))
+                let obert = lector.warpObert()
+                if lector.installacio().preview(lector.processos, stableObert: obert) == .obert {
+                    throw .fallida(WarpPreview.obert.text)
+                }
+                throw .fallida(LecturaWarp.senseBase(warpObert: obert))
             }
             throw .fallida("\(ErrorLectura.noHiHaBase(ruta))")
         } catch {

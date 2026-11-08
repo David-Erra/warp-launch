@@ -727,6 +727,28 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(try instantania(e) == abans)
     }
 
+    /// Warp Preview obert, i un Warp Stable instal·lat que encara no s'ha obert mai (sense la base): `llegeix`, `importa` i
+    /// `obre` diuen el text de Warp Preview, com l'app, que demana obrir Warp Stable, i no «obre'l un cop», que no
+    /// s'entendria amb un Warp obert. No escriuen res.
+    @Test func ambWarpPreviewObertISenseBaseDiuQueCalObrirWarpStable() throws {
+        let e = try Escenari()
+        let carpeta = try ambConfiguracio(e)
+        for fitxer in ["warp.sqlite", "warp.sqlite-wal", "warp.sqlite-shm"] where e.existeix(e.tmp.url(fitxer)) {
+            try FileManager.default.removeItem(at: e.tmp.url(fitxer))
+        }
+        let abans = try instantania(e)
+        let entorn = try e.ambPreview()
+        #expect(!entorn.lector.warpObert() && entorn.lector.senseWarpStable() == nil)
+        for args in [["llegeix"], ["llegeix", "--json"], ["importa"], ["obre", "feina", "--config", carpeta.path],
+                     ["obre", "feina", "--json", "--config", carpeta.path]] {
+            var sortida = Sortida()
+            let codi = OrdreCLI.executa(args, entorn: entorn, sortida: &sortida)
+            #expect(codi == 1 && sortida.text.isEmpty, "\(args)")
+            #expect(sortida.errors == "warp-launch: \(WarpPreview.obert.text)\n", "\(args): \(sortida.errors)")
+        }
+        #expect(try instantania(e) == abans)
+    }
+
     /// Un `estat.json` malmès o d'una versió més nova: l'app no obriria res, i el CLI no el toca.
     @Test func obreAmbUnEstatQueNoEsPotLlegir() throws {
         let e = try Escenari()
