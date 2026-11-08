@@ -281,6 +281,12 @@ private func sessionsIProcessosDeDebo(_ codi: [(ruta: String, text: String)]) th
 /// seus fitxers, `Self(` i `.init(`, que en crearien un amb un altre nom (`.deDebo`), les rutes per defecte soles i
 /// qualsevol `init`. Així, cap `init` nou (tampoc el d'un protocol, que demanaria canviar la declaració del tipus o una
 /// extensió) no torna a deixar crear-ne un sense la ruta.
+/// Sense dir-ne el nom, a qualsevol fitxer: `.init(carpeta:` i `.init(ruta:`, les úniques etiquetes dels seus `init`
+/// (`confianca: .init(ruta: URL(filePath: lector.inici).appending(path: ".claude.json"))` llegiria el de debò a una prova,
+/// perquè `Lector.inici` encara té la carpeta d'inici de debò per defecte), també `type(of: c).init(ruta:` i `.init(` al
+/// final de la línia; cap altre tipus de `Sources` no es crea així. I una línia que comença amb el nom: la segona d'una
+/// extensió, d'un àlies o d'una declaració partida en dues línies (`extension` i, a la següent, `LectorConfianca {`, que
+/// hi podria afegir un `init()`).
 private let rutesLectorsClaude = [
     "Sources/WarpLaunchCore/LectorConfianca.swift", "Sources/WarpLaunchCore/LectorTranscripcions.swift",
 ]
@@ -291,6 +297,10 @@ private func lectorsDeClaudeDeDebo(_ codi: [(ruta: String, text: String)]) throw
     let aliesOExtensio = try Regex(#"(^|[^A-Za-z0-9_])(typealias|extension)(?![A-Za-z0-9_]).*[^A-Za-z0-9_]"# + nom
         + #"(?![A-Za-z0-9_])"#)
     let declaracio = try Regex(#"(^|[^A-Za-z0-9_])(struct|class|enum|actor|protocol)\s+"# + nom + #"(?![A-Za-z0-9_])"#)
+    // `self.init(ruta:` i `Tipus.init(ruta:` no: no és el tipus implícit.
+    let senseElNom = try Regex(#"(^|[^A-Za-z0-9_])\.init\s*\(\s*((carpeta|ruta)\s*:|(//.*)?$)"#)
+    // Un tipus seu (`LectorTranscripcions.On`), no.
+    let comencaAmbElNom = try Regex(#"^\.?([A-Za-z_][A-Za-z0-9_]*\.)*"# + nom + #"(?![A-Za-z0-9_]|\.[A-Z])"#)
     // Als seus fitxers: `Self(`, `.init(` i les rutes per defecte soles, i la declaració de qualsevol `init` (també `init?(`
     // i `init<T>(`; `self.init(` i `.init(` no la declaren).
     let alSeuFitxer = try Regex(#"(^|[^A-Za-z0-9_])(Self(\(|\.init(?![A-Za-z0-9_]))|\.init\(|(carpeta|ruta)PerDefecte(?![A-Za-z0-9_]))"#
@@ -303,6 +313,7 @@ private func lectorsDeClaudeDeDebo(_ codi: [(ruta: String, text: String)]) throw
             // `transcripcions: LectorTranscripcions` i, a la línia següent, `= .deDebo`.
             let linia = i + 1 < linies.count && linies[i + 1].hasPrefix("=") ? linies[i] + " " + linies[i + 1] : linies[i]
             guard linia.contains(crea) || linia.contains(aliesOExtensio) || linia.contains(declaracio)
+                || linia.contains(senseElNom) || linia.contains(comencaAmbElNom)
                 || (rutesLectorsClaude.contains(f.ruta) && linia.contains(alSeuFitxer)) else { return nil }
             return "\(f.ruta): \(linia)"
         }
@@ -711,7 +722,8 @@ private let prohibidesArrossegar = [
 
     /// Els lectors de Claude de debò (`~/.claude/projects` i `~/.claude.json`) només els creen l'app i el CLI, cap `init` no
     /// en té la ruta per defecte, i cap paràmetre ni cap variable del codi no en té un per defecte (`lectorsDeClaudeDeDebo`).
-    /// Una línia nova que en creï un, a qualsevol fitxer, o un `init` nou als seus fitxers, fa fallar la llista. Dels `init`
+    /// Una línia nova que en creï un, a qualsevol fitxer (també sense dir-ne el nom, amb `.init(carpeta:` o `.init(ruta:`),
+    /// una extensió (també partida en dues línies) o un `init` nou als seus fitxers, fa fallar la llista. Dels `init`
     /// de la llista, `init(confiades:inici:)` és de `Confianca` i `init(id:darrerMissatge:)`, de `Recent`.
     @Test func elsLectorsDeClaudeDeDeboNomesDeLAppIDelCLI() throws {
         let app = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
@@ -735,8 +747,10 @@ private let prohibidesArrossegar = [
         // un altre nom; la ruta per defecte, a qualsevol fitxer; un àlies, una extensió o una altra declaració del tipus
         // (també amb una conformitat de més); i, als seus fitxers, `Self(`, `.init(`, les rutes per defecte i qualsevol `init`
         // (un `init()` nou, un de genèric o un que pot fallar). Un comentari, el tipus d'un paràmetre sense valor, els seus
-        // tipus i constants, un altre nom, `.init(` amb una ruta, la ruta d'un altre tipus, `Self(` en un altre fitxer i
-        // `self.init(` no. Tampoc `.init()` sense arguments: ja no compila.
+        // tipus i constants, un altre nom, la ruta d'un altre tipus, `Self(` en un altre fitxer i `self.init(` no. Tampoc
+        // `.init()` sense arguments: ja no compila. Sense dir-ne el nom, `.init(carpeta:` i `.init(ruta:` (també amb
+        // `type(of:)` o amb els arguments a la línia següent) i una extensió partida en dues línies, sí; `.init(` amb una altra
+        // etiqueta, `self.init(ruta:`, `Tipus.init(ruta:` i un tipus seu a principi de línia, no.
         let diagnostic = "Sources/WarpLaunchCore/Diagnostic.swift"
         let obertura = "Sources/WarpLaunchUI/Obertura.swift"
         #expect(try lectorsDeClaudeDeDebo([
@@ -760,6 +774,12 @@ private let prohibidesArrossegar = [
                 if a == b {}
                 return Self(lector: l)
                 public init(lector: Lector) {
+                extension
+                    LectorConfianca {
+                public extension
+                    WarpLaunchCore.LectorTranscripcions: AmbRuta {
+                self.init(ruta: r)
+                LectorTranscripcions.On.trobada(id)
                 """),
             (ruta: obertura, text: """
                 confianca: .init(ruta: LectorConfianca.rutaPerDefecte),
@@ -769,8 +789,18 @@ private let prohibidesArrossegar = [
                 let t = LectorTranscripcions
                     .init()
                 transcripcions: .init(carpeta: carpeta), confianca: .init(ruta: ruta),
+                confianca: .init(ruta: URL(filePath: lector.inici).appending(path: ".claude.json")),
+                let c = type(of: confianca).init(ruta: r)
+                transcripcions: .init(
+                    carpeta: c),
+                let u = LectorTranscripcions
+                    .init(carpeta: c)
                 let warp = LectorWarp(ruta: LectorWarp.rutaPerDefecte)
                 let carpetaPerDefecte = c
+                let lector = Lector.init(rutaWarp: r, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
+                let l: Lector = .init(carpetaSessions: c, processos: p, warp: w)
+                let m = MagatzemConfiguracio.init(carpeta: c, inici: i)
+                let a = AjustRestauracio(ruta: r)
                 """),
             (ruta: rutesLectorsClaude[0], text: """
                 static let deDebo = Self(ruta: r)
@@ -798,8 +828,15 @@ private let prohibidesArrossegar = [
             "\(diagnostic): public typealias Transcripcions = WarpLaunchCore.LectorTranscripcions",
             "\(diagnostic): extension LectorConfianca {",
             "\(diagnostic): struct LectorConfianca: Sendable {",
+            "\(diagnostic): LectorConfianca {",
+            "\(diagnostic): WarpLaunchCore.LectorTranscripcions: AmbRuta {",
             "\(obertura): confianca: .init(ruta: LectorConfianca.rutaPerDefecte),",
             "\(obertura): transcripcions: .init(carpeta: WarpLaunchCore.LectorTranscripcions.carpetaPerDefecte)",
+            "\(obertura): transcripcions: .init(carpeta: carpeta), confianca: .init(ruta: ruta),",
+            "\(obertura): confianca: .init(ruta: URL(filePath: lector.inici).appending(path: \".claude.json\")),",
+            "\(obertura): let c = type(of: confianca).init(ruta: r)",
+            "\(obertura): transcripcions: .init(",
+            "\(obertura): .init(carpeta: c)",
             "\(rutesLectorsClaude[0]): static let deDebo = Self(ruta: r)",
             "\(rutesLectorsClaude[0]): static var real: LectorConfianca { .init(ruta: r) }",
             "\(rutesLectorsClaude[0]): static let altra = Self.init(ruta: r)",
