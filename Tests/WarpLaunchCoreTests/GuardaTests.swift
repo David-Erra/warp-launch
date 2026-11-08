@@ -873,7 +873,8 @@ private let prohibidesArrossegar = [
     /// Warp no l'ha creat mentrestant (`renamex_np` amb `RENAME_EXCL`), des d'un fitxer de la carpeta temporal
     /// (`EscripturaAtomica.creaFitxerNou`). No crea la carpeta de Warp, ni obre res per escriure-hi directament, i l'únic
     /// `copyfile` hi copia els atributs estesos de l'original, no al revés. Tampoc no canvia els permisos ni els atributs de
-    /// cap fitxer (`altresCanvienAtributs`): els del fitxer nou els posa `EscripturaAtomica.creaFitxerNou`. Cap altre fitxer no
+    /// cap fitxer (`altresCanvienAtributs`): els del fitxer nou els posa `EscripturaAtomica.creaFitxerNou`. L'únic `rename` és
+    /// el que substitueix el fitxer que ja hi és, i no esborra res més que el fitxer de la carpeta temporal. Cap altre fitxer no
     /// fa servir aquestes crides, ni `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
     @Test func nomesLAjustCreaElFitxerDeWarp() throws {
         let codi = try fitxers("Sources")
@@ -886,12 +887,51 @@ private let prohibidesArrossegar = [
         let copies = try aparicions(de: [creaOEnllaca[8]], a: [ajust])
         #expect(copies.count == 1, "\(copies)")
         #expect(ajust.text.contains("copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))"))
+        // L'únic `rename` (que no mira si hi ha res) és el de `substitueix`, just després de mirar que el fitxer encara és el
+        // que s'ha llegit: un altre, o `renameat`, crearia `settings.toml` si no hi és, sense `RENAME_EXCL` i sense mirar si
+        // Warp és obert (`potCrearElFitxer`). Tampoc no esborra res (`unlink`, `remove`, `removefile`, `trashItem`…), i l'únic
+        // `removeItem` és el del fitxer de la carpeta temporal.
+        let renames = try aparicions(de: [cridaRename], a: [ajust])
+        #expect(renames.count == 1, "\(renames)")
+        let substitueix = try #require(ajust.text.range(of: "private func substitueix("))
+        let comprova = try #require(ajust.text.range(of: "guard lstat(ruta.path, &ara) == 0, Identitat(ara) == llegit,"))
+        let rename = try #require(ajust.text.range(of: "guard rename(temporal.path, ruta.path) == 0 else {"))
+        let crea = try #require(ajust.text.range(of: "private func crea("))
+        #expect(substitueix.lowerBound < comprova.lowerBound && comprova.lowerBound < rename.lowerBound
+                && rename.lowerBound < crea.lowerBound)
+        #expect(!ajust.text[comprova.upperBound..<rename.lowerBound].contains("func "))
+        func esborraAltres(_ text: String) -> [String] {
+            text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { $0.contains("removeItem") && $0 != "try? FileManager.default.removeItem(at: temporal)" }
+        }
+        #expect(esborraAltres(ajust.text).isEmpty, "\(esborraAltres(ajust.text))")
+        #expect(esborraAltres("""
+            try? FileManager.default.removeItem(at: temporal)
+            try? FileManager.default.removeItem(at: ruta)
+            try FileManager.default.removeItem(atPath: temporal.path)
+            """) == ["try? FileManager.default.removeItem(at: ruta)", "try FileManager.default.removeItem(atPath: temporal.path)"])
+        let esborrenOMouen = [cridaUnlink] + altresEsborrenOMouen.filter { !$0.contains("renamex_np") }
         let noFaLAjust = [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], creaOEnllaca[6],
                           creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
                           #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#,
                           #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#] + escriuenDirectament
-            + altresCanvienAtributs
+            + altresCanvienAtributs + esborrenOMouen
         #expect(try aparicions(de: noFaLAjust, a: [ajust]).isEmpty)
+        // Cada línia, la seva expressió de `esborrenOMouen`; el `renamex_np` de crear-lo, el `rename` de substituir-lo i un
+        // mètode que s'hi assembla, cap.
+        #expect(try aparicions(de: esborrenOMouen, a: [(ruta: rutaAjustRestauracio, text: """
+            _ = unlink(ruta.path)
+            rmdir(ruta.deletingLastPathComponent().path)
+            Darwin.unlinkat(AT_FDCWD, ruta.path, 0)
+            guard renameat(AT_FDCWD, temporal.path, AT_FDCWD, ruta.path) == 0 else {
+            Darwin.mkdirat(AT_FDCWD, carpeta.path, 0o755)
+            try FileManager.default.trashItem(at: ruta, resultingItemURL: nil)
+            removefile(ruta.path, nil, 0)
+            remove(ruta.path)
+            guard renamex_np(temporal.path, ruta.path, UInt32(RENAME_EXCL)) == 0 else {
+            guard rename(temporal.path, ruta.path) == 0 else {
+            linies.remove(at: 0)
+            """)]) == esborrenOMouen.enumerated().map { "\(rutaAjustRestauracio):\($0.offset + 1): «\($0.element)»" })
         // La crida de `fchmod` de `FitxersLaunchWarp`, a l'ajust, surt.
         #expect(try aparicions(de: noFaLAjust, a: [(ruta: rutaAjustRestauracio, text: canvienAtributsAFitxersLaunchWarp[0])])
             == ["\(rutaAjustRestauracio):1: «\(altresCanvienAtributs[0])»"])
