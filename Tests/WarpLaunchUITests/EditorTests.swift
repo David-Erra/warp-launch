@@ -1065,6 +1065,40 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(!full.confirma())
     }
 
+    /// «Comença en blanc» i després «Torna a importar-ho tot de Warp»: sense cap pestanya, és com una importació nova
+    /// (decisió d'en David del 08/11/2026). Les que no tenien Claude obert queden només terminal, amb la plantilla de la
+    /// configuració si s'hi activa Claude; el full substitueix, amb Desfés. Amb una pestanya, ja és tornar a importar.
+    @Test func tornarAImportarSobreUnaConfiguracioSensePestanyesEsComUnaDeNova() async throws {
+        let tmp = try Temporal()
+        let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil, carpetaExisteix: { !$0.contains("/vell") })
+        editor.carrega()
+        editor.comencaEnBlanc()
+        editor.canviaPlantilla(nom: "Salta els permisos") { $0.saltaPermisos = true }
+        editor.afegeixFinestra()
+        #expect(editor.configuracio.finestres.count == 1 && editor.senseSessioPerImportar == .nomesTerminal)
+        let full = try #require(FullImportacio(editor: editor, warp: EstatWarp(lector: { lecturaVariada() })))
+        #expect(full.mode == .substitueix)
+        await full.llegeix()
+        #expect(full.xifres == [
+            "2 finestres · 5 pestanyes",
+            "1 amb Claude, amb l'ordre de la seva sessió",
+            "4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que ja no existeix",
+        ])
+        #expect(full.ordrePlantilla == "claude --dangerously-skip-permissions", "la plantilla de la configuració")
+        #expect(full.notaSenseClaudeObert != nil)
+        #expect(full.confirma())
+        #expect(editor.undoManager.undoActionName == "Torna a importar")
+        let pestanyes = editor.configuracio.finestres.flatMap(\.pestanyes)
+        #expect(pestanyes.map(\.claude.activat) == [false, true, false, false, false])
+        #expect(!editor.configuracio.plantilla.ultracode && editor.configuracio.plantilla.saltaPermisos)
+        // Ara ja hi ha pestanyes: tornar a importar hi posa la plantilla (D11).
+        #expect(editor.senseSessioPerImportar == .plantilla)
+        #expect(editor.previsualitza(lecturaVariada()).resum.ambPlantilla == 2)
+        // Desfet, torna a no tenir cap pestanya.
+        editor.undoManager.undo()
+        #expect(editor.senseSessioPerImportar == .nomesTerminal)
+    }
+
     @Test func tornarAImportarSubstitueix() async throws {
         let tmp = try Temporal()
         let editor = try editorAmbMostra(tmp)

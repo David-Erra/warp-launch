@@ -205,7 +205,9 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         var plantilla = ClaudePestanya.habituals
         plantilla.model = "opus"
         let real = MagatzemConfiguracio(carpeta: e.real, inici: e.inici)
-        try real.desa(Configuracio(plantilla: plantilla), sobre: nil)
+        let feta = Pestanya(id: uuid(2), titol: "Feta", carpeta: "\(e.inici)/GitHub/projectes/a", claude: plantilla)
+        try real.desa(Configuracio(plantilla: plantilla, finestres: [Finestra(id: uuid(1), nom: "f", pestanyes: [feta])]),
+                      sobre: nil)
         let abans = try Data(contentsOf: real.fitxer)
 
         let (codi, sortida) = e.executa("importa")
@@ -222,6 +224,33 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         let desada = try #require(try MagatzemConfiguracio(carpeta: carpeta, inici: e.inici).carrega()).configuracio
         #expect(desada.plantilla == plantilla)
         #expect(desada.finestres[0].pestanyes[1].claude == plantilla.perAPestanyaNova())
+        #expect(try Data(contentsOf: real.fitxer) == abans)
+    }
+
+    /// Una configuració real sense cap pestanya (després de «Comença en blanc», o amb una finestra buida) és com una de
+    /// nova, com a l'app (decisió d'en David del 08/11/2026): les pestanyes on no corre Claude queden només terminal, amb
+    /// la plantilla de la configuració si s'hi activa Claude. La configuració real no canvia.
+    @Test func importaAmbUnaConfiguracioSensePestanyesEsComUnaDeNova() throws {
+        let e = try Escenari(argv: ["claude"])
+        var plantilla = ClaudePestanya.habituals
+        plantilla.model = "opus"
+        let real = MagatzemConfiguracio(carpeta: e.real, inici: e.inici)
+        try real.desa(Configuracio(plantilla: plantilla, finestres: [Finestra(id: uuid(1), nom: "buida")]), sobre: nil)
+        let abans = try Data(contentsOf: real.fitxer)
+
+        let (codi, sortida) = e.executa("importa")
+        #expect(codi == 0)
+        #expect(sortida.text.contains("Plantilla: la de \(real.fitxer.path).\n"
+            + "Les pestanyes que no tenien Claude obert queden només terminal (la configuració encara no té cap pestanya).\n"))
+        #expect(sortida.text.contains("2 finestres · 3 pestanyes · 1 amb Claude, amb la seva ordre · 2 només terminal "
+            + "(1 sense Claude obert)\n"))
+        let llegida = try Configuracio.llegeix(Data(e.executa("importa", "--json").sortida.text.utf8), inici: e.inici)
+        let pestanyes = llegida.configuracio.finestres.flatMap(\.pestanyes)
+        #expect(pestanyes.map(\.claude.activat) == [true, false, false])
+        var apagada = plantilla.perAPestanyaNova()
+        apagada.activat = false
+        #expect(pestanyes[1].claude == apagada, "«B», només terminal, amb la plantilla de la configuració")
+        #expect(llegida.configuracio.plantilla == plantilla)
         #expect(try Data(contentsOf: real.fitxer) == abans)
     }
 

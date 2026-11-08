@@ -11,6 +11,16 @@ public enum Importador {
         case nomesTerminal
         /// Tornar a importar sobre una configuració que ja existeix: Claude, amb la plantilla (D11).
         case plantilla
+
+        /// La de cada importació (l'app i `warp-launch importa`). Sense configuració, o amb una que encara no té cap
+        /// pestanya (per exemple, després de «Comença en blanc»; decisió d'en David del 08/11/2026), és com una de nova:
+        /// només terminal. Amb alguna pestanya, la plantilla.
+        public static func per(_ configuracio: Configuracio?) -> SenseSessio {
+            guard let configuracio, configuracio.finestres.contains(where: { !$0.pestanyes.isEmpty }) else {
+                return .nomesTerminal
+            }
+            return .plantilla
+        }
     }
 
     public static func importa(_ lectura: LecturaWarp, inici: String, plantilla: ClaudePestanya,

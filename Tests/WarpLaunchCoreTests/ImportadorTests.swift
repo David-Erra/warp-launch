@@ -187,6 +187,20 @@ private func lecturaGran() -> LecturaWarp {
         #expect(nova.notes == tornada.notes)
     }
 
+    /// Què reben les pestanyes on no corria Claude: sense configuració, o amb una sense cap pestanya (per exemple, després
+    /// de «Comença en blanc», encara que tingui finestres buides), com una de nova (decisió d'en David del 08/11/2026); amb
+    /// una pestanya, la plantilla.
+    @Test func unaConfiguracioSensePestanyesEsComUnaDeNova() {
+        #expect(Importador.SenseSessio.per(nil) == .nomesTerminal)
+        #expect(Importador.SenseSessio.per(Configuracio(plantilla: .habituals)) == .nomesTerminal)
+        let buides = Configuracio(plantilla: .habituals, finestres: [Finestra(id: uuid(1), nom: "a"),
+                                                                     Finestra(id: uuid(2), nom: "b")])
+        #expect(Importador.SenseSessio.per(buides) == .nomesTerminal)
+        var ambUna = buides
+        ambUna.finestres[1].pestanyes = [Pestanya(id: uuid(3), titol: "p", carpeta: "/Users/prova/p", claude: .habituals)]
+        #expect(Importador.SenseSessio.per(ambUna) == .plantilla)
+    }
+
     /// Amb Warp tancat (la foto, sense cap sessió viva), cap pestanya conserva la seva ordre: en una configuració nova
     /// queden totes només terminal (D-P5a), i en tornar a importar prenen la plantilla (D11). L'avís de la foto ho diu
     /// sense prometre la plantilla, que en una configuració nova no hi és (revisió de la 0.29.1).

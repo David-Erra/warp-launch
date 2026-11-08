@@ -430,9 +430,10 @@ public final class Editor {
     }
 
     /// Què reben les pestanyes que no tenien Claude obert: en una configuració nova, només terminal (D-P5a, en David,
-    /// 07/11/2026); en tornar a importar, Claude amb la plantilla, com fins ara (D11).
+    /// 07/11/2026), i també en una que encara no té cap pestanya, com després de «Comença en blanc» (08/11/2026); en
+    /// tornar a importar sobre alguna pestanya, Claude amb la plantilla, com fins ara (D11).
     public var senseSessioPerImportar: Importador.SenseSessio {
-        estat == .oberta ? .plantilla : .nomesTerminal
+        .per(estat == .oberta ? configuracio : nil)
     }
 
     /// El que sortiria d'importar una lectura de Warp, per al full de previsualització. No canvia res.
