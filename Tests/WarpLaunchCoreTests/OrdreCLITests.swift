@@ -62,6 +62,18 @@ private struct Escenari {
         entorn.lector.warp = { [warp] in warp }
         return entorn
     }
+
+    /// 0.31.1: el mateix, sense cap Warp: ni Stable ni Preview (macOS no en sap res i no n'hi ha a Aplicacions), ni obert.
+    func senseWarp() throws -> EntornCLI {
+        var entorn = self.entorn
+        var processos = try #require(entorn.lector.processos as? ProcessosFalsos)
+        processos.processos[40] = nil
+        processos.processos[50] = nil
+        entorn.lector.processos = processos
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: { _ in nil })
+        entorn.lector.warp = { warp }
+        return entorn
+    }
 }
 
 private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/preview"
@@ -600,6 +612,35 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(try #require(try JSONSerialization.jsonObject(with: Data(net.text.utf8)) as? [String: Any])["warpPreview"] == nil)
     }
 
+    /// 0.31.1: sense cap Warp (ni Stable ni Preview), `llegeix` i `obre` ho diuen, i `obre` surt amb 1 sense dir que primer
+    /// s'obriria Warp (abans ho deia, i amb `--obre` fallava). No s'escriu res.
+    @Test func senseCapWarpLlegeixIObreHoDiuen() throws {
+        let e = try Escenari()
+        let carpeta = try ambConfiguracio(e)
+        let entorn = try e.senseWarp()
+        let abans = try instantania(e)
+        func executa(_ args: String...) -> (Int32, Sortida) {
+            var sortida = Sortida()
+            return (OrdreCLI.executa(args, entorn: entorn, sortida: &sortida), sortida)
+        }
+        let avis = "No s'ha trobat Warp en aquest Mac: cal Warp Stable."
+        let (codiLlegeix, llegeix) = executa("llegeix")
+        #expect(codiLlegeix == 0)
+        #expect(llegeix.text.contains("Warp és tancat: són les finestres que restaurarà en obrir-se.\n⚠ \(avis)\n"), "\(llegeix.text)")
+
+        let (codi, sortida) = executa("obre", "feina", "--config", carpeta.path)
+        #expect(codi == 1)
+        let linies = sortida.text.split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(linies.count > 2 && linies[1].hasPrefix("Finestra ") && linies[2] == "✗ \(avis) No s'obriria res.",
+                "\(sortida.text)")
+        #expect(!sortida.text.contains("primer s'obriria Warp") && !sortida.text.contains("Warp és tancat"), "\(sortida.text)")
+        let (codiJSON, json) = executa("obre", "feina", "--json", "--config", carpeta.path)
+        #expect(codiJSON == 1)
+        let objecte = try #require(try JSONSerialization.jsonObject(with: Data(json.text.utf8)) as? [String: Any])
+        #expect(objecte["warpPreview"] as? String == avis)
+        #expect(try instantania(e) == abans)
+    }
+
     /// Un `estat.json` malmès o d'una versió més nova: l'app no obriria res, i el CLI no el toca.
     @Test func obreAmbUnEstatQueNoEsPotLlegir() throws {
         let e = try Escenari()
@@ -795,6 +836,24 @@ private struct NoEngega: Error, CustomStringConvertible {
                                           obridor: o.obridor, sortida: &sortida)
         #expect(codi == 1)
         #expect(sortida.errors == "warp-launch: \(WarpPreview.obert.text) No s'ha obert res.\n", "\(sortida.errors)")
+        #expect(o.mostrat.isEmpty && o.engegades == 0 && o.urls.isEmpty && o.fitxersWarp.isEmpty)
+        #expect(try Data(contentsOf: carpeta.appending(path: EstatApp.nomFitxer)) == estat)
+    }
+
+    /// 0.31.1: sense cap Warp, `--obre` no intenta obrir-lo, ni escriu res: ho diu.
+    @Test func senseCapWarpNoObreRes() async throws {
+        let e = try Escenari()
+        let carpeta = try configuracio(e)
+        let o = try ObridorFals(e)
+        var entorn = try e.senseWarp()
+        let rellotge = o.rellotge
+        entorn.ara = { rellotge.ara }
+        let estat = try Data(contentsOf: carpeta.appending(path: EstatApp.nomFitxer))
+        var sortida = Sortida()
+        let codi = await OrdreCLI.executa(["obre", "1", "--obre", "--config", carpeta.path], entorn: entorn,
+                                          obridor: o.obridor, sortida: &sortida)
+        #expect(codi == 1)
+        #expect(sortida.errors == "warp-launch: \(WarpPreview.capWarp.text) No s'ha obert res.\n", "\(sortida.errors)")
         #expect(o.mostrat.isEmpty && o.engegades == 0 && o.urls.isEmpty && o.fitxersWarp.isEmpty)
         #expect(try Data(contentsOf: carpeta.appending(path: EstatApp.nomFitxer)) == estat)
     }

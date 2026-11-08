@@ -456,7 +456,7 @@ public final class Obertura {
     static let warpRestaurara = "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar."
 
     /// Desa la configuració i llegeix Warp (la lectura posa al dia els lligams, `EstatWarp.enLlegir`). Amb Warp Preview
-    /// (`LecturaWarp.warpPreview`, D-P12), no es pot obrir res: ho diu el full.
+    /// (`LecturaWarp.warpPreview`, D-P12), o sense cap Warp (0.31.1), no es pot obrir res: ho diu el full.
     func llegeixPerObrir() async -> Result<LecturaWarp, Motiu> {
         editor.acabaNom(desant: true)
         guard editor.desaSiCal() else {
@@ -471,7 +471,7 @@ public final class Obertura {
         }
         if let motiu = sessions.motiuNoEsPotObrir { return .failure(Motiu(text: motiu)) }
         enLlegir(lectura)
-        // D-P12: amb Warp Preview, ni el full ni obrir res (tampoc Warp Stable, sense dir-ho).
+        // D-P12: amb Warp Preview, o sense cap Warp (0.31.1), ni el full ni obrir res (tampoc Warp Stable, sense dir-ho).
         if let preview = lectura.warpPreview { return .failure(Motiu(text: preview.text)) }
         return .success(lectura)
     }

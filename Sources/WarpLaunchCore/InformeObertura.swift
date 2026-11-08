@@ -13,7 +13,7 @@ enum InformeObertura {
         var finestres: Int
         var configuracio: URL
         var warpObert: Bool?
-        /// Warp Preview no deixa obrir res (D-P12, 0.29.2).
+        /// Per què no es pot obrir res a Warp Stable: Warp Preview (D-P12, 0.29.2) o cap Warp (0.31.1).
         var warpPreview: WarpPreview? = nil
         /// `nil` si no hi ha cap pestanya per obrir.
         var fitxer: FitxerLaunch?
@@ -28,7 +28,8 @@ enum InformeObertura {
         var linies = [d.capcalera]
         let pla = d.pla
         linies.append("Finestra \(d.numero) de \(d.finestres): «\(pla.finestra.nom)» (\(d.configuracio.path))")
-        // D-P12: amb Warp Preview no s'obriria res, tampoc Warp Stable: el text de Warp Preview ja diu què hi ha obert.
+        // D-P12: amb Warp Preview, o sense cap Warp (0.31.1), no s'obriria res, tampoc Warp Stable: el text ja diu què hi
+        // ha obert o què falta.
         if let preview = d.warpPreview {
             linies.append("✗ \(preview.text) No s'obriria res.")
         } else {
@@ -110,7 +111,7 @@ enum InformeObertura {
         var configuracio: String
         var finestra: Finestra
         var warpObert: Bool?
-        /// Per què Warp Preview no deixa obrir res (D-P12, 0.29.2).
+        /// Per què no es pot obrir res a Warp Stable: Warp Preview (D-P12, 0.29.2) o cap Warp (0.31.1).
         var warpPreview: String?
         var resum: String
         /// Per què encara no s'ha d'obrir (`Pla.motiuEspera`).

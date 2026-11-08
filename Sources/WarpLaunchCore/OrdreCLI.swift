@@ -126,8 +126,9 @@ public enum OrdreCLI {
         també l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,
         excepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).
         Codis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot
-        obert; amb obre, també si Warp Preview no deixa obrir res; amb diagnostica, alguna comprovació ha donat
-        error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no s'obriria; 64 ús incorrecte.
+        obert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna
+        comprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no
+        s'obriria; 64 ús incorrecte.
         """
     }
 
@@ -534,7 +535,7 @@ public enum OrdreCLI {
             throw .fallida("l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. "
                 + "No s'ha obert res.")
         }
-        // D-P12: amb Warp Preview, ni s'obre Warp ni s'escriu res.
+        // D-P12: amb Warp Preview, o sense cap Warp (0.31.1), ni s'obre Warp ni s'escriu res.
         if let preview = p.lectura.warpPreview { throw .fallida("\(preview.text) No s'ha obert res.") }
         let id = p.pla.finestra.id
         func dades(_ p: PlaCLI, fitxer: FitxerLaunch?) -> InformeObertura.Dades {

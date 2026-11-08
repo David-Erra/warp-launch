@@ -97,7 +97,8 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
             #expect(sense == InstallacioWarp(app: AppWarp(url: tmp.url("Applications/Warp.app")),
                                              executable: tmp.ruta + "/Applications/Warp.app/Contents/MacOS/stable",
                                              hiHaStable: false), "\(trobada.path)")
-            #expect(sense.preview(ProcessosFalsos(), stableObert: false) == nil, "Warp Preview a la Paperera no compta")
+            #expect(sense.preview(ProcessosFalsos(), stableObert: false) == .capWarp,
+                    "Warp Preview a la Paperera no compta: no hi ha cap Warp")
         }
         // Amb Warp a Aplicacions, és aquest.
         _ = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
@@ -111,13 +112,14 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
     }
 
     /// Cap Warp: ni el diu macOS ni n'hi ha a Aplicacions. Obrir res fallaria, i el binari és el de sempre (no n'hi ha cap).
+    /// Des de la 0.31.1, ho diu (abans, res a dir: el full proposava obrir Warp i fallava en confirmar).
     @Test func capWarp() throws {
         let tmp = try CarpetaTemporal()
         let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: CercaFalsa().cerca)
         #expect(warp == InstallacioWarp(app: AppWarp(url: tmp.url("Applications/Warp.app")),
                                         executable: tmp.ruta + "/Applications/Warp.app/Contents/MacOS/stable", hiHaStable: false))
         #expect(!warp.app.esWarp)
-        #expect(warp.preview(ProcessosFalsos(), stableObert: false) == nil, "sense Preview, res a dir")
+        #expect(warp.preview(ProcessosFalsos(), stableObert: false) == .capWarp)
     }
 
     /// Només Warp Preview: no hi ha Stable, i l'app ho diu, obert o no.
@@ -169,6 +171,7 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         for preview in [WarpPreview.nomesPreview, .obert] {
             #expect(preview.text.hasPrefix("Warp Preview encara no és compatible: cal Warp Stable. "))
         }
+        #expect(WarpPreview.capWarp.text == "No s'ha trobat Warp en aquest Mac: cal Warp Stable.")
     }
 
     /// La instal·lació per omissió (la de les proves) és la de sempre, i és el binari dels processos de prova.
@@ -212,11 +215,12 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
                             inici: inici)
         // Encara no s'ha instal·lat: no hi ha Warp, ni en corre cap.
         let abans = try lector.llegeix()
-        #expect(abans.warpObert == false && abans.terminals.isEmpty)
+        #expect(abans.warpObert == false && abans.terminals.isEmpty && abans.warpPreview == .capWarp)
         #expect(!lector.warpObert() && lector.installacio().app.versio == nil)
         // Instal·lat a `~/Applications`: la lectura següent ja el veu, tancat.
         cerca.apps[AppWarp.identificador] = stable
-        #expect(try lector.llegeix().warpObert == false)
+        let installat = try lector.llegeix()
+        #expect(installat.warpObert == false && installat.warpPreview == nil)
         #expect(lector.installacio().app.versio == "0.2026.11.04.08.17.01")
         // I obert, amb un terminal.
         var processos = ProcessosFalsos()
@@ -275,6 +279,35 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         lector.processos = processos
         let corre = try lector.llegeix()
         #expect(corre.warpObert == true && corre.warpPreview == nil)
+    }
+
+    /// Sense cap Warp (0.31.1), la lectura ho diu, i `llegeix` també, en text i en JSON. Una còpia que corre a la Paperera
+    /// no hi canvia res.
+    @Test func senseCapWarpLaLecturaHoDiu() throws {
+        let tmp = try CarpetaTemporal()
+        let inici = try tmp.carpeta("inici")
+        try tmp.carpeta("sessions")
+        try Data("[general]\nrestore_session = false\n".utf8).write(to: tmp.url("settings.toml"))
+        let paperera = try paquet(tmp, "inici/.Trash/Warp.app", id: AppWarp.identificador, executable: "stable")
+        var lector = Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"),
+                            carpetaSessions: tmp.url("sessions"), processos: ProcessosFalsos(),
+                            warp: { InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: { _ in nil }) },
+                            inici: inici)
+        let lectura = try lector.llegeix()
+        #expect(lectura.warpObert == false && lectura.warpPreview == .capWarp)
+        let text = Informe.text(lectura, inici: inici)
+        #expect(text.contains("Warp és tancat.\n⚠ No s'ha trobat Warp en aquest Mac: cal Warp Stable."), "\(text)")
+        let codificador = JSONEncoder()
+        codificador.dateEncodingStrategy = .iso8601
+        let json = try codificador.encode(lectura)
+        #expect(String(decoding: json, as: UTF8.self).contains(#""warpPreview":"capWarp""#))
+        let descodificador = JSONDecoder()
+        descodificador.dateDecodingStrategy = .iso8601
+        #expect(try descodificador.decode(LecturaWarp.self, from: json) == lectura)
+        var processos = ProcessosFalsos()
+        ambWarp(paperera.appending(path: "Contents/MacOS/stable").path, a: &processos)
+        lector.processos = processos
+        #expect(try lector.llegeix().warpPreview == .capWarp)
     }
 
     /// Sense res a dir, el JSON no porta el camp, com el d'abans de la 0.29.2, i es llegeix igual.

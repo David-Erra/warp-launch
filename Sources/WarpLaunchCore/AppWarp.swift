@@ -122,22 +122,26 @@ public struct InstallacioWarp: Sendable, Equatable {
         return self
     }
 
-    /// Per què Warp Preview no deixa obrir res, amb aquests processos: no hi ha Warp Stable, o Warp Preview és obert i
-    /// Warp Stable no (l'app obriria un altre Warp sense dir-ho). Amb tots dos oberts, l'app fa servir el Stable.
+    /// Per què no es pot obrir res a Warp Stable, amb aquests processos: no hi ha cap Warp (0.31.1), només hi ha Warp
+    /// Preview, o Warp Preview és obert i Warp Stable no (l'app obriria un altre Warp sense dir-ho). Amb tots dos oberts,
+    /// l'app fa servir el Stable.
     public func preview(_ processos: any FontProcessos, stableObert: Bool) -> WarpPreview? {
+        guard hiHaStable else { return executablePreview == nil ? .capWarp : .nomesPreview }
         guard let executablePreview else { return nil }
-        if !hiHaStable { return .nomesPreview }
         return !stableObert && processos.warpObert(executable: executablePreview) ? .obert : nil
     }
 }
 
-/// Warp Preview (D-P12, 0.29.2): encara no és compatible, i l'app ho diu en lloc d'obrir un altre Warp o de fallar sense
-/// explicar per què.
+/// Per què no hi ha cap Warp Stable on obrir res: Warp Preview (D-P12, 0.29.2), que encara no és compatible, o cap Warp
+/// (0.31.1). L'app ho diu en lloc d'obrir un altre Warp o de fallar sense explicar per què.
 public enum WarpPreview: String, Codable, Sendable, Equatable {
     /// Hi ha Warp Preview, però no Warp Stable.
     case nomesPreview
     /// Warp Preview és obert, i Warp Stable no.
     case obert
+    /// No hi ha cap Warp: ni Warp Stable ni Warp Preview (0.31.1). Abans, el full proposava obrir Warp i fallava en
+    /// confirmar.
+    case capWarp
 
     public static let noCompatible = "Warp Preview encara no és compatible: cal Warp Stable."
 
@@ -145,6 +149,7 @@ public enum WarpPreview: String, Codable, Sendable, Equatable {
         switch self {
         case .nomesPreview: "\(Self.noCompatible) En aquest Mac només hi ha Warp Preview."
         case .obert: "\(Self.noCompatible) Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar."
+        case .capWarp: "No s'ha trobat Warp en aquest Mac: cal Warp Stable."
         }
     }
 }

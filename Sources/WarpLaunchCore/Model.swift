@@ -23,8 +23,8 @@ public struct LecturaWarp: Codable, Sendable, Equatable {
     public var warpDesaFinestres: Bool? = nil
     /// Si `finestres` és una foto que pot no ser el que hi ha obert (`RefrescWarp`), per què.
     public var avisFoto: String? = nil
-    /// Warp Preview no deixa obrir res (D-P12, 0.29.2): no hi ha Warp Stable, o Warp Preview és obert i Warp Stable no
-    /// (`InstallacioWarp.preview`). `nil`: no hi ha res a dir, o no s'ha mirat.
+    /// Per què no es pot obrir res a Warp Stable (`InstallacioWarp.preview`): no hi ha cap Warp (0.31.1), només hi ha Warp
+    /// Preview, o Warp Preview és obert i Warp Stable no (D-P12, 0.29.2). `nil`: no hi ha res a dir, o no s'ha mirat.
     public var warpPreview: WarpPreview? = nil
 
     /// Per què no es pot importar ni lligar res amb la restauració de sessió desactivada.

@@ -47,7 +47,8 @@ private func senseBase(_ terminals: [TerminalViu], sessions: [SessioClaude] = []
                 warpDesaFinestres: false)
 }
 
-/// D-P12: Warp Preview no deixa obrir res (`LecturaWarp.warpPreview`), amb Warp Stable tancat.
+/// D-P12: Warp Preview no deixa obrir res (`LecturaWarp.warpPreview`), amb Warp Stable tancat; o no hi ha cap Warp
+/// (0.31.1).
 private func ambPreview(_ preview: WarpPreview) -> LecturaWarp {
     var lectura = senseBase([], warpObert: false)
     lectura.warpPreview = preview
@@ -816,6 +817,26 @@ private struct NoObre: Error, CustomStringConvertible {
         await b.obertura.confirmaIObre()
         #expect(b.obertura.estat == .noEsPot(WarpPreview.obert.text))
         #expect(b.engegades == 0 && b.urls.isEmpty && b.fitxersWarp.isEmpty && b.estatAlDisc.llancaments.isEmpty)
+    }
+
+    /// 0.31.1: sense cap Warp (ni Stable ni Preview), el full no surt ni proposa obrir Warp: ho diu, i no obre res. Igual
+    /// amb «Obre-ho tot» i en iniciar sessió. Abans, el full proposava obrir Warp i fallava en confirmar.
+    @Test func senseCapWarpHoDiuINoObreRes() async throws {
+        let b = try Banc()
+        b.lectures = [ambPreview(.capWarp)]
+        await b.obertura.demana(id(100))
+        #expect(b.obertura.estat == .noEsPot("No s'ha trobat Warp en aquest Mac: cal Warp Stable."))
+        #expect(b.proposta == nil)
+        #expect(b.engegades == 0 && b.urls.isEmpty && b.fitxersWarp.isEmpty && b.estatAlDisc.llancaments.isEmpty)
+
+        let tot = try Banc(configuracio: duesFinestres)
+        tot.lectures = [ambPreview(.capWarp)]
+        #expect(await tot.obertura.enIniciarSessio() == .mostra)
+        #expect(tot.obertura.estat == .noEsPot(WarpPreview.capWarp.text))
+        tot.obertura.cancela()
+        await tot.obertura.demanaTot()
+        #expect(tot.obertura.estat == .noEsPot(WarpPreview.capWarp.text))
+        #expect(tot.engegades == 0 && tot.urls.isEmpty && tot.fitxersWarp.isEmpty && tot.estatAlDisc.llancaments.isEmpty)
     }
 
     /// Les ordres de l'editor només demanen el full.
