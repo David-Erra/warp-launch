@@ -119,20 +119,25 @@ private let altresCreenOSobreescriuen = [
     #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
 ]
 /// Les maneres de canviar els permisos, el propietari, les marques, les dates o els atributs estesos d'un fitxer, o
-/// d'intercanviar-ne el contingut amb un altre, de C, de `FileManager` i d'`URL`: `chmod`, `fchmod`, `lchmod` i `fchmodat`;
-/// `chown`, `fchown`, `lchown` i `fchownat`; `chflags`, `fchflags` i `lchflags`; `setAttributes`; `setResourceValue` i
-/// `setResourceValues`; `exchangedata` i `fexchangedata`; `setxattr`, `fsetxattr`, `removexattr` i `fremovexattr`;
-/// `setattrlist`, `fsetattrlist` i `setattrlistat`; i `utimes`, `futimes`, `lutimes`, `utime`, `utimensat` i `futimens`. Com a
-/// paraula, també amb el mòdul i sense cridar-les; les que només llegeixen (`getxattr`, `listxattr`, `getattrlist`,
-/// `attributesOfItem`, `resourceValues`), no. Valen per al diagnòstic (`escriuen`), per a l'ajust
+/// d'intercanviar-ne el contingut amb un altre, de C, de `FileManager`, d'`URL` i de `CFURL`: `chmod`, `fchmod`, `lchmod`,
+/// `fchmodat`, `chmodx_np` i `fchmodx_np`; `chown`, `fchown`, `lchown` i `fchownat`; `chflags`, `fchflags` i `lchflags`;
+/// `setAttributes`; `setResourceValue` i `setResourceValues`; `exchangedata` i `fexchangedata`; `setxattr`, `fsetxattr`,
+/// `removexattr` i `fremovexattr`; `setattrlist`, `fsetattrlist` i `setattrlistat`; `utimes`, `futimes`, `lutimes`, `utime`,
+/// `utimensat` i `futimens`; les ACL d'un fitxer (`acl_set_file`, `acl_set_fd`, `acl_set_fd_np`, `acl_set_link_np` i
+/// `acl_delete_def_file`), que també en canvien els permisos; i `CFURLSetResourcePropertyForKey` i
+/// `CFURLSetResourcePropertiesForKeys`, els d'`URL` amb un altre nom. Com a paraula, també amb el mòdul i sense cridar-les;
+/// les que només llegeixen (`getxattr`, `listxattr`, `getattrlist`, `attributesOfItem`, `resourceValues`, `acl_get_file`,
+/// `CFURLCopyResourcePropertyForKey`) i les que només canvien una ACL a la memòria (`acl_set_permset`), no. Valen per al diagnòstic (`escriuen`), per a l'ajust
 /// (`nomesLAjustCreaElFitxerDeWarp`) i per a la carpeta de Warp, on només hi ha la crida que posa 0644 al fitxer que
 /// `FitxersLaunchWarp` acaba de crear (`canvienAtributsAFitxersLaunchWarp`).
 private let altresCanvienAtributs = [
-    #"(^|[^A-Za-z0-9_])(f|l)?chmod(at)?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])(f|l)?chown(at)?(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])(f|l)?chmod(at|x_np)?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])(f|l)?chown(at)?(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])(f|l)?chflags(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])setAttributes(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])setResourceValues?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?exchangedata(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])f?(set|remove)xattr(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?setattrlist(at)?(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])((f|l)?utimes|utimensat|futimens|utime)(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])acl_(set_(file|fd|fd_np|link_np)|delete_def_file)(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])CFURLSetResourcePropert(yForKey|iesForKeys)(?![A-Za-z0-9_])"#,
 ]
 /// L'única crida de `FitxersLaunchWarp` que canvia els permisos d'un fitxer: la del que acaba de crear amb `O_EXCL`, pel seu
 /// descriptor, abans d'escriure-hi. Una altra, també amb el mòdul o amb una ruta, ja hi surt (`canvienAtributs`).
@@ -1045,6 +1050,8 @@ private let prohibidesArrossegar = [
             fsetxattr(fd, nom, valor, mida, 0, 0)
             setattrlist(r, &llista, &dades, mida, 0)
             utimensat(AT_FDCWD, r, &temps, 0)
+            acl_set_file(r, ACL_TYPE_EXTENDED, acl)
+            CFURLSetResourcePropertyForKey(u as CFURL, kCFURLIsHiddenKey, kCFBooleanTrue, nil)
             """)]
         #expect(mostra[0].text.split(separator: "\n").count == escriuen.count, "una línia per expressió")
         #expect(try aparicions(de: escriuen, a: mostra)
@@ -1356,6 +1363,15 @@ private let prohibidesArrossegar = [
             utime(r, nil)
             utimensat(AT_FDCWD, r, &temps, 0)
             futimens(fd, &temps)
+            chmodx_np(r, seguretat)
+            Darwin.fchmodx_np(fd, seguretat)
+            acl_set_file(r, ACL_TYPE_EXTENDED, acl)
+            acl_set_fd(fd, acl)
+            Darwin.acl_set_fd_np(fd, acl, ACL_TYPE_EXTENDED)
+            acl_set_link_np(r, ACL_TYPE_EXTENDED, acl)
+            let esborra = acl_delete_def_file
+            CFURLSetResourcePropertyForKey(u as CFURL, kCFURLIsHiddenKey, kCFBooleanTrue, nil)
+            _ = CFURLSetResourcePropertiesForKeys(u as CFURL, valors as CFDictionary, nil)
             let mida = getxattr(r, nom, nil, 0, 0, 0)
             let noms = listxattr(r, nil, 0, 0)
             getattrlist(r, &llista, &dades, mida, 0)
@@ -1364,9 +1380,14 @@ private let prohibidesArrossegar = [
             let chmodBits = 0o644
             let p = MeuChown(r)
             let utimesPerDefecte = 0
+            let acl = acl_get_file(r, ACL_TYPE_EXTENDED)
+            acl_set_permset(entrada, permisos)
+            CFURLCopyResourcePropertyForKey(u as CFURL, kCFURLIsHiddenKey, &valor, nil)
+            let chmodx = 0
             """)]
         let atributs = altresCanvienAtributs
-        let familia = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8]
+        let familia = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8,
+                       0, 0, 9, 9, 9, 9, 9, 10, 10]
         #expect(try aparicions(de: atributs, a: canvienAtributsMostra)
             == familia.enumerated().map { "mostra.swift:\($0.offset + 1): «\(atributs[$0.element])»" })
         // La carpeta de Warp (`canvienAtributs`) i el diagnòstic (`escriuen`) troben les mateixes línies, i cap de les altres.
@@ -1378,7 +1399,8 @@ private let prohibidesArrossegar = [
         let fitxersLaunch = "    if fchmod(fd, 0o644) != 0 {\n        error = String(cString: strerror(errno))\n    }"
         #expect(try canvienAtributs(fitxersLaunch) == canvienAtributsAFitxersLaunchWarp)
         for altra in ["if Darwin.fchmod(fd, 0o644) != 0 {", "chmod(ruta, 0o644)", "if fchmod(fd, 0o666) != 0 {",
-                      "let canvia = fchmod", "_ = fsetxattr(fd, nom, valor, mida, 0, 0)"] {
+                      "let canvia = fchmod", "_ = fsetxattr(fd, nom, valor, mida, 0, 0)", "fchmodx_np(fd, seguretat)",
+                      "acl_set_fd(fd, acl)"] {
             #expect(try canvienAtributs(fitxersLaunch + "\n" + altra) == canvienAtributsAFitxersLaunchWarp + [altra])
         }
         // A la carpeta de Warp, tampoc cap altra manera d'escriure-hi: cada línia, la seva expressió. La crida `write` de C, que
