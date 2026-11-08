@@ -82,9 +82,14 @@ private let donenConsentiment = [#"\.acceptat\("#, #"\.migrat(?![A-Za-z0-9_])"#,
 /// D3: qualsevol aparició de la paraula `register`, també en un comentari.
 private let paraulaRegister = #"(^|[^A-Za-z0-9_])register(?![A-Za-z0-9_])"#
 /// A les proves, les lectures de Warp només amb rutes de prova, i res de l'app (`lesProvesNoLlegeixenLEstatReal`).
-private let lectorProves = #"(^|[^A-Za-z0-9_])Lector\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#
-private let lectorAjustosProves = #"(^|[^A-Za-z0-9_])LectorAjustosWarp\((?!ruta:)"#
-private let lectorWarpProves = #"(^|[^A-Za-z0-9_])LectorWarp\((?!ruta:)"#
+/// També amb `.init(`: `Lector`, `LectorWarp` i `LectorAjustosWarp` encara tenen les rutes de debò de Warp per defecte, i
+/// `Lector.init(carpetaSessions: c, processos: p, warp: w)` llegiria `warp.sqlite` i `settings.toml`. Sense dir-ne el nom
+/// (`lectorSenseNomProves`), un `.init(` que comenci amb una etiqueta del `Lector` sense les dues rutes de prova
+/// (`l: Lector = .init(carpetaSessions:`), o al final de la línia, on no se'n veuen els arguments; cap prova no en fa servir.
+private let lectorProves = #"(^|[^A-Za-z0-9_])Lector(\.init)?\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#
+private let lectorAjustosProves = #"(^|[^A-Za-z0-9_])LectorAjustosWarp(\.init)?\((?!ruta:)"#
+private let lectorWarpProves = #"(^|[^A-Za-z0-9_])LectorWarp(\.init)?\((?!ruta:)"#
+private let lectorSenseNomProves = #"(^|[^A-Za-z0-9_])\.init\s*\(\s*((?!rutaWarp:[^,]+,\s*rutaAjustos:)(rutaWarp|rutaAjustos|carpetaSessions)\s*:|(//.*)?$)"#
 private let ajustRestauracioProves = #"(^|[^A-Za-z0-9_])AjustRestauracio\((?!ruta: b\.fitxer|ruta: tmp\.url)"#
 private let trobaProves = #"(^|[^A-Za-z0-9_])InstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
 private let nsApp = #"(^|[^A-Za-z0-9_])NSApp(?![A-Za-z0-9_])"#
@@ -1027,7 +1032,8 @@ private let prohibidesArrossegar = [
             // `Lector(` només amb les rutes de prova: `Lector()`, `Lector(inici:)` o sense `rutaAjustos` llegirien Warp i
             // Claude de debò; `LectorWarp()`, la base de Warp. Les sessions i els processos no tenen valor per defecte
             // (`lesSessionsIElsProcessosDeDeboNomesDeLAppIDelCLI`).
-            lectorProves, lectorAjustosProves, lectorWarpProves, ajustRestauracioProves, #"ProcessosDelSistema"#,
+            lectorProves, lectorAjustosProves, lectorWarpProves, lectorSenseNomProves, ajustRestauracioProves,
+            #"ProcessosDelSistema"#,
             #"rutaPerDefecte"#, #"carpetaPerDefecte"#,
             #"\.config/warp-launch"#, nsApp, #"NSApplication"#, #"NSWindow"#, #"NSHostingView"#,
             // El porta-retalls d'en David: una prova el buidaria, o hi deixaria pestanyes fictícies.
@@ -1166,6 +1172,27 @@ private let prohibidesArrossegar = [
             "mostra.swift:8: «\(paraulaProcess)»", "mostra.swift:9: «\(lectorProves)»",
         ])
         #expect(try aparicions(de: [lectorProves], a: [(ruta: "mostra.swift", text: "Lector(rutaWarp: url, rutaAjustos: altra)")]).isEmpty)
+        // També amb `.init(`, i sense dir-ne el nom: cada línia, la seva expressió. Amb les dues rutes de prova, o amb una
+        // altra etiqueta, no.
+        #expect(try aparicions(de: [lectorProves, lectorAjustosProves, lectorWarpProves, lectorSenseNomProves],
+                               a: [(ruta: "mostra.swift", text: """
+            let l = Lector.init(carpetaSessions: c, processos: p, warp: w)
+            let a = WarpLaunchCore.LectorAjustosWarp.init().valor()
+            try LectorWarp.init().llegeix()
+            let l: Lector = .init(carpetaSessions: c, processos: p, warp: w)
+            let l: Lector = .init(rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
+            let l: Lector = .init(rutaWarp: base.url, carpetaSessions: c, processos: p, warp: w)
+            let l = type(of: lector).init(
+            let l = Lector.init(rutaWarp: base.url, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
+            let l: Lector = .init(rutaWarp: base.url, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
+            try LectorWarp.init(ruta: base.url).llegeix()
+            let t: LectorTranscripcions = .init(carpeta: tmp.url)
+            """)]) == [
+            "mostra.swift:1: «\(lectorProves)»", "mostra.swift:2: «\(lectorAjustosProves)»",
+            "mostra.swift:3: «\(lectorWarpProves)»", "mostra.swift:4: «\(lectorSenseNomProves)»",
+            "mostra.swift:5: «\(lectorSenseNomProves)»", "mostra.swift:6: «\(lectorSenseNomProves)»",
+            "mostra.swift:7: «\(lectorSenseNomProves)»",
+        ])
         // El refresc de l'ajust (D-P4): crear-lo sí; el seu entorn, no.
         #expect(try aparicions(de: [refrescWarp], a: [(ruta: "mostra.swift", text: """
             let r = RefrescWarp(entorn: e)
