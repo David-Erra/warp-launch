@@ -26,7 +26,7 @@ private final class Mon: @unchecked Sendable {
     private let pany = NSLock()
     private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true, posats: 0,
                          mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0, quanSObriWarp: 0, warpMaiObert: 0,
-                         ara: Date(timeIntervalSince1970: 1_793_750_400))
+                         ara: TimeInterval(1000))
     private var lectura: @Sendable (Bool, Int) -> LecturaWarp = { _, _ in LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) }
     var enEsperar: @Sendable (Int) -> Void = { _ in }
 
@@ -53,8 +53,8 @@ private final class Mon: @unchecked Sendable {
     var quanSObriWarp: Int {
         get { pany.withLock { estat.quanSObriWarp } } set { pany.withLock { estat.quanSObriWarp = newValue } }
     }
-    /// L'hora del refresc (decisió 3, 08/11/2026): la mou la prova, sense esperar.
-    var ara: Date { get { pany.withLock { estat.ara } } set { pany.withLock { estat.ara = newValue } } }
+    /// Els segons que el Mac porta despert (decisió 3, 08/11/2026): els mou la prova, sense esperar.
+    var ara: TimeInterval { get { pany.withLock { estat.ara } } set { pany.withLock { estat.ara = newValue } } }
     /// Quantes vegades més desactivar-lo refusa perquè no hi ha la carpeta de Warp (`Refusat.warpMaiObert`, 0.31.2).
     var warpMaiObert: Int {
         get { pany.withLock { estat.warpMaiObert } } set { pany.withLock { estat.warpMaiObert = newValue } }
@@ -110,7 +110,7 @@ private final class Mon: @unchecked Sendable {
                 enEsperar(n)
                 try Task.checkCancellation()
             },
-            rellotge: { [self] in ara })
+            segonsDespert: { [self] in ara })
     }
 }
 
@@ -554,6 +554,14 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         mon.ajust = false
         r.vigila()
         #expect(r.avis == nil && r.pendent == nil)
+    }
+
+    /// Els 5 minuts han de ser de debò: amb l'hora del rellotge, un Mac que ha dormit avisaria a la primera, i un rellotge que
+    /// va enrere (decisió 2) no avisaria fins que l'hora tornés a passar. L'app fa servir els segons que el Mac porta despert.
+    @Test func elsCincMinutsNoSonDeLHoraDelRellotge() {
+        let entorn = RefrescWarp.Entorn(ajust: { false }, posa: { _ in .jaHiEra }, warpObert: { true },
+                                        llegeixBase: { LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) })
+        #expect(abs(entorn.segonsDespert() - ProcessInfo.processInfo.systemUptime) < 60)
     }
 
     /// Sense haver pogut mirar mai el valor (per exemple, l'app s'acaba d'obrir i el fitxer ja no parava de canviar), l'ajust

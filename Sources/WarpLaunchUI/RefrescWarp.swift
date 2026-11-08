@@ -40,21 +40,23 @@ public final class RefrescWarp {
         /// `false`).
         public var llegeixBase: @Sendable () throws -> LecturaWarp
         public var espera: @Sendable (Duration) async throws -> Void
-        /// L'hora d'ara, per saber quanta estona fa que l'ajust no es pot desactivar (`segonsAvisMesTard`). Les proves en donen
-        /// una de fixa i la mouen, sense esperar; l'app, la de sèrie.
-        public var rellotge: @Sendable () -> Date
+        /// Els segons que el Mac porta despert, per saber quanta estona fa que l'ajust no es pot desactivar
+        /// (`segonsAvisMesTard`). No l'hora del rellotge: amb el Mac adormit, o si l'hora canvia (decisió 2 d'en David,
+        /// 08/11/2026), els 5 minuts no serien de debò. Les proves en donen uns de fixos i els mouen, sense esperar; l'app, els
+        /// de sèrie.
+        public var segonsDespert: @Sendable () -> TimeInterval
 
         public init(ajust: @escaping @Sendable () throws -> Bool?,
                     posa: @escaping @Sendable (Bool) throws -> AjustRestauracio.Escriptura,
                     warpObert: @escaping @Sendable () -> Bool, llegeixBase: @escaping @Sendable () throws -> LecturaWarp,
                     espera: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) },
-                    rellotge: @escaping @Sendable () -> Date = { Date() }) {
+                    segonsDespert: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
             self.ajust = ajust
             self.posa = posa
             self.warpObert = warpObert
             self.llegeixBase = llegeixBase
             self.espera = espera
-            self.rellotge = rellotge
+            self.segonsDespert = segonsDespert
         }
     }
 
@@ -143,7 +145,7 @@ public final class RefrescWarp {
     @ObservationIgnored private var enCurs: Task<Resultat, Never>?
     /// Des de quan l'ajust no es pot desactivar perquè `settings.toml` no para de canviar: des que `pendent` ha passat a
     /// `.acabaDeCanviar`, sense haver estat res més entremig. Només val mentre `pendent` és `.acabaDeCanviar`.
-    @ObservationIgnored private var mesTardDes: Date?
+    @ObservationIgnored private var mesTardDes: TimeInterval?
     /// L'app està sortint: cap cicle pot tornar a activar l'ajust (`atura`).
     @ObservationIgnored private var aturat = false
     /// «Deixa de fer servir Warp Launch» (`retira`): ni la vigilància de cada minut, ni cap cicle, ni sortir de l'app no
@@ -357,10 +359,10 @@ public final class RefrescWarp {
     /// David (08/11/2026): si fa més de `segonsAvisMesTard` seguits, l'avís al menú. Quan es pot desactivar (o passa qualsevol
     /// altra cosa), `desactiva` i `vigila` el treuen o el canvien.
     private func noEsPotPerqueAcabaDeCanviar() {
-        if pendent != .acabaDeCanviar { mesTardDes = entorn.rellotge() }
+        if pendent != .acabaDeCanviar { mesTardDes = entorn.segonsDespert() }
         pendent = .acabaDeCanviar
         guard let mesTardDes, avis != Self.avisNoParaDeCanviar,
-              entorn.rellotge().timeIntervalSince(mesTardDes) > Self.segonsAvisMesTard else { return }
+              entorn.segonsDespert() - mesTardDes > Self.segonsAvisMesTard else { return }
         avis = Self.avisNoParaDeCanviar
         Registre.refresc.error("fa més de 5 minuts que settings.toml no para de canviar: l'ajust no es pot desactivar")
     }
