@@ -36,8 +36,10 @@ private func aparicions(de expressions: [String], a fitxers: [(ruta: String, tex
 /// segueix les regles d'Unicode, i un punt o dos punts entre lletres no hi fan cap límit de paraula. `\bProcess\(` no veia
 /// `Foundation.Process(`, `\bNSApp\b` no veia `NSApp.terminate(nil)`, i `\bregister\b` no veia `mainApp.register()`.
 /// Davant d'un nom, `(^|[^A-Za-z0-9_])`; darrere, `(?![A-Za-z0-9_])`.
-private let cridaProcess = #"(^|[^A-Za-z0-9_])Process\("#
-private let cridaKill = #"(^|[^A-Za-z0-9_])kill(pg)?\("#
+/// `Process` i `kill`, com a paraula, sense demanar el parèntesi: quan el demanaven, `Process.init()`,
+/// `let p: Process = .init()` i `let k = kill` passaven. Cap línia de `Sources` no els esmenta, ni en un comentari.
+private let paraulaProcess = #"(^|[^A-Za-z0-9_])Process(?![A-Za-z0-9_])"#
+private let paraulaKill = #"(^|[^A-Za-z0-9_])kill(pg)?(?![A-Za-z0-9_])"#
 /// D19 i D-P4: el refresc de l'ajust de Warp, el consentiment i l'ajust de debò, cadascun creat en un sol lloc
 /// (`elCodiNoObreResNiRegistraArrencades`, `lAjustDeWarpNomesLEscriuLApp`).
 private let refrescWarp = #"(^|[^A-Za-z0-9_])RefrescWarp\("#
@@ -70,13 +72,13 @@ private let escapada = [#"cancelAction"#, #"\.escape(?![A-Za-z0-9_])"#, #"onExit
 /// sol lloc (`nomesHiHaLURLDeLlancament`).
 private let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
 private let prohibidesCodi = [
-    #"warp://(?!launch/")"#, cridaProcess,
+    #"warp://(?!launch/")"#, paraulaProcess,
     workspace, #"openURL"#,
     #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
     #"@AppStorage"#,
     // Tancar o matar Warp o Claude (regla 2), o obrir apps. La paraula `openApplication` només pot ser a l'obridor, per
     // obrir Warp si és tancat (`nomesLObridorObreWarp`).
-    #"NSRunningApplication"#, #"forceTerminate"#, #"launchApplication"#, cridaKill,
+    #"NSRunningApplication"#, #"forceTerminate"#, #"launchApplication"#, paraulaKill,
 ]
 
 private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
@@ -116,7 +118,7 @@ private let escriuen = [
     #"createDirectory"#, #"removeItem"#, #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#,
     #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
     #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
-    #"recordaRestauracioOriginal"#, #"(^|[^A-Za-z0-9_])Process\("#, #"NSPasteboard"#, #"copiaText"#,
+    #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#,
 ]
 
 /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
@@ -653,10 +655,10 @@ private let prohibidesArrossegar = [
             let m = MeuProcess()
             MeuLector()
             """)]
-        #expect(try aparicions(de: [cridaProcess, #"(^|[^.\w])system\("#, lectorProves], a: mostra) == [
-            "mostra.swift:1: «\(cridaProcess)»", "mostra.swift:2: «(^|[^.\\w])system\\(»",
+        #expect(try aparicions(de: [paraulaProcess, #"(^|[^.\w])system\("#, lectorProves], a: mostra) == [
+            "mostra.swift:1: «\(paraulaProcess)»", "mostra.swift:2: «(^|[^.\\w])system\\(»",
             "mostra.swift:4: «\(lectorProves)»", "mostra.swift:5: «\(lectorProves)»", "mostra.swift:6: «\(lectorProves)»",
-            "mostra.swift:8: «\(cridaProcess)»", "mostra.swift:9: «\(lectorProves)»",
+            "mostra.swift:8: «\(paraulaProcess)»", "mostra.swift:9: «\(lectorProves)»",
         ])
         #expect(try aparicions(de: [lectorProves], a: [(ruta: "mostra.swift", text: "Lector(rutaWarp: url, rutaAjustos: altra)")]).isEmpty)
         // El refresc de l'ajust (D-P4): crear-lo sí; el seu entorn, no.
@@ -812,9 +814,9 @@ private let prohibidesArrossegar = [
         let trobades = try aparicions(de: prohibidesArrossegar, a: arrossegar)
         #expect(trobades == prohibidesArrossegar.enumerated().map { "mostra.swift:\($0.offset + 1): «\($0.element)»" }
             + ["mostra.swift:10: «\(onDrag)»"])
-        // Obrir o tancar: cada línia, la seva expressió; «Mostra al Finder», cap; `kill` com a part d'un nom, cap.
-        // De Warp, totes les URL menys la de llançament. `NSWorkspace.shared.open(` passa aquesta expressió, però
-        // `nomesLObridorObreWarp` el deixa en un sol lloc.
+        // Obrir o tancar: cada línia, la seva expressió; «Mostra al Finder», cap; `kill` i `Process` com a part d'un nom, cap,
+        // però sense cridar-los o amb `.init`, sí. De Warp, totes les URL menys la de llançament. `NSWorkspace.shared.open(`
+        // passa aquesta expressió, però `nomesLObridorObreWarp` el deixa en un sol lloc.
         let obrir = [(ruta: "mostra.swift", text: """
             NSWorkspace.shared.open(url)
             NSRunningApplication.current
@@ -831,6 +833,12 @@ private let prohibidesArrossegar = [
             Darwin.kill(pid, SIGKILL)
             Darwin.killpg(grup, SIGKILL)
             let p = Foundation.Process()
+            let r = Process.init()
+            let s: Process = .init()
+            let k = kill
+            let g = Darwin.killpg
+            let e = ProcessInfo.processInfo.environment
+            let d = ProcessosDelSistema()
             """)]
         let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
         #expect(try aparicions(de: prohibidesCodi, a: obrir) == [
@@ -838,17 +846,21 @@ private let prohibidesArrossegar = [
             "mostra.swift:3: «forceTerminate»",
             "mostra.swift:4: «\(workspace)»",
             "mostra.swift:4: «launchApplication»",
-            "mostra.swift:6: «\(cridaKill)»",
-            "mostra.swift:9: «\(cridaKill)»",
+            "mostra.swift:6: «\(paraulaKill)»",
+            "mostra.swift:9: «\(paraulaKill)»",
             "mostra.swift:10: «warp://(?!launch/\")»",
             "mostra.swift:12: «warp://(?!launch/\")»",
-            "mostra.swift:13: «\(cridaKill)»",
-            "mostra.swift:14: «\(cridaKill)»",
-            "mostra.swift:15: «\(cridaProcess)»",
+            "mostra.swift:13: «\(paraulaKill)»",
+            "mostra.swift:14: «\(paraulaKill)»",
+            "mostra.swift:15: «\(paraulaProcess)»",
+            "mostra.swift:16: «\(paraulaProcess)»",
+            "mostra.swift:17: «\(paraulaProcess)»",
+            "mostra.swift:18: «\(paraulaKill)»",
+            "mostra.swift:19: «\(paraulaKill)»",
         ])
     }
 
-    /// Cap expressió d'aquest fitxer no fa servir `\b` (vegeu `cridaProcess`): una guarda nova que el fes servir no veuria els
+    /// Cap expressió d'aquest fitxer no fa servir `\b` (vegeu `paraulaProcess`): una guarda nova que el fes servir no veuria els
     /// noms amb el mòdul davant. És l'única prova que llegeix aquest fitxer, i només en mira les línies que no són comentaris.
     @Test func capGuardaFaServirElLimitDeParaula() throws {
         let limit = "\\" + "b"
@@ -1038,9 +1050,10 @@ private let prohibidesArrossegar = [
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
     }
 
-    /// A les proves, `Process(` només és als helpers que fan llegir una línia a zsh o executen un script de `scripts/`.
+    /// A les proves, `Process` només és als helpers que fan llegir una línia a zsh o executen un script de `scripts/`. Com a
+    /// paraula (`paraulaProcess`): `Process.init()` tampoc no pot ser enlloc més.
     @Test func processNomesAlHelperDeZsh() throws {
-        let llocs = try fitxers("Tests").filter { $0.text.contains("Process(") }.map(\.ruta)
+        let llocs = Set(try aparicions(de: [paraulaProcess], a: fitxers("Tests")).map { $0.prefix { $0 != ":" } })
         #expect(llocs == ["Tests/WarpLaunchCoreTests/ShellDeProva.swift"])
     }
 
