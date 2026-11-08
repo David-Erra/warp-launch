@@ -6,7 +6,8 @@ import WarpLaunchCore
 /// **Només s'hi arriba després de la confirmació** (el full, o `--obre` amb l'OK d'en David).
 public enum ObreWarp {
     public enum ErrorObrir: Error, Equatable, CustomStringConvertible {
-        /// No s'ha trobat Warp Stable (ni el que diu macOS ni el d'Aplicacions), o no és el de debò: no s'obre res.
+        /// No s'ha trobat Warp Stable (ni cap que corri, ni el que diu macOS, ni el d'Aplicacions), o no és el de debò: no
+        /// s'obre res. Des de la 0.31.1, la lectura ja ho diu abans (`WarpPreview.capWarp`).
         case senseWarp
         /// Només hi ha Warp Preview, que encara no és compatible (D-P12, 0.29.2): no s'obre res.
         case nomesPreview
