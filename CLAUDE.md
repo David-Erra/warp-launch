@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (08/11/2026, 0.31.1)
+## Estat (08/11/2026, 0.31.2)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -80,10 +80,10 @@ Els requisits són a `docs/especificacio.md`.
   `claude` sense saltar els permisos ni ultracode (`.perOmissio`, continuant la conversa). «Salta els permisos», l'esforç i
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
-- **Per a altres usuaris, de la 0.29.0 a la 0.31.1** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
+- **Per a altres usuaris, de la 0.29.0 a la 0.31.2** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
   passos, proves, el que falta provar a l'app i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha
-  publicat** (la versió de GitHub és la 0.28.0), **i res de la 0.30.3 endavant no s'ha vist a l'app:** la de `build/`, que en
-  David prova, és la 0.30.2.
+  publicat** (la versió de GitHub és la 0.28.0), **i res de la 0.30.3 endavant no s'ha donat per provat a l'app:** en David
+  prova ara la 0.31.1, compilada a part; la 0.31.2 no s'ha vist.
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
     obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
@@ -111,10 +111,22 @@ Els requisits són a `docs/especificacio.md`.
     restauració activada. README, «Desinstal·lar».
   - **0.31.1 (decisió 4): compta el Warp que corre,** també si és una altra còpia de Warp Stable (pels processos,
     `Lector.installacio()`). Sense cap Warp, ho diu i no proposa obrir res.
+  - **0.31.2 (decisió A, ronda 4): sense la línia `restore_session`, l'app l'afegeix** a `settings.toml` (regla 7, segona
+    excepció): just després de `[general]`; sense la taula, la taula; sense el fitxer, el crea només amb la línia, d'un sol cop i
+    només si Warp no l'ha creat mentrestant. Sense `~/.warp`, no la crea, i el menú diu que Warp no s'ha obert mai. Tot el que és
+    ambigu (dues `[general]`, `general` com a clau, CRLF, una marca d'ordre de bytes, textos de diverses línies, un enllaç…) es
+    refusa sense tocar res. Sense la línia, el valor és el de sèrie (`true`): és el que desa `preferencies.json`, i «Restaura
+    Warp i surt…» hi deixa `restore_session = true`. Ho diuen el diagnòstic, la pantalla del permís i l'script (`estat`:
+    «activat (de sèrie, sense la línia)»). També: «Lliga amb Warp…» amb `--config` diu per què no hi ha finestres
+    (`MotiuSenseFinestres`), i sense cap Warp ni la seva base l'app diu que no hi ha Warp també amb `--config`
+    (`Lector.llegeixDeLApp`). Falta veure-ho a l'app i en un usuari de macOS nou.
   - **Guardes (08/11/2026, sense versió):** cap expressió de `GuardaTests` no fa servir `\b`, que no veia els noms amb mòdul
     (`Foundation.Process()`, `NSApp.terminate`); `Process` i `kill` compten com a paraula sencera, i `exec…` i `NSUser…Task` són
     prohibides; les proves no poden fer servir la carpeta d'inici de debò per cap camí; i `Lector(carpetaSessions:)` és
-    obligatori.
+    obligatori. Després de la 0.31.2: la carpeta de Warp i el diagnòstic tampoc no poden esborrar, moure, crear ni enllaçar
+    fitxers per cap altra crida (també `remove` de C); `copyfile`, `linkItem`, `createSymbolicLink` i `renamex_np` només a
+    `AjustRestauracio.swift`, que no pot obrir `settings.toml` per escriure-hi directament; i els lectors de Claude de debò, només
+    a l'app i al CLI (`lectorsDeClaudeDeDebo`).
 - **Signatura:** `scripts/build-app.sh` signa amb el certificat «Warp Launch Dev» del clauer d'en David (D12).
   Per llegir les dades de Warp, cal donar a l'app el permís de Privacitat i seguretat › Arxius i carpetes.
 - **Ordre de feina acordat:**
@@ -244,12 +256,15 @@ desenes de sessions o les tanca totes de cop.
      `espai-*.yaml` del prototip), ni les preferències de Warp.
    - **Única excepció (en David, 05/11/2026):** la línia `restore_session` de `[general]` a `~/.warp/settings.toml`, per
      activar la restauració de sessió una estona i poder llegir les finestres i els títols de Warp.
-     - Només amb `scripts/warp-restauracio.sh`, i només amb l'OK d'en David per a cada vegada.
+     - Només amb `scripts/warp-restauracio.sh`, i només amb l'OK d'en David per a cada vegada. L'script només canvia la línia:
+       si no hi és, no l'afegeix (`desactiva` falla).
      - Abans, digues-li què passa mentre és activada: si Warp es tanca, restaura les seves finestres, i, amb Settings Sync,
        l'ajust arriba a les altres instal·lacions.
      - En acabar, torna-la a desactivar i comprova-ho amb `estat`, passat 1 s (Warp podria tornar a posar el valor d'abans).
-   - **Segona excepció (en David, 05/11/2026, D19): l'app** pot canviar aquesta mateixa línia, sola i sense OK per a cada vegada, només amb la carpeta
-     de debò (`AjustRestauracio`, `RefrescWarp`). Cap altre codi ni cap altra línia. Mentre l'app és en marxa, l'ajust que activis a mà es torna a desactivar en 60 s:
+   - **Segona excepció (en David, 05/11/2026, D19; 08/11/2026, decisió A): l'app** pot canviar o afegir aquesta mateixa línia i,
+     si no hi són, la taula `[general]` o el fitxer `settings.toml` (mai la carpeta `~/.warp`), sola i sense OK per a cada vegada,
+     només amb la carpeta de debò i el permís acceptat o migrat (`AjustRestauracio`, `RefrescWarp`). Cap altre codi ni cap altra
+     línia. Mentre l'app és en marxa, l'ajust que activis a mà es torna a desactivar en 60 s:
      per fer servir l'script, primer surt de l'app.
    - Quan arribi la fase 3, l'app només escriurà els fitxers que generi ella, amb una marca pròpia, i amb l'OK d'en David.
 8. **`~/.config/espai-warp/` és només de lectura.** Hi ha la configuració i l'historial del prototip.
