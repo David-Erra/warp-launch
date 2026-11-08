@@ -58,6 +58,10 @@ private let lectorWarpProves = #"(^|[^A-Za-z0-9_])LectorWarp\((?!ruta:)"#
 private let ajustRestauracioProves = #"(^|[^A-Za-z0-9_])AjustRestauracio\((?!ruta: b\.fitxer|ruta: tmp\.url)"#
 private let trobaProves = #"(^|[^A-Za-z0-9_])InstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
 private let nsApp = #"(^|[^A-Za-z0-9_])NSApp(?![A-Za-z0-9_])"#
+/// La carpeta d'inici de debò, de qualsevol manera: una prova que la fes servir podria arribar a `~/.claude` o a
+/// `~/.config/warp-launch`. A les proves, `HOME` només es posa als processos fills, amb una carpeta temporal.
+private let iniciDeDebo = [#"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#, #"\.homeDirectory(?![A-Za-z0-9_])"#,
+                           #"expandingTildeInPath"#, #"getenv\("#, #"environment\["HOME"\]"#, #"getpw(uid|nam)"#]
 /// Fase 3.1: el que `FitxersLaunchWarp` no pot fer amb la carpeta de Warp (`nomesFitxersLaunchWarpTocaLaCarpetaDeWarp`).
 private let cridaUnlink = #"(^|[^A-Za-z0-9_])unlink\("#
 private let cridaRename = #"(^|[^A-Za-z0-9_])rename\("#
@@ -564,7 +568,6 @@ private let prohibidesArrossegar = [
             lectorProves, lectorAjustosProves, lectorWarpProves, ajustRestauracioProves, #"ProcessosDelSistema"#,
             #"rutaPerDefecte"#, #"carpetaPerDefecte"#,
             #"\.config/warp-launch"#, nsApp, #"NSApplication"#, #"NSWindow"#, #"NSHostingView"#,
-            #"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#,
             // El porta-retalls d'en David: una prova el buidaria, o hi deixaria pestanyes fictícies.
             #"NSPasteboard"#, #"PortaRetallsSistema\.(enganxa|hiHaPestanyes|escriu)"#,
             // Fase 3.1: res que obri Warp, ni les carpetes de debò de Warp i de Claude.
@@ -575,7 +578,7 @@ private let prohibidesArrossegar = [
             // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude), i
             // «Copia el diagnòstic», sempre amb un porta-retalls fals (a la mateixa línia).
             lectorTranscripcions, lectorConfianca, copiaDiagnostic,
-        ]
+        ] + iniciDeDebo
         let trobades = try aparicions(de: prohibides, a: proves)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
     }
@@ -763,6 +766,22 @@ private let prohibidesArrossegar = [
             "mostra.swift:1: «\(lectorAjustosProves)»", "mostra.swift:3: «\(lectorAjustosProves)»",
             "mostra.swift:4: «\(lectorWarpProves)»", "mostra.swift:6: «\(lectorWarpProves)»",
             "mostra.swift:8: «\(nsApp)»", "mostra.swift:9: «\(nsApp)»", "mostra.swift:10: «\(nsApp)»",
+        ])
+        // La carpeta d'inici de debò, de totes les maneres; posar `HOME` a un procés fill, no.
+        #expect(try aparicions(de: iniciDeDebo, a: [(ruta: "mostra.swift", text: """
+            FileManager.default.homeDirectoryForCurrentUser
+            NSHomeDirectory()
+            URL.homeDirectory.appending(path: ".claude")
+            FileManager.default.homeDirectory(forUser: "prova")
+            ("~/.claude" as NSString).expandingTildeInPath
+            getenv("HOME")
+            ProcessInfo.processInfo.environment["HOME"]
+            getpwuid(getuid())
+            procés.environment = ["HOME": tmp.url("inici").path]
+            """)]) == [
+            "mostra.swift:1: «\(iniciDeDebo[0])»", "mostra.swift:2: «\(iniciDeDebo[1])»", "mostra.swift:3: «\(iniciDeDebo[2])»",
+            "mostra.swift:4: «\(iniciDeDebo[2])»", "mostra.swift:5: «\(iniciDeDebo[3])»", "mostra.swift:6: «\(iniciDeDebo[4])»",
+            "mostra.swift:7: «\(iniciDeDebo[5])»", "mostra.swift:8: «\(iniciDeDebo[6])»",
         ])
         #expect(try aparicions(de: [#"PortaRetallsSistema\.(enganxa|hiHaPestanyes|escriu)"#], a: mostra) == [
             "mostra.swift:7: «PortaRetallsSistema\\.(enganxa|hiHaPestanyes|escriu)»",
