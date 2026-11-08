@@ -277,14 +277,26 @@ public struct VistaConfiguracio: View {
     private var seccioDesinstallacio: some View {
         Section {
             LabeledContent {
+                // La confirmació, al botó i no a la `Section`: en un `Form`, el que es posa a una secció pot anar a cada fila,
+                // i amb la fila de l'error hi hauria dues confirmacions per a la mateixa variable (revisió de la 0.31.0).
                 Button("Restaura Warp i surt…", role: .destructive) { desinstallacio.demana() }
                     .disabled(!desinstallacio.disponible)
+                    .confirmationDialog(Desinstallacio.titolConfirmacio, isPresented: $desinstallacio.confirmant,
+                                        titleVisibility: .visible) {
+                        Button("Restaura Warp i surt", role: .destructive) { desinstallacio.confirma() }
+                        Button("Cancel·la", role: .cancel) {}
+                            .keyboardShortcut(.defaultAction)
+                    } message: {
+                        Text(desinstallacio.missatgeConfirmacio)
+                    }
             } label: {
                 Text("Torna a deixar Warp com era")
                 if let text = desinstallacio.textAjust {
                     Text(text)
                 }
             }
+            // En tornar a la pestanya, o després d'acceptar el permís en aquesta mateixa finestra.
+            .onAppear { desinstallacio.actualitza() }
             if let error = desinstallacio.error {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
@@ -296,16 +308,6 @@ public struct VistaConfiguracio: View {
             Text(desinstallacio.peu)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-        // En tornar a la pestanya, o després d'acceptar el permís en aquesta mateixa finestra.
-        .onAppear { desinstallacio.actualitza() }
-        .confirmationDialog(Desinstallacio.titolConfirmacio, isPresented: $desinstallacio.confirmant,
-                            titleVisibility: .visible) {
-            Button("Restaura Warp i surt", role: .destructive) { desinstallacio.confirma() }
-            Button("Cancel·la", role: .cancel) {}
-                .keyboardShortcut(.defaultAction)
-        } message: {
-            Text(desinstallacio.missatgeConfirmacio)
         }
     }
 
