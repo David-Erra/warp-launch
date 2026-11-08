@@ -211,15 +211,20 @@ private func sessionsIProcessosDeDebo(_ codi: [(ruta: String, text: String)]) th
 /// fora dels comentaris, que en creen un (també amb `.init`, `.self` o el mòdul), que donen un valor a una variable o a un
 /// paràmetre del tipus (`LectorConfianca = .init()`, també amb el valor a la línia següent), o que en fan un àlies o una
 /// extensió; i, als seus fitxers, `Self(` i `.init(`, que en crearien un amb un altre nom (`.deDebo`).
+/// Sense dir-ne el nom, també: `.init()` sense arguments, de qualsevol tipus i a qualsevol fitxer (`transcripcions: .init()`
+/// en una crida, o `type(of: t).init()`, en crearien un amb la ruta per defecte de l'`init`), i les rutes per defecte
+/// (`.init(ruta: LectorConfianca.rutaPerDefecte)`; als seus fitxers, `rutaPerDefecte` i `carpetaPerDefecte` soles).
 private let rutesLectorsClaude = [
     "Sources/WarpLaunchCore/LectorConfianca.swift", "Sources/WarpLaunchCore/LectorTranscripcions.swift",
 ]
 private func lectorsDeClaudeDeDebo(_ codi: [(ruta: String, text: String)]) throws -> [String] {
     let nom = #"Lector(Transcripcions|Confianca)"#
-    let crea = try Regex(#"(^|[^A-Za-z0-9_])"# + nom + #"(\(|\.(init|self)(?![A-Za-z0-9_])|\??\s*=(?!=))"#)
+    let crea = try Regex(#"(^|[^A-Za-z0-9_])"# + nom
+        + #"(\(|\.(init|self|carpetaPerDefecte|rutaPerDefecte)(?![A-Za-z0-9_])|\??\s*=(?!=))"#)
+    let initSenseArguments = try Regex(#"\.init\(\s*\)"#)
     let aliesOExtensio = try Regex(#"(^|[^A-Za-z0-9_])(typealias|extension)(?![A-Za-z0-9_]).*[^A-Za-z0-9_]"# + nom
         + #"(?![A-Za-z0-9_])"#)
-    let creaSelf = try Regex(#"(^|[^A-Za-z0-9_])(Self(\(|\.init(?![A-Za-z0-9_]))|\.init\()"#)
+    let creaSelf = try Regex(#"(^|[^A-Za-z0-9_])(Self(\(|\.init(?![A-Za-z0-9_]))|\.init\(|(carpeta|ruta)PerDefecte(?![A-Za-z0-9_]))"#)
     return codi.flatMap { f in
         let linies = f.text.split(separator: "\n", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -227,7 +232,7 @@ private func lectorsDeClaudeDeDebo(_ codi: [(ruta: String, text: String)]) throw
             guard !linies[i].hasPrefix("//") else { return nil }
             // `transcripcions: LectorTranscripcions` i, a la línia següent, `= .init()`.
             let linia = i + 1 < linies.count && linies[i + 1].hasPrefix("=") ? linies[i] + " " + linies[i + 1] : linies[i]
-            guard linia.contains(crea) || linia.contains(aliesOExtensio)
+            guard linia.contains(crea) || linia.contains(initSenseArguments) || linia.contains(aliesOExtensio)
                 || (rutesLectorsClaude.contains(f.ruta) && linia.contains(creaSelf)) else { return nil }
             return "\(f.ruta): \(linia)"
         }
@@ -642,11 +647,18 @@ private let prohibidesArrossegar = [
             "\(app): transcripcions: LectorTranscripcions(),",
             "\(app): transcripcions: LectorTranscripcions(), confianca: LectorConfianca())",
             "\(cli): transcripcions: LectorTranscripcions(), confianca: LectorConfianca())",
+            "\(rutesLectorsClaude[0]): public init(ruta: URL = LectorConfianca.rutaPerDefecte) {",
+            "\(rutesLectorsClaude[0]): public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".claude.json\")",
+            "\(rutesLectorsClaude[1]): public init(carpeta: URL = LectorTranscripcions.carpetaPerDefecte) {",
+            "\(rutesLectorsClaude[1]): public static let carpetaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
         ], "\(deDebo.joined(separator: "\n"))")
         // La mostra: crear-ne un, també amb el mòdul, `.init` o `.self`; un valor per defecte, també a la línia següent o amb
-        // un altre nom; un àlies o una extensió; i, als seus fitxers, `Self(` i `.init(`. Un comentari, el tipus d'un
-        // paràmetre sense valor, els seus tipus i constants, un altre nom i `Self(` en un altre fitxer, no.
+        // un altre nom; un àlies o una extensió; sense dir-ne el nom, amb `.init()` o amb la ruta per defecte, a qualsevol
+        // fitxer; i, als seus fitxers, `Self(`, `.init(` i les rutes per defecte. Un comentari, el tipus d'un paràmetre sense
+        // valor, els seus tipus i constants, un altre nom, `.init(` amb una ruta, la ruta d'un altre tipus i `Self(` en un
+        // altre fitxer, no.
         let diagnostic = "Sources/WarpLaunchCore/Diagnostic.swift"
+        let obertura = "Sources/WarpLaunchUI/Obertura.swift"
         #expect(try lectorsDeClaudeDeDebo([
             (ruta: diagnostic, text: """
                 transcripcions: LectorTranscripcions = .init(), confianca: LectorConfianca, usuari: String? = nil,
@@ -667,12 +679,24 @@ private let prohibidesArrossegar = [
                 if a == b {}
                 return Self(lector: l)
                 """),
+            (ruta: obertura, text: """
+                let entorn = Entorn(lector: l, transcripcions: .init(), confianca: .init( ))
+                let altre = type(of: transcripcions).init()
+                confianca: .init(ruta: LectorConfianca.rutaPerDefecte),
+                transcripcions: .init(carpeta: WarpLaunchCore.LectorTranscripcions.carpetaPerDefecte)
+                let t = LectorTranscripcions
+                    .init()
+                transcripcions: .init(carpeta: carpeta), confianca: .init(ruta: ruta),
+                let warp = LectorWarp(ruta: LectorWarp.rutaPerDefecte)
+                let carpetaPerDefecte = c
+                """),
             (ruta: rutesLectorsClaude[0], text: """
                 static let deDebo = Self()
                 static var real: LectorConfianca { .init() }
                 static let altra = Self.init(ruta: r)
                 return Confianca(confiades: Set(confiades), inici: Rutes.canonica(inici))
                 public init(ruta: URL = LectorConfianca.rutaPerDefecte) {
+                let r = Self.rutaPerDefecte
                 """),
             (ruta: rutesLectorsClaude[1], text: "public static let deDebo = Self(carpeta: Self.carpetaPerDefecte)"),
         ]) == [
@@ -683,9 +707,16 @@ private let prohibidesArrossegar = [
             "\(diagnostic): confianca: LectorConfianca = .deDebo,",
             "\(diagnostic): public typealias Transcripcions = WarpLaunchCore.LectorTranscripcions",
             "\(diagnostic): extension LectorConfianca {",
+            "\(obertura): let entorn = Entorn(lector: l, transcripcions: .init(), confianca: .init( ))",
+            "\(obertura): let altre = type(of: transcripcions).init()",
+            "\(obertura): confianca: .init(ruta: LectorConfianca.rutaPerDefecte),",
+            "\(obertura): transcripcions: .init(carpeta: WarpLaunchCore.LectorTranscripcions.carpetaPerDefecte)",
+            "\(obertura): .init()",
             "\(rutesLectorsClaude[0]): static let deDebo = Self()",
             "\(rutesLectorsClaude[0]): static var real: LectorConfianca { .init() }",
             "\(rutesLectorsClaude[0]): static let altra = Self.init(ruta: r)",
+            "\(rutesLectorsClaude[0]): public init(ruta: URL = LectorConfianca.rutaPerDefecte) {",
+            "\(rutesLectorsClaude[0]): let r = Self.rutaPerDefecte",
             "\(rutesLectorsClaude[1]): public static let deDebo = Self(carpeta: Self.carpetaPerDefecte)",
         ])
     }
