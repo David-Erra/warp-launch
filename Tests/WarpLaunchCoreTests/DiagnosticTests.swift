@@ -505,6 +505,42 @@ private struct MacDeProva {
             + "the setting (with consent and the real configuration folder). Consent not given yet"), "\(senseConsentiment.detall)")
     }
 
+    /// El diagnòstic llegeix el fitxer com l'app (`AjustRestauracio.llegeix`): si l'app no el pot fer servir (un enllaç, una
+    /// carpeta de Warp que és un fitxer, un text que no és UTF-8), és un error, i no diu que l'app hi afegirà la línia, ni
+    /// que el desactivarà, ni que crearà el fitxer. Amb el motiu, i sense la ruta de l'usuari si s'anonimitza.
+    @Test func siLAppNoPotLlegirElFitxerEsUnError() throws {
+        let mac = try MacDeProva()
+        let real = mac.ajustos.deletingLastPathComponent().appending(path: "real.toml")
+        for contingut in ["[general]\nx = 1\n", "[general]\nrestore_session = true\n"] {
+            try? FileManager.default.removeItem(at: mac.ajustos)
+            try mac.escriu(contingut, a: real)
+            try FileManager.default.createSymbolicLink(at: mac.ajustos, withDestinationURL: real)
+            let enllac = try mac.comprovacio(.restauracio)
+            #expect(enllac.resultat == .error, "\(enllac.detall)")
+            #expect(enllac.detall.hasPrefix("\(mac.ajustos.path): Warp Launch can't manage restore_session (reason, in "
+                + "Catalan: ««\(mac.ajustos.path)» no és un fitxer normal»)."), "\(enllac.detall)")
+            #expect(!enllac.detall.contains("adds") && !enllac.detall.contains("turns it off"), "\(enllac.detall)")
+            let anonimitzat = try mac.comprovacio(.restauracio, anonimitza: true).detall
+            #expect(!anonimitzat.contains("maria.prova"), "\(anonimitzat)")
+        }
+        // «[general]», i un byte que no és UTF-8.
+        try FileManager.default.removeItem(at: mac.ajustos)
+        try Data([0x5B, 0x67, 0x65, 0x6E, 0x65, 0x72, 0x61, 0x6C, 0x5D, 0x0A, 0xFF, 0x0A]).write(to: mac.ajustos)
+        let noUTF8 = try mac.comprovacio(.restauracio)
+        #expect(noUTF8.resultat == .error, "\(noUTF8.detall)")
+        #expect(noUTF8.detall.contains("no es pot llegir"), "\(noUTF8.detall)")
+        // La carpeta de Warp és un fitxer: l'app no crearia res.
+        let carpetaWarp = mac.ajustos.deletingLastPathComponent()
+        try FileManager.default.removeItem(at: carpetaWarp)
+        try Data("x".utf8).write(to: carpetaWarp)
+        let carpetaFitxer = try mac.comprovacio(.restauracio)
+        #expect(carpetaFitxer.resultat == .error, "\(carpetaFitxer.detall)")
+        #expect(carpetaFitxer.detall.hasPrefix("\(mac.ajustos.path): Warp Launch can't manage restore_session (reason, in "
+            + "Catalan: «no es pot mirar «\(mac.ajustos.path)»: "), "\(carpetaFitxer.detall)")
+        #expect(!carpetaFitxer.detall.contains("creates it") && !carpetaFitxer.detall.contains("doesn't exist"),
+                "\(carpetaFitxer.detall)")
+    }
+
     @Test func elConsentimentSenseDonarOIlegible() throws {
         let mac = try MacDeProva()
         let preferencies = mac.configuracio.appending(path: Preferencies.nomFitxer)

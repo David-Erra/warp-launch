@@ -131,7 +131,7 @@ public struct AjustRestauracio: Sendable {
 
     // MARK: - Llegir
 
-    private enum Lectura {
+    enum Lectura {
         /// La carpeta de Warp (la del fitxer) no hi és: Warp no s'ha obert mai en aquest usuari.
         case senseCarpeta
         /// La carpeta hi és, i el fitxer no: Warp no hi ha desat cap ajust.
@@ -140,6 +140,12 @@ public struct AjustRestauracio: Sendable {
     }
 
     private func llegeix() throws(Refusat) -> Lectura {
+        try Self.llegeix(ruta)
+    }
+
+    /// Només llegeix. També per al diagnòstic, que no pot crear l'ajust (`lAjustDeWarpNomesLEscriuLApp`): així diu el que
+    /// veu l'app, i no que hi afegirà la línia si l'app no pot ni llegir el fitxer.
+    static func llegeix(_ ruta: URL) throws(Refusat) -> Lectura {
         var info = stat()
         guard lstat(ruta.path, &info) == 0 else {
             let codi = errno

@@ -704,22 +704,29 @@ public enum Diagnostic {
         let quan = !consentiment.acceptat ? "when it manages the setting (with consent and the real configuration folder)"
             : e.configuracioDeProva ? "only with the real configuration folder, not with a test one (--config)"
             : "within a minute while it's running"
-        var info = stat()
-        guard lstat(ruta.path, &info) == 0 else {
-            let carpeta = ruta.deletingLastPathComponent().path
-            var infoCarpeta = stat()
+        // Com l'app (`AjustRestauracio.llegeix`, només lectura): un enllaç, una carpeta que no ho és o un text que no és
+        // UTF-8, l'app no els pot fer servir, i el diagnòstic no ha de dir que hi afegirà la línia.
+        let lectura: AjustRestauracio.Lectura
+        do {
+            lectura = try AjustRestauracio.llegeix(ruta)
+        } catch {
+            return Comprovacio(.restauracio, .error, "\(mostrada): Warp Launch can't manage restore_session (reason, in "
+                + "Catalan: «\(anon.text(error.description))»). " + deConsentiment.1)
+        }
+        let text: String
+        switch lectura {
+        case .senseFitxer:
+            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) doesn't exist: \(deSerie) Warp "
+                + "Launch creates it with only restore_session = false \(quan). " + deConsentiment.1)
+        case .senseCarpeta:
             // Warp Launch no crea la carpeta de Warp (regla 7: només la línia).
-            let detall = stat(carpeta, &infoCarpeta) == 0
-                ? "\(mostrada) doesn't exist: \(deSerie) Warp Launch creates it with only restore_session = false \(quan). "
-                : "\(anon.ruta(carpeta)) doesn't exist: Warp hasn't been opened yet for this user. \(deSerie) Warp Launch "
-                    + "doesn't create Warp's folder: once Warp has created it, Warp Launch adds restore_session = false \(quan). "
-            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), detall + deConsentiment.1)
+            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0),
+                               "\(anon.ruta(ruta.deletingLastPathComponent().path)) doesn't exist: Warp hasn't been opened "
+                                   + "yet for this user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has "
+                                   + "created it, Warp Launch adds restore_session = false \(quan). " + deConsentiment.1)
+        case let .fitxer(_, llegit):
+            text = llegit
         }
-        guard let dades = try? Data(contentsOf: ruta) else {
-            return Comprovacio(.restauracio, .error, "\(mostrada) can't be read: Warp Launch can't manage restore_session. "
-                + deConsentiment.1)
-        }
-        let text = String(decoding: dades, as: UTF8.self)
         let analisi: AjustRestauracio.Analisi
         do {
             analisi = try AjustRestauracio.analitza(text)
