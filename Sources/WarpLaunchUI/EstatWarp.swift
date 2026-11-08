@@ -33,7 +33,7 @@ public final class EstatWarp {
         public var description: String
     }
 
-    /// - Parameter lector: la lectura; l'app hi passa `Lector(…).llegeix`, i les proves, una de falsa.
+    /// - Parameter lector: la lectura; l'app hi passa `Lector(…).llegeixDeLApp`, i les proves, una de falsa.
     public init(lector: @escaping @Sendable () throws -> LecturaWarp) {
         self.lector = lector
     }
