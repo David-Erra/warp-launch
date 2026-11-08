@@ -51,7 +51,7 @@ public final class FullImportacio {
         switch await warp.llegeixAmbFinestres() {
         case let .success(lectura) where lectura.warpDesaFinestres == false:
             // Importar substituiria la configuració per res.
-            estat = .senseFinestres(LecturaWarp.senseFinestres + senseFinestres)
+            estat = .senseFinestres(LecturaWarp.senseFinestres + queFerSenseFinestres)
         case let .success(lectura):
             avisosLectura = lectura.avisos
             plantillaPrevista = editor.plantillaPerImportar.normalitzada()
@@ -65,7 +65,7 @@ public final class FullImportacio {
     /// carpeta de prova (`--config`), on l'app no toca l'ajust, i no és que Warp no tingui res. Sense el consentiment
     /// tampoc no n'hi ha, però llavors el full no es pot obrir (D-P4). Amb el refresc, la foto sempre hi és
     /// (`BaseWarp.sempre`): el text de sempre, per si de cas.
-    private var senseFinestres: String {
+    private var queFerSenseFinestres: String {
         guard warp.refresc == nil else {
             return mode == .crea
                 ? " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
