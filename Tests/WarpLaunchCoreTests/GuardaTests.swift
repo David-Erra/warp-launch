@@ -41,6 +41,10 @@ private func aparicions(de expressions: [String], a fitxers: [(ruta: String, tex
 /// `let p: Process = .init()` i `let k = kill` passaven. Cap línia de `Sources` no els esmenta, ni en un comentari.
 private let paraulaProcess = #"(^|[^A-Za-z0-9_])Process(?![A-Za-z0-9_])"#
 private let paraulaKill = #"(^|[^A-Za-z0-9_])kill(pg)?(?![A-Za-z0-9_])"#
+/// Les altres maneres d'executar res que Swift deixa fer a macOS (`popen`, `system` i `fork` no hi són): la família `exec`,
+/// que canviaria l'app per l'ordre, i les tasques d'usuari (`NSUserUnixTask`, `NSUserAppleScriptTask`…).
+private let paraulaExec = #"(^|[^A-Za-z0-9_])exec(l|lp|le|v|vp|vP|ve)(?![A-Za-z0-9_])"#
+private let tascaUsuari = #"NSUser[A-Za-z]*Task"#
 /// D19 i D-P4: el refresc de l'ajust de Warp, el consentiment i l'ajust de debò, cadascun creat en un sol lloc
 /// (`elCodiNoObreResNiRegistraArrencades`, `lAjustDeWarpNomesLEscriuLApp`).
 private let refrescWarp = #"(^|[^A-Za-z0-9_])RefrescWarp\("#
@@ -79,7 +83,8 @@ private let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|o
 private let prohibidesCodi = [
     #"warp://(?!launch/")"#, paraulaProcess,
     workspace, #"openURL"#,
-    #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
+    #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, paraulaExec, tascaUsuari,
+    #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
     #"@AppStorage"#,
     // Tancar o matar Warp o Claude (regla 2), o obrir apps. La paraula `openApplication` només pot ser a l'obridor, per
     // obrir Warp si és tancat (`nomesLObridorObreWarp`).
@@ -868,6 +873,11 @@ private let prohibidesArrossegar = [
             let g = Darwin.killpg
             let e = ProcessInfo.processInfo.environment
             let d = ProcessosDelSistema()
+            execv("/usr/bin/open", args)
+            Darwin.execvp("open", args)
+            try NSUserUnixTask(url: u).execute(withArguments: [])
+            NSUserAppleScriptTask(url: u)
+            executa(ordre)
             """)]
         let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
         #expect(try aparicions(de: prohibidesCodi, a: obrir) == [
@@ -886,6 +896,10 @@ private let prohibidesArrossegar = [
             "mostra.swift:17: «\(paraulaProcess)»",
             "mostra.swift:18: «\(paraulaKill)»",
             "mostra.swift:19: «\(paraulaKill)»",
+            "mostra.swift:22: «\(paraulaExec)»",
+            "mostra.swift:23: «\(paraulaExec)»",
+            "mostra.swift:24: «\(tascaUsuari)»",
+            "mostra.swift:25: «\(tascaUsuari)»",
         ])
     }
 
