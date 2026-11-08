@@ -88,7 +88,7 @@ public final class RefrescWarp {
         }
     }
 
-    /// Per què l'última vegada no s'ha pogut desactivar l'ajust, sense que sigui cap error (no hi ha `avis`).
+    /// Per què l'última vegada no s'ha pogut desactivar l'ajust, sense que sigui cap error.
     public enum Pendent: Equatable, Sendable {
         /// `settings.toml` acabava de canviar (`AjustRestauracio.Escriptura.mesTard`, o la vigilància no n'ha pogut saber el
         /// valor): l'ajust pot haver quedat activat. Al final d'un refresc es torna a provar cada segon; si no, amb la
@@ -106,8 +106,8 @@ public final class RefrescWarp {
 
     /// Per què l'app no pot fer la seva feina amb l'ajust: el menú de la icona ho diu.
     public private(set) var avis: String?
-    /// L'última vegada que s'havia de desactivar l'ajust, no s'hi ha escrit res, i no és cap error (no hi ha `avis`): per què
-    /// (`Pendent`). La vigilància de cada minut ho torna a provar. S'observa: el menú en treu la `nota`.
+    /// L'última vegada que s'havia de desactivar l'ajust o de saber-ne el valor, no s'ha pogut, i no és cap error: per què
+    /// (`Pendent`). Passats 5 minuts seguits sense poder, hi ha també l'`avis` (`avisNoParaDeCanviar`). La vigilància de cada minut ho torna a provar. S'observa: el menú en treu la `nota`.
     public private(set) var pendent: Pendent?
     public var desactivacioPendent: Bool { pendent != nil }
     /// Si Warp, en arrencar ara, faria servir la restauració de sèrie, activada, perquè l'app encara no l'hi ha pogut
