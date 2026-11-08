@@ -100,6 +100,7 @@ final class Aplicacio {
         let processos = ProcessosDelSistema()
         let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)
         let entornDiagnostic = EntornDiagnostic(lector: lector, carpetaConfiguracio: carpeta,
+                                                configuracioDeProva: arguments.deProva,
                                                 transcripcions: LectorTranscripcions(), confianca: LectorConfianca())
         copiaDiagnostic = CopiaDiagnostic(diagnostic: { Diagnostic.executa(entornDiagnostic, anonimitza: $0) })
         // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.

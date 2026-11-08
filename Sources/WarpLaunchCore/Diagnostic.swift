@@ -65,14 +65,17 @@ public struct EntornDiagnostic: Sendable {
     public var confianca: LectorConfianca
     /// On és `preferencies.json` (la carpeta de la configuració). `nil`: l'app no en té.
     public var carpetaConfiguracio: URL?
+    /// La carpeta és de prova (`--config`): l'app no hi toca mai `restore_session`, perquè D19 només val per a la de debò.
+    /// El CLI sempre llegeix la de debò.
+    public var configuracioDeProva: Bool
     public var inici: String
     /// El nom d'usuari, que l'informe anonimitzat no porta. Per defecte, l'últim component de la carpeta d'inici.
     public var usuari: String
     /// La versió de macOS, per a l'informe.
     public var sistema: String
 
-    public init(lector: Lector, carpetaConfiguracio: URL?, transcripcions: LectorTranscripcions,
-                confianca: LectorConfianca, usuari: String? = nil,
+    public init(lector: Lector, carpetaConfiguracio: URL?, configuracioDeProva: Bool = false,
+                transcripcions: LectorTranscripcions, confianca: LectorConfianca, usuari: String? = nil,
                 sistema: String = ProcessInfo.processInfo.operatingSystemVersionString) {
         processos = lector.processos
         warp = lector.warp
@@ -82,6 +85,7 @@ public struct EntornDiagnostic: Sendable {
         self.transcripcions = transcripcions
         self.confianca = confianca
         self.carpetaConfiguracio = carpetaConfiguracio
+        self.configuracioDeProva = configuracioDeProva
         inici = lector.inici
         self.usuari = usuari ?? (lector.inici as NSString).lastPathComponent
         self.sistema = sistema
@@ -706,8 +710,12 @@ public enum Diagnostic {
                 + "Warp Launch won't change it. " + deConsentiment.1)
         }
         if valor, consentiment.acceptat {
+            // D19: només amb la configuració de debò. Amb una de prova, l'app no el desactiva mai.
+            let qui = e.configuracioDeProva
+                ? "With a test configuration folder (--config), Warp Launch doesn't turn it off. "
+                : "Warp Launch turns it off within a minute while it's running. "
             return Comprovacio(.restauracio, .avis, "restore_session = true: after a restart, Warp will restore its own "
-                + "windows, without Claude. Warp Launch turns it off within a minute while it's running. " + deConsentiment.1)
+                + "windows, without Claude. " + qui + deConsentiment.1)
         }
         let estat = valor ? "restore_session = true (Warp restores its own windows)."
             : "restore_session = false (Warp doesn't restore its own windows)."

@@ -417,6 +417,15 @@ private struct MacDeProva {
         let activada = try mac.comprovacio(.restauracio)
         #expect(activada.resultat == .avis)
         #expect(activada.detall.hasPrefix("restore_session = true: after a restart"))
+        #expect(activada.detall.contains("Warp Launch turns it off within a minute while it's running."))
+        // Amb una carpeta de prova (`--config`), l'app no el desactiva mai (D19 només val per a la de debò).
+        var deProva = mac.entorn
+        deProva.configuracioDeProva = true
+        let ambProva = try #require(Diagnostic.executa(deProva, anonimitza: false).comprovacio(.restauracio))
+        #expect(ambProva.resultat == .avis)
+        #expect(ambProva.detall == "restore_session = true: after a restart, Warp will restore its own windows, without "
+            + "Claude. With a test configuration folder (--config), Warp Launch doesn't turn it off. Consent given on "
+            + "2026-11-04.")
         // Dues línies: l'app no la tocaria.
         try mac.escriu("[general]\nrestore_session = true\n[altres]\nrestore_session = false\n", a: mac.ajustos)
         let estranya = try mac.comprovacio(.restauracio)
