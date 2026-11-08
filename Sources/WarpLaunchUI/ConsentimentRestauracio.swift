@@ -187,12 +187,13 @@ public final class ConsentimentRestauracio {
             Registre.consentiment.error("retirar: \(error.description, privacy: .public)")
             // Desactivar-lo també pot fallar (Warp l'escriu en calent): llavors el refresc té l'avís, i la vigilància de cada
             // minut ho torna a provar (revisió de la 0.31.0). Si `settings.toml` acabava de canviar (0.31.3), no hi ha avís,
-            // però tampoc no s'ha desactivat. Sense el fitxer i amb Warp tancat (ronda 5), és el de sèrie fins que Warp s'obri.
+            // però tampoc no s'ha desactivat. Sense el fitxer i amb Warp tancat o encara arrencant (ronda 5), és el de sèrie
+            // fins que Warp sigui obert amb algun terminal.
             let ajust = switch (refresc.avis, refresc.pendent) {
             case (nil, nil): "L'ajust de Warp torna a quedar desactivat, i el permís"
             case (nil, .quanSObriWarp?):
                 "L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà "
-                    + "quan Warp sigui obert. El permís"
+                    + "quan Warp sigui obert amb alguna pestanya. El permís"
             default:
                 "L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar "
                     + "d'aquí a un minut. El permís"

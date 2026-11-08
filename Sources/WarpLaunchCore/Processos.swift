@@ -32,9 +32,6 @@ public protocol FontProcessos: Sendable {
     func fills() -> [Int32: [Int32]]
     /// La carpeta de treball d'un procés, o `nil` si no es pot saber.
     func carpeta(_ pid: Int32) -> String?
-    /// Quan ha arrencat el procés, o `nil` si no existeix o no se sap. Només per saber des de quan és obert Warp
-    /// (`warpObertDes`).
-    func arrencat(_ pid: Int32) -> Date?
     /// El Warp Stable del paquet d'un binari que corre (`AppWarp.delBinari`, decisió 4, 0.31.1): en llegeix l'`Info.plist`.
     /// És aquí, i no a `InstallacioWarp.ambLaCopiaOberta`, perquè els processos falsos de les proves només el llegeixin
     /// dins de la seva carpeta temporal: un binari inventat amb una ruta de debò no ha de llegir el Warp de debò.
@@ -59,10 +56,29 @@ extension FontProcessos {
         processos(executable: executable).contains { $0.info.argv.count <= 1 }
     }
 
-    /// Des de quan és obert Warp (`warpObert`): quan va arrencar el procés de l'app més antic. `nil` si és tancat, o si no
-    /// se sap quan va arrencar. `AjustRestauracio` només crea `settings.toml` quan fa prou estona que Warp és obert.
-    public func warpObertDes(executable: String) -> Date? {
-        processos(executable: executable).filter { $0.info.argv.count <= 1 }.compactMap { arrencat($0.pid) }.min()
+    /// Si el Warp que corre ja ha acabat d'arrencar (ronda 5): l'app de Warp (`warpObert`) té un `terminal-server` fill seu,
+    /// i aquest, algun terminal (un procés fill seu, com a `terminalsDeWarp`). L'app només crea `settings.toml` llavors
+    /// (`AjustRestauracio.potCrearElFitxer`), perquè Warp ja hi ha passat els ajustos de les preferències de macOS.
+    ///
+    /// **Per què un terminal, i no només el `terminal-server`** (codi públic de `warpdotdev/warp` a `abb3fe33`, `master` del
+    /// 06/11/2026, llegit el 08/11/2026, no vist; potser no és la versió instal·lada): Warp crea el `terminal-server` molt aviat
+    /// (`app/src/lib.rs`, `run_internal`, `PtySpawner::new`), just després d'obrir `settings.toml` i abans d'inicialitzar els
+    /// ajustos. La migració única es fa després, a `initialize_app` (`settings::init`, `needs_settings_file_migration`), i
+    /// mira si el fitxer existeix en aquell moment. Els terminals, en canvi, només els demana a `launch()`, després
+    /// d'`initialize_app`, quan obre les finestres: amb un terminal, la migració ja s'ha fet. Sense comptar el temps: un
+    /// rellotge no diu si Warp ha passat per `settings::init`.
+    ///
+    /// El `terminal-server` ha de penjar d'una app de Warp que corre: Warp el crea com a fill seu, i ell mateix s'atura quan
+    /// canvia de pare (`server/event_loop.rs`); un d'orfe no diu res del Warp d'ara. Warp obert sense cap finestra no té cap
+    /// terminal, i no compta: no té res per restaurar, i el fitxer es crearà quan n'obri una.
+    public func warpHaAcabatDArrencar(executable: String) -> Bool {
+        let tots = processos(executable: executable)
+        let apps = Set(tots.filter { $0.info.argv.count <= 1 }.map(\.pid))
+        guard !apps.isEmpty else { return false }
+        let servidors = tots.filter { $0.info.argv.contains("terminal-server") && pare($0.pid).map(apps.contains) == true }
+        guard !servidors.isEmpty else { return false }
+        let arbre = fills()
+        return servidors.contains { servidor in (arbre[servidor.pid] ?? []).contains { proces($0) != nil } }
     }
 
     /// Els terminals vius de Warp: els fills del seu `terminal-server` (el de `executable`), un per pane. No depèn de
@@ -144,16 +160,6 @@ public struct ProcessosDelSistema: FontProcessos {
         var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
         guard sysctl(&mib, 4, &info, &mida, nil, 0) == 0, mida > 0 else { return nil }
         return info.kp_eproc.e_ppid
-    }
-
-    /// `p_starttime` de `KERN_PROC_PID`: l'hora del rellotge del Mac en què va arrencar.
-    public func arrencat(_ pid: Int32) -> Date? {
-        var info = kinfo_proc()
-        var mida = MemoryLayout<kinfo_proc>.stride
-        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
-        guard sysctl(&mib, 4, &info, &mida, nil, 0) == 0, mida > 0, info.kp_proc.p_pid == pid else { return nil }
-        let hora = info.kp_proc.p_un.__p_starttime
-        return Date(timeIntervalSince1970: TimeInterval(hora.tv_sec) + TimeInterval(hora.tv_usec) / 1_000_000)
     }
 
     /// `KERN_PROCARGS2`: argc, ruta de l'executable, argv i entorn, separats per zeros.

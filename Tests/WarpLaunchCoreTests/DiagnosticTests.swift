@@ -479,13 +479,13 @@ private struct MacDeProva {
         #expect(noEsPot.detall.hasPrefix("\(mac.ajustos.path) has no restore_session: \(deSerie) Warp Launch can't add it "
             + "to this file (reason, in Catalan: ««restore_session» no hi és, i no s'hi pot afegir: a la línia 1, «general» "
             + "és una clau, no una taula [general]»), and won't change it."), "\(noEsPot.detall)")
-        // Sense el fitxer, el crea; sense la carpeta de Warp, Warp no s'ha obert mai, i no la crea. El diagnòstic no
-        // escriu res.
+        // Sense el fitxer, el crea, però només amb Warp obert i amb algun terminal (ronda 5); sense la carpeta de Warp, Warp
+        // no s'ha obert mai, i no la crea. El diagnòstic no escriu res.
         try FileManager.default.removeItem(at: mac.ajustos)
         let senseFitxer = try mac.comprovacio(.restauracio)
         #expect(senseFitxer.resultat == .avis)
         #expect(senseFitxer.detall.hasPrefix("\(mac.ajustos.path) doesn't exist: \(deSerie) Warp Launch creates it with only "
-            + "restore_session = false within a minute while it's running, once Warp has been open for 30 seconds (when "
+            + "restore_session = false within a minute while it's running, but only when Warp is open with a terminal (when "
             + "Warp starts without settings.toml, it first moves its older settings into it, and it wouldn't if the file "
             + "were already there)."), "\(senseFitxer.detall)")
         let carpetaWarp = mac.ajustos.deletingLastPathComponent()
@@ -494,7 +494,7 @@ private struct MacDeProva {
         #expect(senseCarpeta.resultat == .avis)
         #expect(senseCarpeta.detall.hasPrefix("\(carpetaWarp.path) doesn't exist: Warp hasn't been opened yet for this "
             + "user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has created it, Warp Launch adds "
-            + "restore_session = false within a minute while it's running, once Warp has been open for 30 seconds"),
+            + "restore_session = false within a minute while it's running, but only when Warp is open with a terminal"),
                 "\(senseCarpeta.detall)")
         #expect(!FileManager.default.fileExists(atPath: carpetaWarp.path))
         #expect(try !mac.comprovacio(.restauracio, anonimitza: true).detall.contains("maria.prova"))

@@ -425,7 +425,7 @@ private final class Mon {
         try mon.carpeta.posaPermisos(0o755)
         let error = try #require(d.error)
         #expect(error.hasSuffix("L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp "
-            + "Launch el desactivarà quan Warp sigui obert. El permís no ha canviat."), "\(error)")
+            + "Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat."), "\(error)")
         #expect(c.refresc?.avis == nil && c.refresc?.pendent == .quanSObriWarp)
         #expect(mon.ajust.valor && mon.sortides == 0 && c.estat == .acceptat)
     }
@@ -509,6 +509,8 @@ private final class Mon {
 private final class MonSenseLinia {
     let tmp: Carpeta
     let rellotge = RellotgeDeProva()
+    /// Si Warp ha acabat d'arrencar (ronda 5): per omissió, sí.
+    let warp = ArrencadaWarpDeProva()
     let ajust: AjustRestauracio
     let items = ItemsDInici()
     var sortides = 0
@@ -520,7 +522,7 @@ private final class MonSenseLinia {
         try FileManager.default.createDirectory(at: tmp.url("config"), withIntermediateDirectories: true)
         if carpetaWarp { try FileManager.default.createDirectory(at: tmp.url("warp"), withIntermediateDirectories: true) }
         ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: tmp.url("tmp"), rellotge: rellotge.funcio,
-                                 warpObertDes: rellotge.warp)
+                                 potCrearElFitxer: warp.funcio)
         if let contingut { try Data(contingut.utf8).write(to: ajust.ruta) }
         if migrat { try Data("{}".utf8).write(to: tmp.url("config").appending(path: MagatzemConfiguracio.nomFitxer)) }
     }
@@ -625,25 +627,71 @@ extension Carpeta {
         #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
     }
 
-    /// Ronda 5: sense el fitxer i amb Warp tancat, ni la vigilància ni sortir de l'app o engegar Warp (`tanca`) no el
-    /// creen, i no hi ha cap avís. Amb Warp acabat d'obrir, tampoc; quan fa mig minut que és obert, la vigilància el crea.
-    @Test func senseElFitxerNomesElCreaQuanFaMigMinutQueWarpEsObert() throws {
+    /// Ronda 5: sense el fitxer i amb Warp tancat (o encara arrencant), ni la vigilància ni sortir de l'app o engegar Warp
+    /// (`tanca`) no el creen. No és cap error: cap avís. Cada vigilància ho torna a preguntar.
+    @Test func senseElFitxerIAmbWarpTancatNoElCreaIHoTornaAProvar() throws {
         let mon = try MonSenseLinia(nil)
-        mon.rellotge.warpObertDes = nil
+        mon.warp.arrencat = false
         let c = mon.consentiment()
         c.accepta()
         let refresc = try #require(c.refresc)
         refresc.vigila()
         refresc.tanca()
         #expect(refresc.avis == nil && refresc.pendent == .quanSObriWarp, "\(refresc.avis ?? "")")
-        #expect(mon.contingut == nil)
-        mon.rellotge.warpObertDes = mon.rellotge.ara - 5
+        #expect(mon.contingut == nil && mon.warp.crides == 2)
         refresc.vigila()
-        #expect(mon.contingut == nil && refresc.avis == nil)
-        mon.rellotge.ara += 25
+        #expect(mon.contingut == nil && mon.warp.crides == 3 && refresc.avis == nil)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("warp").path).isEmpty)
+    }
+
+    /// Ronda 5: Warp s'obre entre dues passades de la vigilància. La primera no crea res; la segona, amb Warp obert i amb un
+    /// terminal, crea el fitxer només amb la línia.
+    @Test func siWarpSObreEntreDuesPassadesLaSegonaElCrea() throws {
+        let mon = try MonSenseLinia(nil)
+        mon.warp.arrencat = false
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(mon.contingut == nil && refresc.pendent == .quanSObriWarp)
+        mon.warp.arrencat = true
         refresc.vigila()
         #expect(refresc.avis == nil && refresc.pendent == nil)
         #expect(mon.contingut == "[general]\nrestore_session = false\n")
+        #expect(try mon.magatzem.carrega().restauracioOriginal == true)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+        // Ja hi és: la vigilància següent no ho torna a preguntar.
+        refresc.vigila()
+        #expect(mon.warp.crides == 2)
+    }
+
+    /// Ronda 5: si el fitxer apareix mentre Warp Launch espera (Warp hi ha desat un ajust seu), no es trepitja: la vigilància
+    /// següent hi afegeix la línia, i la resta queda com l'ha deixada Warp. Si apareix just quan l'ajust pregunta si el pot
+    /// crear, tampoc: no s'hi escriu res, i la vigilància següent hi afegeix la línia.
+    @Test(arguments: [false, true])
+    func unFitxerQueApareixMentrestantNoEsTrepitja(justQuanPregunta: Bool) throws {
+        let mon = try MonSenseLinia(nil)
+        mon.warp.arrencat = false
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(mon.contingut == nil)
+        let deWarp = "[general]\nlogin_item = false\n", ruta = mon.ajust.ruta
+        if justQuanPregunta {
+            mon.warp.arrencat = true
+            mon.warp.enPreguntar = { try? Data(deWarp.utf8).write(to: ruta) }
+            refresc.vigila()
+            #expect(mon.contingut == deWarp)
+            #expect(refresc.avis == nil && refresc.pendent == .acabaDeCanviar)
+            mon.warp.enPreguntar = nil
+        } else {
+            try Data(deWarp.utf8).write(to: ruta)
+        }
+        refresc.vigila()
+        #expect(refresc.avis == nil && refresc.pendent == nil)
+        #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = false\n")
         #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
     }
 
@@ -651,7 +699,7 @@ extension Carpeta {
     /// d'esperar a crear-lo.
     @Test func quanApareixLaCarpetaLAvisMarxaIElFitxerEspera() throws {
         let mon = try MonSenseLinia(nil, carpetaWarp: false)
-        mon.rellotge.warpObertDes = nil
+        mon.warp.arrencat = false
         let c = mon.consentiment()
         c.accepta()
         let refresc = try #require(c.refresc)
@@ -659,17 +707,17 @@ extension Carpeta {
         #expect(refresc.avis == RefrescWarp.avisWarpMaiObert)
         try FileManager.default.createDirectory(at: mon.tmp.url("warp"), withIntermediateDirectories: true)
         refresc.vigila()
-        #expect(refresc.avis == nil && mon.contingut == nil)
-        mon.rellotge.warpObertDes = mon.rellotge.ara - 30
+        #expect(refresc.avis == nil && refresc.pendent == .quanSObriWarp && mon.contingut == nil)
+        mon.warp.arrencat = true
         refresc.vigila()
         #expect(mon.contingut == "[general]\nrestore_session = false\n")
     }
 
     /// Ronda 5: «Restaura Warp i surt…» que hi ha de posar `false` sense el fitxer i amb Warp tancat no el crea: ho diu, no
-    /// surt i no canvia res. Amb Warp obert des de fa mig minut, sí.
+    /// surt i no canvia res. Amb Warp obert i amb un terminal, sí.
     @Test func desinstallarSenseElFitxerAmbWarpTancatNoElCrea() throws {
         let mon = try MonSenseLinia(nil)
-        mon.rellotge.warpObertDes = nil
+        mon.warp.arrencat = false
         let c = mon.consentiment()
         c.accepta()
         #expect(try mon.magatzem.recordaRestauracioOriginal(false))
@@ -678,10 +726,10 @@ extension Carpeta {
         #expect(d.retirada == .disponible(.original(false)))
         d.confirma()
         #expect(d.error == "No s'ha pogut tornar l'ajust de Warp com era: Warp no té «settings.toml», i Warp Launch només el "
-            + "crea quan fa 30 s que Warp és obert, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i "
-            + "torna-ho a provar d'aquí a un minut). L'ajust i el permís no han canviat.", "\(d.error ?? "")")
+            + "crea amb Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre "
+            + "Warp i torna-ho a provar). L'ajust i el permís no han canviat.", "\(d.error ?? "")")
         #expect(mon.contingut == nil && mon.sortides == 0 && c.estat == .acceptat)
-        mon.rellotge.warpObertDes = mon.rellotge.ara - 30
+        mon.warp.arrencat = true
         d.demana()
         d.confirma()
         #expect(d.error == nil, "\(d.error ?? "")")
@@ -729,23 +777,27 @@ extension Carpeta {
     }
 
     /// Amb `migrat` (el de sèrie) i sense la línia, sense el fitxer o sense la carpeta de Warp, «Restaura Warp i surt…»
-    /// acaba bé sense escriure res a Warp: l'ajust ja és activat.
+    /// acaba bé sense escriure res a Warp: l'ajust ja és activat. Tant si Warp és obert com si no (ronda 5).
     @Test(arguments: [("[general]\nlogin_item = true\n", true), (nil, true), (nil, false)] as [(String?, Bool)])
     func desinstallarSenseLiniaNoEscriuRes(contingut: String?, carpetaWarp: Bool) throws {
-        let mon = try MonSenseLinia(contingut, carpetaWarp: carpetaWarp, migrat: true)
-        let inode = try? FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.systemFileNumber] as? Int
-        let c = mon.consentiment()
-        #expect(c.estat == .acceptat)
-        let d = mon.desinstallacio(c)
-        d.demana()
-        #expect(d.retirada == .disponible(.deSerie))
-        d.confirma()
-        #expect(d.error == nil, "\(d.error ?? "")")
-        #expect(mon.sortides == 1)
-        #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .retirat(t0)))
-        #expect(mon.contingut == contingut)
-        #expect((try? FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.systemFileNumber] as? Int) == inode)
-        #expect(FileManager.default.fileExists(atPath: mon.tmp.url("warp").path) == carpetaWarp)
-        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+        for warpArrencat in [true, false] {
+            let mon = try MonSenseLinia(contingut, carpetaWarp: carpetaWarp, migrat: true)
+            mon.warp.arrencat = warpArrencat
+            let inode = try? FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.systemFileNumber] as? Int
+            let c = mon.consentiment()
+            #expect(c.estat == .acceptat)
+            let d = mon.desinstallacio(c)
+            d.demana()
+            #expect(d.retirada == .disponible(.deSerie))
+            d.confirma()
+            #expect(d.error == nil, "\(d.error ?? "")")
+            #expect(mon.sortides == 1)
+            #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .retirat(t0)))
+            #expect(mon.contingut == contingut)
+            #expect((try? FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.systemFileNumber] as? Int) == inode)
+            #expect(FileManager.default.fileExists(atPath: mon.tmp.url("warp").path) == carpetaWarp)
+            #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+            #expect(mon.warp.crides == 0, "no ha calgut preguntar-ho")
+        }
     }
 }

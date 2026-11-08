@@ -200,23 +200,42 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(ProcessosFalsos.ambWarp().terminalsDeWarp(executable: warp.executable).isEmpty)
     }
 
-    /// Des de quan és obert Warp (ronda 5): quan va arrencar l'app de Warp (el procés sense arguments), la més antiga si n'hi
-    /// ha més d'una. El `terminal-server` no compta, ni un altre Warp. Tancat, o sense saber quan va arrencar, `nil`.
-    @Test func desDeQuanEsObertWarp() throws {
-        let t = Date(timeIntervalSince1970: 1_800_000_000)
-        var processos = ProcessosFalsos.ambWarp()
+    /// Si Warp ha acabat d'arrencar (ronda 5): l'app de Warp (sense arguments), un `terminal-server` fill seu, i algun
+    /// terminal d'aquest. Sense cap terminal (encara arrenca, o és obert sense cap finestra), no. Un `terminal-server` orfe,
+    /// el d'un altre Warp, el CLI o l'app tancada, tampoc.
+    @Test func quanHaAcabatDArrencarWarp() throws {
         let warp = ProcessosFalsos.executableWarp
-        #expect(processos.warpObertDes(executable: warp) == nil, "no se sap quan va arrencar")
-        processos.arrencades = [40: t, 50: t - 100, 60: t - 200]
-        #expect(processos.warpObertDes(executable: warp) == t)
-        #expect(processos.warpObertDes(executable: "/Users/prova/Applications/Warp.app/Contents/MacOS/stable") == nil)
-        processos.processos[41] = (InfoProces(executable: warp, argv: [warp]), 1)
-        processos.arrencades[41] = t + 5
-        #expect(processos.warpObertDes(executable: warp) == t)
-        processos.processos[40] = nil
-        processos.processos[41] = nil
-        #expect(!processos.warpObert(executable: warp))
-        #expect(processos.warpObertDes(executable: warp) == nil, "tancat")
+        var processos = ProcessosFalsos()
+        #expect(!processos.warpHaAcabatDArrencar(executable: warp), "tancat")
+        ambWarp(warp, a: &processos)
+        #expect(processos.warpHaAcabatDArrencar(executable: warp))
+        #expect(!processos.warpHaAcabatDArrencar(executable: "/Users/prova/Applications/Warp.app/Contents/MacOS/stable"),
+                "un altre Warp")
+        // Encara arrenca: l'app i el `terminal-server`, sense cap terminal (també obert sense cap finestra).
+        var arrencant = processos
+        arrencant.processos[51] = nil
+        #expect(arrencant.warpObert(executable: warp))
+        #expect(!arrencant.warpHaAcabatDArrencar(executable: warp))
+        // Abans de crear el `terminal-server`.
+        arrencant.processos[50] = nil
+        #expect(arrencant.warpObert(executable: warp) && !arrencant.warpHaAcabatDArrencar(executable: warp))
+        // Un `terminal-server` orfe (el d'una app que s'ha tancat), amb un shell: no diu res de l'app d'ara.
+        var orfe = processos
+        orfe.processos[50] = (try #require(orfe.processos[50]).info, 1)
+        #expect(!orfe.warpHaAcabatDArrencar(executable: warp))
+        // L'app tancada, encara que en quedi el `terminal-server` amb un shell; o només el CLI de Warp.
+        var tancat = processos
+        tancat.processos[40] = nil
+        #expect(!tancat.warpObert(executable: warp) && !tancat.warpHaAcabatDArrencar(executable: warp))
+        tancat.processos[40] = (InfoProces(executable: warp, argv: [warp, "--help"]), 1)
+        #expect(!tancat.warpHaAcabatDArrencar(executable: warp), "el CLI no és l'app")
+        // Un shell del Terminal de macOS no és cap terminal de Warp.
+        var ambTerminal = ProcessosFalsos.ambWarp()
+        #expect(!ambTerminal.warpHaAcabatDArrencar(executable: warp))
+        ambTerminal.processos[61] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 60)
+        #expect(!ambTerminal.warpHaAcabatDArrencar(executable: warp))
+        ambTerminal.processos[51] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+        #expect(ambTerminal.warpHaAcabatDArrencar(executable: warp))
     }
 
     /// El lector fa servir el Warp que li diuen, a cada lectura.
@@ -249,11 +268,11 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(despres.warpObert == true)
         #expect(despres.terminals == [TerminalViu(pid: 51)])
         #expect(lector.warpObert())
-        // Des de quan, el del Warp que corre (ronda 5).
-        #expect(lector.warpObertDes() == nil)
-        processos.arrencades[40] = Date(timeIntervalSince1970: 1_800_000_000)
+        // Ha acabat d'arrencar: el Warp que corre, amb un terminal (ronda 5). Sense, encara no.
+        #expect(lector.warpHaAcabatDArrencar())
+        processos.processos[51] = nil
         lector.processos = processos
-        #expect(lector.warpObertDes() == Date(timeIntervalSince1970: 1_800_000_000))
+        #expect(lector.warpObert() && !lector.warpHaAcabatDArrencar())
     }
 
     /// La lectura diu si Warp Preview no deixa obrir res, i `llegeix` també ho diu, en text i en JSON.
@@ -437,6 +456,10 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         servidor.processos[70] = (InfoProces(executable: binari, argv: [binari, "--help"]), 1)
         #expect(warp.ambLaCopiaOberta(servidor) == warp)
         #expect(try !lector(tmp, servidor, cerca: cerca).warpObert())
+        // Ronda 5: si ha acabat d'arrencar, també de la còpia que corre, i no de la que diu macOS.
+        #expect(l.warpHaAcabatDArrencar())
+        #expect(!processos.warpHaAcabatDArrencar(executable: warp.executable))
+        #expect(try !lector(tmp, servidor, cerca: cerca).warpHaAcabatDArrencar())
     }
 
     /// Amb totes dues obertes, la que diu macOS, com fins ara. Amb dues altres, la de pid més baix.

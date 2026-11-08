@@ -28,13 +28,9 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
 final class RellotgeDeProva: @unchecked Sendable {
     private let pany = NSLock()
     private var valor = Date() + 60
-    private var obert: Date? = Date()
 
     var ara: Date { get { pany.withLock { valor } } set { pany.withLock { valor = newValue } } }
     var funcio: @Sendable () -> Date { { [self] in ara } }
-    /// Des de quan és obert Warp (`AjustRestauracio.warpObertDes`, ronda 5): per omissió, des de fa un minut; `nil`, tancat.
-    var warpObertDes: Date? { get { pany.withLock { obert } } set { pany.withLock { obert = newValue } } }
-    var warp: @Sendable () -> Date? { { [self] in warpObertDes } }
 
     /// Posa la data de modificació del fitxer a fa `segons` (negatiu: del futur).
     func modificat(_ fitxer: URL, fa segons: TimeInterval) throws {
@@ -42,10 +38,37 @@ final class RellotgeDeProva: @unchecked Sendable {
     }
 }
 
+/// Si el Warp de les proves ha acabat d'arrencar (`AjustRestauracio.potCrearElFitxer`, ronda 5): el fals del que l'app mira
+/// pels processos (`Lector.warpHaAcabatDArrencar`). Per omissió, sí (Warp obert amb terminals): les proves que no són de la
+/// ronda 5 creen el fitxer com abans. `enPreguntar`: el que fa Warp just quan l'ajust ho pregunta. La mateixa a
+/// `WarpLaunchUITests/AjudesDeProva.swift`.
+final class ArrencadaWarpDeProva: @unchecked Sendable {
+    private let pany = NSLock()
+    private var estat: (arrencat: Bool, crides: Int, enPreguntar: (@Sendable () -> Void)?) = (true, 0, nil)
+
+    var arrencat: Bool { get { pany.withLock { estat.arrencat } } set { pany.withLock { estat.arrencat = newValue } } }
+    /// Quantes vegades l'ajust ho ha preguntat.
+    var crides: Int { pany.withLock { estat.crides } }
+    var enPreguntar: (@Sendable () -> Void)? {
+        get { pany.withLock { estat.enPreguntar } } set { pany.withLock { estat.enPreguntar = newValue } }
+    }
+    var funcio: @Sendable () -> Bool {
+        { [self] in
+            let (arrencat, enPreguntar) = pany.withLock { () -> (Bool, (@Sendable () -> Void)?) in
+                estat.crides += 1
+                return (estat.arrencat, estat.enPreguntar)
+            }
+            enPreguntar?()
+            return arrencat
+        }
+    }
+}
+
 @Suite struct AjustRestauracioTests {
     private struct Banc {
         let tmp: CarpetaTemporal
         let rellotge = RellotgeDeProva()
+        let warp = ArrencadaWarpDeProva()
         var ajust: AjustRestauracio
         var fitxer: URL { ajust.ruta }
 
@@ -54,7 +77,7 @@ final class RellotgeDeProva: @unchecked Sendable {
             tmp = try CarpetaTemporal()
             let temporal = try tmp.carpeta("tmp")
             ajust = AjustRestauracio(ruta: tmp.url("settings.toml"), carpetaTemporal: URL(filePath: temporal),
-                                     rellotge: rellotge.funcio, warpObertDes: rellotge.warp)
+                                     rellotge: rellotge.funcio, potCrearElFitxer: warp.funcio)
             if let contingut { try Data(contingut.utf8).write(to: tmp.url("settings.toml")) }
         }
 
@@ -291,11 +314,14 @@ final class RellotgeDeProva: @unchecked Sendable {
     }
 
     /// Crear el fitxer tampoc no es fa des d'un altre volum: no seria d'un sol cop. L'error ha de ser el del volum: a
-    /// `/dev` tampoc no s'hi pot preparar res, i sense la comprovació la prova passaria igualment.
-    @Test func crearloDesDUnAltreVolumNoEsFa() throws {
+    /// `/dev` tampoc no s'hi pot preparar res, i sense la comprovació la prova passaria igualment. També amb Warp tancat
+    /// (ronda 5): l'error es diu abans de preguntar si es pot crear, i no s'ha d'esperar que Warp s'obri per veure'l.
+    @Test(arguments: [true, false])
+    func crearloDesDUnAltreVolumNoEsFa(warpArrencat: Bool) throws {
         let b = try Banc(nil)
+        b.warp.arrencat = warpArrencat
         let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"), rellotge: b.rellotge.funcio,
-                                     warpObertDes: b.rellotge.warp)
+                                     potCrearElFitxer: b.warp.funcio)
         #expect(throws: AjustRestauracio.Refusat(description: "la carpeta temporal no és al mateix volum que "
             + "«\(b.fitxer.path)»")) { try ajust.posa(false) }
         #expect(!FileManager.default.fileExists(atPath: b.fitxer.path))
@@ -328,24 +354,29 @@ final class RellotgeDeProva: @unchecked Sendable {
 
     // MARK: - Crear el fitxer, només amb Warp obert (ronda 5)
 
-    /// Sense el fitxer, amb Warp tancat, acabat d'obrir o amb una hora d'arrencada del futur, no es crea: Warp encara podria
-    /// fer la migració d'arrencada, i se la saltaria. No és cap error, i no queda res a la carpeta temporal. Quan fa 30 s
-    /// que Warp és obert, sí.
-    @Test(arguments: [nil, 0, 10, 29.9, -5] as [TimeInterval?])
-    func senseElFitxerNomesElCreaAmbWarpObertDesDeFaMigMinut(obertFa: TimeInterval?) throws {
+    /// Sense el fitxer, si qui crida l'ajust diu que ara no es pot crear (Warp tancat, o encara arrencant), no es crea: Warp
+    /// encara podria fer la migració d'arrencada, i se la saltaria. No és cap error, no queda res a la carpeta temporal, i
+    /// l'ajust no ho recorda: la vegada següent ho torna a preguntar, i quan es pot, el crea.
+    @Test func senseElFitxerNomesElCreaSiQuiCridaDiuQueEsPot() throws {
         let b = try Banc(nil)
-        b.rellotge.warpObertDes = obertFa.map { b.rellotge.ara - $0 }
+        b.warp.arrencat = false
         #expect(try b.ajust.valor() == true)
         #expect(try b.ajust.posa(true) == .jaHiEra)
+        #expect(b.warp.crides == 0, "activar-lo no crea res: no cal preguntar-ho")
         #expect(try b.ajust.posa(false) == .quanSObriWarp)
+        #expect(try b.ajust.posa(false) == .quanSObriWarp)
+        #expect(b.warp.crides == 2)
         #expect(!FileManager.default.fileExists(atPath: b.fitxer.path))
         #expect(b.temporals.isEmpty)
-        b.rellotge.warpObertDes = b.rellotge.ara - 30
+        #expect(try FileManager.default.contentsOfDirectory(atPath: b.tmp.ruta) == ["tmp"])
+        b.warp.arrencat = true
         #expect(try b.ajust.posa(false) == .escrit)
         #expect(b.contingut == "[general]\nrestore_session = false\n")
+        #expect(b.warp.crides == 3)
+        #expect(b.temporals.isEmpty)
     }
 
-    /// Per omissió (sense dir des de quan és obert Warp), l'ajust no crea mai el fitxer.
+    /// Per omissió (sense dir si es pot), l'ajust no crea mai el fitxer.
     @Test func perOmissioNoCreaElFitxer() throws {
         let tmp = try CarpetaTemporal()
         let ajust = AjustRestauracio(ruta: tmp.url("settings.toml"), carpetaTemporal: URL(filePath: try tmp.carpeta("tmp")),
@@ -354,13 +385,39 @@ final class RellotgeDeProva: @unchecked Sendable {
         #expect(!FileManager.default.fileExists(atPath: tmp.url("settings.toml").path))
     }
 
+    /// Es pregunta després de llegir que el fitxer no hi és, just abans de crear-lo: si Warp el crea just llavors (amb un
+    /// ajust seu), no es trepitja, i és `.mesTard`. Si es preguntés abans de llegir, l'ajust veuria el fitxer de Warp i hi
+    /// afegiria la taula.
+    @Test func esPreguntaJustAbansDeCrearlo() throws {
+        let b = try Banc(nil)
+        let fitxer = b.fitxer
+        b.warp.enPreguntar = { try? Data("x = 1\n".utf8).write(to: fitxer) }
+        #expect(try b.ajust.posa(false) == .mesTard)
+        #expect(b.contingut == "x = 1\n")
+        #expect(b.warp.crides == 1)
+        #expect(b.temporals.isEmpty)
+    }
+
     /// Amb el fitxer, afegir-hi la línia o la taula, o canviar-la, no depèn de Warp: també amb Warp tancat, com a la 0.31.2.
+    /// Ni s'arriba a preguntar.
     @Test(arguments: [(text, true), ("[general]\nx = 1\n", false), ("x = 1\n", false), ("", false)])
     func ambElFitxerEscriuAmbWarpTancat(contingut: String, nou: Bool) throws {
         let b = try Banc(contingut)
-        b.rellotge.warpObertDes = nil
+        b.warp.arrencat = false
         #expect(try b.ajust.posa(nou) == .escrit)
         #expect(try b.ajust.valor() == nou)
+        #expect(b.warp.crides == 0)
+    }
+
+    /// Sense la carpeta de Warp, refusa com abans, sense preguntar-ho: no és que Warp encara arrenqui, és que no s'ha obert mai.
+    @Test func senseLaCarpetaNoHoPregunta() throws {
+        let tmp = try CarpetaTemporal()
+        let warp = ArrencadaWarpDeProva()
+        let ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: URL(filePath: try tmp.carpeta("tmp")),
+                                     potCrearElFitxer: warp.funcio)
+        #expect(throws: AjustRestauracio.Refusat.self) { try ajust.posa(false) }
+        #expect(warp.crides == 0)
+        #expect(!FileManager.default.fileExists(atPath: tmp.url("warp").path))
     }
 
     // MARK: - Escriptura prudent (0.31.3)

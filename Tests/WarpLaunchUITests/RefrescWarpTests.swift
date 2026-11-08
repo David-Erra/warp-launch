@@ -442,9 +442,9 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(mon.esperes == 0 && mon.posats == 1 && r.pendent == .quanSObriWarp && r.avis == nil)
     }
 
-    // MARK: - Sense `settings.toml`, i amb Warp tancat o acabat d'obrir (ronda 5)
+    // MARK: - Sense `settings.toml`, i amb Warp tancat o encara arrencant (ronda 5)
 
-    /// Si l'ajust no crea el fitxer perquè Warp és tancat o acabat d'obrir, no és cap error: cap avís, queda pendent, i la
+    /// Si l'ajust no crea el fitxer perquè Warp és tancat o encara arrenca, no és cap error: cap avís, queda pendent, i la
     /// vigilància següent ho torna a provar.
     @Test func senseElFitxerIAmbWarpTancatQuedaPendentSenseAvis() {
         let mon = Mon()
@@ -477,8 +477,9 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         mon.quanSObriWarp = 1
         let r = RefrescWarp(entorn: mon.entorn)
         #expect(throws: RefrescWarp.QuanSObriWarp()) { try r.retira(posant: false) }
-        #expect(RefrescWarp.QuanSObriWarp().description.hasPrefix("Warp no té «settings.toml», i Warp Launch només el crea "
-            + "quan fa 30 s que Warp és obert"))
+        #expect(RefrescWarp.QuanSObriWarp().description == "Warp no té «settings.toml», i Warp Launch només el crea amb "
+            + "Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i "
+            + "torna-ho a provar)")
         #expect(mon.ajust && mon.canvis.isEmpty)
         r.vigila()
         #expect(!mon.ajust, "la vigilància continua")

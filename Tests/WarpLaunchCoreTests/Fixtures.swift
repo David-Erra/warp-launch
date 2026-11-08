@@ -114,8 +114,6 @@ struct ProcessosFalsos: FontProcessos {
 
     var processos: [Int32: (info: InfoProces, pare: Int32)] = [:]
     var carpetes: [Int32: String] = [:]
-    /// Quan va arrencar cada procés (`arrencat`); sense, no se sap.
-    var arrencades: [Int32: Date] = [:]
 
     func fills() -> [Int32: [Int32]] {
         Dictionary(grouping: processos, by: \.value.pare).mapValues { $0.map(\.key) }
@@ -123,7 +121,6 @@ struct ProcessosFalsos: FontProcessos {
     func carpeta(_ pid: Int32) -> String? { carpetes[pid] }
     func proces(_ pid: Int32) -> InfoProces? { processos[pid]?.info }
     func pare(_ pid: Int32) -> Int32? { processos[pid]?.pare }
-    func arrencat(_ pid: Int32) -> Date? { processos[pid] == nil ? nil : arrencades[pid] }
     func pids(nom: String) -> [Int32] {
         processos.filter { String(URL(filePath: $0.value.info.executable).lastPathComponent.prefix(16)) == nom }
             .keys.sorted()
