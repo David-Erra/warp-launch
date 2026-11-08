@@ -156,15 +156,15 @@ private func retiradaForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -
 /// Les sessions de Claude (`~/.claude/sessions`) i els processos de debò. Cap paràmetre no els té per defecte (`Lector`,
 /// `LectorSessions`): una prova que se'ls oblidés els llegiria, i cap guarda de línia no ho veuria, perquè el valor per
 /// defecte no surt a la crida i els arguments poden ocupar diverses línies. Les línies de `Sources` que els esmenten, fora
-/// dels comentaris.
+/// dels comentaris. De les carpetes, qualsevol `carpetaPerDefecte` (també la de les transcripcions): amb
+/// `Self.carpetaPerDefecte`, una extensió de `LectorSessions` en un altre fitxer en podria tornar a fer un valor per defecte.
 private let rutaLectorSessions = "Sources/WarpLaunchCore/LectorSessions.swift"
 private func sessionsIProcessosDeDebo(_ codi: [(ruta: String, text: String)]) throws -> [String] {
     let rutaEscrita = try Regex(#""[^"]*\.claude/sessions"#)
     return codi.flatMap { f in
         f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.hasPrefix("//") }
-            .filter { $0.contains("LectorSessions.carpetaPerDefecte") || $0.contains("ProcessosDelSistema") || $0.contains(rutaEscrita)
-                      || (f.ruta == rutaLectorSessions && $0.contains("carpetaPerDefecte")) }
+            .filter { $0.contains("carpetaPerDefecte") || $0.contains("ProcessosDelSistema") || $0.contains(rutaEscrita) }
             .map { "\(f.ruta): \($0)" }
     }
 }
@@ -521,12 +521,15 @@ private let prohibidesArrossegar = [
             "\(cli): let processos = ProcessosDelSistema()",
             "\(rutaLectorSessions): .appending(path: \".claude/sessions\")",
             "\(rutaLectorSessions): public static let carpetaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
+            "Sources/WarpLaunchCore/LectorTranscripcions.swift: public init(carpeta: URL = LectorTranscripcions.carpetaPerDefecte) {",
+            "Sources/WarpLaunchCore/LectorTranscripcions.swift: public static let carpetaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
             "Sources/WarpLaunchCore/Processos.swift: public struct ProcessosDelSistema: FontProcessos {",
         ], "\(deDebo.joined(separator: "\n"))")
         func text(_ ruta: String) throws -> String { try #require(codi.first { $0.ruta == ruta }).text }
         #expect(try text("Sources/WarpLaunchCore/Lector.swift").contains("\n                carpetaSessions: URL,\n"))
         #expect(try text(rutaLectorSessions).contains("\n    public init(carpeta: URL, processos: any FontProcessos) {\n"))
-        // La mostra: un valor per defecte, també amb la ruta escrita o dins de `LectorSessions`, surt; un comentari, no.
+        // La mostra: un valor per defecte, també amb la ruta escrita, dins de `LectorSessions` o en una extensió seva d'un
+        // altre fitxer, surt; un comentari, no.
         #expect(try sessionsIProcessosDeDebo([
             (ruta: "Sources/WarpLaunchCore/Lector.swift", text: """
                 carpetaSessions: URL = LectorSessions.carpetaPerDefecte,
@@ -537,11 +540,17 @@ private let prohibidesArrossegar = [
                 """),
             (ruta: rutaLectorSessions, text: "public init(carpeta: URL = carpetaPerDefecte, processos: any FontProcessos) {"),
             (ruta: "Sources/WarpLaunchCore/OrdreCLI.swift", text: "    Només llegeix Warp, ~/.claude/sessions i ~/.claude/projects."),
+            (ruta: "Sources/WarpLaunchCore/Diagnostic.swift", text: """
+                extension LectorSessions {
+                    init(processos: any FontProcessos) { self.init(carpeta: Self.carpetaPerDefecte, processos: processos) }
+                }
+                """),
         ]) == [
             "Sources/WarpLaunchCore/Lector.swift: carpetaSessions: URL = LectorSessions.carpetaPerDefecte,",
             "Sources/WarpLaunchCore/Lector.swift: processos: any FontProcessos = ProcessosDelSistema(),",
             "Sources/WarpLaunchCore/Lector.swift: carpetaSessions: URL = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".claude/sessions\"),",
             "\(rutaLectorSessions): public init(carpeta: URL = carpetaPerDefecte, processos: any FontProcessos) {",
+            "Sources/WarpLaunchCore/Diagnostic.swift: init(processos: any FontProcessos) { self.init(carpeta: Self.carpetaPerDefecte, processos: processos) }",
         ])
     }
 
