@@ -81,15 +81,9 @@ private let assignacioEstat = #"(^|[^A-Za-z0-9_])estat\s*=(?!=)"#
 private let donenConsentiment = [#"\.acceptat\("#, #"\.migrat(?![A-Za-z0-9_])"#, #"\.restauracio\s*=(?!=)"#, #"\.retirat\("#]
 /// D3: qualsevol aparició de la paraula `register`, també en un comentari.
 private let paraulaRegister = #"(^|[^A-Za-z0-9_])register(?![A-Za-z0-9_])"#
-/// A les proves, les lectures de Warp només amb rutes de prova, i res de l'app (`lesProvesNoLlegeixenLEstatReal`).
-/// També amb `.init(`: `Lector`, `LectorWarp` i `LectorAjustosWarp` encara tenen les rutes de debò de Warp per defecte, i
-/// `Lector.init(carpetaSessions: c, processos: p, warp: w)` llegiria `warp.sqlite` i `settings.toml`. Sense dir-ne el nom
-/// (`lectorSenseNomProves`), un `.init(` que comenci amb una etiqueta del `Lector` sense les dues rutes de prova
-/// (`l: Lector = .init(carpetaSessions:`), o al final de la línia, on no se'n veuen els arguments; cap prova no en fa servir.
-private let lectorProves = #"(^|[^A-Za-z0-9_])Lector(\.init)?\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#
-private let lectorAjustosProves = #"(^|[^A-Za-z0-9_])LectorAjustosWarp(\.init)?\((?!ruta:)"#
-private let lectorWarpProves = #"(^|[^A-Za-z0-9_])LectorWarp(\.init)?\((?!ruta:)"#
-private let lectorSenseNomProves = #"(^|[^A-Za-z0-9_])\.init\s*\(\s*((?!rutaWarp:[^,]+,\s*rutaAjustos:)(rutaWarp|rutaAjustos|carpetaSessions)\s*:|(//.*)?$)"#
+/// A les proves, res de l'app (`lesProvesNoLlegeixenLEstatReal`). `Lector`, `LectorWarp` i `LectorAjustosWarp` no tenen cap
+/// valor per defecte (`elsLectorsDeWarpDeDeboNomesDeLAppIDelCLI`): sense les rutes, tampoc amb `.init(`, no compilen, i les
+/// de debò no es poden escriure en una prova (`rutaPerDefecte`, `iniciDeDebo`).
 private let ajustRestauracioProves = #"(^|[^A-Za-z0-9_])AjustRestauracio\((?!ruta: b\.fitxer|ruta: tmp\.url)"#
 private let trobaProves = #"(^|[^A-Za-z0-9_])InstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
 private let nsApp = #"(^|[^A-Za-z0-9_])NSApp(?![A-Za-z0-9_])"#
@@ -235,11 +229,8 @@ private func obrenOTanquen(_ codi: [(ruta: String, text: String)]) throws -> [St
 
 /// Pla A4: a les proves, els lectors de Claude només amb una ruta (també amb `.init(`), i «Copia el diagnòstic» només amb un
 /// porta-retalls fals. Sense `\b`: amb les regles d'Unicode, `WarpLaunchCore.LectorConfianca(` no hi té cap límit de paraula.
-/// Ni `.init()` sense arguments, de cap tipus: `LectorWarp` i `LectorAjustosWarp` encara tenen la ruta de debò per defecte, i
-/// `.init()` en crearia un sense dir-ne el nom. Els de Claude ja no en tenen cap: sense la ruta, no compilen.
 private let lectorTranscripcions = #"(^|[^A-Za-z0-9_])LectorTranscripcions(\.init)?\((?!carpeta:)"#
 private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca(\.init)?\((?!ruta:)"#
-private let initSenseArguments = #"\.init\(\s*\)"#
 private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
 /// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen`,
@@ -309,23 +300,39 @@ private func sessionsIProcessosDeDebo(_ codi: [(ruta: String, text: String)]) th
 /// qualsevol `init`. Així, cap `init` nou (tampoc el d'un protocol, que demanaria canviar la declaració del tipus o una
 /// extensió) no torna a deixar crear-ne un sense la ruta.
 /// Sense dir-ne el nom, a qualsevol fitxer: `.init(carpeta:` i `.init(ruta:`, les úniques etiquetes dels seus `init`
-/// (`confianca: .init(ruta: URL(filePath: lector.inici).appending(path: ".claude.json"))` llegiria el de debò a una prova,
-/// perquè `Lector.inici` encara té la carpeta d'inici de debò per defecte), també `type(of: c).init(ruta:` i `.init(` al
-/// final de la línia; cap altre tipus de `Sources` no es crea així. I una línia que comença amb el nom: la segona d'una
+/// (`confianca: .init(ruta: URL(filePath: lector.inici).appending(path: ".claude.json"))` els diria el fitxer de debò sense
+/// passar per l'app), també `type(of: c).init(ruta:` i `.init(` al final de la línia; cap altre tipus de `Sources` no es crea
+/// així. I una línia que comença amb el nom: la segona d'una
 /// extensió, d'un àlies o d'una declaració partida en dues línies (`extension` i, a la següent, `LectorConfianca {`, que
 /// hi podria afegir un `init()`).
 private let rutesLectorsClaude = [
     "Sources/WarpLaunchCore/LectorConfianca.swift", "Sources/WarpLaunchCore/LectorTranscripcions.swift",
 ]
 private func lectorsDeClaudeDeDebo(_ codi: [(ruta: String, text: String)]) throws -> [String] {
-    let nom = #"Lector(Transcripcions|Confianca)"#
+    try lectorsDeDebo(codi, nom: #"Lector(Transcripcions|Confianca)"#, etiquetes: "carpeta|ruta", rutes: rutesLectorsClaude)
+}
+
+/// Els lectors de Warp de debò (decisió 7, ronda 6), amb la mateixa guarda: `LectorWarp` (`warp.sqlite`), `LectorAjustosWarp`
+/// (`settings.toml`) i `Lector`, que els fa servir tots dos i té les etiquetes `rutaWarp`, `rutaAjustos` i `carpetaSessions`.
+/// El `Lector` privat que llegeix JSON (`JSONEstricte`, `ClausRepetides`) és un altre tipus, i surt a la llista fixa.
+private let rutesLectorsWarp = [
+    "Sources/WarpLaunchCore/Lector.swift", "Sources/WarpLaunchCore/LectorAjustosWarp.swift", "Sources/WarpLaunchCore/LectorWarp.swift",
+]
+private func lectorsDeWarpDeDebo(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    try lectorsDeDebo(codi, nom: #"Lector(Warp|AjustosWarp)?"#, etiquetes: "ruta|rutaWarp|rutaAjustos|carpetaSessions", rutes: rutesLectorsWarp)
+}
+
+/// Les línies de `Sources`, fora dels comentaris, que creen o declaren un lector de debò dels noms de `nom`, o que en diuen
+/// la ruta; `etiquetes`, les dels seus `init` (per als que es creen sense dir-ne el nom), i `rutes`, els seus fitxers.
+private func lectorsDeDebo(_ codi: [(ruta: String, text: String)], nom: String, etiquetes: String,
+                           rutes: [String]) throws -> [String] {
     let crea = try Regex(#"(^|[^A-Za-z0-9_])"# + nom
         + #"(\(|\.(init|self|carpetaPerDefecte|rutaPerDefecte)(?![A-Za-z0-9_])|\??\s*=(?!=))"#)
     let aliesOExtensio = try Regex(#"(^|[^A-Za-z0-9_])(typealias|extension)(?![A-Za-z0-9_]).*[^A-Za-z0-9_]"# + nom
         + #"(?![A-Za-z0-9_])"#)
     let declaracio = try Regex(#"(^|[^A-Za-z0-9_])(struct|class|enum|actor|protocol)\s+"# + nom + #"(?![A-Za-z0-9_])"#)
     // `self.init(ruta:` i `Tipus.init(ruta:` no: no és el tipus implícit.
-    let senseElNom = try Regex(#"(^|[^A-Za-z0-9_])\.init\s*\(\s*((carpeta|ruta)\s*:|(//.*)?$)"#)
+    let senseElNom = try Regex(#"(^|[^A-Za-z0-9_])\.init\s*\(\s*(("# + etiquetes + #")\s*:|(//.*)?$)"#)
     // Un tipus seu (`LectorTranscripcions.On`), no.
     let comencaAmbElNom = try Regex(#"^\.?([A-Za-z_][A-Za-z0-9_]*\.)*"# + nom + #"(?![A-Za-z0-9_]|\.[A-Z])"#)
     // Als seus fitxers: `Self(`, `.init(` i les rutes per defecte soles, i la declaració de qualsevol `init` (també `init?(`
@@ -341,9 +348,28 @@ private func lectorsDeClaudeDeDebo(_ codi: [(ruta: String, text: String)]) throw
             let linia = i + 1 < linies.count && linies[i + 1].hasPrefix("=") ? linies[i] + " " + linies[i + 1] : linies[i]
             guard linia.contains(crea) || linia.contains(aliesOExtensio) || linia.contains(declaracio)
                 || linia.contains(senseElNom) || linia.contains(comencaAmbElNom)
-                || (rutesLectorsClaude.contains(f.ruta) && linia.contains(alSeuFitxer)) else { return nil }
+                || (rutes.contains(f.ruta) && linia.contains(alSeuFitxer)) else { return nil }
             return "\(f.ruta): \(linia)"
         }
+    }
+}
+
+/// Les línies d'un `init` de diverses línies, de la que comença amb `comenca` a la que acaba amb `{`, sense els comentaris
+/// ni els espais del principi. Un valor per defecte a qualsevol paràmetre hi surt.
+private func liniesDelInit(_ text: String, comenca: String) -> [String] {
+    let linies = text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.hasPrefix("//") }
+    guard let primera = linies.firstIndex(where: { $0.hasPrefix(comenca) }),
+          let darrera = linies[primera...].firstIndex(where: { $0.hasSuffix("{") }) else { return [] }
+    return Array(linies[primera...darrera])
+}
+
+/// Les línies de `Sources`, fora dels comentaris, que fan servir la carpeta d'inici de debò (`iniciDeDebo`).
+private func iniciDeDeboAlCodi(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    let regs = try iniciDeDebo.map { try Regex($0) }
+    return codi.flatMap { f in
+        f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { linia in !linia.hasPrefix("//") && regs.contains { linia.contains($0) } }
+            .map { "\(f.ruta): \($0)" }
     }
 }
 
@@ -471,9 +497,9 @@ private let prohibidesArrossegar = [
             "Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCLI/main.swift",
         ])
         // L'app i el CLI llegeixen Warp on és de debò: el lector de cadascun en porta la crida.
-        #expect(linies("Lector(carpetaSessions:").sorted() == [
-            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
-            "Sources/WarpLaunchCLI/main.swift: let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema)",
+        #expect(linies("carpetaSessions: LectorSessions.carpetaPerDefecte").sorted() == [
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift: carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
+            "Sources/WarpLaunchCLI/main.swift: carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
         ])
         // Decisió 4 (0.31.1): l'app i el CLI obren al Warp del lector (el que corre, si n'hi ha un), i la versió del full
         // és la d'aquell. L'obridor no té cap Warp per defecte, i ningú no se salta el lector amb `lector.warp`.
@@ -707,10 +733,10 @@ private let prohibidesArrossegar = [
         let cli = "Sources/WarpLaunchCLI/main.swift"
         let deDebo = try sessionsIProcessosDeDebo(codi)
         #expect(deDebo.sorted() == [
-            "\(app): let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
+            "\(app): carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
             "\(app): let processos = ProcessosDelSistema()",
             "\(app): let transcripcions = LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte)",
-            "\(cli): let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema)",
+            "\(cli): carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
             "\(cli): let processos = ProcessosDelSistema()",
             "\(cli): transcripcions: LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte),",
             "\(rutaLectorSessions): .appending(path: \".claude/sessions\")",
@@ -877,6 +903,195 @@ private let prohibidesArrossegar = [
         ])
     }
 
+    /// Decisió 7 (ronda 6): com els de Claude (`elsLectorsDeClaudeDeDeboNomesDeLAppIDelCLI`), `LectorWarp`, `LectorAjustosWarp` i
+    /// `Lector` només els creen l'app i el CLI amb les rutes de debò, i el core amb les que li passen (`lectorsDeWarpDeDebo`). Cap
+    /// `init` no té cap valor per defecte: un `Lector()` o un `.init()` oblidat a una prova no compila, i per això les proves ja
+    /// no necessiten cap expressió pròpia per a aquests lectors. La carpeta d'inici de debò, tampoc: només a les línies d'aquí.
+    /// Dels `init` de la llista, el de `init(_ db:` és de la consulta de `LectorWarp`.
+    @Test func elsLectorsDeWarpDeDeboNomesDeLAppIDelCLI() throws {
+        let app = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
+        let cli = "Sources/WarpLaunchCLI/main.swift"
+        let diagnostic = "Sources/WarpLaunchCore/Diagnostic.swift"
+        let (lector, ajustos, warp) = (rutesLectorsWarp[0], rutesLectorsWarp[1], rutesLectorsWarp[2])
+        let codi = try fitxers("Sources")
+        let deDebo = try lectorsDeWarpDeDebo(codi)
+        #expect(deDebo.sorted() == [
+            "\(app): let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte, potCrearElFitxer: { lector.warpHaAcabatDArrencar() })",
+            "\(app): let lector = Lector(rutaWarp: LectorWarp.rutaPerDefecte, rutaAjustos: LectorAjustosWarp.rutaPerDefecte,",
+            "\(cli): let lector = Lector(rutaWarp: LectorWarp.rutaPerDefecte, rutaAjustos: LectorAjustosWarp.rutaPerDefecte,",
+            "Sources/WarpLaunchCore/ClausRepetides.swift: private struct Lector {",
+            "Sources/WarpLaunchCore/ClausRepetides.swift: var lector = Lector(bytes: bytes)",
+            "\(diagnostic): falta = try LectorWarp(ruta: e.rutaWarp).queFalta()",
+            "\(diagnostic): let desaFinestres = e.rutaAjustos.map { LectorAjustosWarp(ruta: $0).desaFinestres() }",
+            "Sources/WarpLaunchCore/JSONEstricte.swift: private struct Lector {",
+            "Sources/WarpLaunchCore/JSONEstricte.swift: var lector = Lector(bytes: bytes)",
+            "\(lector): case .segonsAjust: rutaAjustos.map { LectorAjustosWarp(ruta: $0).desaFinestres() }",
+            "\(lector): let finestresWarp = desaFinestres == false ? [] : try LectorWarp(ruta: rutaWarp).llegeix()",
+            "\(lector): public init(rutaWarp: URL,",
+            "\(lector): public struct Lector: Sendable {",
+            "\(ajustos): public init(ruta: URL) {",
+            "\(ajustos): public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".warp/settings.toml\")",
+            "\(ajustos): public struct LectorAjustosWarp: Sendable {",
+            "\(warp): init(_ db: OpaquePointer, _ sql: String) throws {",
+            "\(warp): public init(ruta: URL) {",
+            "\(warp): public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
+            "\(warp): public struct LectorWarp: Sendable {",
+        ].sorted(), "\(deDebo.joined(separator: "\n"))")
+
+        // Cada paràmetre del `init` del `Lector`, sense cap valor per defecte: un valor a la segona línia o a la darrera
+        // (`inici: String = …`) no surt a la llista de sobre.
+        let parametres = ["public init(rutaWarp: URL,", "rutaAjustos: URL?,", "carpetaSessions: URL,", "processos: any FontProcessos,",
+                          "warp: @escaping @Sendable () -> InstallacioWarp,", "inici: String) {"]
+        let textLector = try #require(codi.first { $0.ruta == lector }).text
+        #expect(liniesDelInit(textLector, comenca: "public init(") == parametres)
+        #expect(liniesDelInit("""
+                public init(rutaWarp: URL,
+                            // Un comentari.
+                            rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,
+                            inici: String = FileManager.default.homeDirectoryForCurrentUser.path) {
+                    self.rutaWarp = rutaWarp
+                }
+            """, comenca: "public init(") == [
+            "public init(rutaWarp: URL,", "rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,",
+            "inici: String = FileManager.default.homeDirectoryForCurrentUser.path) {",
+        ])
+
+        // La carpeta d'inici de debò: l'app, el CLI i les rutes de debò. Cap altra línia, de cap manera (també `NSHomeDirectory`).
+        #expect(try iniciDeDeboAlCodi(codi).sorted() == [
+            "\(app): inici = FileManager.default.homeDirectoryForCurrentUser.path",
+            "\(cli): inici: FileManager.default.homeDirectoryForCurrentUser.path)",
+            "Sources/WarpLaunchCore/FitxersLaunchWarp.swift: FitxersLaunchWarp(carpeta: FileManager.default.homeDirectoryForCurrentUser",
+            "\(ajustos): public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".warp/settings.toml\")",
+            "Sources/WarpLaunchCore/LectorConfianca.swift: public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".claude.json\")",
+            "\(rutaLectorSessions): public static let carpetaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
+            "Sources/WarpLaunchCore/LectorTranscripcions.swift: public static let carpetaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
+            "\(warp): public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
+        ].sorted())
+        #expect(try iniciDeDeboAlCodi([(ruta: diagnostic, text: """
+            inici: String = NSHomeDirectory(),
+            let c = URL.homeDirectory.appending(path: ".warp")
+            /// `NSHomeDirectory()`
+            let inici = lector.inici
+            """)]) == [
+            "\(diagnostic): inici: String = NSHomeDirectory(),", "\(diagnostic): let c = URL.homeDirectory.appending(path: \".warp\")",
+        ])
+
+        // La mostra: crear-ne un, també amb el mòdul, `.init` o `.self`; un valor per defecte, també a la línia següent; la ruta
+        // de debò, a qualsevol fitxer; un àlies, una extensió o una altra declaració del tipus (també partides en dues línies); i,
+        // als seus fitxers, `Self(`, `.init(`, les rutes per defecte i qualsevol `init`. Sense dir-ne el nom, `.init(` amb les
+        // etiquetes dels seus `init` (també amb `type(of:)` o amb els arguments a la línia següent). Un comentari, el tipus d'un
+        // paràmetre sense valor, els seus tipus i constants, un altre nom, `Self(` en un altre fitxer i `self.init(`, no.
+        let obertura = "Sources/WarpLaunchUI/Obertura.swift"
+        #expect(try lectorsDeWarpDeDebo([
+            (ruta: diagnostic, text: """
+                warp: LectorWarp = .init(ruta: r), ajustos: LectorAjustosWarp, usuari: String? = nil,
+                ajustos: LectorAjustosWarp? = LectorAjustosWarp(ruta: LectorAjustosWarp.rutaPerDefecte),
+                lector: Lector = .deDebo,
+                let w = WarpLaunchCore.LectorWarp.init(ruta: r)
+                let tipus = LectorAjustosWarp.self
+                lector: Lector
+                    = .deDebo,
+                public typealias Ajustos = WarpLaunchCore.LectorAjustosWarp
+                extension Lector {
+                extension LectorWarp {
+                struct LectorAjustosWarp: Sendable {
+                /// `LectorWarp(ruta: LectorWarp.rutaPerDefecte)`
+                // let l = Lector(rutaWarp: r)
+                public var lector: Lector
+                lector: Lector, inici: String,
+                lector: inout Lector,
+                let t = LectorWarp.TaulaLlegida(nom: n, columnes: c, opcional: false)
+                for taula in LectorWarp.esquema {}
+                let m = MeuLectorWarp(ruta: r)
+                let s = LectorSessions(carpeta: c, processos: p)
+                if a == b {}
+                return Self(lector: l)
+                public init(lector: Lector) {
+                extension
+                    LectorWarp {
+                public extension
+                    WarpLaunchCore.Lector: AmbRuta {
+                self.init(ruta: r)
+                LectorWarp.TaulaLlegida(nom: n, columnes: c, opcional: true)
+                """),
+            (ruta: obertura, text: """
+                let l = Lector(rutaWarp: a, rutaAjustos: b, carpetaSessions: c, processos: p, warp: w, inici: i)
+                let l: Lector = .init(rutaWarp: a, rutaAjustos: b, carpetaSessions: c, processos: p, warp: w, inici: i)
+                lector: .init(carpetaSessions: c, processos: p, warp: w, inici: i),
+                lector: .init(rutaAjustos: b, carpetaSessions: c, processos: p, warp: w, inici: i),
+                ajustos: .init(ruta: LectorAjustosWarp.rutaPerDefecte),
+                let v = type(of: warp).init(ruta: r)
+                warp: .init(
+                    ruta: r),
+                let u = LectorWarp
+                    .init(ruta: r)
+                let j = JSONEstricte.Lector(bytes: b)
+                let m = MagatzemConfiguracio.init(carpeta: c, inici: i)
+                let a = AjustRestauracio(ruta: r)
+                let x = LectorConfianca(ruta: r)
+                let carpetaPerDefecte = c
+                """),
+            (ruta: warp, text: """
+                static let deDebo = Self(ruta: r)
+                static var real: LectorWarp { .init(ruta: r) }
+                static let altra = Self.init(ruta: r)
+                public init(ruta: URL = LectorWarp.rutaPerDefecte) {
+                let r = Self.rutaPerDefecte
+                public init() { self.init(ruta: r) }
+                init?(ruta: String) {
+                public struct LectorWarp: Sendable, AmbRutaPerDefecte {
+                self.init(ruta: URL(filePath: ruta))
+                let initialitza = reinit(x)
+                """),
+            (ruta: ajustos, text: """
+                public init(ruta: URL = LectorAjustosWarp.rutaPerDefecte) {
+                public static let deDebo = Self(ruta: Self.rutaPerDefecte)
+                """),
+            (ruta: lector, text: """
+                public init(rutaWarp: URL = LectorWarp.rutaPerDefecte,
+                rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,
+                public static let deDebo = Self(rutaWarp: r, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w, inici: i)
+                init<T: StringProtocol>(_ c: T) { self.init(rutaWarp: URL(filePath: String(c))) }
+                """),
+        ]) == [
+            "\(diagnostic): warp: LectorWarp = .init(ruta: r), ajustos: LectorAjustosWarp, usuari: String? = nil,",
+            "\(diagnostic): ajustos: LectorAjustosWarp? = LectorAjustosWarp(ruta: LectorAjustosWarp.rutaPerDefecte),",
+            "\(diagnostic): lector: Lector = .deDebo,",
+            "\(diagnostic): let w = WarpLaunchCore.LectorWarp.init(ruta: r)",
+            "\(diagnostic): let tipus = LectorAjustosWarp.self",
+            "\(diagnostic): lector: Lector = .deDebo,",
+            "\(diagnostic): public typealias Ajustos = WarpLaunchCore.LectorAjustosWarp",
+            "\(diagnostic): extension Lector {",
+            "\(diagnostic): extension LectorWarp {",
+            "\(diagnostic): struct LectorAjustosWarp: Sendable {",
+            "\(diagnostic): LectorWarp {",
+            "\(diagnostic): WarpLaunchCore.Lector: AmbRuta {",
+            "\(obertura): let l = Lector(rutaWarp: a, rutaAjustos: b, carpetaSessions: c, processos: p, warp: w, inici: i)",
+            "\(obertura): let l: Lector = .init(rutaWarp: a, rutaAjustos: b, carpetaSessions: c, processos: p, warp: w, inici: i)",
+            "\(obertura): lector: .init(carpetaSessions: c, processos: p, warp: w, inici: i),",
+            "\(obertura): lector: .init(rutaAjustos: b, carpetaSessions: c, processos: p, warp: w, inici: i),",
+            "\(obertura): ajustos: .init(ruta: LectorAjustosWarp.rutaPerDefecte),",
+            "\(obertura): let v = type(of: warp).init(ruta: r)",
+            "\(obertura): warp: .init(",
+            "\(obertura): .init(ruta: r)",
+            "\(obertura): let j = JSONEstricte.Lector(bytes: b)",
+            "\(warp): static let deDebo = Self(ruta: r)",
+            "\(warp): static var real: LectorWarp { .init(ruta: r) }",
+            "\(warp): static let altra = Self.init(ruta: r)",
+            "\(warp): public init(ruta: URL = LectorWarp.rutaPerDefecte) {",
+            "\(warp): let r = Self.rutaPerDefecte",
+            "\(warp): public init() { self.init(ruta: r) }",
+            "\(warp): init?(ruta: String) {",
+            "\(warp): public struct LectorWarp: Sendable, AmbRutaPerDefecte {",
+            "\(ajustos): public init(ruta: URL = LectorAjustosWarp.rutaPerDefecte) {",
+            "\(ajustos): public static let deDebo = Self(ruta: Self.rutaPerDefecte)",
+            "\(lector): public init(rutaWarp: URL = LectorWarp.rutaPerDefecte,",
+            "\(lector): rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,",
+            "\(lector): public static let deDebo = Self(rutaWarp: r, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w, inici: i)",
+            "\(lector): init<T: StringProtocol>(_ c: T) { self.init(rutaWarp: URL(filePath: String(c))) }",
+        ])
+    }
+
     /// D19 i regla 7: l'ajust de debò només l'escriu l'app, i només amb la carpeta `.real`. `AjustRestauracio` només es pot
     /// crear a l'app: ni el CLI ni el core poden fer-ho, amb cap ruta.
     @Test func lAjustDeWarpNomesLEscriuLApp() throws {
@@ -976,7 +1191,8 @@ private let prohibidesArrossegar = [
             """)]) == escriuenDirectament.enumerated().map { "\(rutaAjustRestauracio):\($0.offset + 1): «\($0.element)»" })
         #expect(ajust.text.contains("try EscripturaAtomica.creaFitxerNou(resultat, a: temporal, permisos: permisos)"))
 
-        // La ruta de debò de `settings.toml`: per llegir-la, el lector; per a l'ajust, l'app (`lAjustDeWarpNomesLEscriuLApp`).
+        // La ruta de debò de `settings.toml`: per llegir-la, el `Lector` de l'app i el del CLI; per a l'ajust, l'app
+        // (`lAjustDeWarpNomesLEscriuLApp`).
         let deDebo = codi.flatMap { f in
             f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.hasPrefix("//") }
@@ -986,8 +1202,8 @@ private let prohibidesArrossegar = [
         }
         #expect(deDebo.sorted() == [
             "Sources/WarpLaunchApp/WarpLaunchApp.swift: let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte, potCrearElFitxer: { lector.warpHaAcabatDArrencar() })",
-            "Sources/WarpLaunchCore/Lector.swift: rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,",
-            "Sources/WarpLaunchCore/LectorAjustosWarp.swift: public init(ruta: URL = LectorAjustosWarp.rutaPerDefecte) {",
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let lector = Lector(rutaWarp: LectorWarp.rutaPerDefecte, rutaAjustos: LectorAjustosWarp.rutaPerDefecte,",
+            "Sources/WarpLaunchCLI/main.swift: let lector = Lector(rutaWarp: LectorWarp.rutaPerDefecte, rutaAjustos: LectorAjustosWarp.rutaPerDefecte,",
             "Sources/WarpLaunchCore/LectorAjustosWarp.swift: public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".warp/settings.toml\")",
             "Sources/WarpLaunchCore/OrdreCLI.swift: també l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,",
         ], "\(deDebo.joined(separator: "\n"))")
@@ -1036,10 +1252,9 @@ private let prohibidesArrossegar = [
         let proves = try fitxers("Tests")
         #expect(proves.count > 5, "no s'han trobat les proves a \(arrel.path)")
         let prohibides = [
-            // `Lector(` només amb les rutes de prova: `Lector()`, `Lector(inici:)` o sense `rutaAjustos` llegirien Warp i
-            // Claude de debò; `LectorWarp()`, la base de Warp. Les sessions i els processos no tenen valor per defecte
-            // (`lesSessionsIElsProcessosDeDeboNomesDeLAppIDelCLI`).
-            lectorProves, lectorAjustosProves, lectorWarpProves, lectorSenseNomProves, ajustRestauracioProves,
+            // Els lectors de Warp, les sessions i els processos no tenen valor per defecte (`elsLectorsDeWarpDeDeboNomesDeLAppIDelCLI`,
+            // `lesSessionsIElsProcessosDeDeboNomesDeLAppIDelCLI`): sense les rutes, no compilen, i aquí no se'n pot dir cap de debò.
+            ajustRestauracioProves,
             #"ProcessosDelSistema"#,
             #"rutaPerDefecte"#, #"carpetaPerDefecte"#,
             #"\.config/warp-launch"#, nsApp, #"NSApplication"#, #"NSWindow"#, #"NSHostingView"#,
@@ -1050,9 +1265,9 @@ private let prohibidesArrossegar = [
             #"\.claude\.json"#, #"\.claude/projects"#,
             // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
             #"TrobaWarp"#, #"urlForApplication"#, trobaProves, #"perOmissio\.app(?![A-Za-z0-9_])"#,
-            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude; ni amb
-            // `.init()`, que no en diu el nom), i «Copia el diagnòstic», sempre amb un porta-retalls fals (a la mateixa línia).
-            lectorTranscripcions, lectorConfianca, initSenseArguments, copiaDiagnostic,
+            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova, i «Copia el diagnòstic», sempre amb un
+            // porta-retalls fals (a la mateixa línia).
+            lectorTranscripcions, lectorConfianca, copiaDiagnostic,
         ] + iniciDeDebo
         let trobades = try aparicions(de: prohibides, a: proves)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
@@ -1165,41 +1380,12 @@ private let prohibidesArrossegar = [
             let p = Process()
             system("ls")
             let f = Font.system(size: 13)
-            Lector().llegeix()
-            Lector(rutaWarp: url)
-            Lector(inici: inici)
             PortaRetallsSistema.escriu(dades)
             let q = Foundation.Process()
-            WarpLaunchCore.Lector().llegeix()
             let m = MeuProcess()
-            MeuLector()
             """)]
-        #expect(try aparicions(de: [paraulaProcess, #"(^|[^.\w])system\("#, lectorProves], a: mostra) == [
-            "mostra.swift:1: «\(paraulaProcess)»", "mostra.swift:2: «(^|[^.\\w])system\\(»",
-            "mostra.swift:4: «\(lectorProves)»", "mostra.swift:5: «\(lectorProves)»", "mostra.swift:6: «\(lectorProves)»",
-            "mostra.swift:8: «\(paraulaProcess)»", "mostra.swift:9: «\(lectorProves)»",
-        ])
-        #expect(try aparicions(de: [lectorProves], a: [(ruta: "mostra.swift", text: "Lector(rutaWarp: url, rutaAjustos: altra)")]).isEmpty)
-        // També amb `.init(`, i sense dir-ne el nom: cada línia, la seva expressió. Amb les dues rutes de prova, o amb una
-        // altra etiqueta, no.
-        #expect(try aparicions(de: [lectorProves, lectorAjustosProves, lectorWarpProves, lectorSenseNomProves],
-                               a: [(ruta: "mostra.swift", text: """
-            let l = Lector.init(carpetaSessions: c, processos: p, warp: w)
-            let a = WarpLaunchCore.LectorAjustosWarp.init().valor()
-            try LectorWarp.init().llegeix()
-            let l: Lector = .init(carpetaSessions: c, processos: p, warp: w)
-            let l: Lector = .init(rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
-            let l: Lector = .init(rutaWarp: base.url, carpetaSessions: c, processos: p, warp: w)
-            let l = type(of: lector).init(
-            let l = Lector.init(rutaWarp: base.url, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
-            let l: Lector = .init(rutaWarp: base.url, rutaAjustos: a, carpetaSessions: c, processos: p, warp: w)
-            try LectorWarp.init(ruta: base.url).llegeix()
-            let t: LectorTranscripcions = .init(carpeta: tmp.url)
-            """)]) == [
-            "mostra.swift:1: «\(lectorProves)»", "mostra.swift:2: «\(lectorAjustosProves)»",
-            "mostra.swift:3: «\(lectorWarpProves)»", "mostra.swift:4: «\(lectorSenseNomProves)»",
-            "mostra.swift:5: «\(lectorSenseNomProves)»", "mostra.swift:6: «\(lectorSenseNomProves)»",
-            "mostra.swift:7: «\(lectorSenseNomProves)»",
+        #expect(try aparicions(de: [paraulaProcess, #"(^|[^.\w])system\("#], a: mostra) == [
+            "mostra.swift:1: «\(paraulaProcess)»", "mostra.swift:2: «(^|[^.\\w])system\\(»", "mostra.swift:5: «\(paraulaProcess)»",
         ])
         // El refresc de l'ajust (D-P4): crear-lo sí; el seu entorn, no.
         #expect(try aparicions(de: [refrescWarp], a: [(ruta: "mostra.swift", text: """
@@ -1270,7 +1456,7 @@ private let prohibidesArrossegar = [
             if lector.warpObert() {}
             """)]) == ["mostra.swift:1: «\(senseInstallacio)»", "mostra.swift:2: «\(senseInstallacio)»"])
         // Pla A4: els lectors de Claude i «Copia el diagnòstic».
-        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca, initSenseArguments, copiaDiagnostic],
+        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca, copiaDiagnostic],
                                a: [(ruta: "mostra.swift", text: """
             LectorTranscripcions()
             LectorTranscripcions(carpeta: tmp.url("p"))
@@ -1283,35 +1469,20 @@ private let prohibidesArrossegar = [
             WarpLaunchUI.CopiaDiagnostic(diagnostic: d)
             let t = LectorTranscripcions.init(carpeta: tmp.url("p"))
             let c = WarpLaunchCore.LectorConfianca.init()
-            let d = Diagnostic(lector: l, inici: i, transcripcions: .init(), confianca: .init(ruta: tmp.url("c")))
-            let e = type(of: t).init( )
             let f = LectorTranscripcions.init(carpeta: c), g = Foo.init(x: 1)
             """)]) == ["mostra.swift:1: «\(lectorTranscripcions)»", "mostra.swift:3: «\(lectorConfianca)»",
                        "mostra.swift:5: «\(copiaDiagnostic)»", "mostra.swift:7: «\(lectorTranscripcions)»",
                        "mostra.swift:8: «\(lectorConfianca)»", "mostra.swift:9: «\(copiaDiagnostic)»",
-                       "mostra.swift:11: «\(lectorConfianca)»", "mostra.swift:11: «\(initSenseArguments)»",
-                       "mostra.swift:12: «\(initSenseArguments)»", "mostra.swift:13: «\(initSenseArguments)»"])
+                       "mostra.swift:11: «\(lectorConfianca)»"])
         // Ni `MeuLectorConfianca(`, que és un altre nom.
         #expect(try aparicions(de: [lectorConfianca], a: [(ruta: "mostra.swift", text: "MeuLectorConfianca()")]).isEmpty)
-        // Ni `LectorAjustosWarp()`, que llegiria el `settings.toml` de debò, ni `LectorWarp()`, que en llegiria la base, ni
-        // `NSApp`, que és l'app de les proves (també davant d'un punt). `LlegeixLectorWarp(` i `NSApplication` són altres noms.
-        #expect(try aparicions(de: [lectorAjustosProves, lectorWarpProves, nsApp], a: [(ruta: "mostra.swift", text: """
-            LectorAjustosWarp().desaFinestres()
-            LectorAjustosWarp(ruta: tmp)
-            WarpLaunchCore.LectorAjustosWarp().desaFinestres()
-            try LectorWarp().llegeix()
-            try LectorWarp(ruta: base.url).llegeix()
-            try WarpLaunchCore.LectorWarp().llegeix()
-            @Test func lEsquemaEsTotElQueLlegeixLectorWarp() throws {
+        // Ni `NSApp`, que és l'app de les proves (també davant d'un punt). `NSApplication` és un altre nom.
+        #expect(try aparicions(de: [nsApp], a: [(ruta: "mostra.swift", text: """
             NSApp.terminate(nil)
             AppKit.NSApp.setActivationPolicy(.regular)
             let a = NSApp
             NSApplication.shared.hide(nil)
-            """)]) == [
-            "mostra.swift:1: «\(lectorAjustosProves)»", "mostra.swift:3: «\(lectorAjustosProves)»",
-            "mostra.swift:4: «\(lectorWarpProves)»", "mostra.swift:6: «\(lectorWarpProves)»",
-            "mostra.swift:8: «\(nsApp)»", "mostra.swift:9: «\(nsApp)»", "mostra.swift:10: «\(nsApp)»",
-        ])
+            """)]) == ["mostra.swift:1: «\(nsApp)»", "mostra.swift:2: «\(nsApp)»", "mostra.swift:3: «\(nsApp)»"])
         // La carpeta d'inici de debò, de totes les maneres; posar `HOME` a un procés fill, no.
         #expect(try aparicions(de: iniciDeDebo, a: [(ruta: "mostra.swift", text: """
             FileManager.default.homeDirectoryForCurrentUser
@@ -1329,7 +1500,7 @@ private let prohibidesArrossegar = [
             "mostra.swift:7: «\(iniciDeDebo[5])»", "mostra.swift:8: «\(iniciDeDebo[6])»",
         ])
         #expect(try aparicions(de: [#"PortaRetallsSistema\.(enganxa|hiHaPestanyes|escriu)"#], a: mostra) == [
-            "mostra.swift:7: «PortaRetallsSistema\\.(enganxa|hiHaPestanyes|escriu)»",
+            "mostra.swift:4: «PortaRetallsSistema\\.(enganxa|hiHaPestanyes|escriu)»",
         ])
         // Fase 3.1: les carpetes de debò.
         let carpetes = [(ruta: "mostra.swift", text: """

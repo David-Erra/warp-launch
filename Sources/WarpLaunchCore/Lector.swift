@@ -25,17 +25,16 @@ public struct Lector: Sendable {
     /// Carpeta d'inici de l'usuari. Un pane amb aquesta carpeta probablement l'ha perduda en restaurar-se.
     public var inici: String
 
-    public init(rutaWarp: URL = LectorWarp.rutaPerDefecte,
-                rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,
-                // Sense valor per defecte: una prova que se l'oblidés llegiria les sessions de Claude de debò, i cap guarda
-                // de línia no ho veuria (els arguments poden ocupar diverses línies). L'app i el CLI hi posen
-                // `LectorSessions.carpetaPerDefecte`.
+    /// Cap paràmetre no té valor per defecte: una prova que se n'oblidés un llegiria Warp, Claude o els processos de debò, i
+    /// cap guarda de línia no ho veuria (el valor per defecte no surt a la crida, i els arguments poden ocupar diverses
+    /// línies). L'app i el CLI hi posen les rutes de debò (`LectorWarp.rutaPerDefecte`, `LectorAjustosWarp.rutaPerDefecte` i
+    /// `LectorSessions.carpetaPerDefecte`), els processos del sistema, la instal·lació de macOS i la carpeta d'inici.
+    public init(rutaWarp: URL,
+                rutaAjustos: URL?,
                 carpetaSessions: URL,
-                // Tampoc: una prova que se l'oblidés llegiria els processos de debò.
                 processos: any FontProcessos,
-                // Tampoc: les proves hi han de posar una instal·lació fixa, i l'app i el CLI, la de macOS.
                 warp: @escaping @Sendable () -> InstallacioWarp,
-                inici: String = FileManager.default.homeDirectoryForCurrentUser.path) {
+                inici: String) {
         self.rutaWarp = rutaWarp
         self.rutaAjustos = rutaAjustos
         self.carpetaSessions = carpetaSessions

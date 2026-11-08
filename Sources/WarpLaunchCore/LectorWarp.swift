@@ -60,7 +60,10 @@ public struct LectorWarp: Sendable {
 
     public var ruta: URL
 
-    public init(ruta: URL = LectorWarp.rutaPerDefecte) {
+    /// Sense valor per defecte, com `LectorSessions`: una prova que se l'oblidés llegiria el `warp.sqlite` de debò, i cap
+    /// guarda de línia no ho veuria (el valor per defecte no surt a la crida). L'app i el CLI hi posen `rutaPerDefecte`, al
+    /// seu `Lector`.
+    public init(ruta: URL) {
         self.ruta = ruta
     }
 

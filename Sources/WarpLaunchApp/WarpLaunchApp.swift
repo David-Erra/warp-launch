@@ -101,7 +101,9 @@ final class Aplicacio {
         self.editor = editor
         self.sessions = sessions
         let processos = ProcessosDelSistema()
-        let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,
+        // Warp i Claude de debò (només lectura): el lector no té res per defecte.
+        let lector = Lector(rutaWarp: LectorWarp.rutaPerDefecte, rutaAjustos: LectorAjustosWarp.rutaPerDefecte,
+                            carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,
                             inici: inici)
         // Les transcripcions i la confiança de Claude de debò (només lectura): els lectors no tenen cap ruta per defecte.
         let transcripcions = LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte)

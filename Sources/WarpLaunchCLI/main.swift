@@ -8,7 +8,9 @@ import WarpLaunchObridor
 // de debò de Warp: l'única connexió del CLI amb `ObreWarp`.
 
 let processos = ProcessosDelSistema()
-let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema)
+let lector = Lector(rutaWarp: LectorWarp.rutaPerDefecte, rutaAjustos: LectorAjustosWarp.rutaPerDefecte,
+                    carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,
+                    inici: FileManager.default.homeDirectoryForCurrentUser.path)
 let entorn = EntornCLI(lector: lector, inici: lector.inici,
                        carpetaReal: Rutes.carpetaConfiguracio(inici: lector.inici),
                        transcripcions: LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte),
