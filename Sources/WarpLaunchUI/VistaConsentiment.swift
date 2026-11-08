@@ -30,12 +30,44 @@ public struct PortaConsentiment<Contingut: View>: View {
 /// La pantalla de consentiment (D-P4, en David, 07/11/2026): per què l'app ha de desactivar la restauració de Warp, què
 /// canvia, i dos botons. «Surt de Warp Launch» no desa res, i la propera vegada es torna a preguntar. Retorn prem
 /// «Accepta», que és el botó per defecte (decisió d'en David del 07/11/2026). Escapada no fa res (vegeu `botons`).
+///
+/// Després de «Deixa de fer servir Warp Launch» (0.31.0), l'app surt; si la sortida es cancel·la, aquesta pantalla diu que
+/// ja no toca Warp, i només deixa sortir (`retirat`).
 struct VistaConsentiment: View {
     let consentiment: ConsentimentRestauracio
     let carpetaDeProva: String?
     let surt: () -> Void
 
     var body: some View {
+        if consentiment.estat == .retirat {
+            retirat
+        } else {
+            permis
+        }
+    }
+
+    private var retirat: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center, spacing: 14) {
+                Image(systemName: "macwindow.on.rectangle")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
+                Text("Has deixat de fer servir Warp Launch")
+                    .font(.title2.bold())
+            }
+            Text(consentiment.textSortir)
+            HStack {
+                Spacer()
+                Button("Surt de Warp Launch", action: surt)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(28)
+        .frame(width: 560)
+    }
+
+    private var permis: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .center, spacing: 14) {
                 Image(systemName: "macwindow.on.rectangle")

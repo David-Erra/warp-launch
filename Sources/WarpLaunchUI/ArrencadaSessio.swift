@@ -73,6 +73,29 @@ public final class ArrencadaSessio {
     }
 
     public func obreAjustos() { entorn?.obreAjustos() }
+
+    /// «Deixa de fer servir Warp Launch» (0.31.0, `Desinstallacio`): treu l'app dels ítems d'inici, si hi és (també pendent
+    /// d'aprovar), pel mateix entorn que l'interruptor (`ServeiArrencada`). L'única altra manera de treure-la, i mai no
+    /// l'afegeix. Torna per què no s'ha pogut; `nil` si ja no hi és.
+    public func treuDelsItemsDInici() -> String? {
+        actualitza()
+        guard let entorn, activada else { return nil }
+        do {
+            try entorn.desactiva()
+        } catch {
+            actualitza()
+            return "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: \(error.localizedDescription). No s'ha "
+                + "canviat res més."
+        }
+        actualitza()
+        guard !activada else {
+            return "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › "
+                + "Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més."
+        }
+        error = nil
+        Registre.obertura.notice("en iniciar sessió: desactivada en deixar de fer servir l'app")
+        return nil
+    }
 }
 
 extension Obertura {

@@ -85,6 +85,34 @@ private let escriuen = [
     #"recordaRestauracioOriginal"#, #"(^|[^A-Za-z0-9_])Process\("#, #"NSPasteboard"#, #"copiaText"#,
 ]
 
+/// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
+/// - posar l'ajust de Warp a un valor que no és el d'un refresc: només `RefrescWarp.retira` (`entorn.posa(`, que fins ara
+///   només activava i desactivava l'ajust en un refresc);
+/// - retirar el refresc i el permís, i desfer-ho si no es pot desar: només `ConsentimentRestauracio.retira`;
+/// - fer-ho tot, i treure l'app dels ítems d'inici fora de l'interruptor: només `Desinstallacio`, que només crea l'app;
+/// - confirmar-ho: només el botó de la confirmació de la Configuració.
+/// Les expressions no miren qui fa la crida: cap altre fitxer no pot cridar cap funció amb aquests noms.
+private let rutaRefresc = "Sources/WarpLaunchUI/RefrescWarp.swift"
+private let rutaConsentimentUI = "Sources/WarpLaunchUI/ConsentimentRestauracio.swift"
+private let rutaDesinstallacio = "Sources/WarpLaunchUI/Desinstallacio.swift"
+private let rutaVistaConfiguracio = "Sources/WarpLaunchUI/VistaConfiguracio.swift"
+private let rutaAppPrincipal = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
+private let retirada: [(expressio: String, fitxer: String, mostra: String)] = [
+    (#"entorn\.posa\("#, rutaRefresc, "try entorn.posa(valor)"),
+    (#"\.retira\(posant:"#, rutaConsentimentUI, "try refresc.retira(posant: retorn.valor)"),
+    (#"\.desfesRetirada\("#, rutaConsentimentUI, "refresc.desfesRetirada()"),
+    (#"\.retira\(ara:"#, rutaConsentimentUI, "try magatzem.retira(ara: rellotge())"),
+    (#"\.retira\((?!posant:|ara:)"#, rutaDesinstallacio, "try consentiment.retira(retorn)"),
+    (#"\.treuDelsItemsDInici\("#, rutaDesinstallacio, "if let motiu = arrencada.treuDelsItemsDInici() {"),
+    (#"(^|[^A-Za-z0-9_])Desinstallacio\("#, rutaAppPrincipal, "let d = Desinstallacio(consentiment: c, arrencada: a, surt: s)"),
+    (#"desinstallacio\.confirma\("#, rutaVistaConfiguracio, "desinstallacio.confirma()"),
+]
+
+/// Les línies de la retirada que són fora del seu fitxer.
+private func retiradaForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    try retirada.flatMap { r in try aparicions(de: [r.expressio], a: codi.filter { $0.ruta != r.fitxer }) }
+}
+
 /// El que s'arrossega no surt de l'app: ni fitxers, ni text, ni `ShareLink`.
 private let prohibidesArrossegar = [
     #"ShareLink"#, #"ProxyRepresentation"#, #"FileRepresentation"#, #"CodableRepresentation"#, #"\.onDrag\b"#,
@@ -153,6 +181,8 @@ private let prohibidesArrossegar = [
             "estat = try magatzem.carrega().restauracio.esAcceptat ? .acceptat : .pendent",
             "estat = .error(error.description)",
             "estat = .acceptat",
+            // 0.31.0: «Deixa de fer servir Warp Launch» (`deixarDeFerServirLAppNomesDesDelBoto`).
+            "estat = .retirat",
         ], "\(assignacions)")
         // El consentiment només el dona l'usuari, amb el botó «Accepta»: cap altre codi no l'accepta ni el desa per ell.
         let accepten = try aparicions(de: [#"\.accepta\("#], a: codi)
@@ -275,9 +305,99 @@ private let prohibidesArrossegar = [
         let posa = try aparicions(de: [#"arrencada\.posa\("#], a: altres)
         #expect(posa.count == 1 && posa[0].hasPrefix("Sources/WarpLaunchUI/VistaConfiguracio.swift"), "\(posa)")
         #expect(model.components(separatedBy: "posa(").count == 2)
+        // Treure-la: l'interruptor i, des de la 0.31.0, «Deixa de fer servir Warp Launch» (`treuDelsItemsDInici`, només des de
+        // `Desinstallacio`: `deixarDeFerServirLAppNomesDesDelBoto`).
+        #expect(model.components(separatedBy: "entorn.desactiva()").count == 3)
         // Dins del servei, `entorn` només es defineix, i `register` només és a la seva línia; enlloc més no hi és.
         #expect(servei.components(separatedBy: "entorn").count == 2)
         #expect(try aparicions(de: [#"\bregister\b"#], a: codi).allSatisfy { $0.hasPrefix("\(serveiArrencada):18:") })
+    }
+
+    /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch» (vegeu `retirada`). Cada pas, al seu fitxer i amb la seva línia,
+    /// en ordre, i tota la cadena només surt del botó de la confirmació.
+    @Test func deixarDeFerServirLAppNomesDesDelBoto() throws {
+        let codi = try fitxers("Sources")
+        let fora = try retiradaForaDeLloc(codi)
+        #expect(fora.isEmpty, "\(fora.joined(separator: "\n"))")
+        func text(_ ruta: String) throws -> String { try #require(codi.first { $0.ruta == ruta }).text }
+        func linies(_ ruta: String, _ expressio: String) throws -> [String] {
+            let reg = try Regex(expressio)
+            return try text(ruta).split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.hasPrefix("//") && $0.contains(reg) }
+        }
+        func abans(_ ruta: String, _ textos: [String]) throws -> Bool {
+            let t = try text(ruta)
+            let llocs = textos.compactMap { t.range(of: $0)?.lowerBound }
+            return llocs.count == textos.count && llocs == llocs.sorted()
+        }
+
+        // L'ajust: un refresc l'activa i el desactiva; només la retirada el posa al valor que li donen, després d'aturar-se.
+        #expect(try linies(rutaRefresc, #"entorn\.posa\("#) == ["try entorn.posa(valor)", "try entorn.posa(true)",
+                                                                 "try entorn.posa(false)"])
+        let refresc = try text(rutaRefresc)
+        let inici = try #require(refresc.range(of: "    public func retira(posant valor: Bool?) throws {\n"))
+        let fi = try #require(refresc[inici.upperBound...].range(of: "\n    }\n"))
+        let cos = refresc[inici.upperBound..<fi.lowerBound]
+        #expect(cos.hasPrefix("        guard !retirat else { return }\n        retirat = true\n        enCurs?.cancel()\n"))
+        #expect(cos.contains("try entorn.posa(valor)"))
+        // Retirat, cap altre camí no el toca: la vigilància, el cicle i desactivar-lo (també en sortir) ho miren.
+        for guarda in ["guard enCurs == nil, !retirat else { return }", "guard !retirat else { return avisant(",
+                       "guard !aturat, !retirat, !Task.isCancelled, entorn.warpObert() else {",
+                       "    private func desactiva() {\n        guard !retirat else { return }\n"] {
+            #expect(refresc.contains(guarda), "\(guarda)")
+        }
+        // Només `retira` el retira, i només si no es pot posar i en desfer-la es torna a fals.
+        #expect(try linies(rutaRefresc, #"^retirat = "#) == ["retirat = true", "retirat = false", "retirat = false"])
+
+        // El permís: primer l'ajust, després el fitxer (si no es pot desar, l'ajust es torna a desactivar), i llavors l'estat.
+        #expect(try linies(rutaConsentimentUI, #"\.retira\(posant:"#) == ["try refresc.retira(posant: retorn.valor)"])
+        #expect(try linies(rutaConsentimentUI, #"\.retira\(ara:"#) == ["try magatzem.retira(ara: rellotge())"])
+        #expect(try linies(rutaConsentimentUI, #"\.desfesRetirada\("#) == ["refresc.desfesRetirada()"])
+        #expect(try abans(rutaConsentimentUI, ["try refresc.retira(posant: retorn.valor)", "try magatzem.retira(ara: rellotge())",
+                                               "refresc.desfesRetirada()", "estat = .retirat"]))
+
+        // Tot plegat: els ítems d'inici (si no es poden treure, res més), l'ajust i el permís, i sortir.
+        #expect(try linies(rutaDesinstallacio, #"\.treuDelsItemsDInici\("#) == ["if let motiu = arrencada.treuDelsItemsDInici() {"])
+        #expect(try linies(rutaDesinstallacio, #"\.retira\("#) == ["try consentiment.retira(retorn)"])
+        #expect(try linies(rutaDesinstallacio, #"surt\(\)"#) == ["surt()"])
+        #expect(try abans(rutaDesinstallacio, ["public func confirma() {", "arrencada.treuDelsItemsDInici()",
+                                               "try consentiment.retira(retorn)", "surt()"]))
+        // L'ajust i els ítems d'inici de l'app (els de debò, només amb la configuració de debò), i res més.
+        #expect(try linies(rutaAppPrincipal, #"Desinstallacio\("#) == [
+            "let desinstallacio = Desinstallacio(consentiment: consentiment, arrencada: arrencada, surt: { NSApp.terminate(nil) })",
+        ])
+        // I només el botó de la confirmació.
+        #expect(try linies(rutaVistaConfiguracio, #"\.confirma\("#) == [
+            #"Button("Restaura Warp i surt", role: .destructive) { desinstallacio.confirma() }"#,
+        ])
+        #expect(try text(rutaVistaConfiguracio).components(separatedBy: ".confirmationDialog(").count == 2)
+        // Treure l'app dels ítems d'inici no l'hi pot afegir.
+        let arrencada = try text("Sources/WarpLaunchUI/ArrencadaSessio.swift")
+        let treu = try #require(arrencada.range(of: "    public func treuDelsItemsDInici() -> String? {\n"))
+        let fiTreu = try #require(arrencada[treu.upperBound...].range(of: "\n    }\n"))
+        let cosTreu = arrencada[treu.upperBound..<fiTreu.lowerBound]
+        #expect(cosTreu.contains("try entorn.desactiva()"))
+        #expect(!cosTreu.replacingOccurrences(of: "desactiva()", with: "").contains("activa()"))
+    }
+
+    /// Cada línia de la retirada (`retirada`) només val al seu fitxer: a qualsevol altre, la guarda falla.
+    @Test func laRetiradaNomesValAlSeuFitxer() throws {
+        let codi = try fitxers("Sources")
+        #expect(try retiradaForaDeLloc(codi).isEmpty)
+        let altres = Set(retirada.map(\.fitxer) + [
+            "Sources/WarpLaunchUI/Obertura.swift", "Sources/WarpLaunchUI/ArrencadaSessio.swift",
+            "Sources/WarpLaunchUI/VistaConsentiment.swift", "Sources/WarpLaunchUI/EstatWarp.swift",
+            "Sources/WarpLaunchCore/Preferencies.swift", "Sources/WarpLaunchCore/AjustRestauracio.swift",
+            "Sources/WarpLaunchApp/ServeiArrencada.swift", "Sources/WarpLaunchCLI/main.swift", "Sources/WarpLaunchUI/Altre.swift",
+        ])
+        // Línia a línia: el codi ja és net, i n'hi ha prou de mirar la línia de mostra a cada fitxer.
+        for r in retirada {
+            for ruta in altres.sorted() where ruta != r.fitxer {
+                #expect(try retiradaForaDeLloc([(ruta: ruta, text: r.mostra)]) == ["\(ruta):1: «\(r.expressio)»"],
+                        "\(ruta): \(r.mostra)")
+            }
+            #expect(try retiradaForaDeLloc([(ruta: r.fitxer, text: r.mostra)]).isEmpty, "\(r.mostra)")
+        }
     }
 
     /// D19 i regla 7: l'ajust de debò només l'escriu l'app, i només amb la carpeta `.real`. `AjustRestauracio` només es pot

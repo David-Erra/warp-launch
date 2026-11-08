@@ -86,5 +86,41 @@ import WarpLaunchCore
         #expect(!a.editable && !a.activada)
         a.posa(true)
         #expect(!a.activada && a.error == nil)
+        #expect(a.treuDelsItemsDInici() == nil)
+    }
+
+    // MARK: - Deixar de fer servir Warp Launch (0.31.0, decisió 3)
+
+    /// La treu si hi és (també pendent d'aprovar, o fora d'Aplicacions), mirant l'estat d'ara; si no hi és, no fa res. Mai
+    /// no l'afegeix.
+    @Test func enDeixarDeFerLaServirLaTreuSiHiEs() {
+        let f = Fals()
+        let a = ArrencadaSessio(entorn: f.entorn, motiuNoDisponible: nil)
+        #expect(a.treuDelsItemsDInici() == nil && f.crides.isEmpty)
+        // Activada a Configuració del Sistema, sense que l'app ho sàpiga encara.
+        f.estat = .activada
+        #expect(a.treuDelsItemsDInici() == nil)
+        #expect(f.crides == ["desactiva"] && !a.activada)
+        f.estat = .perAprovar
+        #expect(ArrencadaSessio(entorn: f.entorn, motiuNoDisponible: "fora d'Aplicacions").treuDelsItemsDInici() == nil)
+        #expect(f.crides == ["desactiva", "desactiva"] && f.estat == .desactivada)
+    }
+
+    /// Si no es pot treure, o si macOS encara la té, ho diu.
+    @Test func siNoEsPotTreureHoDiu() {
+        let f = Fals()
+        f.estat = .activada
+        f.falla = NoEsPot()
+        let a = ArrencadaSessio(entorn: f.entorn, motiuNoDisponible: nil)
+        let motiu = a.treuDelsItemsDInici()
+        #expect(motiu == "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: Operació no permesa. No s'ha canviat "
+            + "res més.")
+        #expect(a.activada)
+
+        let encara = Fals()
+        encara.estat = .activada
+        let b = ArrencadaSessio(entorn: ArrencadaSessio.Entorn(estat: { encara.estat }, activa: {}, desactiva: {},
+                                                               obreAjustos: {}), motiuNoDisponible: nil)
+        #expect(b.treuDelsItemsDInici()?.hasPrefix("macOS encara té Warp Launch als ítems d'inici de sessió") == true)
     }
 }

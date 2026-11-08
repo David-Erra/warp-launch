@@ -5,7 +5,7 @@ import WarpLaunchCore
 /// posa les icones a la barra d'eines, i el títol de la finestra és el de la pestanya que es veu. L'app no desa quina és
 /// l'última: no fa servir les preferències del sistema (prova de guarda), i la configuració JSON és d'en David.
 enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
-    /// «En iniciar sessió», «Fitxer» i «Diagnòstic».
+    /// «En iniciar sessió», «Fitxer», «Diagnòstic» i, al final, «Deixar de fer servir Warp Launch».
     case general
     /// La plantilla de les pestanyes noves, l'ordre que en surt i les opcions que la Configuració no canvia.
     case pestanyesNoves
@@ -29,8 +29,9 @@ enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
 }
 
 /// La finestra de Configuració (⌘,; docs/disseny.md, pas 11), en dues pestanyes (`PestanyaConfiguracio`): «General» (en
-/// iniciar sessió, el fitxer i el diagnòstic, pla A4) i «Pestanyes noves» (la plantilla i l'ordre que en surt). Els canvis
-/// de la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`), no al de l'editor.
+/// iniciar sessió, el fitxer, el diagnòstic, pla A4, i deixar de fer servir l'app, 0.31.0) i «Pestanyes noves» (la
+/// plantilla i l'ordre que en surt). Els canvis de la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`),
+/// no al de l'editor.
 public struct VistaConfiguracio: View {
     @Bindable var editor: Editor
     let carpeta: String
@@ -38,13 +39,17 @@ public struct VistaConfiguracio: View {
     let arrencada: ArrencadaSessio
     /// Pla A4: «Copia el diagnòstic».
     let diagnostic: CopiaDiagnostic
+    /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch».
+    @Bindable var desinstallacio: Desinstallacio
 
-    public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio, diagnostic: CopiaDiagnostic) {
+    public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio, diagnostic: CopiaDiagnostic,
+                desinstallacio: Desinstallacio) {
         self.editor = editor
         self.carpeta = carpeta
         self.deProva = deProva
         self.arrencada = arrencada
         self.diagnostic = diagnostic
+        self.desinstallacio = desinstallacio
     }
 
     /// settings.md: cada pestanya, un `Form` agrupat de 520 pt d'amplada; la que faria més de 640 pt d'alçada es desplaça.
@@ -82,6 +87,7 @@ public struct VistaConfiguracio: View {
                 seccioArrencada
                 seccioFitxer
                 seccioDiagnostic
+                seccioDesinstallacio
             case .pestanyesNoves:
                 seccionsPestanyesNoves
             }
@@ -262,6 +268,44 @@ public struct VistaConfiguracio: View {
                 + "les carpetes; el complet, sí.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Decisió 3 (0.31.0): torna l'ajust de Warp com era, retira el permís, treu l'app dels ítems d'inici i surt. Al final de
+    /// «General», amb `role: .destructive` i una confirmació que diu què passarà (settings.md: no es pot desfer, perquè
+    /// l'app surt). «Cancel·la» és el botó per defecte: Retorn no la fa sortir.
+    private var seccioDesinstallacio: some View {
+        Section {
+            LabeledContent {
+                Button("Restaura Warp i surt…", role: .destructive) { desinstallacio.demana() }
+                    .disabled(!desinstallacio.disponible)
+            } label: {
+                Text("Torna a deixar Warp com era")
+                if let text = desinstallacio.textAjust {
+                    Text(text)
+                }
+            }
+            if let error = desinstallacio.error {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .symbolRenderingMode(.multicolor)
+                    .textSelection(.enabled)
+            }
+        } header: {
+            Text("Deixar de fer servir Warp Launch")
+        } footer: {
+            Text(desinstallacio.peu)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        // En tornar a la pestanya, o després d'acceptar el permís en aquesta mateixa finestra.
+        .onAppear { desinstallacio.actualitza() }
+        .confirmationDialog(Desinstallacio.titolConfirmacio, isPresented: $desinstallacio.confirmant,
+                            titleVisibility: .visible) {
+            Button("Restaura Warp i surt", role: .destructive) { desinstallacio.confirma() }
+            Button("Cancel·la", role: .cancel) {}
+                .keyboardShortcut(.defaultAction)
+        } message: {
+            Text(desinstallacio.missatgeConfirmacio)
         }
     }
 

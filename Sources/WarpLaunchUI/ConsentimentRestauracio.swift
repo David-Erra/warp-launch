@@ -11,6 +11,9 @@ import WarpLaunchCore
 /// desar res, i la propera vegada ho torna a preguntar.
 ///
 /// Una carpeta que ja tenia `configuracio.json` o `estat.json` compta com a acceptada (`MagatzemPreferencies.carrega`).
+///
+/// **«Deixa de fer servir Warp Launch» (0.31.0, decisió 3 d'en David)** el retira (`retira`, des de `Desinstallacio`): torna
+/// l'ajust com era, i la propera vegada l'app torna a preguntar.
 @MainActor
 @Observable
 public final class ConsentimentRestauracio {
@@ -22,6 +25,20 @@ public final class ConsentimentRestauracio {
         case error(String)
         /// Sense carpeta de configuració: l'app no toca Warp, ni té on desar-ho.
         case noCal
+        /// Retirat amb «Deixa de fer servir Warp Launch»: l'ajust de Warp torna a ser com era, i l'app surt tot seguit. Si la
+        /// sortida es cancel·la, no toca res i només deixa sortir: el refresc retirat no es torna a crear (la propera
+        /// vegada, sí, si s'accepta).
+        case retirat
+    }
+
+    /// «Deixa de fer servir Warp Launch»: què se'n farà de l'ajust de Warp, o per què no es pot.
+    public enum Retirada: Equatable, Sendable {
+        case disponible(Preferencies.Retorn)
+        case noDisponible(String)
+    }
+
+    public struct ErrorRetirada: Error, Equatable, CustomStringConvertible {
+        public var description: String
     }
 
     public private(set) var estat: Estat
@@ -67,6 +84,10 @@ public final class ConsentimentRestauracio {
     /// Què passa si no s'accepta, per a la pantalla. Amb un `preferencies.json` que no es pot llegir, la propera vegada no
     /// es pregunta (torna a sortir l'error): diu on és el fitxer, que s'ha d'arreglar o esborrar (revisió de la 0.29.0).
     public var textSortir: String {
+        if estat == .retirat {
+            return "L'ajust de Warp torna a ser com era abans de Warp Launch, i Warp Launch ja no té permís per tocar-lo. Si la "
+                + "tornes a obrir, te'l tornarà a demanar."
+        }
         guard case let .error(motiu) = estat else {
             return "Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a "
                 + "preguntar la propera vegada."
@@ -112,6 +133,60 @@ public final class ConsentimentRestauracio {
         let accions = pendents
         pendents = []
         for accio in accions { accio() }
+    }
+
+    /// «Deixa de fer servir Warp Launch» (0.31.0): què se'n farà de l'ajust, segons `preferencies.json` (que només llegeix), o
+    /// per què no es pot. Només amb el consentiment acceptat (o migrat) i amb el refresc, que vol dir amb la configuració de
+    /// debò (D19, regla 7: l'app només pot canviar l'ajust amb la carpeta de debò).
+    public func retirada() -> Retirada {
+        switch estat {
+        case .noCal: return .noDisponible("Sense carpeta de configuració, Warp Launch no ha tocat Warp.")
+        case .retirat: return .noDisponible("Ja has deixat de fer servir Warp Launch.")
+        case .pendent, .error: return .noDisponible("Sense el teu permís, Warp Launch no ha tocat Warp.")
+        case .acceptat: break
+        }
+        guard let magatzem, refresc != nil else {
+            return .noDisponible("Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res "
+                + "per tornar com era. Només es pot fer amb la configuració de debò.")
+        }
+        do {
+            guard let retorn = try magatzem.carrega().retornEnRetirar else {
+                return .noDisponible("«\(Preferencies.nomFitxer)» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch.")
+            }
+            return .disponible(retorn)
+        } catch {
+            return .noDisponible(error.description)
+        }
+    }
+
+    /// «Deixa de fer servir Warp Launch» (0.31.0, decisió 3 d'en David): torna l'ajust de Warp com era (`retorn`, el que ha
+    /// mostrat la confirmació) i retira el permís a `preferencies.json`. A partir d'aquí, l'app no toca Warp (`.retirat`), i
+    /// la propera vegada torna a preguntar. Primer l'ajust, que és el que pot fallar més (Warp l'escriu en calent): si no es
+    /// pot posar, o si el permís no es pot desar (llavors l'ajust torna a quedar desactivat), no ha canviat res, i llança
+    /// l'error.
+    public func retira(_ retorn: Preferencies.Retorn) throws(ErrorRetirada) {
+        let ara = retirada()
+        if case let .noDisponible(motiu) = ara { throw ErrorRetirada(description: motiu) }
+        guard ara == .disponible(retorn), let magatzem, let refresc else {
+            throw ErrorRetirada(description: "Mentrestant, «\(Preferencies.nomFitxer)» ha canviat: torna-ho a provar.")
+        }
+        do {
+            try refresc.retira(posant: retorn.valor)
+        } catch {
+            Registre.consentiment.error("retirar: l'ajust: \(String(describing: error), privacy: .public)")
+            throw ErrorRetirada(description: "No s'ha pogut tornar l'ajust de Warp com era: \(error). L'ajust i el permís no "
+                + "han canviat.")
+        }
+        do {
+            try magatzem.retira(ara: rellotge())
+        } catch {
+            refresc.desfesRetirada()
+            Registre.consentiment.error("retirar: \(error.description, privacy: .public)")
+            throw ErrorRetirada(description: "No s'ha pogut retirar el permís: \(error.description). L'ajust de Warp torna a "
+                + "quedar desactivat, i el permís no ha canviat.")
+        }
+        estat = .retirat
+        Registre.consentiment.notice("retirat")
     }
 
     /// L'únic lloc que crea el refresc i l'entorn de l'ajust de Warp: només amb el consentiment acceptat.

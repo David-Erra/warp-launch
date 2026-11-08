@@ -36,7 +36,7 @@ struct WarpLaunchApp: App {
                               surt: { NSApp.terminate(nil) }) {
                 VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
                                   deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada,
-                                  diagnostic: aplicacio.copiaDiagnostic)
+                                  diagnostic: aplicacio.copiaDiagnostic, desinstallacio: aplicacio.desinstallacio)
             }
             .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
         }
@@ -74,6 +74,9 @@ final class Aplicacio {
     let arrencada: ArrencadaSessio
     /// Pla A4: «Copia el diagnòstic», a la Configuració, amb el mateix Warp i Claude que llegeix l'app. Només llegeix.
     let copiaDiagnostic: CopiaDiagnostic
+    /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch», a la Configuració. Només es pot amb la configuració de debò i el
+    /// permís (sense el refresc, el botó és desactivat).
+    let desinstallacio: Desinstallacio
     /// Aquesta arrencada és la de l'inici de sessió (es decideix a `applicationDidFinishLaunching`).
     var enIniciarSessio = false
     /// Cada quant es torna a llegir Warp mentre l'app és en marxa (D18).
@@ -154,6 +157,8 @@ final class Aplicacio {
             arrencada = ArrencadaSessio(entorn: nil, motiuNoDisponible: "Amb una configuració de prova, l'app no s'obre sola.")
         }
         self.arrencada = arrencada
+        let desinstallacio = Desinstallacio(consentiment: consentiment, arrencada: arrencada, surt: { NSApp.terminate(nil) })
+        self.desinstallacio = desinstallacio
         let transcripcions = LectorTranscripcions()
         editor.conversaDe = { sessions.conversaAReprendre($0, transcripcions: transcripcions) }
         editor.enImportar = { sessions.vincula($0.vincles) }
@@ -169,6 +174,7 @@ final class Aplicacio {
                                   editor.comprovaCanviExtern()
                                   // Es pot haver canviat a Configuració del Sistema.
                                   arrencada.actualitza()
+                                  desinstallacio.actualitza()
                               },
                               enTancarConfiguracio: {
                                   // D-P4: tancar la pantalla de consentiment és no acceptar-lo, com tancar l'editor.
