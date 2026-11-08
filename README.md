@@ -3,16 +3,17 @@
 App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestres i pestanyes de Warp,
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
-**Estat (07/11/2026, 0.30.1 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
+**Estat (08/11/2026, 0.31.1 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
 obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.28.0: el que
-aquí diu «des de la 0.29» o «des de la 0.30» encara no s'ha publicat ni provat a l'app. Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
+aquí diu «des de la 0.29», «des de la 0.30» o «des de la 0.31» encara no s'ha publicat ni provat a l'app. Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
 
 Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte d'administrador del Mac,
 [Warp](https://www.warp.dev) Stable i [Claude Code](https://docs.claude.com/claude-code). No cal compilar res.
-- **Warp Stable** a `/Applications` (des de la 0.29.2, a qualsevol carpeta: l'app pregunta a macOS on és). **Warp Preview no és
-  compatible:** si només hi ha Preview, o Preview és obert i Stable no, l'app no obre res i ho diu.
+- **Warp Stable** a `/Applications` (des de la 0.29.2, a qualsevol carpeta: l'app pregunta a macOS on és; des de la 0.31.1, si
+  tens una altra còpia oberta, compta la que és oberta). **Warp Preview no és compatible:** si només hi ha Preview, o Preview és
+  obert i Stable no, l'app no obre res i ho diu. Sense cap Warp, tampoc.
 - Provat el 05/11/2026 amb macOS 27.2, Warp 0.2026.10.21 i Claude Code 2.1.318. Llegeix formats interns de Warp i de Claude Code que
   no estan documentats, i una versió nova els pot trencar: el diagnòstic («Si alguna cosa falla», a sota) diu si encara quadren.
 
@@ -36,7 +37,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
      tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
      llegeixi les finestres de Warp. Si no acceptes («Surt de Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
      propera vegada. Fins que acceptes, no llegeix ni obre res. Si ja la feies servir (hi ha `configuracio.json` o `estat.json` a
-     `~/.config/warp-launch/`), no pregunta.
+     `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»).
    - **Permís per llegir les dades de Warp:** macOS no pregunta; la primera vegada, l'app no les pot llegir i surt un avís
      («Accés a les dades bloquejat», amb el botó «Gestiona»). Activa-ho a Configuració del Sistema › Privacitat i seguretat ›
      Arxius i carpetes › Warp Launch.app › «Dades compartides per l'app Warp i les apps afiliades», i torna a obrir l'app.
@@ -45,7 +46,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
    queden només terminal (des de la 0.29.1; abans hi obria `claude`): per obrir-hi Claude, marca «Obre Claude Code en aquesta
    pestanya» a l'inspector, amb les opcions de Configuració (⌘,) › «Pestanyes noves». Les de la carpeta d'inici o d'una carpeta
    que ja no existeix també queden sense Claude.
-5. Si vols que s'obri sola en iniciar sessió: Configuració (⌘,) › **Obre Warp Launch en iniciar sessió**.
+5. Si vols que s'obri sola en iniciar sessió: Configuració (⌘,) › General › **Obre Warp Launch en iniciar sessió**.
    Si a Warp tens activada «Start Warp at login», desactiva-la, perquè no s'obri pel seu compte (en un reinici, amb l'opció
    desactivada, Warp es va obrir igualment, i encara no se sap per què).
 
@@ -72,9 +73,11 @@ Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una 
 ## Desinstal·lar
 
 1. **Configuració (⌘,) › General › «Deixar de fer servir Warp Launch» › Restaura Warp i surt…** (des de la 0.31.0). Abans de
-   fer res, diu com quedarà l'ajust de Warp «Restore windows, tabs, and panes on startup»: com el tenies abans de Warp Launch
-   o, si ja la feies servir abans que demanés permís (0.29.0), activat, com ve de sèrie a Warp. Després retira el permís, treu
-   l'app dels ítems d'inici de sessió i surt. Si la tornes a obrir, et torna a demanar permís.
+   fer res, diu com quedarà l'ajust de Warp «Restore windows, tabs, and panes on startup»: com el tenies abans de Warp Launch;
+   si ja la feies servir abans que demanés permís (0.29.0), activat, com ve de sèrie a Warp; i, si Warp Launch no l'ha canviat
+   mai, com és. En confirmar, treu l'app dels ítems d'inici de sessió, torna l'ajust com ha dit, retira el permís i surt. Si un
+   pas no es pot fer, ho diu i no fa els següents. Si la tornes a obrir, et torna a demanar permís. Si no li has donat mai el
+   permís, aquest pas no cal: sense permís, Warp Launch no toca Warp.
 2. Arrossega `/Applications/Warp Launch.app` a la Paperera.
 3. Si no vols conservar la configuració, esborra `~/.config/warp-launch/`.
 
@@ -87,14 +90,14 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
   primer ús (pas 3): la deixa sempre
   desactivada, perquè és ella qui torna a obrir les finestres, amb Claude. Només l'activa uns segons quan demanes
   «Torna a llegir Warp», «Importa de Warp» o «Lliga amb Warp», per llegir-ne les finestres. Si tens Settings Sync, l'ajust arriba
-  a les altres instal·lacions de Warp.
+  a les altres instal·lacions de Warp. Per deixar-la de fer servir, «Restaura Warp i surt…» torna l'ajust (vegeu «Desinstal·lar»).
 - **Res no s'obre sense el teu clic.** Obrir una finestra o totes passa sempre per un full que diu quantes
   pestanyes i sessions de Claude s'obriran.
 - **Ordre de Claude per defecte:** a les configuracions noves, Claude s'obre sense saltar els permisos (`claude`, continuant
   la conversa). «Salta els permisos», l'esforç i «Ultracode» es trien a la Configuració (⌘,) › «Pestanyes noves», o per
   pestanya a l'inspector. Les pestanyes que ja tenien Claude obert en importar conserven l'ordre amb què es va obrir.
-- **Si alguna cosa falla** (des de la 0.30.0): Configuració (⌘,) › «Diagnòstic» › **Copia el diagnòstic** copia un informe en
-  anglès, sense el teu nom d'usuari ni els noms de les carpetes, per enganxar-lo en una issue de GitHub. Diu, per a 8
+- **Si alguna cosa falla** (des de la 0.30.0): Configuració (⌘,) › General › «Diagnòstic» › **Copia el diagnòstic** copia un
+  informe en anglès, sense el teu nom d'usuari ni els noms de les carpetes, per enganxar-lo en una issue de GitHub. Diu, per a 8
   comprovacions (els terminals de Warp, els fitxers de sessió, les transcripcions i `~/.claude.json` de Claude Code, les taules de
   `warp.sqlite`, les versions i la restauració de Warp), si encara tenen la forma que l'app llegeix. Només llegeix: no obre, no
   atura ni escriu res. Des del codi: `warp-launch diagnostica [--json] [--anonimitza]`.
