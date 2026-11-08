@@ -144,10 +144,30 @@ public final class RefrescWarp {
     }
 
     /// Abans de sortir de l'app o d'engegar Warp: desactiva l'ajust ara mateix, sense esperar res. Sincrònic: l'app pot sortir
-    /// tot seguit.
+    /// tot seguit. Si `settings.toml` acabava de canviar, l'ajust pot haver quedat activat: després, `acabaDeDesactivar`.
     public func tanca() {
         enCurs?.cancel()
         desactiva()
+    }
+
+    /// Abans d'engegar Warp: `tanca` i, si `settings.toml` acabava de canviar, uns segons més (`acabaDeDesactivar`). Amb
+    /// l'ajust activat, Warp restauraria les seves finestres en arrencar.
+    public func tancaEsperant() async {
+        tanca()
+        await acabaDeDesactivar()
+    }
+
+    /// Si l'última desactivació no s'ha pogut fer perquè `settings.toml` acabava de canviar (`Pendent.acabaDeCanviar`): es
+    /// torna a provar cada segon, fins a `segonsTornaAProvar` cops, i no d'aquí a un minut. Al final d'un refresc, abans
+    /// d'engegar Warp i en sortir de l'app (que, si no, la deixaria activada fins que es tornés a obrir). Sense el fitxer i
+    /// amb Warp tancat o acabat d'obrir (`.quanSObriWarp`), esperar uns segons no serviria.
+    public func acabaDeDesactivar() async {
+        var intents = 0
+        while pendent == .acabaDeCanviar, !retirat, intents < Self.segonsTornaAProvar {
+            intents += 1
+            do { try await entorn.espera(.seconds(1)) } catch { break }
+            desactiva()
+        }
     }
 
     /// En demanar sortir: cap cicle tornarà a activar l'ajust mentre una alerta pugui aturar la sortida.
@@ -225,13 +245,7 @@ public final class RefrescWarp {
         }
         desactiva()
         // Si `settings.toml` acabava de canviar, d'aquí a un segon i no d'aquí a un minut: com menys estona activat, millor.
-        // Sense el fitxer i amb Warp tancat o acabat d'obrir, esperar uns segons no serviria.
-        var intents = 0
-        while pendent == .acabaDeCanviar, !retirat, intents < Self.segonsTornaAProvar {
-            intents += 1
-            do { try await entorn.espera(.seconds(1)) } catch { break }
-            desactiva()
-        }
+        await acabaDeDesactivar()
         return avisant(await base(), warpTancat: !entorn.warpObert())
     }
 

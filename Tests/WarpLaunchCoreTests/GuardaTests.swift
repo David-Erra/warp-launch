@@ -414,7 +414,7 @@ private let prohibidesArrossegar = [
             "\(cli): let obridor = ObridorCLI(obre: { try await ObreWarp.obre($0, warp: lector.installacio()) },",
         ])
         #expect(linies("ObreWarp.engega(").sorted() == [
-            "\(app): engegaWarp: { consentiment.refresc?.tanca(); try await ObreWarp.engega(warp: lector.installacio()) },",
+            "\(app): engegaWarp: { await consentiment.refresc?.tancaEsperant(); try await ObreWarp.engega(warp: lector.installacio()) },",
             "\(cli): engega: { try await ObreWarp.engega(warp: lector.installacio()) },",
         ])
         #expect(linies("versioWarp: {") == ["\(app): versioWarp: { lector.installacio().app.versio },"])

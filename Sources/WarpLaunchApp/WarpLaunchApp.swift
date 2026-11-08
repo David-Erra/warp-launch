@@ -142,7 +142,7 @@ final class Aplicacio {
                 llegeix: { await warp.llegeix() },
                 obre: { try await ObreWarp.obre($0, warp: lector.installacio()) },
                 // Amb l'ajust activat, Warp restauraria les seves finestres en arrencar.
-                engegaWarp: { consentiment.refresc?.tanca(); try await ObreWarp.engega(warp: lector.installacio()) },
+                engegaWarp: { await consentiment.refresc?.tancaEsperant(); try await ObreWarp.engega(warp: lector.installacio()) },
                 fitxers: FitxersLaunchWarp.real,
                 transcripcions: LectorTranscripcions(),
                 confianca: LectorConfianca(),
@@ -282,7 +282,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aplicacio.refresc?.atura()
         if aplicacio.editor.desaSiCal() {
             aplicacio.obertura?.enSortir()
-            return .terminateNow
+            return surtAmbLAjustDesactivat()
         }
         aplicacio.activacio.posaAlDavant()
         let alerta = NSAlert()
@@ -297,7 +297,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return .terminateCancel
         }
         aplicacio.obertura?.enSortir()
-        return .terminateNow
+        return surtAmbLAjustDesactivat()
+    }
+
+    /// Si `settings.toml` acabava de canviar quan `atura` ha volgut desactivar l'ajust (`RefrescWarp.Pendent.acabaDeCanviar`),
+    /// l'app no surt fins que l'ha pogut desactivar, com a molt uns segons (`RefrescWarp.acabaDeDesactivar`): si sortís, la
+    /// restauració de Warp podria quedar activada, i ningú no la tornaria a desactivar.
+    private func surtAmbLAjustDesactivat() -> NSApplication.TerminateReply {
+        guard let refresc = aplicacio.refresc, refresc.pendent == .acabaDeCanviar else { return .terminateNow }
+        Task { @MainActor in
+            await refresc.acabaDeDesactivar()
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
     }
 }
 

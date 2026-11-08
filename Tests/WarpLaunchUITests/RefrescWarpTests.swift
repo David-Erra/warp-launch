@@ -411,6 +411,37 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(!mon.ajust, "la vigilància continua")
     }
 
+    /// Abans d'engegar Warp i en sortir de l'app: si en desactivar-lo el fitxer acaba de canviar, es torna a provar cada
+    /// segon, uns quants cops, abans de continuar (si no, Warp arrencaria, o l'app sortiria, amb l'ajust activat). Si
+    /// continua canviant, ho deixa per a la vigilància, sense avís.
+    @Test func abansDEngegarWarpHoTornaAProvarCadaSegon() async {
+        let mon = Mon()
+        mon.ajust = true
+        mon.mesTardDesactivar = 2
+        let r = RefrescWarp(entorn: mon.entorn)
+        await r.tancaEsperant()
+        #expect(!mon.ajust && mon.posats == 3 && mon.esperes == 2 && r.avis == nil && r.pendent == nil)
+        // Ja desactivat: ni espera.
+        await r.tancaEsperant()
+        await r.acabaDeDesactivar()
+        #expect(mon.esperes == 2)
+        mon.ajust = true
+        mon.mesTardDesactivar = 10
+        await r.tancaEsperant()
+        #expect(mon.ajust && mon.esperes == 2 + RefrescWarp.segonsTornaAProvar && r.avis == nil)
+        #expect(r.pendent == .acabaDeCanviar)
+    }
+
+    /// Sense el fitxer i amb Warp tancat (ronda 5), esperar no serviria: `tancaEsperant` no espera.
+    @Test func abansDEngegarWarpSenseElFitxerNoEspera() async {
+        let mon = Mon()
+        mon.ajust = true
+        mon.quanSObriWarp = 10
+        let r = RefrescWarp(entorn: mon.entorn)
+        await r.tancaEsperant()
+        #expect(mon.esperes == 0 && mon.posats == 1 && r.pendent == .quanSObriWarp && r.avis == nil)
+    }
+
     // MARK: - Sense `settings.toml`, i amb Warp tancat o acabat d'obrir (ronda 5)
 
     /// Si l'ajust no crea el fitxer perquè Warp és tancat o acabat d'obrir, no és cap error: cap avís, queda pendent, i la
