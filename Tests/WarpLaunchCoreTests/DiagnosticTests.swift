@@ -373,10 +373,30 @@ private struct MacDeProva {
         try mac.versioDeClaude("2.1.319")
         let claude = try mac.comprovacio(.versioClaude)
         #expect(claude.resultat == .avis)
-        #expect(claude.detall.contains("Claude Code 2.1.319 (1 session), from the session files. Not tested with Warp "
-            + "Launch: 2.1.319 (tested: 2.1.317–2.1.318)"))
+        // La versió, un sol cop, com la de Warp.
+        #expect(claude.detall == "Claude Code 2.1.319 (1 session), from the session files, hasn't been tested with Warp "
+            + "Launch (tested: 2.1.317–2.1.318). It isn't an error: if something fails, this may be why.")
+        #expect(claude.detall.components(separatedBy: "2.1.319").count == 2)
         try mac.versioDeClaude("2.1.318")
         #expect(try mac.comprovacio(.versioClaude).resultat == .be)
+    }
+
+    /// Amb versions provades i no provades, cada una surt un sol cop, i la no provada ho porta al costat; amb dues de no
+    /// provades, el verb va en plural.
+    @Test func lesVersionsDeClaudeSurtenUnSolCop() throws {
+        var mac = try MacDeProva()
+        mac.processos.claude(102, argv: ["claude"], uuid: uuidDeProva("a"))
+        try escriuSessio(a: mac.sessions, pid: 102, sessionId: "1c3d5f7a-2b4c-4d6e-8f0a-1b2c3d4e5f6a", cwd: mac.projecte)
+        try mac.versioDeClaude("2.1.318", pid: 101)
+        try mac.versioDeClaude("2.1.319", pid: 102)
+        let barrejades = try mac.comprovacio(.versioClaude)
+        #expect(barrejades.resultat == .avis)
+        #expect(barrejades.detall == "Claude Code 2.1.318 (1 session), 2.1.319 (1 session, not tested with Warp Launch), "
+            + "from the session files (tested: 2.1.317–2.1.318). It isn't an error: if something fails, this may be why.")
+        try mac.versioDeClaude("2.1.320", pid: 101)
+        #expect(try mac.comprovacio(.versioClaude).detall == "Claude Code 2.1.319 (1 session), 2.1.320 (1 session), from "
+            + "the session files, haven't been tested with Warp Launch (tested: 2.1.317–2.1.318). It isn't an error: if "
+            + "something fails, this may be why.")
     }
 
     @Test func senseWarpStableOSenseVersioDeClaude() throws {

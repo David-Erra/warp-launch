@@ -647,14 +647,21 @@ public enum Diagnostic {
             let (xa, xb) = (RangVersions.xifres(a) ?? [], RangVersions.xifres(b) ?? [])
             return xa == xb ? a < b : xa.lexicographicallyPrecedes(xb)
         }
-        let text = ordenades.map { "\($0) (\(Plural.compta(perVersio[$0] ?? 0, "session", "sessions")))" }
-            .joined(separator: ", ")
-        let noProvades = ordenades.filter { !VersionsProvades.provada($0, VersionsProvades.claude) }
+        let noProvades = Set(ordenades.filter { !VersionsProvades.provada($0, VersionsProvades.claude) })
+        // Cada versió, un sol cop, com la de Warp. Si n'hi ha de provades i de no provades, cada no provada ho porta al costat.
+        let totes = noProvades.count == ordenades.count
+        let text = ordenades.map { versio in
+            let sessions = Plural.compta(perVersio[versio] ?? 0, "session", "sessions")
+            return totes || !noProvades.contains(versio) ? "\(versio) (\(sessions))"
+                : "\(versio) (\(sessions), not tested with Warp Launch)"
+        }.joined(separator: ", ")
         guard noProvades.isEmpty else {
-            return Comprovacio(.versioClaude, .avis, "Claude Code \(text), from the session files. Not tested with Warp "
-                + "Launch: \(noProvades.joined(separator: ", ")) (tested: "
-                + VersionsProvades.claude.map(\.description).joined(separator: ", ") + "). It isn't an error: if something "
-                + "fails, this may be why.")
+            let provades = "(tested: " + VersionsProvades.claude.map(\.description).joined(separator: ", ") + ")"
+            let quines = totes
+                ? ", \(ordenades.count == 1 ? "hasn't" : "haven't") been tested with Warp Launch \(provades)."
+                : " \(provades)."
+            return Comprovacio(.versioClaude, .avis, "Claude Code \(text), from the session files\(quines) It isn't an "
+                + "error: if something fails, this may be why.")
         }
         return Comprovacio(.versioClaude, .be, "Claude Code \(text), from the session files: tested with Warp Launch.")
     }
