@@ -50,9 +50,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
    desactivada, Warp es va obrir igualment, i encara no se sap per què).
 
 **Per actualitzar-la:** surt de l'app i torna a fer la comanda del pas 2.
-**Per desinstal·lar-la:** desactiva l'interruptor de l'inici de sessió, surt de l'app i esborra
-`/Applications/Warp Launch.app` (i `~/.config/warp-launch/` si no vols conservar la configuració). La restauració de sessió
-de Warp queda desactivada: si la vols, torna-la a activar a la configuració de Warp.
+**Per desinstal·lar-la:** vegeu «Desinstal·lar», a sota.
 
 ### Des del codi
 
@@ -70,6 +68,18 @@ Cal que el compte actiu de `gh` pugui escriure a `David-Erra/warp-launch` (`gh a
 `scripts/publica.sh` compila la versió de `VERSION`, comprova la signatura «Warp Launch Dev» i diu què publicaria; amb
 `--aplica`, la publica a GitHub (`vX.Y.Z`, amb `WarpLaunch-X.Y.Z.zip`), i és la que instal·la la comanda del pas 2.
 Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui.
+
+## Desinstal·lar
+
+1. **Configuració (⌘,) › General › «Deixar de fer servir Warp Launch» › Restaura Warp i surt…** (des de la 0.31.0). Abans de
+   fer res, diu com quedarà l'ajust de Warp «Restore windows, tabs, and panes on startup»: com el tenies abans de Warp Launch
+   o, si ja la feies servir abans que demanés permís (0.29.0), activat, com ve de sèrie a Warp. Després retira el permís, treu
+   l'app dels ítems d'inici de sessió i surt. Si la tornes a obrir, et torna a demanar permís.
+2. Arrossega `/Applications/Warp Launch.app` a la Paperera.
+3. Si no vols conservar la configuració, esborra `~/.config/warp-launch/`.
+
+Amb una versió sense el botó (d'abans de la 0.31.0): desactiva l'interruptor de l'inici de sessió, surt de l'app i, si vols que
+Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la configuració de Warp.
 
 ## Què has de saber
 
