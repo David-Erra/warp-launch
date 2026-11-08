@@ -147,6 +147,21 @@ private let ajustos = """
         #expect(b.text == ajustos + "de_warp = 1\n", "el canvi de Warp hi és, i `restore_session` no ha canviat")
     }
 
+    /// L'script no crea mai `settings.toml` (ronda 5: si el creés abans que Warp, Warp se saltaria la migració d'arrencada).
+    /// Sense el fitxer no escriu res (`senseLaLiniaEsActivatDeSerie`), i si Warp l'esborra mentre l'script el canvia, no el
+    /// torna a crear: el fitxer ja no és el que s'ha llegit, i no es toca res.
+    @Test func siWarpLEsborraMentrestantNoElTornaACrear() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(interposant: "mktemp", cos: #"""
+            case "$1" in *warp-settings-nou*) /bin/rm -f "$WARP_SETTINGS" ;; esac
+            exec /usr/bin/mktemp "$@"
+            """#, "activa", "--aplica")
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains("acaba de canviar. No s'ha tocat res."), "\(sortida)")
+        #expect(b.noms == ["bin", "tmp"])
+        #expect(b.temporals.isEmpty)
+    }
+
     /// Si Warp escriu just abans de llegir, es conserva, i el número de línia és el de la lectura. Abans, amb una línia nova a
     /// dalt entre dues lectures, l'script canviava el valor de la línia anterior, `login_item`.
     @Test func siWarpEscriuAbansEsConserva() throws {
