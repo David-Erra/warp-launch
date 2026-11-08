@@ -641,6 +641,48 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(try instantania(e) == abans)
     }
 
+    /// 0.31.1: en un Mac on no s'ha instal·lat mai Warp, tampoc no hi ha `warp.sqlite` (ni `settings.toml`, i per tant la
+    /// base es llegeix). `llegeix`, `importa` i `obre` diuen que no hi ha Warp, no només que no troben la base. Amb només
+    /// Warp Preview, el seu text; amb Warp Stable, l'error de sempre.
+    @Test func senseCapWarpNiBaseHoDiuen() throws {
+        let e = try Escenari()
+        let carpeta = try ambConfiguracio(e)
+        let senseBase = e.tmp.url("no-hi-es.sqlite")
+        var entorn = try e.senseWarp()
+        entorn.lector.rutaWarp = senseBase
+        func executa(_ entorn: EntornCLI, _ args: [String]) -> (Int32, Sortida) {
+            var sortida = Sortida()
+            return (OrdreCLI.executa(args, entorn: entorn, sortida: &sortida), sortida)
+        }
+        let ordres = [["llegeix"], ["llegeix", "--json"], ["importa"], ["obre", "feina", "--config", carpeta.path],
+                      ["obre", "feina", "--json", "--config", carpeta.path]]
+        let base = "Tampoc no hi ha la base de Warp (\(senseBase.path))."
+        let abans = try instantania(e)
+        for args in ordres {
+            let (codi, sortida) = executa(entorn, args)
+            #expect(codi == 1, "\(args)")
+            #expect(sortida.text.isEmpty && sortida.errors == "warp-launch: \(WarpPreview.capWarp.text) \(base)\n",
+                    "\(args): \(sortida.errors)")
+        }
+        // Només Warp Preview: el seu text.
+        let tmp = e.tmp
+        var preview = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: { _ in nil })
+        preview.executablePreview = binariPreview
+        entorn.lector.warp = { [preview] in preview }
+        for args in ordres {
+            #expect(executa(entorn, args).1.errors == "warp-launch: \(WarpPreview.nomesPreview.text) \(base)\n", "\(args)")
+        }
+        // Amb Warp Stable, no és que no hi hagi Warp: l'error de sempre.
+        var stable = e.entorn
+        stable.lector.rutaWarp = senseBase
+        for args in ordres {
+            let (codi, sortida) = executa(stable, args)
+            #expect(codi == 1 && sortida.errors == "warp-launch: no trobo la base de Warp: \(senseBase.path)\n",
+                    "\(args): \(sortida.errors)")
+        }
+        #expect(try instantania(e) == abans)
+    }
+
     /// Un `estat.json` malmès o d'una versió més nova: l'app no obriria res, i el CLI no el toca.
     @Test func obreAmbUnEstatQueNoEsPotLlegir() throws {
         let e = try Escenari()

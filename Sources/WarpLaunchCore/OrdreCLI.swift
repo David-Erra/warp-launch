@@ -695,6 +695,14 @@ public enum OrdreCLI {
     private static func llegeixWarp(_ lector: Lector) throws(ErrorCLI) -> LecturaWarp {
         do {
             return try lector.llegeix()
+        } catch let ErrorLectura.noHiHaBase(ruta) {
+            // 0.31.1: on no s'ha instal·lat mai Warp Stable, tampoc no hi ha la base. Es diu per què (cap Warp, o només
+            // Warp Preview), com ho diria la lectura, i no només que no es troba la base.
+            let warp = lector.installacio()
+            if !warp.hiHaStable, let motiu = warp.preview(lector.processos, stableObert: false) {
+                throw .fallida("\(motiu.text) Tampoc no hi ha la base de Warp (\(ruta)).")
+            }
+            throw .fallida("\(ErrorLectura.noHiHaBase(ruta))")
         } catch {
             throw .fallida("\(error)")
         }
