@@ -17,7 +17,9 @@ import WarpLaunchCore
 /// no el toca mai més, tampoc en sortir de l'app.
 ///
 /// **Si `settings.toml` acaba de canviar (0.31.3):** Warp el podria estar escrivint, i l'ajust no hi escriu res
-/// (`AjustRestauracio.Escriptura.mesTard`). No és cap error: la vigilància de cada minut ho torna a provar, sense cap avís.
+/// (`AjustRestauracio.Escriptura.mesTard`). No és cap error: la vigilància de cada minut ho torna a provar, sense cap avís, i
+/// al final d'un refresc es torna a provar cada segon uns quants cops (`segonsTornaAProvar`), perquè l'ajust quedi activat
+/// tan poca estona com es pugui.
 @MainActor
 @Observable
 public final class RefrescWarp {
@@ -50,6 +52,10 @@ public final class RefrescWarp {
     public static let segonsMaxim = 30
     /// Si no hi ha cap canvi, l'estona mínima: a la prova, Warp va desar en menys de 5 s.
     public static let segonsMinim = 5
+    /// Al final d'un refresc, si `settings.toml` acabava de canviar: quants cops es torna a provar de desactivar l'ajust,
+    /// d'un en un segon. Els 2 s d'`AjustRestauracio.segonsRecent`, i un de marge.
+    public static let segonsTornaAProvar = 3
+
     /// «Restaura Warp i surt…» no ha pogut posar l'ajust: `settings.toml` acabava de canviar, i no s'hi ha escrit res.
     public struct MesTard: Error, Equatable, CustomStringConvertible {
         public var description: String { "«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" }
@@ -188,6 +194,13 @@ public final class RefrescWarp {
             if lectura.fotoFinestres != abans || segon >= Self.segonsMinim { break }
         }
         desactiva()
+        // Si `settings.toml` acabava de canviar, d'aquí a un segon i no d'aquí a un minut: com menys estona activat, millor.
+        var intents = 0
+        while desactivacioPendent, !retirat, intents < Self.segonsTornaAProvar {
+            intents += 1
+            do { try await entorn.espera(.seconds(1)) } catch { break }
+            desactiva()
+        }
         return avisant(await base(), warpTancat: !entorn.warpObert())
     }
 

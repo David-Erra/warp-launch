@@ -362,6 +362,33 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(mon.canvis.isEmpty && mon.esperes == 0 && mon.posats == 1 && r.avis == nil)
     }
 
+    /// Al final d'un refresc, si el fitxer acaba de canviar, es torna a provar de desactivar-lo cada segon, i no d'aquí a un
+    /// minut: com menys estona activat, millor.
+    @Test func alFinalDUnRefrescHoTornaAProvarCadaSegon() async throws {
+        let mon = Mon()
+        mon.mesTardDesactivar = 2
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        _ = try await r.refresca().get()
+        #expect(mon.canvis == [true, false] && !mon.ajust)
+        #expect(mon.esperes == RefrescWarp.segonsMinim + 2)
+        #expect(r.avis == nil && !r.desactivacioPendent)
+    }
+
+    /// Si al final del refresc el fitxer continua canviant, ho deixa per a la vigilància de cada minut, sense avís.
+    @Test func siContinuaCanviantHoDeixaPerALaVigilancia() async throws {
+        let mon = Mon()
+        mon.mesTardDesactivar = 10
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        _ = try await r.refresca().get()
+        #expect(mon.ajust && mon.esperes == RefrescWarp.segonsMinim + RefrescWarp.segonsTornaAProvar)
+        #expect(r.avis == nil && r.desactivacioPendent)
+        mon.mesTardDesactivar = 0
+        r.vigila()
+        #expect(!mon.ajust && r.avis == nil && !r.desactivacioPendent)
+    }
+
     /// «Restaura Warp i surt…»: si el fitxer acaba de canviar, no hi escriu res, ho diu (l'ha demanat l'usuari), i el refresc
     /// continua com abans.
     @Test func siEnRetirarAcabaDeCanviarNoCanviaRes() {
