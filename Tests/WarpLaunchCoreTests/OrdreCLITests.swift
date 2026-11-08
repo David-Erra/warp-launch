@@ -123,6 +123,10 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         let (codi, sortida) = e.executa("importa", "--desa", "--config", carpeta.path)
         #expect(codi != 0)
         #expect(sortida.errors.contains("Warp no desa les finestres"))
+        // No és que Warp no tingui res: el CLI no toca l'ajust, i l'app, amb la configuració de debò, sí.
+        #expect(sortida.errors.contains("«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. "
+            + "L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar."))
+        #expect(!sortida.errors.contains("No hi ha res per importar"))
         #expect(!e.existeix(carpeta), "no s'ha desat res")
         #expect(e.executa("llegeix").sortida.text.contains("Warp no desa les finestres"))
         #expect(e.executa("llegeix", "--warp", e.tmp.url("warp.sqlite").path).sortida.text.contains("Warp: 2 finestres"))

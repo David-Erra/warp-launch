@@ -51,9 +51,7 @@ public final class FullImportacio {
         switch await warp.llegeixAmbFinestres() {
         case let .success(lectura) where lectura.warpDesaFinestres == false:
             // Importar substituiria la configuració per res.
-            estat = .senseFinestres(LecturaWarp.senseFinestres + (mode == .crea
-                ? " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
-                : " No hi ha res per importar, i la configuració no canvia."))
+            estat = .senseFinestres(LecturaWarp.senseFinestres + senseFinestres)
         case let .success(lectura):
             avisosLectura = lectura.avisos
             plantillaPrevista = editor.plantillaPerImportar.normalitzada()
@@ -61,6 +59,21 @@ public final class FullImportacio {
         case let .failure(error):
             estat = .error(error.description)
         }
+    }
+
+    /// Què fer quan Warp no desa les finestres. Sense refresc (D19), l'app no ha pogut demanar a Warp que les desi: és una
+    /// carpeta de prova (`--config`), on l'app no toca l'ajust, i no és que Warp no tingui res. Sense el consentiment
+    /// tampoc no n'hi ha, però llavors el full no es pot obrir (D-P4). Amb el refresc, la foto sempre hi és
+    /// (`BaseWarp.sempre`): el text de sempre, per si de cas.
+    private var senseFinestres: String {
+        guard warp.refresc == nil else {
+            return mode == .crea
+                ? " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
+                : " No hi ha res per importar, i la configuració no canvia."
+        }
+        return " Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les "
+            + "desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar."
+            + (mode == .crea ? " Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes." : " La configuració no canvia.")
     }
 
     public var importacio: Importacio? {

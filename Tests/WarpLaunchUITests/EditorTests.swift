@@ -1003,6 +1003,41 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(!FileManager.default.fileExists(atPath: tmp.magatzem.carpeta.path))
     }
 
+    /// Sense refresc (una carpeta de prova, `--config`), l'app no toca l'ajust de Warp i no li pot demanar que desi les
+    /// finestres: el full ho diu així, i que amb la configuració de debò sí que es pot. No diu que no hi hagi res a Warp.
+    /// Amb el refresc (la configuració de debò), el text de sempre.
+    @Test func senseFinestresAmbUnaCarpetaDeProvaDiuPerQue() async throws {
+        let tmp = try Temporal()
+        var lectura = lecturaVariada()
+        lectura.warpDesaFinestres = false
+        let llegida = lectura
+
+        let nova = Editor(magatzem: tmp.magatzem, retardDesat: nil)
+        nova.carrega()
+        let crea = try #require(FullImportacio(editor: nova, warp: EstatWarp(lector: { llegida })))
+        await crea.llegeix()
+        guard case let .senseFinestres(motiu) = crea.estat else { Issue.record("\(crea.estat)"); return }
+        #expect(motiu == LecturaWarp.senseFinestres + " Amb una configuració de prova (--config), l'app no toca aquest "
+            + "ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp "
+            + "les desi, i el torna a desactivar. Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes.")
+        #expect(!motiu.contains("No hi ha res per importar"))
+
+        let existent = try editorAmbMostra(tmp)
+        let substitueix = try #require(FullImportacio(editor: existent, warp: EstatWarp(lector: { llegida })))
+        await substitueix.llegeix()
+        guard case let .senseFinestres(motiu) = substitueix.estat else { Issue.record("\(substitueix.estat)"); return }
+        #expect(motiu.contains("Amb una configuració de prova (--config)") && motiu.hasSuffix(" La configuració no canvia."))
+
+        // Amb el refresc (la configuració de debò): Warp tancat, i la foto no té finestres.
+        let warp = EstatWarp(lector: { llegida })
+        warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in }, warpObert: { false },
+                                                              llegeixBase: { llegida }, espera: { _ in }))
+        let deDebo = try #require(FullImportacio(editor: existent, warp: warp))
+        await deDebo.llegeix()
+        guard case let .senseFinestres(motiu) = deDebo.estat else { Issue.record("\(deDebo.estat)"); return }
+        #expect(motiu == LecturaWarp.senseFinestres + " No hi ha res per importar, i la configuració no canvia.")
+    }
+
     /// «Substitueix» amb una lectura sense cap finestra de terminal deixaria buida la configuració, i Retorn el prem.
     @Test func noSubstitueixPerUnaConfiguracioBuida() async throws {
         let tmp = try Temporal()

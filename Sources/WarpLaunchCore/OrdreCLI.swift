@@ -258,7 +258,12 @@ public enum OrdreCLI {
         }
 
         let lectura = try llegeixWarp(lector)
-        if lectura.warpDesaFinestres == false { throw .fallida(LecturaWarp.senseFinestres + " No hi ha res per importar.") }
+        // El CLI no toca mai l'ajust (D19 només és de l'app): no és que Warp no tingui res obert.
+        if lectura.warpDesaFinestres == false {
+            throw .fallida(LecturaWarp.senseFinestres + " «warp-launch importa» no toca aquest ajust i no pot demanar a Warp "
+                + "que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el "
+                + "torna a desactivar.")
+        }
         let inici = Rutes.canonica(entorn.inici)
         let plantilla = plantillaPerImportar(entorn, inici: inici)
         let importacio = Importador.importa(lectura, inici: inici, plantilla: plantilla.valor,
