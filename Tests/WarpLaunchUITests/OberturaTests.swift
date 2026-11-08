@@ -47,6 +47,14 @@ private func senseBase(_ terminals: [TerminalViu], sessions: [SessioClaude] = []
                 warpDesaFinestres: false)
 }
 
+/// Un Warp Stable que encara no ha desat res (`LecturaWarp.warpSenseBase`, 0.31.2): la lectura de l'app
+/// (`Lector.llegeixDeLApp`) és la dels processos, sense finestres, com amb la restauració desactivada.
+private func senseLaBaseDeWarp(_ lectura: LecturaWarp) -> LecturaWarp {
+    var l = lectura
+    l.warpSenseBase = true
+    return l
+}
+
 /// D-P12: Warp Preview no deixa obrir res (`LecturaWarp.warpPreview`), amb Warp Stable tancat; o no hi ha cap Warp
 /// (0.31.1).
 private func ambPreview(_ preview: WarpPreview) -> LecturaWarp {
@@ -575,6 +583,29 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(b.obertura.resultat == Obertura.Resultat(correcte: true, text: "S'ha obert «W» a Warp: 2 pestanyes, 1 amb Claude."))
     }
 
+    /// Decisió 6 d'en David (08/11/2026): amb una carpeta de prova (sense refresc) i un Warp Stable que encara no ha desat res
+    /// (`warpSenseBase`), «Obre a Warp…» obre pels processos, com amb la restauració desactivada, en lloc de fallar. Amb Warp
+    /// obert, i amb Warp tancat (primer l'obre).
+    @Test(arguments: [true, false])
+    func ambUnaCarpetaDeProvaISenseLaBaseObrePelsProcessos(warpObert: Bool) async throws {
+        let b = try Banc()
+        #expect(b.consentiment.refresc == nil && b.consentiment.potContinuar, "com amb una carpeta de prova")
+        b.lectures = [senseLaBaseDeWarp(senseBase([], warpObert: warpObert))]
+        await b.obertura.demana(id(100))
+        let proposta = try #require(b.proposta)
+        #expect(proposta.pla.aObrir.count == 2 && proposta.warpTancat == !warpObert && !proposta.warpDesaFinestres)
+        b.llegides = 0
+        let buida = TerminalViu(pid: 500, carpeta: "/Users/prova")
+        b.lectures = (warpObert ? [senseBase([]), senseBase(terminalsNous, sessions: [claudeT1()])]
+            : [senseBase([], warpObert: false), senseBase([], warpObert: false), senseBase([buida]), senseBase([buida]),
+               senseBase([buida] + terminalsNous, sessions: [claudeT1()])]).map(senseLaBaseDeWarp)
+        await b.obertura.confirmaIObre()
+        #expect(b.engegades == (warpObert ? 0 : 1) && b.urls.count == 1)
+        #expect(b.estatAlDisc.llancaments.last?.estat == .confirmat)
+        #expect(b.estatAlDisc.pestanyes[id(1)]?.pane == pane("n"))
+        #expect(b.obertura.resultat?.correcte == true, "\(b.obertura.resultat?.text ?? "")")
+    }
+
     /// Els terminals que ja hi eren no confirmen res, encara que siguin a la mateixa carpeta.
     @Test func elsTerminalsDAbansNoConfirmen() async throws {
         let b = try Banc()
@@ -970,6 +1001,22 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         #expect(b.obertura.resultat?.correcte == true)
         #expect(b.obertura.resultat?.text == "S'han obert 2 finestres a Warp, amb 2 pestanyes, 2 amb Claude.")
         #expect(b.obertura.estat == .cap)
+    }
+
+    /// Decisió 6 d'en David (08/11/2026): amb una carpeta de prova (sense refresc) i un Warp Stable que encara no ha desat res
+    /// (`warpSenseBase`), «Obre-ho tot…» les obre pels processos, en lloc de fallar.
+    @Test func ambUnaCarpetaDeProvaISenseLaBaseLesObrePelsProcessos() async throws {
+        let b = try Banc(configuracio: duesFinestres)
+        #expect(b.consentiment.refresc == nil && b.consentiment.potContinuar, "com amb una carpeta de prova")
+        b.lectures = [senseLaBaseDeWarp(senseBase([]))]
+        await b.obertura.demanaTot()
+        #expect(proposta(b)?.triades == [id(100), id(300)])
+        b.lectures = [senseBase([]), senseBase([]), obertesTotes([(id(1), "/x/t1", 601), (id(11), "/x/u1", 701)])]
+            .map(senseLaBaseDeWarp)
+        await b.obertura.confirmaIObreTot()
+        #expect(b.urls.count == 2 && b.engegades == 0)
+        #expect(b.estatAlDisc.llancaments.count == 2 && b.estatAlDisc.llancaments.allSatisfy { $0.estat == .confirmat })
+        #expect(b.obertura.resultat?.text == "S'han obert 2 finestres a Warp, amb 2 pestanyes, 2 amb Claude.")
     }
 
     /// Ronda 5: sense `settings.toml` i amb Warp tancat, Warp arrencarà amb la restauració de sèrie, activada. El full no diu
