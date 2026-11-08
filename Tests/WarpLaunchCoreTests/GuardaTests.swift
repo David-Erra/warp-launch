@@ -517,6 +517,22 @@ private let prohibidesArrossegar = [
         #expect(ordres.contains(#".keyboardShortcut("i", modifiers: [.option, .command])"#))
     }
 
+    /// D-P4 (decisió d'en David del 07/11/2026): a la pantalla del permís, Retorn prem «Accepta», el botó per defecte, i
+    /// Escapada no fa res: no accepta mai, ni fa sortir. És l'única drecera de la pantalla, i `elCodiNoObreResNiRegistraArrencades`
+    /// ja comprova que `accepta()` només el crida aquest botó.
+    @Test func elPermisSAcceptaAmbRetornINoAmbEscapada() throws {
+        let codi = try fitxers("Sources")
+        let vista = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaConsentiment.swift" })
+        #expect(vista.text.contains(#"Button("Accepta") { consentiment.accepta() }"#
+            + "\n                .keyboardShortcut(.defaultAction)\n"))
+        let dreceres = vista.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { $0.contains("keyboardShortcut") && !$0.hasPrefix("//") }
+        #expect(dreceres == [".keyboardShortcut(.defaultAction)"], "\(dreceres)")
+        let escapada = try aparicions(de: [#"cancelAction"#, #"\.escape\b"#, #"onExitCommand"#, #"onKeyPress"#,
+                                           #"cancelOperation"#, #"\\u\{1[bB]\}"#], a: [vista])
+        #expect(escapada.isEmpty, "\(escapada)")
+    }
+
     /// La fila d'una finestra decideix si accepta pestanyes en cada arrossegament, no quan es dibuixa: amb `isEnabled`,
     /// la d'una finestra triada en crear-la no les acceptava mai més (prova 7).
     @Test func laFilaDeLaFinestraDecideixEnArrossegar() throws {

@@ -28,8 +28,8 @@ public struct PortaConsentiment<Contingut: View>: View {
 }
 
 /// La pantalla de consentiment (D-P4, en David, 07/11/2026): per què l'app ha de desactivar la restauració de Warp, què
-/// canvia, i dos botons. «Surt de Warp Launch» no desa res, i la propera vegada es torna a preguntar. Cap dels dos no té
-/// drecera: s'ha de triar a consciència.
+/// canvia, i dos botons. «Surt de Warp Launch» no desa res, i la propera vegada es torna a preguntar. Retorn prem
+/// «Accepta», que és el botó per defecte (decisió d'en David del 07/11/2026). Escapada no fa res (vegeu `botons`).
 struct VistaConsentiment: View {
     let consentiment: ConsentimentRestauracio
     let carpetaDeProva: String?
@@ -96,17 +96,27 @@ struct VistaConsentiment: View {
                     .textSelection(.enabled)
             }
 
-            HStack {
-                Spacer()
-                Button("Surt de Warp Launch", action: surt)
-                Button("Accepta") { consentiment.accepta() }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!consentiment.potAcceptar)
-            }
+            botons
         }
         .fixedSize(horizontal: false, vertical: true)
         .padding(28)
         .frame(width: 560)
+    }
+
+    /// «Accepta» és el botó per defecte: Retorn el prem, si es pot acceptar (amb un `preferencies.json` que no es pot
+    /// llegir, no). «Surt de Warp Launch» no respon a Escapada, i cap botó no ho fa: a macOS, Escapada és «Cancel·la»,
+    /// que torna on eres sense fer res (`NSAlert` només la dona a un botó «Cancel·la»), i aquí no hi ha on tornar: el botó
+    /// tanca l'app sencera, i una Escapada per costum la tancaria. Per sortir hi ha les maneres de sempre: ⌘Q i tancar la
+    /// finestra.
+    private var botons: some View {
+        HStack {
+            Spacer()
+            Button("Surt de Warp Launch", action: surt)
+            Button("Accepta") { consentiment.accepta() }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(!consentiment.potAcceptar)
+        }
     }
 
     private func apartat(_ titol: String, @ViewBuilder _ cos: () -> some View) -> some View {
