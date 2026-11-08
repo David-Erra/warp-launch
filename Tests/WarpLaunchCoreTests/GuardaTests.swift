@@ -940,7 +940,7 @@ private let prohibidesArrossegar = [
     /// `Lector` només els creen l'app i el CLI amb les rutes de debò, i el core amb les que li passen (`lectorsDeWarpDeDebo`). Cap
     /// `init` no té cap valor per defecte: un `Lector()` o un `.init()` oblidat a una prova no compila, i per això les proves ja
     /// no necessiten cap expressió pròpia per a aquests lectors. La carpeta d'inici de debò, tampoc: només a les línies d'aquí.
-    /// Dels `init` de la llista, el de `init(_ db:` és de la consulta de `LectorWarp`.
+    /// Dels `init` de la llista, `init(_ db:` és de `Sentencia`, la consulta de `LectorWarp`.
     @Test func elsLectorsDeWarpDeDeboNomesDeLAppIDelCLI() throws {
         let app = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
         let cli = "Sources/WarpLaunchCLI/main.swift"
@@ -1145,7 +1145,7 @@ private let prohibidesArrossegar = [
     /// `copyfile` hi copia els atributs estesos de l'original, no al revés. Tampoc no canvia els permisos ni els atributs de
     /// cap fitxer (`altresCanvienAtributs`): els del fitxer nou els posa `EscripturaAtomica.creaFitxerNou`. L'únic `rename` és
     /// el que substitueix el fitxer que ja hi és, i no esborra res més que el fitxer de la carpeta temporal. Cap altre fitxer no
-    /// fa servir aquestes crides, ni `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
+    /// fa servir aquestes crides, ni `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen `LectorAjustosWarp`, l'app i el CLI.
     @Test func nomesLAjustCreaElFitxerDeWarp() throws {
         let codi = try fitxers("Sources")
         let trobades = try creenForaDeLloc(codi)
