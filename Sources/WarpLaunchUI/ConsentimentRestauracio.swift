@@ -166,7 +166,7 @@ public final class ConsentimentRestauracio {
     /// «Deixa de fer servir Warp Launch» (0.31.0, decisió 3 d'en David): torna l'ajust de Warp com era (`retorn`, el que ha
     /// mostrat la confirmació) i retira el permís a `preferencies.json`. A partir d'aquí, l'app no toca Warp (`.retirat`), i
     /// la propera vegada torna a preguntar. Primer l'ajust, que és el que pot fallar més (Warp l'escriu en calent): si no es
-    /// pot posar, o si el permís no es pot desar (llavors l'ajust torna a quedar desactivat), no ha canviat res, i llança
+    /// pot posar, o si el permís no es pot desar (llavors l'ajust es torna a desactivar; si tampoc no es pot, ho diu), no ha canviat res, i llança
     /// l'error.
     public func retira(_ retorn: Preferencies.Retorn) throws(ErrorRetirada) {
         let ara = retirada()
@@ -184,8 +184,12 @@ public final class ConsentimentRestauracio {
         } catch {
             refresc.desfesRetirada()
             Registre.consentiment.error("retirar: \(error.description, privacy: .public)")
-            throw ErrorRetirada(description: "No s'ha pogut retirar el permís: \(error.description). L'ajust de Warp torna a "
-                + "quedar desactivat, i el permís no ha canviat.")
+            // Desactivar-lo també pot fallar (Warp l'escriu en calent): llavors el refresc té l'avís, i la vigilància de cada
+            // minut ho torna a provar (revisió de la 0.31.0).
+            let ajust = refresc.avis == nil ? "L'ajust de Warp torna a quedar desactivat, i el permís"
+                : "L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar "
+                    + "d'aquí a un minut. El permís"
+            throw ErrorRetirada(description: "No s'ha pogut retirar el permís: \(error.description). \(ajust) no ha canviat.")
         }
         estat = .retirat
         Registre.consentiment.notice("retirat")

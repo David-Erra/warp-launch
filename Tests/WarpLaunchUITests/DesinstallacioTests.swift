@@ -33,10 +33,10 @@ private final class Carpeta {
 /// L'ajust de Warp, fals. Com el de l'app, el primer canvi desa a `preferencies.json` el valor que hi havia.
 private final class AjustFals: @unchecked Sendable {
     private let pany = NSLock()
-    private var estat: (valor: Bool, posats: [Bool], fallades: Int)
+    private var estat: (valor: Bool, posats: [Bool], fallades: Int, falladesDesactivar: Int)
 
     init(_ valor: Bool) {
-        estat = (valor, [], 0)
+        estat = (valor, [], 0, 0)
     }
 
     /// Canviat a mà, a Warp.
@@ -45,6 +45,10 @@ private final class AjustFals: @unchecked Sendable {
     var posats: [Bool] { pany.withLock { estat.posats } }
     /// Quantes vegades més falla el pròxim `posa` (Warp acaba d'escriure el fitxer).
     var fallades: Int { get { pany.withLock { estat.fallades } } set { pany.withLock { estat.fallades = newValue } } }
+    /// Com `fallades`, però només per desactivar-lo.
+    var falladesDesactivar: Int {
+        get { pany.withLock { estat.falladesDesactivar } } set { pany.withLock { estat.falladesDesactivar = newValue } }
+    }
 
     func entorn(_ magatzem: MagatzemPreferencies) -> RefrescWarp.Entorn {
         RefrescWarp.Entorn(
@@ -54,6 +58,10 @@ private final class AjustFals: @unchecked Sendable {
                     try pany.withLock {
                         if estat.fallades > 0 {
                             estat.fallades -= 1
+                            throw AjustRestauracio.Refusat(description: "«settings.toml» acaba de canviar")
+                        }
+                        if !nou, estat.falladesDesactivar > 0 {
+                            estat.falladesDesactivar -= 1
                             throw AjustRestauracio.Refusat(description: "«settings.toml» acaba de canviar")
                         }
                         estat.posats.append(nou)
@@ -326,6 +334,28 @@ private final class Mon {
         #expect(c.estat == .acceptat)
         #expect(try mon.preferencies == Preferencies(restauracio: .acceptat(t0), restauracioOriginal: true))
         mon.ajust.valor = true
+        c.refresc?.vigila()
+        #expect(!mon.ajust.valor, "la vigilància continua")
+    }
+
+    /// Revisió de la 0.31.0: si el permís no es pot desar i l'ajust tampoc no es pot tornar a desactivar, no diu que s'ha
+    /// desactivat. La vigilància de cada minut el desactiva.
+    @Test func siTampocNoEsPotTornarADesactivarNoDiuQueSHaDesactivat() throws {
+        let mon = try Mon(ajust: true)
+        let c = mon.consentiment()
+        c.accepta()
+        try #require(c.refresc).vigila()
+        let d = mon.desinstallacio(c)
+        d.demana()
+        try mon.carpeta.posaPermisos(0o555)
+        mon.ajust.falladesDesactivar = 3
+        d.confirma()
+        try mon.carpeta.posaPermisos(0o755)
+        let error = try #require(d.error)
+        #expect(error.hasPrefix("No s'ha pogut retirar el permís: "), "\(error)")
+        #expect(error.hasSuffix("L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho "
+            + "tornarà a provar d'aquí a un minut. El permís no ha canviat."), "\(error)")
+        #expect(mon.ajust.valor && mon.sortides == 0 && c.estat == .acceptat)
         c.refresc?.vigila()
         #expect(!mon.ajust.valor, "la vigilància continua")
     }
