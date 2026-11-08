@@ -64,9 +64,14 @@ public final class Lligam {
         guard estat == .llegint, peticio == aquesta else { return }
         switch resultat {
         case let .success(lectura):
-            // El mateix motiu que el full d'importar: amb una carpeta de prova, que és per això.
+            // El mateix motiu que el full d'importar: amb una carpeta de prova, que és per això. Sense cap Warp, l'app no
+            // n'obre cap.
             if let motiu = MotiuSenseFinestres(lectura, ambRefresc: ambRefresc()) {
-                estat = .error(motiu.text + " Les pestanyes amb Claude que obre l'app es lliguen soles.")
+                if case .senseWarp = motiu {
+                    estat = .error(motiu.text)
+                } else {
+                    estat = .error(motiu.text + " Les pestanyes amb Claude que obre l'app es lliguen soles.")
+                }
                 return
             }
             avisLectura = lectura.avisFoto

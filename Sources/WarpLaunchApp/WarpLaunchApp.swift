@@ -121,7 +121,7 @@ final class Aplicacio {
                                                                                posa: { try ajust.posa($0) })
                                           },
                                           warpObert: { lector.warpObert() },
-                                          llegeixBase: { try lector.llegeix(base: .sempre) })
+                                          llegeixBase: { try lector.llegeixDeLApp(base: .sempre) })
             }
         }
         let consentiment = ConsentimentRestauracio(magatzem: preferencies, creaEntornRefresc: creaEntornRefresc)
@@ -130,7 +130,8 @@ final class Aplicacio {
         // obrir, van pels processos, també durant un refresc o si l'ajust ha quedat activat. Sense el consentiment, l'app no
         // llegeix Warp.
         let base: BaseWarp = creaEntornRefresc == nil ? .segonsAjust : .mai
-        let warp = EstatWarp(lector: { try lector.llegeix(base: base) })
+        // Sense cap Warp ni la seva base, també amb una carpeta de prova: que no hi ha Warp, com amb la de debò.
+        let warp = EstatWarp(lector: { try lector.llegeixDeLApp(base: base) })
         self.warp = warp
         if case .incorrecta = arguments.carpeta {
             obertura = nil

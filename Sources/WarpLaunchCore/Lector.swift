@@ -52,6 +52,26 @@ public struct Lector: Sendable {
     /// Si Warp Stable és obert (el d'`installacio()`), sense llegir res més.
     public func warpObert() -> Bool { processos.warpObert(executable: installacio().executable) }
 
+    /// Per què no hi ha cap Warp Stable (0.31.1): cap Warp, o només Warp Preview. `nil` si n'hi ha un (el d'`installacio()`).
+    /// On no s'ha instal·lat mai Warp Stable, tampoc no hi ha la seva base.
+    public func senseWarpStable() -> WarpPreview? {
+        let warp = installacio()
+        return warp.hiHaStable ? nil : warp.preview(processos, stableObert: false)
+    }
+
+    /// La lectura de l'app: `llegeix(base:)`, però sense cap Warp Stable ni la seva base (`senseWarpStable`) no falla amb
+    /// «no trobo la base de Warp». Llegeix els processos, com amb la configuració de debò (`.mai`), i la lectura diu que no
+    /// hi ha Warp (`warpPreview`) i que no se'n saben les finestres (`warpDesaFinestres` a `false`). Així, amb una carpeta
+    /// de prova (`.segonsAjust`) i en refrescar la foto (`.sempre`), l'app diu el mateix que amb la configuració de debò.
+    /// El CLI no la fa servir: falla, i diu per què (`OrdreCLI`).
+    public func llegeixDeLApp(base: BaseWarp) throws -> LecturaWarp {
+        do {
+            return try llegeix(base: base)
+        } catch ErrorLectura.noHiHaBase where senseWarpStable() != nil {
+            return try llegeix(base: .mai)
+        }
+    }
+
     public func llegeix(base: BaseWarp = .segonsAjust) throws -> LecturaWarp {
         // Si Warp no desa les finestres, la base és d'abans: ni es llegeix.
         let desaFinestres: Bool? = switch base {

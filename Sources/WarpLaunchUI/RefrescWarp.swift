@@ -22,7 +22,8 @@ public final class RefrescWarp {
         public var ajust: @Sendable () throws -> Bool
         public var posa: @Sendable (Bool) throws -> Void
         public var warpObert: @Sendable () -> Bool
-        /// La base de Warp, sigui quin sigui l'ajust (`Lector.llegeix(base: .sempre)`).
+        /// La base de Warp, sigui quin sigui l'ajust (`Lector.llegeixDeLApp(base: .sempre)`). Sense cap Warp ni la seva base,
+        /// els processos, sense finestres (`warpDesaFinestres` a `false`).
         public var llegeixBase: @Sendable () throws -> LecturaWarp
         public var espera: @Sendable (Duration) async throws -> Void
 
@@ -162,9 +163,10 @@ public final class RefrescWarp {
         return avisant(await base(), warpTancat: !entorn.warpObert())
     }
 
-    /// Una foto que pot no ser el que hi ha obert ho ha de dir: a importar i a lligar, i al menú.
+    /// Una foto que pot no ser el que hi ha obert ho ha de dir: a importar i a lligar, i al menú. Sense cap Warp ni la seva
+    /// base, no hi ha cap foto: res a dir.
     private func avisant(_ resultat: Resultat, warpTancat: Bool) -> Resultat {
-        guard case var .success(lectura) = resultat else { return resultat }
+        guard case var .success(lectura) = resultat, lectura.warpDesaFinestres != false else { return resultat }
         if warpTancat {
             lectura.avisFoto = LecturaWarp.avisFotoWarpTancat
         } else if !lectura.finestresQuadrenAmbTerminals {

@@ -128,6 +128,25 @@ private final class Banc {
         #expect(!FileManager.default.fileExists(atPath: b.carpeta.appending(path: EstatApp.nomFitxer).path))
     }
 
+    /// Sense cap Warp Stable (0.31.1), la lectura de l'app no té finestres (`Lector.llegeixDeLApp`): el full diu el mateix que
+    /// el d'obrir, amb una carpeta de prova i amb la configuració de debò, i no desa res.
+    @Test func senseCapWarpDiuElMateixAmbUnaCarpetaDeProvaIAmbLaDeDebo() async throws {
+        let b = try Banc()
+        var lectura = warp
+        lectura.finestres = []
+        lectura.warpDesaFinestres = false
+        lectura.warpPreview = .capWarp
+        b.lectura = .success(lectura)
+        for ambRefresc in [false, true] {
+            b.ambRefresc = ambRefresc
+            await b.lligam.demana()
+            #expect(b.lligam.estat == .error("No s'ha trobat Warp en aquest Mac: cal Warp Stable."), "refresc: \(ambRefresc)")
+            b.lligam.confirma()
+            b.lligam.cancela()
+        }
+        #expect(!FileManager.default.fileExists(atPath: b.carpeta.appending(path: EstatApp.nomFitxer).path))
+    }
+
     /// Amb `estat.json` d'una versió més nova, no es pot lligar (no s'hi escriuria).
     @Test func ambEstatBlocatNoEsPot() async throws {
         let b = try Banc()

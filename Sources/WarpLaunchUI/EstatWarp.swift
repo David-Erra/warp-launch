@@ -96,6 +96,9 @@ public final class EstatWarp {
 /// Per què una lectura no té finestres per importar ni lligar (`FullImportacio`, `Lligam`): el mateix text als dos fulls,
 /// i cadascú hi afegeix què es pot fer.
 enum MotiuSenseFinestres: Equatable {
+    /// No hi ha cap Warp Stable (0.31.1: cap Warp, o només Warp Preview), i la lectura no n'ha llegit la base
+    /// (`Lector.llegeixDeLApp`): el text del full d'obrir (`WarpPreview.text`), amb la configuració de debò i amb una de prova.
+    case senseWarp(WarpPreview)
     /// Sense refresc (D19), l'app no ha pogut demanar a Warp que desi les finestres: és una carpeta de prova (`--config`),
     /// on l'app no toca l'ajust, i no és que Warp no tingui res. Sense el consentiment tampoc no n'hi ha, però llavors els
     /// fulls no es poden obrir (D-P4).
@@ -107,11 +110,17 @@ enum MotiuSenseFinestres: Equatable {
     /// l'ajust (`EstatWarp.refresc`).
     init?(_ lectura: LecturaWarp, ambRefresc: Bool) {
         guard lectura.warpDesaFinestres == false else { return nil }
-        self = ambRefresc ? .restauracioDesactivada : .deProva
+        // Amb Warp Preview obert, Warp Stable hi és, i la lectura és la de sempre.
+        if let preview = lectura.warpPreview, preview != .obert {
+            self = .senseWarp(preview)
+        } else {
+            self = ambRefresc ? .restauracioDesactivada : .deProva
+        }
     }
 
     var text: String {
         switch self {
+        case let .senseWarp(preview): preview.text
         case .deProva:
             LecturaWarp.senseFinestres + " Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot "
                 + "demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i "

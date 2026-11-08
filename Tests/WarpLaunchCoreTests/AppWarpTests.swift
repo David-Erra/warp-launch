@@ -310,6 +310,54 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(try lector.llegeix().warpPreview == .capWarp)
     }
 
+    /// On no s'ha instal·lat mai Warp, tampoc no hi ha `settings.toml` ni la base: amb una carpeta de prova (`.segonsAjust`,
+    /// l'ajust per defecte diu que es llegeixi la base) o en refrescar la foto (`.sempre`), `llegeix` falla amb «no trobo la
+    /// base de Warp». La lectura de l'app no: és la de la configuració de debò (`.mai`), que diu que no hi ha Warp. El CLI
+    /// continua fallant (`llegeix`). Amb només Warp Preview, el seu motiu; amb Warp Stable sense base, o sense Warp però amb
+    /// la base, com sempre.
+    @Test func laLecturaDeLAppSenseCapWarpNiBaseDiuQueNoHiHaWarp() throws {
+        let tmp = try CarpetaTemporal()
+        let inici = try tmp.carpeta("inici")
+        try tmp.carpeta("sessions")
+        let cerca = CercaFalsa()
+        let lector = Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"),
+                            carpetaSessions: tmp.url("sessions"), processos: ProcessosFalsos(),
+                            warp: { InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca) },
+                            inici: inici)
+        #expect(lector.senseWarpStable() == .capWarp)
+        #expect(throws: ErrorLectura.noHiHaBase(tmp.url("warp.sqlite").path)) { try lector.llegeix() }
+        let deDebo = try lector.llegeix(base: .mai)
+        #expect(deDebo.warpPreview == .capWarp && deDebo.warpDesaFinestres == false && deDebo.finestres.isEmpty)
+        for base in [BaseWarp.segonsAjust, .sempre, .mai] {
+            #expect(try lector.llegeixDeLApp(base: base) == deDebo, "\(base)")
+        }
+
+        // Només Warp Preview: el seu motiu.
+        let preview = try paquet(tmp, "Applications/Warp Preview.app", id: AppWarp.identificadorPreview, executable: "preview")
+        cerca.apps[AppWarp.identificadorPreview] = preview
+        #expect(lector.senseWarpStable() == .nomesPreview)
+        #expect(try lector.llegeixDeLApp(base: .segonsAjust).warpPreview == .nomesPreview)
+
+        // Sense Warp però amb la base (d'un Warp que ja no hi és): la llegeix, com sempre.
+        cerca.apps = [:]
+        do {
+            let sqlite = try BaseWarpDeProva(a: tmp.url("warp.sqlite"))
+            try sqlite.finestra(1)
+            try sqlite.pestanya(10, finestra: 1)
+            try sqlite.paneTerminal(100, pestanya: 10, uuid: uuidDeProva("a"), cwd: inici)
+        }
+        let ambBase = try lector.llegeixDeLApp(base: .segonsAjust)
+        #expect(ambBase.finestres.count == 1 && ambBase.warpDesaFinestres == true && ambBase.warpPreview == .capWarp)
+
+        // Amb Warp Stable i sense la base: no és que no hi hagi Warp, i l'error de sempre.
+        try FileManager.default.removeItem(at: tmp.url("warp.sqlite"))
+        _ = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        #expect(lector.senseWarpStable() == nil)
+        for base in [BaseWarp.segonsAjust, .sempre] {
+            #expect(throws: ErrorLectura.noHiHaBase(tmp.url("warp.sqlite").path)) { try lector.llegeixDeLApp(base: base) }
+        }
+    }
+
     /// Sense res a dir, el JSON no porta el camp, com el d'abans de la 0.29.2, i es llegeix igual.
     @Test func unaLecturaDAbans() throws {
         let json = try JSONEncoder().encode(LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: ["x"]))

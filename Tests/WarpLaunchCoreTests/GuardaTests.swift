@@ -395,6 +395,16 @@ private let prohibidesArrossegar = [
         #expect(!app.contains("refrescaPeriodicament"))
     }
 
+    /// Sense cap Warp ni la seva base, l'app diu que no hi ha Warp també amb una carpeta de prova i en refrescar la foto, com
+    /// amb la configuració de debò: les dues lectures de l'app són `llegeixDeLApp`, i cap no és `llegeix(`, que fallaria amb
+    /// «no trobo la base de Warp».
+    @Test func lAppLlegeixWarpAmbLaLecturaDeLApp() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        #expect(app.contains("let warp = EstatWarp(lector: { try lector.llegeixDeLApp(base: base) })"))
+        #expect(app.contains("llegeixBase: { try lector.llegeixDeLApp(base: .sempre) })"))
+        #expect(app.components(separatedBy: "lector.llegeix").count == 3, "només aquelles dues")
+    }
+
     /// D3 i regla 3: l'app només s'afegeix als ítems d'inici amb l'interruptor de la Configuració. Només l'app principal
     /// (cap agent ni dimoni), només amb la configuració de debò, i res més no hi registra.
     @Test func nomesLInterruptorRegistraLArrencada() throws {

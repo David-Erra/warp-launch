@@ -105,6 +105,26 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(mon.canvis.isEmpty && mon.esperes == 0)
     }
 
+    /// Sense cap Warp ni la seva base, la lectura de l'app no té finestres (`Lector.llegeixDeLApp`): no hi ha cap foto, i no
+    /// diu que n'és una d'antiga. Ni a la lectura ni al menú.
+    @Test func senseCapWarpNoDiuQueEsUnaFoto() async throws {
+        let mon = Mon()
+        mon.obert = false
+        mon.base { _, _ in
+            var lectura = LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: [], warpObert: false,
+                                      warpDesaFinestres: false)
+            lectura.warpPreview = .capWarp
+            return lectura
+        }
+        let lectura = try await RefrescWarp(entorn: mon.entorn).refresca().get()
+        #expect(lectura.avisFoto == nil && lectura.avisos.isEmpty && lectura.warpPreview == .capWarp)
+        #expect(mon.canvis.isEmpty && mon.esperes == 0)
+        let estat = EstatWarp(lector: { LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) })
+        estat.refresc = RefrescWarp(entorn: mon.entorn)
+        await estat.llegeixAmbFinestres()
+        #expect(estat.avisFoto == nil && estat.descripcio == "Warp: 0 terminals · 0 sessions de Claude")
+    }
+
     /// Warp es tanca a mig refresc: es desactiva de seguida, sense esperar.
     @Test func siWarpEsTancaAMigRefrescEsDesactiva() async throws {
         let mon = Mon()
