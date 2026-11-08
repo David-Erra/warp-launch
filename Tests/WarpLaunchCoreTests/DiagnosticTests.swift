@@ -466,6 +466,13 @@ private struct MacDeProva {
         let malmes = try mac.comprovacio(.restauracio)
         #expect(malmes.resultat == .error)
         #expect(malmes.detall.contains("preferencies.json can't be read"))
+        // 0.31.0: retirat amb «Deixa de fer servir Warp Launch».
+        try FileManager.default.removeItem(at: preferencies)
+        try MagatzemPreferencies(carpeta: mac.configuracio).retira(ara: Date(timeIntervalSince1970: 1_793_750_400))
+        let retirat = try mac.comprovacio(.restauracio)
+        #expect(retirat.resultat == .avis)
+        #expect(retirat.detall.contains("Consent withdrawn on 2026-11-04, when restore_session was put back as it was "
+            + "before Warp Launch: Warp Launch asks for it again the next time it opens"), "\(retirat.detall)")
     }
 
     // MARK: - Anonimització

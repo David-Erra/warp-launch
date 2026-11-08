@@ -682,8 +682,12 @@ public enum Diagnostic {
             deConsentiment = (.error, "\(Preferencies.nomFitxer) can't be read (reason, in Catalan: «\(motiu)»): Warp "
                 + "Launch shows the error instead of the editor.")
         case let .llegit(llegit) where !llegit.esAcceptat:
-            deConsentiment = (.avis, "Consent not given yet: Warp Launch asks for it the first time it opens, and doesn't "
-                + "touch Warp until then.")
+            // 0.31.0: retirat amb «Deixa de fer servir Warp Launch», que torna l'ajust com era.
+            deConsentiment = (.avis, llegit.retiratEl.map {
+                "Consent withdrawn on \($0.formatted(.iso8601.year().month().day())), when restore_session was put back as "
+                    + "it was before Warp Launch: Warp Launch asks for it again the next time it opens, and doesn't touch "
+                    + "Warp until then."
+            } ?? "Consent not given yet: Warp Launch asks for it the first time it opens, and doesn't touch Warp until then.")
         case let .llegit(llegit):
             deConsentiment = (.be, llegit.acceptatEl.map { "Consent given on \($0.formatted(.iso8601.year().month().day()))." }
                 ?? "Consent counted as given (the configuration existed before Warp Launch 0.29.0).")

@@ -160,9 +160,12 @@ private let prohibidesArrossegar = [
             && accepten.contains { $0.hasPrefix("Sources/WarpLaunchUI/VistaConsentiment.swift:") }, "\(accepten)")
         let vista = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaConsentiment.swift" }).text
         #expect(vista.contains(#"Button("Accepta") { consentiment.accepta() }"#))
+        // Retirar-lo (`.retirat(`, 0.31.0) tampoc: només `MagatzemPreferencies.retira`.
         let preferencies = "Sources/WarpLaunchCore/Preferencies.swift"
-        let consentiments = try aparicions(de: [#"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#], a: codi)
+        let consentiments = try aparicions(de: [#"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#, #"\.retirat\("#],
+                                           a: codi)
         #expect(!consentiments.isEmpty && consentiments.allSatisfy { $0.hasPrefix("\(preferencies):") }, "\(consentiments)")
+        #expect(consentiments.contains { $0.hasSuffix("«\\.retirat\\(»") }, "\(consentiments)")
     }
 
     /// D-P12 (0.29.2): on és Warp només ho pregunta `TrobaWarp`, amb una sola crida, i només per als dos identificadors de
@@ -400,7 +403,7 @@ private let prohibidesArrossegar = [
             """)]) == ["mostra.swift:1: «\\bRefrescWarp\\(»"])
         // El consentiment (revisió de la 0.29.0): acceptar-lo i construir-ne un d'acceptat, sí; definir `accepta` o
         // comparar-hi, no.
-        let consentiment = [#"\.accepta\("#, #"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#]
+        let consentiment = [#"\.accepta\("#, #"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#, #"\.retirat\("#]
         #expect(try aparicions(de: consentiment, a: [(ruta: "mostra.swift", text: """
             consentiment.accepta()
             public func accepta(ara: Date) {}
@@ -408,9 +411,11 @@ private let prohibidesArrossegar = [
             p.restauracio = .acceptat(ara)
             Preferencies(restauracio: .migrat)
             if p.restauracio == .migrat {}
+            Preferencies(restauracio: .retirat(ara))
+            estat = .retirat
             """)]) == [
             "mostra.swift:1: «\\.accepta\\(»", "mostra.swift:4: «\\.acceptat\\(»", "mostra.swift:4: «\\.restauracio\\s*=(?!=)»",
-            "mostra.swift:5: «\\.migrat\\b»", "mostra.swift:6: «\\.migrat\\b»",
+            "mostra.swift:5: «\\.migrat\\b»", "mostra.swift:6: «\\.migrat\\b»", "mostra.swift:7: «\\.retirat\\(»",
         ])
         // D-P12: `troba` només amb una carpeta temporal.
         let troba = #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#

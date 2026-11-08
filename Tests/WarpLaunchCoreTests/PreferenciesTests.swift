@@ -148,6 +148,13 @@ private func noms(_ tmp: CarpetaTemporal) throws -> [String] {
         #"{"versio": 1, "restauracio": {"consentiment": "acceptat"}}"#,
         #"{"versio": 1, "restauracio": {"consentiment": "migrat", "acceptatEl": "2026-11-07T10:00:00Z"}}"#,
         #"{"versio": 1, "restauracio": {"consentiment": "senseTriar", "valorOriginal": "sí"}}"#,
+        // 0.31.0: `retirat` sempre amb la data, i cap data on no toca.
+        #"{"versio": 1, "restauracio": {"consentiment": "retirat"}}"#,
+        #"{"versio": 1, "restauracio": {"consentiment": "retirat", "acceptatEl": "2026-11-07T10:00:00Z"}}"#,
+        #"{"versio": 1, "restauracio": {"consentiment": "senseTriar", "retiratEl": "2026-11-07T10:00:00Z"}}"#,
+        #"{"versio": 1, "restauracio": {"consentiment": "migrat", "retiratEl": "2026-11-07T10:00:00Z"}}"#,
+        #"{"versio": 1, "restauracio": {"consentiment": "acceptat", "acceptatEl": "2026-11-07T10:00:00Z", "retiratEl": "2026-11-08T10:00:00Z"}}"#,
+        #"{"versio": 1, "restauracio": {"consentiment": "retirat", "acceptatEl": "2026-11-07T10:00:00Z", "retiratEl": "2026-11-08T10:00:00Z"}}"#,
     ])
     func unFitxerMalFetEsUnError(_ text: String) throws {
         let tmp = try CarpetaTemporal()
@@ -171,10 +178,100 @@ private func noms(_ tmp: CarpetaTemporal) throws -> [String] {
         Preferencies(),
         Preferencies(restauracio: .acceptat(t0), restauracioOriginal: false),
         Preferencies(restauracio: .migrat, restauracioOriginal: true),
+        Preferencies(restauracio: .retirat(t0)),
     ])
     func elJSONEsTornaALlegirIgual(_ preferencies: Preferencies) throws {
         let dades = try preferencies.json(generador: "prova")
         #expect(try preferencies.json(generador: "prova") == dades)
         #expect(try Preferencies.llegeix(dades) == preferencies)
+    }
+
+    // MARK: - Deixar de fer servir Warp Launch (0.31.0, decisió 3)
+
+    /// Què se'n fa de l'ajust: el valor d'abans de l'app si se sap; amb `migrat`, el de sèrie de Warp (activat), sigui quin
+    /// sigui el valor desat; si l'app no l'ha canviat mai, res. Sense el consentiment, no hi ha res per tornar.
+    @Test(arguments: [
+        (Preferencies(restauracio: .acceptat(t0), restauracioOriginal: true), Preferencies.Retorn.original(true)),
+        (Preferencies(restauracio: .acceptat(t0), restauracioOriginal: false), .original(false)),
+        (Preferencies(restauracio: .acceptat(t0)), .senseCanvis),
+        (Preferencies(restauracio: .migrat), .deSerie),
+        (Preferencies(restauracio: .migrat, restauracioOriginal: false), .deSerie),
+        (Preferencies(restauracio: .migrat, restauracioOriginal: true), .deSerie),
+    ])
+    func queEsFaAmbLAjustEnRetirar(_ preferencies: Preferencies, _ retorn: Preferencies.Retorn) {
+        #expect(preferencies.retornEnRetirar == retorn)
+    }
+
+    @Test func senseConsentimentNoHiHaResPerTornar() {
+        #expect(Preferencies().retornEnRetirar == nil)
+        #expect(Preferencies(restauracio: .retirat(t0), restauracioOriginal: true).retornEnRetirar == nil)
+        #expect(Preferencies.Retorn.original(false).valor == false && Preferencies.Retorn.original(true).valor == true)
+        #expect(Preferencies.Retorn.deSerie.valor == true && Preferencies.restauracioDeSerie)
+        #expect(Preferencies.Retorn.senseCanvis.valor == nil)
+    }
+
+    /// Retirar desa `retirat` amb la data, sense el valor original. Amb `configuracio.json` i `estat.json` a la carpeta, no
+    /// compta com a migrat: el fitxer mana, i l'app torna a preguntar.
+    @Test func retirarNoEsConfonAmbLaMigracio() throws {
+        let tmp = try CarpetaTemporal()
+        try Data("{}".utf8).write(to: tmp.url(MagatzemConfiguracio.nomFitxer))
+        try Data("{}".utf8).write(to: tmp.url(EstatApp.nomFitxer))
+        let magatzem = MagatzemPreferencies(carpeta: carpeta(tmp))
+        try magatzem.accepta(ara: t0)
+        try magatzem.recordaRestauracioOriginal(true)
+
+        let retirades = try magatzem.retira(ara: t0 + 3600.5)
+        #expect(retirades == Preferencies(restauracio: .retirat(t0 + 3600)))
+        let llegides = try magatzem.carrega()
+        #expect(llegides == retirades)
+        #expect(!llegides.restauracio.esAcceptat && llegides.restauracio != .migrat && llegides.retornEnRetirar == nil)
+        #expect(llegides.restauracio.retiratEl == t0 + 3600 && llegides.restauracio.acceptatEl == nil)
+        let text = try String(contentsOf: magatzem.fitxer, encoding: .utf8)
+        #expect(text.contains(#""consentiment" : "retirat""#), "\(text)")
+        #expect(text.contains(#""retiratEl" : "2026-11-04T01:00:00Z""#), "\(text)")
+        #expect(!text.contains("acceptatEl") && !text.contains("valorOriginal"), "\(text)")
+        #expect(try noms(tmp) == [MagatzemConfiguracio.nomFitxer, EstatApp.nomFitxer, Preferencies.nomFitxer].sorted())
+    }
+
+    /// Una carpeta migrada que encara no tenia `preferencies.json` (l'app no havia canviat mai l'ajust): retirar el crea, i
+    /// a partir d'aquí ja no compta com a acceptada.
+    @Test func retirarUnaCarpetaMigradaSenseFitxerElCrea() throws {
+        let tmp = try CarpetaTemporal()
+        try Data("{}".utf8).write(to: tmp.url(MagatzemConfiguracio.nomFitxer))
+        let magatzem = MagatzemPreferencies(carpeta: carpeta(tmp))
+        #expect(try magatzem.carrega().restauracio == .migrat)
+        try magatzem.retira(ara: t0)
+        #expect(FileManager.default.fileExists(atPath: magatzem.fitxer.path))
+        #expect(try magatzem.carrega().restauracio == .retirat(t0))
+    }
+
+    /// Després de retirar, l'app no desa cap valor original (no toca l'ajust) fins que es torna a acceptar; llavors, el del
+    /// primer canvi d'aquesta vegada. Sense triar, tampoc.
+    @Test func senseConsentimentNoEsDesaCapValorOriginal() throws {
+        let tmp = try CarpetaTemporal()
+        let magatzem = MagatzemPreferencies(carpeta: carpeta(tmp))
+        #expect(try !magatzem.recordaRestauracioOriginal(true))
+        #expect(try noms(tmp).isEmpty, "sense triar: no es crea res")
+
+        try magatzem.accepta(ara: t0)
+        try magatzem.recordaRestauracioOriginal(true)
+        try magatzem.retira(ara: t0 + 60)
+        #expect(try !magatzem.recordaRestauracioOriginal(false))
+        var ajust = false
+        try magatzem.posaRestauracio(true, valor: { ajust }, posa: { ajust = $0 })
+        #expect(try magatzem.carrega() == Preferencies(restauracio: .retirat(t0 + 60)))
+
+        try magatzem.accepta(ara: t0 + 120)
+        #expect(try magatzem.recordaRestauracioOriginal(false))
+        #expect(try magatzem.carrega() == Preferencies(restauracio: .acceptat(t0 + 120), restauracioOriginal: false))
+    }
+
+    /// Un fitxer que no es pot llegir no es trepitja tampoc en retirar.
+    @Test func retirarNoTrepitjaUnFitxerQueNoEsPotLlegir() throws {
+        let tmp = try CarpetaTemporal()
+        let magatzem = MagatzemPreferencies(carpeta: carpeta(tmp))
+        try Data(#"{"versio": 9}"#.utf8).write(to: magatzem.fitxer)
+        #expect(throws: Preferencies.ErrorPreferencies.versioMesNova(9)) { try magatzem.retira(ara: t0) }
+        #expect(try String(contentsOf: magatzem.fitxer, encoding: .utf8) == #"{"versio": 9}"#)
     }
 }
