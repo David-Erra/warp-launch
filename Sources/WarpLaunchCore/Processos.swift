@@ -32,6 +32,9 @@ public protocol FontProcessos: Sendable {
     func fills() -> [Int32: [Int32]]
     /// La carpeta de treball d'un procés, o `nil` si no es pot saber.
     func carpeta(_ pid: Int32) -> String?
+    /// Quan ha arrencat el procés, o `nil` si no existeix o no se sap. Només per saber des de quan és obert Warp
+    /// (`warpObertDes`).
+    func arrencat(_ pid: Int32) -> Date?
     /// El Warp Stable del paquet d'un binari que corre (`AppWarp.delBinari`, decisió 4, 0.31.1): en llegeix l'`Info.plist`.
     /// És aquí, i no a `InstallacioWarp.ambLaCopiaOberta`, perquè els processos falsos de les proves només el llegeixin
     /// dins de la seva carpeta temporal: un binari inventat amb una ruta de debò no ha de llegir el Warp de debò.
@@ -54,6 +57,12 @@ extension FontProcessos {
     /// mira abans `InstallacioWarp.ambLaCopiaOberta` (decisió 4, 0.31.1).
     public func warpObert(executable: String) -> Bool {
         processos(executable: executable).contains { $0.info.argv.count <= 1 }
+    }
+
+    /// Des de quan és obert Warp (`warpObert`): quan va arrencar el procés de l'app més antic. `nil` si és tancat, o si no
+    /// se sap quan va arrencar. `AjustRestauracio` només crea `settings.toml` quan fa prou estona que Warp és obert.
+    public func warpObertDes(executable: String) -> Date? {
+        processos(executable: executable).filter { $0.info.argv.count <= 1 }.compactMap { arrencat($0.pid) }.min()
     }
 
     /// Els terminals vius de Warp: els fills del seu `terminal-server` (el de `executable`), un per pane. No depèn de
@@ -135,6 +144,16 @@ public struct ProcessosDelSistema: FontProcessos {
         var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
         guard sysctl(&mib, 4, &info, &mida, nil, 0) == 0, mida > 0 else { return nil }
         return info.kp_eproc.e_ppid
+    }
+
+    /// `p_starttime` de `KERN_PROC_PID`: l'hora del rellotge del Mac en què va arrencar.
+    public func arrencat(_ pid: Int32) -> Date? {
+        var info = kinfo_proc()
+        var mida = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        guard sysctl(&mib, 4, &info, &mida, nil, 0) == 0, mida > 0, info.kp_proc.p_pid == pid else { return nil }
+        let hora = info.kp_proc.p_un.__p_starttime
+        return Date(timeIntervalSince1970: TimeInterval(hora.tv_sec) + TimeInterval(hora.tv_usec) / 1_000_000)
     }
 
     /// `KERN_PROCARGS2`: argc, ruta de l'executable, argv i entorn, separats per zeros.

@@ -22,11 +22,19 @@ import os
 /// fitxer que acaba de posar aquest mateix ajust, si encara és igual (`escrit`): si no, un refresc no podria tornar a
 /// desactivar l'ajust fins passats 2 s, ni en sortir de l'app. I just abans del `rename`, el fitxer encara ha de ser el que
 /// s'ha llegit, pel contingut i per `stat`.
+///
+/// **Crear el fitxer, només amb Warp obert (decisió d'en David del 08/11/2026, ronda 5).** En arrencar, si `settings.toml`
+/// no existeix, Warp hi passa una sola vegada els ajustos de les preferències de macOS; si algú el crea abans, Warp se la
+/// salta (docs/fets-verificats.md, 08/11/2026). Per això, sense el fitxer, no es crea fins que fa `segonsWarpObert` que
+/// Warp és obert (`warpObertDes`): amb Warp tancat, o acabat d'obrir (per exemple, en iniciar sessió, quan arrenquen
+/// tots dos alhora), `posa(false)` torna `.quanSObriWarp`, i la vigilància de cada minut el crea quan toca. Afegir la línia
+/// o la taula a un fitxer que ja hi és no en depèn.
 public struct AjustRestauracio: Sendable {
     public struct Refusat: Error, Equatable, CustomStringConvertible {
         public var description: String
         /// No hi ha la carpeta de Warp: Warp no s'ha obert mai en aquest usuari, i no té res per restaurar. Quan la creï, la
-        /// vigilància de cada minut hi afegirà la línia (`RefrescWarp.avisWarpMaiObert`).
+        /// vigilància de cada minut hi crearà el fitxer, quan faci `segonsWarpObert` que Warp és obert
+        /// (`RefrescWarp.avisWarpMaiObert`).
         public var warpMaiObert = false
     }
 
@@ -38,6 +46,10 @@ public struct AjustRestauracio: Sendable {
         /// `settings.toml` acaba de canviar, o ha canviat mentre es preparava el nou (Warp el podria estar escrivint): no
         /// s'hi ha escrit res. No és cap error: cal tornar-ho a provar més tard (`RefrescWarp` ho fa sense avisar).
         case mesTard
+        /// No hi ha `settings.toml`, i Warp és tancat o fa menys de `segonsWarpObert` que és obert: no es crea, perquè Warp
+        /// no se salti la migració d'arrencada (ronda 5). No és cap error: cal tornar-ho a provar quan faci prou que Warp és
+        /// obert (`RefrescWarp` ho fa sense avisar).
+        case quanSObriWarp
     }
 
     public var ruta: URL
@@ -46,6 +58,10 @@ public struct AjustRestauracio: Sendable {
     /// L'hora d'ara, per saber si el fitxer acaba de canviar. Les proves en donen una de fixa; l'app, la de sèrie (la guarda
     /// `lAjustDeWarpNomesLEscriuLApp` en fixa la línia).
     let rellotge: @Sendable () -> Date
+    /// Des de quan és obert Warp (`Lector.warpObertDes`), o `nil` si és tancat o no se sap: només per crear `settings.toml`.
+    /// Per omissió, `nil`: sense dir-ho, no es crea mai. L'app hi dona el de debò (la guarda `lAjustDeWarpNomesLEscriuLApp`
+    /// en fixa la línia).
+    let warpObertDes: @Sendable () -> Date?
     /// Només per a les proves: el que fa Warp entre la lectura i l'escriptura (escriure el fitxer, o crear-lo).
     var ganxoDeProva: (@Sendable () -> Void)?
     /// El fitxer que aquest ajust ha posat l'últim cop, compartit entre les còpies: si encara hi és igual (el mateix `stat` i
@@ -53,10 +69,12 @@ public struct AjustRestauracio: Sendable {
     private let escrit = OSAllocatedUnfairLock<Escrit?>(initialState: nil)
 
     public init(ruta: URL, carpetaTemporal: URL = FileManager.default.temporaryDirectory,
-                rellotge: @escaping @Sendable () -> Date = { Date() }) {
+                rellotge: @escaping @Sendable () -> Date = { Date() },
+                warpObertDes: @escaping @Sendable () -> Date? = { nil }) {
         self.ruta = ruta
         self.carpetaTemporal = carpetaTemporal
         self.rellotge = rellotge
+        self.warpObertDes = warpObertDes
     }
 
     /// La línia que s'hi escriu quan no hi és.
@@ -65,6 +83,11 @@ public struct AjustRestauracio: Sendable {
     /// Si el fitxer ha canviat fa menys d'aquesta estona, Warp el podria estar escrivint: no s'hi escriu res. Una data del
     /// futur (el rellotge del Mac ha anat enrere) també compta com a recent.
     static let segonsRecent: TimeInterval = 2
+
+    /// Sense `settings.toml`, quanta estona ha de fer que Warp és obert per crear-lo: la migració d'arrencada es fa en
+    /// començar, però en iniciar sessió Warp pot trigar a arrencar. Una hora d'arrencada del futur (el rellotge del Mac ha
+    /// anat enrere) no compta.
+    public static let segonsWarpObert: TimeInterval = 30
 
     /// El valor que fa servir Warp: el de la línia, o, sense, el de sèrie. També sense el fitxer i sense la carpeta de
     /// Warp: «Restaura Warp i surt…» llegeix el valor abans de posar-lo (`Preferencies.posaRestauracio`), i ha de poder
@@ -78,6 +101,7 @@ public struct AjustRestauracio: Sendable {
     }
 
     /// Posa el valor. Si el fitxer acaba de canviar, o si Warp l'escriu o el crea mentrestant, no toca res i torna `.mesTard`.
+    /// Sense el fitxer, i amb Warp tancat o acabat d'obrir, no el crea i torna `.quanSObriWarp`.
     @discardableResult
     public func posa(_ nou: Bool) throws(Refusat) -> Escriptura {
         switch try llegeix() {
@@ -88,6 +112,10 @@ public struct AjustRestauracio: Sendable {
                 + "«\(ruta.deletingLastPathComponent().path)», i Warp Launch no la crea", warpMaiObert: true)
         case .senseFitxer:
             guard !nou else { return .jaHiEra }
+            // Amb Warp tancat o acabat d'obrir, Warp encara podria fer la migració d'arrencada, i se la saltaria (ronda 5).
+            guard let obert = warpObertDes(), rellotge().timeIntervalSince(obert) >= Self.segonsWarpObert else {
+                return .quanSObriWarp
+            }
             return try crea(Data("[general]\n\(Self.liniaNova)\n".utf8))
         case let .fitxer(dades, text, identitat):
             // Abans d'analitzar-lo: buit o a mitges, el text no diu res de cert.

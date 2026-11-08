@@ -34,10 +34,10 @@ private final class Carpeta {
 private final class AjustFals: @unchecked Sendable {
     private let pany = NSLock()
     private var estat: (valor: Bool, posats: [Bool], fallades: Int, falladesDesactivar: Int, mesTard: Int,
-                        mesTardDesactivar: Int)
+                        mesTardDesactivar: Int, quanSObriWarpDesactivar: Int)
 
     init(_ valor: Bool) {
-        estat = (valor, [], 0, 0, 0, 0)
+        estat = (valor, [], 0, 0, 0, 0, 0)
     }
 
     /// Canviat a mà, a Warp.
@@ -55,6 +55,11 @@ private final class AjustFals: @unchecked Sendable {
     /// Com `mesTard`, però només per desactivar-lo.
     var mesTardDesactivar: Int {
         get { pany.withLock { estat.mesTardDesactivar } } set { pany.withLock { estat.mesTardDesactivar = newValue } }
+    }
+    /// Quantes vegades més desactivar-lo torna `.quanSObriWarp` (ronda 5: sense `settings.toml`, amb Warp tancat).
+    var quanSObriWarpDesactivar: Int {
+        get { pany.withLock { estat.quanSObriWarpDesactivar } }
+        set { pany.withLock { estat.quanSObriWarpDesactivar = newValue } }
     }
 
     func entorn(_ magatzem: MagatzemPreferencies) -> RefrescWarp.Entorn {
@@ -78,6 +83,10 @@ private final class AjustFals: @unchecked Sendable {
                         if !nou, estat.mesTardDesactivar > 0 {
                             estat.mesTardDesactivar -= 1
                             return .mesTard
+                        }
+                        if !nou, estat.quanSObriWarpDesactivar > 0 {
+                            estat.quanSObriWarpDesactivar -= 1
+                            return .quanSObriWarp
                         }
                         estat.posats.append(nou)
                         estat.valor = nou
@@ -401,6 +410,26 @@ private final class Mon {
         #expect(!mon.ajust.valor && c.refresc?.desactivacioPendent == false, "la vigilància continua")
     }
 
+    /// Ronda 5: si en tornar-lo a desactivar no hi ha `settings.toml` i Warp és tancat, l'ajust ha quedat activat (el de
+    /// sèrie): ho diu, i que es desactivarà quan Warp sigui obert, no d'aquí a un minut.
+    @Test func siEnTornarADesactivarNoEsPotCrearElFitxerHoDiu() throws {
+        let mon = try Mon(ajust: true)
+        let c = mon.consentiment()
+        c.accepta()
+        try #require(c.refresc).vigila()
+        let d = mon.desinstallacio(c)
+        d.demana()
+        try mon.carpeta.posaPermisos(0o555)
+        mon.ajust.quanSObriWarpDesactivar = 1
+        d.confirma()
+        try mon.carpeta.posaPermisos(0o755)
+        let error = try #require(d.error)
+        #expect(error.hasSuffix("L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp "
+            + "Launch el desactivarà quan Warp sigui obert. El permís no ha canviat."), "\(error)")
+        #expect(c.refresc?.avis == nil && c.refresc?.pendent == .quanSObriWarp)
+        #expect(mon.ajust.valor && mon.sortides == 0 && c.estat == .acceptat)
+    }
+
     /// 0.31.3: si `settings.toml` acaba de canviar, «Restaura Warp i surt…» no hi escriu res, ho diu (l'ha demanat l'usuari) i
     /// no surt. Es pot tornar a provar.
     @Test func siAcabaDeCanviarNoRetiraResINoSurt() throws {
@@ -490,7 +519,8 @@ private final class MonSenseLinia {
         try FileManager.default.createDirectory(at: tmp.url("tmp"), withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: tmp.url("config"), withIntermediateDirectories: true)
         if carpetaWarp { try FileManager.default.createDirectory(at: tmp.url("warp"), withIntermediateDirectories: true) }
-        ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: tmp.url("tmp"), rellotge: rellotge.funcio)
+        ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: tmp.url("tmp"), rellotge: rellotge.funcio,
+                                 warpObertDes: rellotge.warp)
         if let contingut { try Data(contingut.utf8).write(to: ajust.ruta) }
         if migrat { try Data("{}".utf8).write(to: tmp.url("config").appending(path: MagatzemConfiguracio.nomFitxer)) }
     }
@@ -593,6 +623,69 @@ extension Carpeta {
         refresc.desfesRetirada()
         #expect(refresc.avis == nil && !refresc.desactivacioPendent)
         #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
+    }
+
+    /// Ronda 5: sense el fitxer i amb Warp tancat, ni la vigilància ni sortir de l'app o engegar Warp (`tanca`) no el
+    /// creen, i no hi ha cap avís. Amb Warp acabat d'obrir, tampoc; quan fa mig minut que és obert, la vigilància el crea.
+    @Test func senseElFitxerNomesElCreaQuanFaMigMinutQueWarpEsObert() throws {
+        let mon = try MonSenseLinia(nil)
+        mon.rellotge.warpObertDes = nil
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        refresc.tanca()
+        #expect(refresc.avis == nil && refresc.pendent == .quanSObriWarp, "\(refresc.avis ?? "")")
+        #expect(mon.contingut == nil)
+        mon.rellotge.warpObertDes = mon.rellotge.ara - 5
+        refresc.vigila()
+        #expect(mon.contingut == nil && refresc.avis == nil)
+        mon.rellotge.ara += 25
+        refresc.vigila()
+        #expect(refresc.avis == nil && refresc.pendent == nil)
+        #expect(mon.contingut == "[general]\nrestore_session = false\n")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+    }
+
+    /// Ronda 5: quan apareix la carpeta de Warp, l'avís que Warp no s'ha obert mai ja no val, encara que el fitxer s'hagi
+    /// d'esperar a crear-lo.
+    @Test func quanApareixLaCarpetaLAvisMarxaIElFitxerEspera() throws {
+        let mon = try MonSenseLinia(nil, carpetaWarp: false)
+        mon.rellotge.warpObertDes = nil
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(refresc.avis == RefrescWarp.avisWarpMaiObert)
+        try FileManager.default.createDirectory(at: mon.tmp.url("warp"), withIntermediateDirectories: true)
+        refresc.vigila()
+        #expect(refresc.avis == nil && mon.contingut == nil)
+        mon.rellotge.warpObertDes = mon.rellotge.ara - 30
+        refresc.vigila()
+        #expect(mon.contingut == "[general]\nrestore_session = false\n")
+    }
+
+    /// Ronda 5: «Restaura Warp i surt…» que hi ha de posar `false` sense el fitxer i amb Warp tancat no el crea: ho diu, no
+    /// surt i no canvia res. Amb Warp obert des de fa mig minut, sí.
+    @Test func desinstallarSenseElFitxerAmbWarpTancatNoElCrea() throws {
+        let mon = try MonSenseLinia(nil)
+        mon.rellotge.warpObertDes = nil
+        let c = mon.consentiment()
+        c.accepta()
+        #expect(try mon.magatzem.recordaRestauracioOriginal(false))
+        let d = mon.desinstallacio(c)
+        d.demana()
+        #expect(d.retirada == .disponible(.original(false)))
+        d.confirma()
+        #expect(d.error == "No s'ha pogut tornar l'ajust de Warp com era: Warp no té «settings.toml», i Warp Launch només el "
+            + "crea quan fa 30 s que Warp és obert, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i "
+            + "torna-ho a provar d'aquí a un minut). L'ajust i el permís no han canviat.", "\(d.error ?? "")")
+        #expect(mon.contingut == nil && mon.sortides == 0 && c.estat == .acceptat)
+        mon.rellotge.warpObertDes = mon.rellotge.ara - 30
+        d.demana()
+        d.confirma()
+        #expect(d.error == nil, "\(d.error ?? "")")
+        #expect(mon.contingut == "[general]\nrestore_session = false\n" && mon.sortides == 1 && c.estat == .retirat)
     }
 
     /// Sense el fitxer, la vigilància el crea només amb la línia.

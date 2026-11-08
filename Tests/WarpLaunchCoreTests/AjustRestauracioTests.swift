@@ -28,9 +28,13 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
 final class RellotgeDeProva: @unchecked Sendable {
     private let pany = NSLock()
     private var valor = Date() + 60
+    private var obert: Date? = Date()
 
     var ara: Date { get { pany.withLock { valor } } set { pany.withLock { valor = newValue } } }
     var funcio: @Sendable () -> Date { { [self] in ara } }
+    /// Des de quan és obert Warp (`AjustRestauracio.warpObertDes`, ronda 5): per omissió, des de fa un minut; `nil`, tancat.
+    var warpObertDes: Date? { get { pany.withLock { obert } } set { pany.withLock { obert = newValue } } }
+    var warp: @Sendable () -> Date? { { [self] in warpObertDes } }
 
     /// Posa la data de modificació del fitxer a fa `segons` (negatiu: del futur).
     func modificat(_ fitxer: URL, fa segons: TimeInterval) throws {
@@ -50,7 +54,7 @@ final class RellotgeDeProva: @unchecked Sendable {
             tmp = try CarpetaTemporal()
             let temporal = try tmp.carpeta("tmp")
             ajust = AjustRestauracio(ruta: tmp.url("settings.toml"), carpetaTemporal: URL(filePath: temporal),
-                                     rellotge: rellotge.funcio)
+                                     rellotge: rellotge.funcio, warpObertDes: rellotge.warp)
             if let contingut { try Data(contingut.utf8).write(to: tmp.url("settings.toml")) }
         }
 
@@ -290,7 +294,8 @@ final class RellotgeDeProva: @unchecked Sendable {
     /// `/dev` tampoc no s'hi pot preparar res, i sense la comprovació la prova passaria igualment.
     @Test func crearloDesDUnAltreVolumNoEsFa() throws {
         let b = try Banc(nil)
-        let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"))
+        let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"), rellotge: b.rellotge.funcio,
+                                     warpObertDes: b.rellotge.warp)
         #expect(throws: AjustRestauracio.Refusat(description: "la carpeta temporal no és al mateix volum que "
             + "«\(b.fitxer.path)»")) { try ajust.posa(false) }
         #expect(!FileManager.default.fileExists(atPath: b.fitxer.path))
@@ -319,6 +324,43 @@ final class RellotgeDeProva: @unchecked Sendable {
         #expect(throws: AjustRestauracio.Refusat(description: "la carpeta temporal no és al mateix volum que "
             + "«\(b.fitxer.path)»")) { try ajust.posa(nou) }
         #expect(b.contingut == contingut)
+    }
+
+    // MARK: - Crear el fitxer, només amb Warp obert (ronda 5)
+
+    /// Sense el fitxer, amb Warp tancat, acabat d'obrir o amb una hora d'arrencada del futur, no es crea: Warp encara podria
+    /// fer la migració d'arrencada, i se la saltaria. No és cap error, i no queda res a la carpeta temporal. Quan fa 30 s
+    /// que Warp és obert, sí.
+    @Test(arguments: [nil, 0, 10, 29.9, -5] as [TimeInterval?])
+    func senseElFitxerNomesElCreaAmbWarpObertDesDeFaMigMinut(obertFa: TimeInterval?) throws {
+        let b = try Banc(nil)
+        b.rellotge.warpObertDes = obertFa.map { b.rellotge.ara - $0 }
+        #expect(try b.ajust.valor() == true)
+        #expect(try b.ajust.posa(true) == .jaHiEra)
+        #expect(try b.ajust.posa(false) == .quanSObriWarp)
+        #expect(!FileManager.default.fileExists(atPath: b.fitxer.path))
+        #expect(b.temporals.isEmpty)
+        b.rellotge.warpObertDes = b.rellotge.ara - 30
+        #expect(try b.ajust.posa(false) == .escrit)
+        #expect(b.contingut == "[general]\nrestore_session = false\n")
+    }
+
+    /// Per omissió (sense dir des de quan és obert Warp), l'ajust no crea mai el fitxer.
+    @Test func perOmissioNoCreaElFitxer() throws {
+        let tmp = try CarpetaTemporal()
+        let ajust = AjustRestauracio(ruta: tmp.url("settings.toml"), carpetaTemporal: URL(filePath: try tmp.carpeta("tmp")),
+                                     rellotge: { Date() + 3600 })
+        #expect(try ajust.posa(false) == .quanSObriWarp)
+        #expect(!FileManager.default.fileExists(atPath: tmp.url("settings.toml").path))
+    }
+
+    /// Amb el fitxer, afegir-hi la línia o la taula, o canviar-la, no depèn de Warp: també amb Warp tancat, com a la 0.31.2.
+    @Test(arguments: [(text, true), ("[general]\nx = 1\n", false), ("x = 1\n", false), ("", false)])
+    func ambElFitxerEscriuAmbWarpTancat(contingut: String, nou: Bool) throws {
+        let b = try Banc(contingut)
+        b.rellotge.warpObertDes = nil
+        #expect(try b.ajust.posa(nou) == .escrit)
+        #expect(try b.ajust.valor() == nou)
     }
 
     // MARK: - Escriptura prudent (0.31.3)

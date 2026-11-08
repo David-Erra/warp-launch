@@ -20,6 +20,10 @@ import WarpLaunchCore
 /// (`AjustRestauracio.Escriptura.mesTard`). No és cap error: la vigilància de cada minut ho torna a provar, sense cap avís, i
 /// al final d'un refresc es torna a provar cada segon uns quants cops (`segonsTornaAProvar`), perquè l'ajust quedi activat
 /// tan poca estona com es pugui.
+///
+/// **Sense `settings.toml`, i amb Warp tancat o acabat d'obrir (ronda 5):** l'ajust no el crea
+/// (`AjustRestauracio.Escriptura.quanSObriWarp`), perquè Warp no se salti la migració d'arrencada. Tampoc no és cap error:
+/// la vigilància de cada minut el crea quan fa prou que Warp és obert, sense cap avís.
 @MainActor
 @Observable
 public final class RefrescWarp {
@@ -61,17 +65,39 @@ public final class RefrescWarp {
         public var description: String { "«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" }
     }
 
+    /// «Restaura Warp i surt…» no ha pogut posar l'ajust: Warp no té `settings.toml`, i Warp Launch només el crea amb Warp
+    /// obert des de fa una estona (ronda 5).
+    public struct QuanSObriWarp: Error, Equatable, CustomStringConvertible {
+        public var description: String {
+            "Warp no té «settings.toml», i Warp Launch només el crea quan fa \(Int(AjustRestauracio.segonsWarpObert)) s que "
+                + "Warp és obert, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar "
+                + "d'aquí a un minut)"
+        }
+    }
+
+    /// Per què l'última vegada no s'ha pogut desactivar l'ajust, sense que sigui cap error (no hi ha `avis`).
+    public enum Pendent: Equatable, Sendable {
+        /// `settings.toml` acabava de canviar (`AjustRestauracio.Escriptura.mesTard`): l'ajust pot haver quedat activat. Al
+        /// final d'un refresc es torna a provar cada segon; si no, amb la vigilància de cada minut.
+        case acabaDeCanviar
+        /// No hi ha `settings.toml`, i Warp és tancat o acabat d'obrir (`.quanSObriWarp`): l'ajust és activat (el de sèrie
+        /// de Warp), i la vigilància de cada minut crearà el fitxer quan faci prou que Warp és obert.
+        case quanSObriWarp
+    }
+
     /// Per què l'app no pot fer la seva feina amb l'ajust: el menú de la icona ho diu.
     public private(set) var avis: String?
-    /// L'última vegada que s'havia de desactivar l'ajust, `settings.toml` acabava de canviar: no s'hi ha escrit res, i no
-    /// és cap error (no hi ha `avis`). La vigilància de cada minut ho torna a provar.
-    @ObservationIgnored public private(set) var desactivacioPendent = false
+    /// L'última vegada que s'havia de desactivar l'ajust, no s'hi ha escrit res, i no és cap error (no hi ha `avis`): per què
+    /// (`Pendent`). La vigilància de cada minut ho torna a provar.
+    @ObservationIgnored public private(set) var pendent: Pendent?
+    public var desactivacioPendent: Bool { pendent != nil }
     /// Sense la carpeta de Warp (0.31.2), l'app no la crea (`AjustRestauracio`). No és que Warp hagi de restaurar res: no ha
     /// obert mai cap finestra. Quan Warp creï la carpeta, la vigilància de cada minut hi afegirà la línia. No diu «quan
-    /// l'obris»: no s'ha vist si Warp la crea en obrir-se per primer cop.
+    /// l'obris»: no s'ha vist si Warp la crea en obrir-se per primer cop. Sense el fitxer, el crea quan fa
+    /// `AjustRestauracio.segonsWarpObert` que Warp és obert (ronda 5): d'aquí, «en un parell de minuts».
     public static let avisWarpMaiObert = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, "
-        + "ni cap finestra per restaurar. Quan Warp la creï, Warp Launch en desactivarà la restauració de sessió en menys "
-        + "d'un minut."
+        + "ni cap finestra per restaurar. Quan Warp la creï, Warp Launch en desactivarà la restauració de sessió en un "
+        + "parell de minuts."
     @ObservationIgnored private let entorn: Entorn
     @ObservationIgnored private var enCurs: Task<Resultat, Never>?
     /// L'app està sortint: cap cicle pot tornar a activar l'ajust (`atura`).
@@ -105,7 +131,7 @@ public final class RefrescWarp {
                 Registre.refresc.notice("l'ajust era activat fora d'un refresc: es desactiva")
                 desactiva()
             case .some(false):
-                desactivacioPendent = false
+                pendent = nil
                 avis = nil
             case .none:
                 // No és cap error: d'aquí a un minut es torna a mirar, sense avís.
@@ -148,7 +174,11 @@ public final class RefrescWarp {
         enCurs?.cancel()
         guard let valor else { return }
         do {
-            guard try entorn.posa(valor) != .mesTard else { throw MesTard() }
+            switch try entorn.posa(valor) {
+            case .mesTard: throw MesTard()
+            case .quanSObriWarp: throw QuanSObriWarp()
+            case .jaHiEra, .escrit: break
+            }
         } catch {
             retirat = false
             throw error
@@ -195,8 +225,9 @@ public final class RefrescWarp {
         }
         desactiva()
         // Si `settings.toml` acabava de canviar, d'aquí a un segon i no d'aquí a un minut: com menys estona activat, millor.
+        // Sense el fitxer i amb Warp tancat o acabat d'obrir, esperar uns segons no serviria.
         var intents = 0
-        while desactivacioPendent, !retirat, intents < Self.segonsTornaAProvar {
+        while pendent == .acabaDeCanviar, !retirat, intents < Self.segonsTornaAProvar {
             intents += 1
             do { try await entorn.espera(.seconds(1)) } catch { break }
             desactiva()
@@ -218,25 +249,33 @@ public final class RefrescWarp {
     }
 
     /// Si `settings.toml` acaba de canviar, no s'hi escriu res, i no és cap error: tornar-ho a provar de seguida no serviria
-    /// (`AjustRestauracio.segonsRecent`), i ho fa la vigilància de cada minut, sense avís. Un error es torna a provar de
-    /// seguida, fins a tres cops. Retirat, res.
+    /// (`AjustRestauracio.segonsRecent`), i ho fa la vigilància de cada minut, sense avís. Sense el fitxer i amb Warp tancat
+    /// o acabat d'obrir, tampoc (`Pendent.quanSObriWarp`): l'avís que hi hagués ja no val (la carpeta de Warp hi és). Un
+    /// error es torna a provar de seguida, fins a tres cops. Retirat, res.
     private func desactiva() {
         guard !retirat else { return }
         var darrer: (any Error)?
         for _ in 0..<3 {
             do {
-                if try entorn.posa(false) == .mesTard {
-                    desactivacioPendent = true
+                switch try entorn.posa(false) {
+                case .mesTard:
+                    pendent = .acabaDeCanviar
                     Registre.refresc.notice("settings.toml acaba de canviar: l'ajust es desactivarà més tard")
                     return
+                case .quanSObriWarp:
+                    pendent = .quanSObriWarp
+                    avis = nil
+                    Registre.refresc.notice("sense settings.toml, amb Warp tancat o acabat d'obrir: es crearà més tard")
+                    return
+                case .jaHiEra, .escrit:
+                    darrer = nil
                 }
-                darrer = nil
                 break
             } catch {
                 darrer = error
             }
         }
-        desactivacioPendent = false
+        pendent = nil
         if let darrer {
             avis = (darrer as? AjustRestauracio.Refusat)?.warpMaiObert == true ? Self.avisWarpMaiObert
                 : "No s'ha pogut desactivar la restauració de sessió de Warp: \(darrer). Si Warp es tanca, restaurarà les finestres sense Claude."

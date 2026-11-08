@@ -16,7 +16,7 @@ private func foto(_ panes: [String], titol: String = "T") -> LecturaWarp {
 private final class Mon: @unchecked Sendable {
     private let pany = NSLock()
     private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true, posats: 0,
-                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0)
+                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0, quanSObriWarp: 0)
     private var lectura: @Sendable (Bool, Int) -> LecturaWarp = { _, _ in LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) }
     var enEsperar: @Sendable (Int) -> Void = { _ in }
 
@@ -38,6 +38,11 @@ private final class Mon: @unchecked Sendable {
     }
     /// Cada crida a `posa`, també les que no canvien res.
     var posats: Int { pany.withLock { estat.posats } }
+    /// Quantes vegades més desactivar-lo torna `.quanSObriWarp`, sense canviar res (ronda 5: sense `settings.toml`, i amb
+    /// Warp tancat o acabat d'obrir).
+    var quanSObriWarp: Int {
+        get { pany.withLock { estat.quanSObriWarp } } set { pany.withLock { estat.quanSObriWarp = newValue } }
+    }
 
     /// `(ajust activat, segons passats)` → què hi ha a la base.
     func base(_ cos: @escaping @Sendable (Bool, Int) -> LecturaWarp) { pany.withLock { lectura = cos } }
@@ -67,6 +72,10 @@ private final class Mon: @unchecked Sendable {
                     if !nou, estat.mesTardDesactivar > 0 {
                         estat.mesTardDesactivar -= 1
                         return .mesTard
+                    }
+                    if !nou, estat.quanSObriWarp > 0 {
+                        estat.quanSObriWarp -= 1
+                        return .quanSObriWarp
                     }
                     let canvia = estat.ajust != nou
                     if canvia { estat.canvis.append(nou) }
@@ -398,6 +407,48 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(throws: RefrescWarp.MesTard()) { try r.retira(posant: true) }
         #expect(!mon.ajust && mon.canvis.isEmpty)
         mon.ajust = true
+        r.vigila()
+        #expect(!mon.ajust, "la vigilància continua")
+    }
+
+    // MARK: - Sense `settings.toml`, i amb Warp tancat o acabat d'obrir (ronda 5)
+
+    /// Si l'ajust no crea el fitxer perquè Warp és tancat o acabat d'obrir, no és cap error: cap avís, queda pendent, i la
+    /// vigilància següent ho torna a provar.
+    @Test func senseElFitxerIAmbWarpTancatQuedaPendentSenseAvis() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.quanSObriWarp = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(mon.ajust && mon.posats == 1 && r.avis == nil && r.pendent == .quanSObriWarp && r.desactivacioPendent)
+        r.vigila()
+        #expect(!mon.ajust && mon.posats == 2 && r.avis == nil && r.pendent == nil)
+    }
+
+    /// Al final d'un refresc, si l'ajust no ha creat el fitxer perquè Warp s'ha tancat, no es torna a provar cada segon: no
+    /// serviria. Ho fa la vigilància de cada minut.
+    @Test func alFinalDUnRefrescSenseElFitxerNoHoTornaAProvarCadaSegon() async throws {
+        let mon = Mon()
+        mon.quanSObriWarp = 10
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let r = RefrescWarp(entorn: mon.entorn)
+        _ = try await r.refresca().get()
+        #expect(mon.esperes == RefrescWarp.segonsMinim && mon.posats == 2)
+        #expect(mon.ajust && r.avis == nil && r.pendent == .quanSObriWarp)
+    }
+
+    /// «Restaura Warp i surt…»: si l'ajust no pot crear el fitxer perquè Warp és tancat, no canvia res, ho diu (amb què cal
+    /// fer), i el refresc continua com abans.
+    @Test func siEnRetirarNoEsPotCrearElFitxerNoCanviaRes() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.quanSObriWarp = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        #expect(throws: RefrescWarp.QuanSObriWarp()) { try r.retira(posant: false) }
+        #expect(RefrescWarp.QuanSObriWarp().description.hasPrefix("Warp no té «settings.toml», i Warp Launch només el crea "
+            + "quan fa 30 s que Warp és obert"))
+        #expect(mon.ajust && mon.canvis.isEmpty)
         r.vigila()
         #expect(!mon.ajust, "la vigilància continua")
     }

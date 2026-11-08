@@ -52,6 +52,9 @@ public struct Lector: Sendable {
     /// Si Warp Stable és obert (el d'`installacio()`), sense llegir res més.
     public func warpObert() -> Bool { processos.warpObert(executable: installacio().executable) }
 
+    /// Des de quan és obert Warp Stable (el d'`installacio()`), o `nil` si és tancat (`FontProcessos.warpObertDes`).
+    public func warpObertDes() -> Date? { processos.warpObertDes(executable: installacio().executable) }
+
     /// Per què no hi ha cap Warp Stable (0.31.1): cap Warp, o només Warp Preview. `nil` si n'hi ha un (el d'`installacio()`).
     /// On no s'ha instal·lat mai Warp Stable, tampoc no hi ha la seva base.
     public func senseWarpStable() -> WarpPreview? {

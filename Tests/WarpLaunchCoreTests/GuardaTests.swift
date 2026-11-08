@@ -557,11 +557,11 @@ private let prohibidesArrossegar = [
         }
 
         // L'ajust: un refresc l'activa i el desactiva; només la retirada el posa al valor que li donen, després d'aturar-se. Si
-        // `settings.toml` acaba de canviar, cap no hi escriu res (0.31.3).
+        // `settings.toml` acaba de canviar, cap no hi escriu res (0.31.3); sense el fitxer i amb Warp tancat, tampoc (ronda 5).
         #expect(try linies(rutaRefresc, #"entorn\.posa\("#) == [
-            "guard try entorn.posa(valor) != .mesTard else { throw MesTard() }",
+            "switch try entorn.posa(valor) {",
             "guard try entorn.posa(true) != .mesTard else {",
-            "if try entorn.posa(false) == .mesTard {",
+            "switch try entorn.posa(false) {",
         ])
         let refresc = try text(rutaRefresc)
         let inici = try #require(refresc.range(of: "    public func retira(posant valor: Bool?) throws {\n"))
@@ -773,7 +773,8 @@ private let prohibidesArrossegar = [
         // D-P4: dins de l'entorn que `ConsentimentRestauracio` només demana amb el consentiment acceptat
         // (`elCodiNoObreResNiRegistraArrencades`).
         #expect(app.contains("if case .real = arguments.carpeta, let preferencies {\n            creaEntornRefresc = {\n"
-            + "                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)\n"))
+            + "                // Sense `settings.toml`, només el crea amb Warp obert des de fa mig minut (ronda 5).\n"
+            + "                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte, warpObertDes: { lector.warpObertDes() })\n"))
     }
 
     /// Decisió A (0.31.2): `settings.toml` de Warp, si no hi és, només el crea `AjustRestauracio`, d'un sol cop i només si
@@ -821,7 +822,7 @@ private let prohibidesArrossegar = [
                 .map { "\(f.ruta): \($0)" }
         }
         #expect(deDebo.sorted() == [
-            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)",
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte, warpObertDes: { lector.warpObertDes() })",
             "Sources/WarpLaunchCore/Lector.swift: rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,",
             "Sources/WarpLaunchCore/LectorAjustosWarp.swift: public init(ruta: URL = LectorAjustosWarp.rutaPerDefecte) {",
             "Sources/WarpLaunchCore/LectorAjustosWarp.swift: public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".warp/settings.toml\")",

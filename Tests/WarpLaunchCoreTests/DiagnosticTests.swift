@@ -485,14 +485,17 @@ private struct MacDeProva {
         let senseFitxer = try mac.comprovacio(.restauracio)
         #expect(senseFitxer.resultat == .avis)
         #expect(senseFitxer.detall.hasPrefix("\(mac.ajustos.path) doesn't exist: \(deSerie) Warp Launch creates it with only "
-            + "restore_session = false within a minute while it's running."), "\(senseFitxer.detall)")
+            + "restore_session = false within a minute while it's running, once Warp has been open for 30 seconds (when "
+            + "Warp starts without settings.toml, it first moves its older settings into it, and it wouldn't if the file "
+            + "were already there)."), "\(senseFitxer.detall)")
         let carpetaWarp = mac.ajustos.deletingLastPathComponent()
         try FileManager.default.removeItem(at: carpetaWarp)
         let senseCarpeta = try mac.comprovacio(.restauracio)
         #expect(senseCarpeta.resultat == .avis)
         #expect(senseCarpeta.detall.hasPrefix("\(carpetaWarp.path) doesn't exist: Warp hasn't been opened yet for this "
             + "user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has created it, Warp Launch adds "
-            + "restore_session = false within a minute while it's running."), "\(senseCarpeta.detall)")
+            + "restore_session = false within a minute while it's running, once Warp has been open for 30 seconds"),
+                "\(senseCarpeta.detall)")
         #expect(!FileManager.default.fileExists(atPath: carpetaWarp.path))
         #expect(try !mac.comprovacio(.restauracio, anonimitza: true).detall.contains("maria.prova"))
         // Sense el permís, quan el gestioni.

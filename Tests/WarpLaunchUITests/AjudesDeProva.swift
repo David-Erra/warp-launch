@@ -9,9 +9,13 @@ import WarpLaunchCore
 final class RellotgeDeProva: @unchecked Sendable {
     private let pany = NSLock()
     private var valor = Date() + 60
+    private var obert: Date? = Date()
 
     var ara: Date { get { pany.withLock { valor } } set { pany.withLock { valor = newValue } } }
     var funcio: @Sendable () -> Date { { [self] in ara } }
+    /// Des de quan és obert Warp (`AjustRestauracio.warpObertDes`, ronda 5): per omissió, des de fa un minut; `nil`, tancat.
+    var warpObertDes: Date? { get { pany.withLock { obert } } set { pany.withLock { obert = newValue } } }
+    var warp: @Sendable () -> Date? { { [self] in warpObertDes } }
 
     /// Posa la data de modificació del fitxer a fa `segons`.
     func modificat(_ fitxer: URL, fa segons: TimeInterval) throws {

@@ -704,6 +704,9 @@ public enum Diagnostic {
         let quan = !consentiment.acceptat ? "when it manages the setting (with consent and the real configuration folder)"
             : e.configuracioDeProva ? "only with the real configuration folder, not with a test one (--config)"
             : "within a minute while it's running"
+        // Sense el fitxer, només el crea amb Warp obert des de fa una estona (ronda 5, `AjustRestauracio.segonsWarpObert`).
+        let ambWarpObert = "once Warp has been open for \(Int(AjustRestauracio.segonsWarpObert)) seconds (when Warp starts "
+            + "without settings.toml, it first moves its older settings into it, and it wouldn't if the file were already there)"
         // Com l'app (`AjustRestauracio.llegeix`, només lectura): un enllaç, una carpeta que no ho és o un text que no és
         // UTF-8, l'app no els pot fer servir, i el diagnòstic no ha de dir que hi afegirà la línia.
         let lectura: AjustRestauracio.Lectura
@@ -717,13 +720,14 @@ public enum Diagnostic {
         switch lectura {
         case .senseFitxer:
             return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) doesn't exist: \(deSerie) Warp "
-                + "Launch creates it with only restore_session = false \(quan). " + deConsentiment.1)
+                + "Launch creates it with only restore_session = false \(quan), \(ambWarpObert). " + deConsentiment.1)
         case .senseCarpeta:
             // Warp Launch no crea la carpeta de Warp (regla 7: només la línia).
             return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0),
                                "\(anon.ruta(ruta.deletingLastPathComponent().path)) doesn't exist: Warp hasn't been opened "
                                    + "yet for this user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has "
-                                   + "created it, Warp Launch adds restore_session = false \(quan). " + deConsentiment.1)
+                                   + "created it, Warp Launch adds restore_session = false \(quan), \(ambWarpObert). "
+                                   + deConsentiment.1)
         case let .fitxer(_, llegit, _):
             text = llegit
         }

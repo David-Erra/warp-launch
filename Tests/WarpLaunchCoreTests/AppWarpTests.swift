@@ -200,6 +200,25 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(ProcessosFalsos.ambWarp().terminalsDeWarp(executable: warp.executable).isEmpty)
     }
 
+    /// Des de quan és obert Warp (ronda 5): quan va arrencar l'app de Warp (el procés sense arguments), la més antiga si n'hi
+    /// ha més d'una. El `terminal-server` no compta, ni un altre Warp. Tancat, o sense saber quan va arrencar, `nil`.
+    @Test func desDeQuanEsObertWarp() throws {
+        let t = Date(timeIntervalSince1970: 1_800_000_000)
+        var processos = ProcessosFalsos.ambWarp()
+        let warp = ProcessosFalsos.executableWarp
+        #expect(processos.warpObertDes(executable: warp) == nil, "no se sap quan va arrencar")
+        processos.arrencades = [40: t, 50: t - 100, 60: t - 200]
+        #expect(processos.warpObertDes(executable: warp) == t)
+        #expect(processos.warpObertDes(executable: "/Users/prova/Applications/Warp.app/Contents/MacOS/stable") == nil)
+        processos.processos[41] = (InfoProces(executable: warp, argv: [warp]), 1)
+        processos.arrencades[41] = t + 5
+        #expect(processos.warpObertDes(executable: warp) == t)
+        processos.processos[40] = nil
+        processos.processos[41] = nil
+        #expect(!processos.warpObert(executable: warp))
+        #expect(processos.warpObertDes(executable: warp) == nil, "tancat")
+    }
+
     /// El lector fa servir el Warp que li diuen, a cada lectura.
     @Test func elLectorElMiraACadaLectura() throws {
         let tmp = try CarpetaTemporal()
@@ -230,6 +249,11 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(despres.warpObert == true)
         #expect(despres.terminals == [TerminalViu(pid: 51)])
         #expect(lector.warpObert())
+        // Des de quan, el del Warp que corre (ronda 5).
+        #expect(lector.warpObertDes() == nil)
+        processos.arrencades[40] = Date(timeIntervalSince1970: 1_800_000_000)
+        lector.processos = processos
+        #expect(lector.warpObertDes() == Date(timeIntervalSince1970: 1_800_000_000))
     }
 
     /// La lectura diu si Warp Preview no deixa obrir res, i `llegeix` també ho diu, en text i en JSON.

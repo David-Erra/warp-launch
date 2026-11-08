@@ -113,7 +113,8 @@ final class Aplicacio {
         var creaEntornRefresc: (@MainActor () -> RefrescWarp.Entorn)?
         if case .real = arguments.carpeta, let preferencies {
             creaEntornRefresc = {
-                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)
+                // Sense `settings.toml`, només el crea amb Warp obert des de fa mig minut (ronda 5).
+                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte, warpObertDes: { lector.warpObertDes() })
                 return RefrescWarp.Entorn(ajust: { try ajust.valor() },
                                           // El primer canvi de l'app desa a `preferencies.json` el valor que hi havia.
                                           posa: { nou in
