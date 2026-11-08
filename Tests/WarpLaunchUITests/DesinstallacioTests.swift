@@ -414,3 +414,122 @@ private final class Mon {
         #expect(mon.sortides == 0 && c.estat == .acceptat)
     }
 }
+
+/// Decisió A (0.31.2): sense la línia `restore_session`, amb l'ajust de debò (`AjustRestauracio`) sobre un `settings.toml`
+/// d'una carpeta temporal, connectat com a l'app. El refresc l'afegeix, i «Restaura Warp i surt…» no falla ni escriu res
+/// si no hi és.
+@MainActor
+private final class MonSenseLinia {
+    let tmp: Carpeta
+    let ajust: AjustRestauracio
+    let items = ItemsDInici()
+    var sortides = 0
+
+    /// Amb `nil`, sense el fitxer; amb `carpetaWarp: false`, tampoc sense la carpeta de Warp.
+    init(_ contingut: String?, carpetaWarp: Bool = true, migrat: Bool = false) throws {
+        tmp = try Carpeta()
+        try FileManager.default.createDirectory(at: tmp.url("tmp"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: tmp.url("config"), withIntermediateDirectories: true)
+        if carpetaWarp { try FileManager.default.createDirectory(at: tmp.url("warp"), withIntermediateDirectories: true) }
+        ajust = AjustRestauracio(ruta: tmp.url("warp/settings.toml"), carpetaTemporal: tmp.url("tmp"))
+        if let contingut { try Data(contingut.utf8).write(to: ajust.ruta) }
+        if migrat { try Data("{}".utf8).write(to: tmp.url("config").appending(path: MagatzemConfiguracio.nomFitxer)) }
+    }
+
+    var magatzem: MagatzemPreferencies { MagatzemPreferencies(carpeta: tmp.url("config")) }
+    var contingut: String? { (try? Data(contentsOf: ajust.ruta)).map { String(decoding: $0, as: UTF8.self) } }
+
+    func consentiment() -> ConsentimentRestauracio {
+        let ajust = ajust, magatzem = magatzem
+        return ConsentimentRestauracio(magatzem: magatzem, creaEntornRefresc: {
+            RefrescWarp.Entorn(ajust: { try ajust.valor() },
+                               posa: { nou in
+                                   try magatzem.posaRestauracio(nou, valor: { try ajust.valor() }, posa: { try ajust.posa($0) })
+                               },
+                               warpObert: { true },
+                               llegeixBase: { LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) },
+                               espera: { _ in })
+        }, rellotge: { t0 })
+    }
+
+    func desinstallacio(_ consentiment: ConsentimentRestauracio) -> Desinstallacio {
+        Desinstallacio(consentiment: consentiment, arrencada: ArrencadaSessio(entorn: items.entorn, motiuNoDisponible: nil),
+                       surt: { [unowned self] in sortides += 1 })
+    }
+}
+
+extension Carpeta {
+    func url(_ nom: String) -> URL { url.appending(path: nom) }
+}
+
+@MainActor
+@Suite struct SenseLiniaTests {
+    /// La vigilància hi afegeix `restore_session = false` i desa que abans era activat (el de sèrie); un refresc l'activa i
+    /// la torna a desactivar canviant només el valor; i «Restaura Warp i surt…» el deixa activat, com venia de sèrie.
+    @Test func elRefrescLAfegeixIEnDesinstallarQuedaActivat() async throws {
+        let mon = try MonSenseLinia("[general]\nlogin_item = true\n")
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(refresc.avis == nil)
+        #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
+        #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .acceptat(t0), restauracioOriginal: true))
+
+        _ = await refresc.refresca()
+        #expect(refresc.avis == nil)
+        #expect(mon.contingut == "[general]\nrestore_session = false\nlogin_item = true\n")
+        #expect(try mon.magatzem.carrega().restauracioOriginal == true)
+
+        let d = mon.desinstallacio(c)
+        d.demana()
+        #expect(d.retirada == .disponible(.original(true)))
+        d.confirma()
+        #expect(d.error == nil && mon.sortides == 1)
+        #expect(mon.contingut == "[general]\nrestore_session = true\nlogin_item = true\n")
+        #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .retirat(t0)))
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+    }
+
+    /// Sense el fitxer, la vigilància el crea només amb la línia.
+    @Test func elRefrescCreaElFitxer() throws {
+        let mon = try MonSenseLinia(nil)
+        let c = mon.consentiment()
+        c.accepta()
+        try #require(c.refresc).vigila()
+        #expect(c.refresc?.avis == nil)
+        #expect(mon.contingut == "[general]\nrestore_session = false\n")
+    }
+
+    /// Sense la carpeta de Warp, no la crea: el menú diu per què.
+    @Test func senseLaCarpetaDeWarpElRefrescNoLaCrea() throws {
+        let mon = try MonSenseLinia(nil, carpetaWarp: false)
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(refresc.avis?.contains("Warp encara no s'ha obert mai en aquest usuari") == true, "\(refresc.avis ?? "")")
+        #expect(!FileManager.default.fileExists(atPath: mon.tmp.url("warp").path))
+    }
+
+    /// Amb `migrat` (el de sèrie) i sense la línia, sense el fitxer o sense la carpeta de Warp, «Restaura Warp i surt…»
+    /// acaba bé sense escriure res a Warp: l'ajust ja és activat.
+    @Test(arguments: [("[general]\nlogin_item = true\n", true), (nil, true), (nil, false)] as [(String?, Bool)])
+    func desinstallarSenseLiniaNoEscriuRes(contingut: String?, carpetaWarp: Bool) throws {
+        let mon = try MonSenseLinia(contingut, carpetaWarp: carpetaWarp, migrat: true)
+        let inode = try? FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.systemFileNumber] as? Int
+        let c = mon.consentiment()
+        #expect(c.estat == .acceptat)
+        let d = mon.desinstallacio(c)
+        d.demana()
+        #expect(d.retirada == .disponible(.deSerie))
+        d.confirma()
+        #expect(d.error == nil, "\(d.error ?? "")")
+        #expect(mon.sortides == 1)
+        #expect(try mon.magatzem.carrega() == Preferencies(restauracio: .retirat(t0)))
+        #expect(mon.contingut == contingut)
+        #expect((try? FileManager.default.attributesOfItem(atPath: mon.ajust.ruta.path)[.systemFileNumber] as? Int) == inode)
+        #expect(FileManager.default.fileExists(atPath: mon.tmp.url("warp").path) == carpetaWarp)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
+    }
+}
