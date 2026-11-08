@@ -268,11 +268,13 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         #expect(b.temporals.isEmpty)
     }
 
-    /// Crear el fitxer tampoc no es fa des d'un altre volum: no seria d'un sol cop.
+    /// Crear el fitxer tampoc no es fa des d'un altre volum: no seria d'un sol cop. L'error ha de ser el del volum: a
+    /// `/dev` tampoc no s'hi pot preparar res, i sense la comprovació la prova passaria igualment.
     @Test func crearloDesDUnAltreVolumNoEsFa() throws {
         let b = try Banc(nil)
         let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"))
-        #expect(throws: AjustRestauracio.Refusat.self) { try ajust.posa(false) }
+        #expect(throws: AjustRestauracio.Refusat(description: "la carpeta temporal no és al mateix volum que "
+            + "«\(b.fitxer.path)»")) { try ajust.posa(false) }
         #expect(!FileManager.default.fileExists(atPath: b.fitxer.path))
     }
 
@@ -291,11 +293,14 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         #expect(getxattr(b.fitxer.path, "cat.davide.prova", nil, 0, 0, 0) == 1)
     }
 
-    @Test func enUnAltreVolumNoEscriu() throws {
-        let b = try Banc()
+    /// Ni en canviar la línia ni en afegir-la. L'error ha de ser el del volum, com en crear el fitxer.
+    @Test(arguments: [(text, true), ("[general]\nx = 1\n", false)])
+    func enUnAltreVolumNoEscriu(contingut: String, nou: Bool) throws {
+        let b = try Banc(contingut)
         let ajust = AjustRestauracio(ruta: b.fitxer, carpetaTemporal: URL(filePath: "/dev"))
-        #expect(throws: AjustRestauracio.Refusat.self) { try ajust.posa(true) }
-        #expect(b.contingut == text)
+        #expect(throws: AjustRestauracio.Refusat(description: "la carpeta temporal no és al mateix volum que "
+            + "«\(b.fitxer.path)»")) { try ajust.posa(nou) }
+        #expect(b.contingut == contingut)
     }
 }
 
