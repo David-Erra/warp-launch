@@ -34,10 +34,10 @@ private final class Carpeta {
 private final class AjustFals: @unchecked Sendable {
     private let pany = NSLock()
     private var estat: (valor: Bool, posats: [Bool], fallades: Int, falladesDesactivar: Int, mesTard: Int,
-                        mesTardDesactivar: Int, quanSObriWarpDesactivar: Int)
+                        mesTardDesactivar: Int, quanSObriWarpDesactivar: Int, warpMaiObertDesactivar: Int)
 
     init(_ valor: Bool) {
-        estat = (valor, [], 0, 0, 0, 0, 0)
+        estat = (valor, [], 0, 0, 0, 0, 0, 0)
     }
 
     /// Canviat a mà, a Warp.
@@ -55,6 +55,11 @@ private final class AjustFals: @unchecked Sendable {
     /// Com `mesTard`, però només per desactivar-lo.
     var mesTardDesactivar: Int {
         get { pany.withLock { estat.mesTardDesactivar } } set { pany.withLock { estat.mesTardDesactivar = newValue } }
+    }
+    /// Quantes vegades més desactivar-lo refusa perquè no hi ha la carpeta de Warp (`Refusat.warpMaiObert`).
+    var warpMaiObertDesactivar: Int {
+        get { pany.withLock { estat.warpMaiObertDesactivar } }
+        set { pany.withLock { estat.warpMaiObertDesactivar = newValue } }
     }
     /// Quantes vegades més desactivar-lo torna `.quanSObriWarp` (ronda 5: sense `settings.toml`, amb Warp tancat).
     var quanSObriWarpDesactivar: Int {
@@ -83,6 +88,10 @@ private final class AjustFals: @unchecked Sendable {
                         if !nou, estat.mesTardDesactivar > 0 {
                             estat.mesTardDesactivar -= 1
                             return .mesTard
+                        }
+                        if !nou, estat.warpMaiObertDesactivar > 0 {
+                            estat.warpMaiObertDesactivar -= 1
+                            throw AjustRestauracio.Refusat(description: "no hi ha la carpeta de Warp", warpMaiObert: true)
                         }
                         if !nou, estat.quanSObriWarpDesactivar > 0 {
                             estat.quanSObriWarpDesactivar -= 1
@@ -408,6 +417,27 @@ private final class Mon {
         #expect(mon.ajust.valor && mon.ajust.posats == [false, true] && mon.sortides == 0 && c.estat == .acceptat)
         c.refresc?.vigila()
         #expect(!mon.ajust.valor && c.refresc?.desactivacioPendent == false, "la vigilància continua")
+    }
+
+    /// Decisió 5 (08/11/2026): sense la carpeta de Warp, igual que sense el fitxer: no és que no s'hagi pogut desactivar, sinó
+    /// que és el de sèrie, i el menú ho diu amb la nota.
+    @Test func siEnTornarADesactivarNoHiHaLaCarpetaDeWarpHoDiu() throws {
+        let mon = try Mon(ajust: true)
+        let c = mon.consentiment()
+        c.accepta()
+        try #require(c.refresc).vigila()
+        let d = mon.desinstallacio(c)
+        d.demana()
+        try mon.carpeta.posaPermisos(0o555)
+        mon.ajust.warpMaiObertDesactivar = 1
+        d.confirma()
+        try mon.carpeta.posaPermisos(0o755)
+        let error = try #require(d.error)
+        #expect(error.hasSuffix("L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp "
+            + "Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat."), "\(error)")
+        #expect(c.refresc?.avis == nil && c.refresc?.pendent == .warpMaiObert)
+        #expect(c.refresc?.nota == RefrescWarp.notaWarpMaiObert)
+        #expect(mon.ajust.valor && mon.sortides == 0 && c.estat == .acceptat)
     }
 
     /// Ronda 5: si en tornar-lo a desactivar no hi ha `settings.toml` i Warp és tancat, l'ajust ha quedat activat (el de
