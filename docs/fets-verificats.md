@@ -675,6 +675,29 @@ engega feines) i li passa al Claude 6 s després, sense retenir-lo. Les resposte
   Els fitxers de sessió que hi havia eren tots `interactive` i de la 2.1.319.
 - **`~/.claude.json`:** totes les entrades de `projects` porten la clau `hasTrustDialogAccepted`.
 
+## La finestra de Configuració (07/11/2026, macOS 27.2)
+
+Mesurat amb un programa a part, sense mostrar cap finestra, per a la 0.30.2 (`VistaConfiguracio.formulari`).
+- **Un `Form` agrupat és una vista de desplaçament,** i la seva alçada ideal és la de tot el contingut. Amb
+  `.frame(maxHeight: H)` entre el `Form` i `.fixedSize(horizontal: false, vertical: true)`, fa l'alçada del contingut, com a
+  molt H, i el que no hi cap es desplaça a dins. Si el contingut és més curt, no hi ha res per desplaçar i macOS no hi posa cap
+  barra. L'ordre dels modificadors compta: `fixedSize` demana l'alçada ideal al marc, i el marc la retalla a H.
+- **Sense `frame(maxHeight:)`,** el `Form` amb `fixedSize` fa l'alçada de tot el contingut, encara que passi de la pantalla, i la
+  finestra no es pot fer més baixa ni s'hi pot desplaçar (la Configuració fins a la 0.30.1).
+- **Amb `.windowResizability(.contentSize)` a l'escena,** la finestra pren la mida del contingut (la mínima i la màxima són
+  iguals) i canvia de mida sola quan el contingut canvia: en canviar de pestanya d'un `TabView`, o quan una pestanya creix.
+
+## Swift: expressions regulars i crides de sistema (08/11/2026, Swift 6.4.2)
+
+- **`\b` a les `Regex` de Swift** fa servir per defecte el límit de paraula d'Unicode (UAX #29), on un punt entre dues lletres no
+  talla la paraula: `\bProcess\(` no troba `Foundation.Process()`, `\bNSApp\b` no troba `NSApp.terminate(nil)`, `\bestat\s*=`
+  no troba `self.estat =` i `\bregister\b` no troba `SMAppService.mainApp.register()`. Amb `.wordBoundaryKind(.simple)`, sí.
+  Per això les guardes no fan servir `\b`, sinó `(^|[^A-Za-z0-9_])` i `(?![A-Za-z0-9_])` (`docs/disseny.md`, «Prova de
+  guarda»). Comprovat amb un programa compilat amb `swiftc`, a part del repo.
+- **Crides que Swift no deixa fer a macOS** (`swiftc -typecheck`): `popen` i `system` («unavailable in Swift: Use posix_spawn
+  APIs or NSTask instead»), i `fork()` i `vfork()` («Please use threads or posix_spawn*()»). En canvi, `execv` i la seva
+  família, i `NSUserUnixTask`, compilen: per això la guarda del codi les prohibeix.
+
 ## Foundation i JSON (03/11/2026, macOS 27.2)
 
 - **Claus repetides:** `JSONSerialization` i `JSONDecoder` es queden amb la **primera** aparició, sense error ni avís.
