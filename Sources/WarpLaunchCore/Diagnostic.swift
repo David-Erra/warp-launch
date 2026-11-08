@@ -684,9 +684,10 @@ public enum Diagnostic {
         case let .llegit(llegit) where !llegit.esAcceptat:
             // 0.31.0: retirat amb «Deixa de fer servir Warp Launch», que torna l'ajust com era.
             deConsentiment = (.avis, llegit.retiratEl.map {
+                // Amb «migrat», el de sèrie de Warp, no el d'abans (revisió de la 0.31.0).
                 "Consent withdrawn on \($0.formatted(.iso8601.year().month().day())), when restore_session was put back as "
-                    + "it was before Warp Launch: Warp Launch asks for it again the next time it opens, and doesn't touch "
-                    + "Warp until then."
+                    + "it was before Warp Launch (or to Warp's default, on, if that wasn't known): Warp Launch asks for it "
+                    + "again the next time it opens, and doesn't touch Warp until then."
             } ?? "Consent not given yet: Warp Launch asks for it the first time it opens, and doesn't touch Warp until then.")
         case let .llegit(llegit):
             deConsentiment = (.be, llegit.acceptatEl.map { "Consent given on \($0.formatted(.iso8601.year().month().day()))." }

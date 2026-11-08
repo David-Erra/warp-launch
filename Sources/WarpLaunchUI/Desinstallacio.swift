@@ -114,8 +114,10 @@ public final class Desinstallacio {
     /// El missatge de la confirmació: què passarà, abans que passi.
     public var missatgeConfirmacio: String {
         guard case let .disponible(retorn) = retirada, let textAjust else { return peu }
+        // Com la pantalla del permís: Settings Sync porta l'ajust als altres Macs (regla 7; revisió de la 0.31.0).
         let restaura = retorn.valor == true
-            ? " En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude." : ""
+            ? " En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust "
+                + "també canviarà als teus altres Macs." : ""
         let inici = arrencada.activada ? ", sortirà dels ítems d'inici de sessió" : ""
         return "\(textAjust)\(restaura) Warp Launch deixarà de tenir permís per tocar l'ajust\(inici) i es tancarà. La "
             + "configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís."

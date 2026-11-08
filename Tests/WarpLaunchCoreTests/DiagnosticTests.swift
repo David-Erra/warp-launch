@@ -472,7 +472,8 @@ private struct MacDeProva {
         let retirat = try mac.comprovacio(.restauracio)
         #expect(retirat.resultat == .avis)
         #expect(retirat.detall.contains("Consent withdrawn on 2026-11-04, when restore_session was put back as it was "
-            + "before Warp Launch: Warp Launch asks for it again the next time it opens"), "\(retirat.detall)")
+            + "before Warp Launch (or to Warp's default, on, if that wasn't known): Warp Launch asks for it again the next "
+            + "time it opens"), "\(retirat.detall)")
     }
 
     // MARK: - Anonimització

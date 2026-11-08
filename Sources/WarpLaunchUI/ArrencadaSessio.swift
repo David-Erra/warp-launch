@@ -58,7 +58,8 @@ public final class ArrencadaSessio {
         estat = entorn.estat()
     }
 
-    /// L'únic camí que afegeix o treu l'app dels ítems d'inici: l'interruptor de la Configuració.
+    /// L'únic camí que afegeix l'app als ítems d'inici: l'interruptor de la Configuració. L'únic altre que la'n treu és
+    /// «Restaura Warp i surt…» (`treuDelsItemsDInici`, 0.31.0).
     public func posa(_ activada: Bool) {
         guard let entorn, activada != self.activada else { return }
         if activada, motiuNoDisponible != nil { return }

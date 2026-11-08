@@ -89,7 +89,8 @@ public final class ConsentimentRestauracio {
     /// es pregunta (torna a sortir l'error): diu on és el fitxer, que s'ha d'arreglar o esborrar (revisió de la 0.29.0).
     public var textSortir: String {
         if estat == .retirat {
-            return "L'ajust de Warp torna a ser com era abans de Warp Launch, i Warp Launch ja no té permís per tocar-lo. Si la "
+            // Amb «migrat», no és el d'abans, sinó el de sèrie de Warp: el que ha dit la confirmació (revisió de la 0.31.0).
+            return "Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la "
                 + "tornes a obrir, te'l tornarà a demanar."
         }
         guard case let .error(motiu) = estat else {
@@ -166,8 +167,8 @@ public final class ConsentimentRestauracio {
     /// «Deixa de fer servir Warp Launch» (0.31.0, decisió 3 d'en David): torna l'ajust de Warp com era (`retorn`, el que ha
     /// mostrat la confirmació) i retira el permís a `preferencies.json`. A partir d'aquí, l'app no toca Warp (`.retirat`), i
     /// la propera vegada torna a preguntar. Primer l'ajust, que és el que pot fallar més (Warp l'escriu en calent): si no es
-    /// pot posar, o si el permís no es pot desar (llavors l'ajust es torna a desactivar; si tampoc no es pot, ho diu), no ha canviat res, i llança
-    /// l'error.
+    /// pot posar, o si el permís no es pot desar (llavors l'ajust es torna a desactivar; si tampoc no es pot, ho diu), no
+    /// ha canviat res, i llança l'error.
     public func retira(_ retorn: Preferencies.Retorn) throws(ErrorRetirada) {
         let ara = retirada()
         if case let .noDisponible(motiu) = ara { throw ErrorRetirada(description: motiu) }

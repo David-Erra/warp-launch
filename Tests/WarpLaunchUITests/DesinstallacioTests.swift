@@ -148,7 +148,8 @@ private final class Mon {
         d.demana()
         #expect(d.confirmant)
         #expect(d.missatgeConfirmacio.hasPrefix(try #require(d.textAjust)))
-        #expect(d.missatgeConfirmacio.contains("Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude."))
+        #expect(d.missatgeConfirmacio.contains("Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens "
+            + "Settings Sync, l'ajust també canviarà als teus altres Macs."))
         #expect(d.missatgeConfirmacio.contains("sortirà dels ítems d'inici de sessió i es tancarà"))
         #expect(d.missatgeConfirmacio.contains("La configuració no s'esborra."))
         #expect(mon.sortides == 0 && mon.items.crides.isEmpty, "res fins a confirmar")
@@ -168,7 +169,8 @@ private final class Mon {
         c.refresc?.tanca()
         #expect(mon.ajust.valor && mon.ajust.posats == [false, true])
         // Si no surt, només deixa sortir, i no torna a acceptar.
-        #expect(c.textSortir.contains("te'l tornarà a demanar"), "\(c.textSortir)")
+        #expect(c.textSortir == "Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per "
+            + "tocar-lo. Si la tornes a obrir, te'l tornarà a demanar.", "\(c.textSortir)")
         c.accepta()
         #expect(c.estat == .retirat && mon.demanats == 1)
         #expect(!c.continuaEnTancarFinestra { mon.sortides += 1 })
@@ -193,6 +195,7 @@ private final class Mon {
         #expect(d.textAjust == "L'ajust de Warp «Restore windows, tabs, and panes on startup» es quedarà desactivat, com el "
             + "tenies abans de Warp Launch.")
         #expect(!d.missatgeConfirmacio.contains("sense Claude") && !d.missatgeConfirmacio.contains("ítems d'inici"))
+        #expect(!d.missatgeConfirmacio.contains("Settings Sync"), "no canvia res que es pugui sincronitzar")
         d.confirma()
         #expect(!mon.ajust.valor && mon.ajust.posats == [true, false, false])
         #expect(try mon.preferencies == Preferencies(restauracio: .retirat(t0)))
@@ -212,7 +215,7 @@ private final class Mon {
         #expect(d.retirada == .disponible(.deSerie))
         #expect(d.textAjust == "No se sap com tenies l'ajust de Warp «Restore windows, tabs, and panes on startup» abans de "
             + "Warp Launch, perquè ja la feies servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp.")
-        #expect(d.missatgeConfirmacio.contains("sense Claude"))
+        #expect(d.missatgeConfirmacio.contains("sense Claude. Si tens Settings Sync, l'ajust també canviarà als teus altres Macs."))
         d.confirma()
         #expect(mon.ajust.valor && mon.sortides == 1)
         #expect(try mon.preferencies == Preferencies(restauracio: .retirat(t0)))
