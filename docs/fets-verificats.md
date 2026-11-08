@@ -95,8 +95,8 @@ corregeix-lo i deixa'n constància.
       per crear `settings.toml` (`FontProcessos.warpHaAcabatDArrencar`), en lloc d'un temps d'espera.
     - El `terminal-server` és fill de l'app (`Command::spawn`, `crates/warp_terminal/src/local_tty/server/mod.rs`) i s'atura sol
       quan canvia de pare (`server/event_loop.rs`, l. 223): un d'orfe no és d'un Warp que corre.
-    - Si el `terminal-server` no es pot fer servir, Warp obre els shells directament (`local_tty/spawner.rs`, `spawn_pty_directly`).
-      Llavors l'app no en veuria cap terminal, i no crearia `settings.toml`. No s'ha vist mai.
+    - Si el `terminal-server` no es pot fer servir, Warp obre els shells directament (`local_tty/spawner.rs`,
+      `spawn_pty_directly`). Llavors l'app no en veuria cap terminal, i no crearia `settings.toml`. No s'ha vist mai.
   - **L'onboarding d'un usuari nou** (08/11/2026, especificació `specs/APP-3680/TECH.md` del mateix codi; llegida, no vista):
     en acabar-lo, Warp n'aplica els ajustos (`apply_agent_settings`, per exemple `DefaultSessionMode`) i, amb dos flags
     activats, pot escriure `~/.warp/tab_configs/startup_config.toml`. Si aplicar-los desa `settings.toml` (Warp desa cada canvi
