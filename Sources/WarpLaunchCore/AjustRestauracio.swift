@@ -80,8 +80,10 @@ public struct AjustRestauracio: Sendable {
     /// La línia que s'hi escriu quan no hi és.
     static let liniaNova = "restore_session = false"
 
-    /// Si el fitxer ha canviat fa menys d'aquesta estona, Warp el podria estar escrivint: no s'hi escriu res. Una data del
-    /// futur (el rellotge del Mac ha anat enrere) també compta com a recent.
+    /// Si el fitxer ha canviat fa menys d'aquesta estona, Warp el podria estar escrivint: no s'hi escriu res. Compta com a
+    /// recent de 2 s enrere a 2 s endavant (decisió 2 d'en David, 08/11/2026): una data una mica del futur pot ser Warp
+    /// escrivint ara mateix, amb el rellotge desfasat; una de més enllà vol dir que el rellotge del Mac ha anat enrere, i
+    /// Warp no l'escriu ara. Si comptés, l'app no hi escriuria res, sense avís, fins que l'hora tornés a passar aquella data.
     static let segonsRecent: TimeInterval = 2
 
     /// El valor que fa servir Warp: el de la línia, o, sense, el de sèrie. També sense el fitxer i sense la carpeta de
@@ -122,9 +124,10 @@ public struct AjustRestauracio: Sendable {
         }
     }
 
-    /// Si el fitxer ha canviat fa menys de `segonsRecent` (també si és buit), i no és el que hi ha posat aquest ajust.
+    /// Si el fitxer ha canviat fa menys de `segonsRecent`, o d'aquí a menys de `segonsRecent` (també si és buit), i no és el
+    /// que hi ha posat aquest ajust.
     private func acabaDeCanviar(_ identitat: Identitat, _ dades: Data) -> Bool {
-        guard rellotge().timeIntervalSince(identitat.modificat) < Self.segonsRecent else { return false }
+        guard abs(rellotge().timeIntervalSince(identitat.modificat)) < Self.segonsRecent else { return false }
         return escrit.withLock { $0 } != Escrit(identitat: identitat, dades: dades)
     }
 

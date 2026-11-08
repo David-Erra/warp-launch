@@ -466,13 +466,18 @@ final class ArrencadaWarpDeProva: @unchecked Sendable {
         #expect(b.contingut == "[general]\nrestore_session = false\n")
     }
 
-    /// Una data del futur (el rellotge del Mac ha anat enrere) també compta com a recent.
-    @Test func unaDataDelFuturCompta() throws {
+    /// Decisió 2 (08/11/2026): compta com a recent de 2 s enrere a 2 s endavant. De fa 1 s i de d'aquí a 1 s (Warp el podria
+    /// estar escrivint, amb el rellotge una mica desfasat), no s'hi escriu res. De fa 3 s, sí. De d'aquí a 1 hora, també: el
+    /// rellotge del Mac ha anat enrere, i Warp no l'escriu ara; l'app no s'ha d'aturar fins que l'hora torni a passar la data.
+    @Test(arguments: [(1.0, true), (-1.0, true), (-3600.0, false), (3.0, false)])
+    func recentEsDe2sEnrereA2sEndavant(fa segons: TimeInterval, recent: Bool) throws {
         let b = try Banc()
-        try b.rellotge.modificat(b.fitxer, fa: -10)
-        #expect(try b.ajust.valor() == nil)
-        #expect(try b.ajust.posa(true) == .mesTard)
-        #expect(b.contingut == text)
+        try b.rellotge.modificat(b.fitxer, fa: segons)
+        #expect(try b.ajust.valor() == (recent ? nil : false))
+        #expect(try b.ajust.posa(true) == (recent ? .mesTard : .escrit))
+        #expect(b.contingut == (recent ? text
+            : text.replacingOccurrences(of: "restore_session = false", with: "restore_session = true")))
+        #expect(b.temporals.isEmpty)
     }
 
     /// Just abans del `rename`, el fitxer ha de ser el que s'ha llegit també segons `stat`, encara que el contingut sigui el
