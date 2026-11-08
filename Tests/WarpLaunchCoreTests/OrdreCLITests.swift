@@ -643,7 +643,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
 
     /// 0.31.1: en un Mac on no s'ha instal·lat mai Warp, tampoc no hi ha `warp.sqlite` (ni `settings.toml`, i per tant la
     /// base es llegeix). `llegeix`, `importa` i `obre` diuen que no hi ha Warp, no només que no troben la base. Amb només
-    /// Warp Preview, el seu text; amb Warp Stable, l'error de sempre.
+    /// Warp Preview, el seu text; amb Warp Stable, que Warp encara no hi ha desat res (`LecturaWarp.senseBase`).
     @Test func senseCapWarpNiBaseHoDiuen() throws {
         let e = try Escenari()
         let carpeta = try ambConfiguracio(e)

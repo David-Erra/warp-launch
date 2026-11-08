@@ -356,8 +356,8 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
     /// On no s'ha instal·lat mai Warp, tampoc no hi ha `settings.toml` ni la base: amb una carpeta de prova (`.segonsAjust`,
     /// l'ajust per defecte diu que es llegeixi la base) o en refrescar la foto (`.sempre`), `llegeix` falla amb «no trobo la
     /// base de Warp». La lectura de l'app no: és la de la configuració de debò (`.mai`), que diu que no hi ha Warp. El CLI
-    /// continua fallant (`llegeix`). Amb només Warp Preview, el seu motiu; amb Warp Stable sense base, o sense Warp però amb
-    /// la base, com sempre.
+    /// continua fallant (`llegeix`). Amb només Warp Preview, el seu motiu; sense Warp però amb la base, com sempre; amb Warp
+    /// Stable sense base, que encara no hi ha desat res (`laLecturaDeLAppAmbWarpStableSenseBaseDiuQueNoHiHaDesatRes`).
     @Test func laLecturaDeLAppSenseCapWarpNiBaseDiuQueNoHiHaWarp() throws {
         let tmp = try CarpetaTemporal()
         let inici = try tmp.carpeta("inici")
