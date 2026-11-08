@@ -33,7 +33,7 @@ public struct AjustRestauracio: Sendable {
     public struct Refusat: Error, Equatable, CustomStringConvertible {
         public var description: String
         /// No hi ha la carpeta de Warp: Warp no s'ha obert mai en aquest usuari, i no té res per restaurar. Quan la creï, la
-        /// vigilància de cada minut hi crearà el fitxer, quan es pugui (`potCrearElFitxer`, `RefrescWarp.avisWarpMaiObert`).
+        /// vigilància de cada minut hi crearà el fitxer, quan es pugui (`potCrearElFitxer`, `RefrescWarp.notaWarpMaiObert`).
         public var warpMaiObert = false
     }
 

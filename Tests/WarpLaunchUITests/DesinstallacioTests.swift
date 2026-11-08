@@ -698,16 +698,16 @@ extension Carpeta {
         #expect(try FileManager.default.contentsOfDirectory(atPath: mon.tmp.url("tmp").path).isEmpty)
     }
 
-    /// Ronda 5: quan apareix la carpeta de Warp, l'avís que Warp no s'ha obert mai ja no val, encara que el fitxer s'hagi
-    /// d'esperar a crear-lo: llavors, la nota.
-    @Test func quanApareixLaCarpetaLAvisMarxaIElFitxerEspera() throws {
+    /// Ronda 5: quan apareix la carpeta de Warp, la nota que Warp no s'ha obert mai ja no val, encara que el fitxer s'hagi
+    /// d'esperar a crear-lo: llavors, la nota sense el fitxer.
+    @Test func quanApareixLaCarpetaLaNotaCanviaIElFitxerEspera() throws {
         let mon = try MonSenseLinia(nil, carpetaWarp: false)
         mon.warp.arrencat = false
         let c = mon.consentiment()
         c.accepta()
         let refresc = try #require(c.refresc)
         refresc.vigila()
-        #expect(refresc.avis == RefrescWarp.avisWarpMaiObert && refresc.nota == nil)
+        #expect(refresc.avis == nil && refresc.nota == RefrescWarp.notaWarpMaiObert)
         try FileManager.default.createDirectory(at: mon.tmp.url("warp"), withIntermediateDirectories: true)
         refresc.vigila()
         #expect(refresc.avis == nil && refresc.nota == RefrescWarp.notaSenseFitxer && mon.contingut == nil)
@@ -750,20 +750,23 @@ extension Carpeta {
     }
 
     /// Sense la carpeta de Warp, no la crea: el menú diu per què, i que quan Warp l'hagi creada ho farà. No diu que Warp
-    /// restaurarà finestres: no n'ha obert mai cap. Quan Warp crea la carpeta, la vigilància hi posa la línia.
+    /// restaurarà finestres: no n'ha obert mai cap. Per això és una nota, sense el triangle d'avís (decisió 5, 08/11/2026).
+    /// Quan Warp crea la carpeta, la vigilància hi posa la línia, i la nota marxa.
     @Test func senseLaCarpetaDeWarpElRefrescNoLaCrea() throws {
         let mon = try MonSenseLinia(nil, carpetaWarp: false)
         let c = mon.consentiment()
         c.accepta()
         let refresc = try #require(c.refresc)
         refresc.vigila()
-        #expect(refresc.avis == RefrescWarp.avisWarpMaiObert, "\(refresc.avis ?? "")")
-        #expect(RefrescWarp.avisWarpMaiObert.hasPrefix("Warp encara no s'ha obert mai en aquest usuari: "))
-        #expect(!RefrescWarp.avisWarpMaiObert.contains("restaurarà"))
+        #expect(refresc.avis == nil, "\(refresc.avis ?? "")")
+        #expect(refresc.nota == RefrescWarp.notaWarpMaiObert && refresc.pendent == .warpMaiObert)
+        #expect(!refresc.warpRestauraEnArrencar, "no hi ha res per restaurar")
+        #expect(RefrescWarp.notaWarpMaiObert.hasPrefix("Warp encara no s'ha obert mai en aquest usuari: "))
+        #expect(!RefrescWarp.notaWarpMaiObert.contains("restaurarà"))
         #expect(!FileManager.default.fileExists(atPath: mon.tmp.url("warp").path))
         try FileManager.default.createDirectory(at: mon.tmp.url("warp"), withIntermediateDirectories: true)
         refresc.vigila()
-        #expect(refresc.avis == nil, "\(refresc.avis ?? "")")
+        #expect(refresc.avis == nil && refresc.nota == nil && refresc.pendent == nil, "\(refresc.avis ?? "")")
         #expect(mon.contingut == "[general]\nrestore_session = false\n")
     }
 

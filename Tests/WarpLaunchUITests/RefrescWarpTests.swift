@@ -25,7 +25,7 @@ private func foto(_ panes: [String], titol: String = "T") -> LecturaWarp {
 private final class Mon: @unchecked Sendable {
     private let pany = NSLock()
     private var estat = (ajust: false, obert: true, canvis: [Bool](), esperes: 0, fallades: 0, potPosar: true, posats: 0,
-                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0, quanSObriWarp: 0)
+                         mesTard: 0, mesTardDesactivar: 0, ajustMesTard: 0, quanSObriWarp: 0, warpMaiObert: 0)
     private var lectura: @Sendable (Bool, Int) -> LecturaWarp = { _, _ in LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) }
     var enEsperar: @Sendable (Int) -> Void = { _ in }
 
@@ -51,6 +51,10 @@ private final class Mon: @unchecked Sendable {
     /// Warp tancat o acabat d'obrir).
     var quanSObriWarp: Int {
         get { pany.withLock { estat.quanSObriWarp } } set { pany.withLock { estat.quanSObriWarp = newValue } }
+    }
+    /// Quantes vegades més desactivar-lo refusa perquè no hi ha la carpeta de Warp (`Refusat.warpMaiObert`, 0.31.2).
+    var warpMaiObert: Int {
+        get { pany.withLock { estat.warpMaiObert } } set { pany.withLock { estat.warpMaiObert = newValue } }
     }
 
     /// `(ajust activat, segons passats)` → què hi ha a la base.
@@ -85,6 +89,10 @@ private final class Mon: @unchecked Sendable {
                     if !nou, estat.quanSObriWarp > 0 {
                         estat.quanSObriWarp -= 1
                         return .quanSObriWarp
+                    }
+                    if !nou, estat.warpMaiObert > 0 {
+                        estat.warpMaiObert -= 1
+                        throw AjustRestauracio.Refusat(description: "no hi ha la carpeta de Warp", warpMaiObert: true)
                     }
                     let canvia = estat.ajust != nou
                     if canvia { estat.canvis.append(nou) }
@@ -519,6 +527,34 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         _ = try await r.refresca().get()
         #expect(mon.esperes == RefrescWarp.segonsMinim && mon.posats == 2)
         #expect(mon.ajust && r.avis == nil && r.pendent == .quanSObriWarp)
+    }
+
+    // MARK: - Sense la carpeta de Warp (decisió 5, 08/11/2026)
+
+    /// Sense la carpeta de Warp, Warp no s'ha obert mai en aquest usuari i no té res per restaurar: no és cap avís (el
+    /// triangle), sinó una nota, i el menú se n'assabenta (s'observa). Tornar-ho a provar de seguida no serviria: un sol
+    /// intent per vigilància, sense esperar. Un avís d'abans ja no val. Quan Warp crea la carpeta, la nota marxa.
+    @Test func senseLaCarpetaDeWarpEsUnaNotaINoUnAvis() async {
+        let mon = Mon()
+        mon.ajust = true
+        mon.fallades = 3
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        #expect(r.avis != nil && r.nota == nil && r.pendent == nil)
+        mon.warpMaiObert = 10
+        let canvis = Comptador()
+        withObservationTracking { _ = r.nota } onChange: { canvis.suma() }
+        let posats = mon.posats
+        r.vigila()
+        #expect(canvis.valor == 1, "el menú ho ha de veure")
+        #expect(mon.posats == posats + 1, "un sol intent")
+        #expect(r.avis == nil && r.nota == RefrescWarp.notaWarpMaiObert && r.pendent == .warpMaiObert)
+        #expect(!r.warpRestauraEnArrencar, "no hi ha res per restaurar")
+        await r.tancaEsperant()
+        #expect(mon.esperes == 0 && mon.posats == posats + 2 && r.nota == RefrescWarp.notaWarpMaiObert)
+        mon.warpMaiObert = 0
+        r.vigila()
+        #expect(!mon.ajust && r.avis == nil && r.nota == nil && r.pendent == nil)
     }
 
     /// «Restaura Warp i surt…»: si l'ajust no pot crear el fitxer perquè Warp és tancat, no canvia res, ho diu (amb què cal

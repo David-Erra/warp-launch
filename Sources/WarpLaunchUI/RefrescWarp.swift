@@ -85,6 +85,10 @@ public final class RefrescWarp {
         /// de Warp), i la vigilància de cada minut crearà el fitxer quan Warp sigui obert amb algun terminal. El menú ho diu
         /// (`nota`).
         case quanSObriWarp
+        /// No hi ha la carpeta de Warp (`AjustRestauracio.Refusat.warpMaiObert`): Warp no s'ha obert mai en aquest usuari, i no
+        /// té cap finestra per restaurar. L'ajust no la crea, i la vigilància de cada minut ho torna a provar. El menú ho diu
+        /// com a nota, sense el triangle d'avís (`notaWarpMaiObert`, decisió 5 d'en David, 08/11/2026).
+        case warpMaiObert
     }
 
     /// Per què l'app no pot fer la seva feina amb l'ajust: el menú de la icona ho diu.
@@ -98,18 +102,25 @@ public final class RefrescWarp {
     /// pot restaurar les finestres d'abans, sense Claude, i no n'obre cap de buida: els fulls d'obrir ho diuen (`Obertura`).
     public var warpRestauraEnArrencar: Bool { pendent == .quanSObriWarp }
     /// Què diu el menú de la icona quan no és cap error, però l'ajust encara no s'ha pogut desactivar: sense `settings.toml`
-    /// (ronda 5), `notaSenseFitxer`. Si `settings.toml` acabava de canviar, res: es torna a provar d'aquí a pocs segons.
-    public var nota: String? { pendent == .quanSObriWarp ? Self.notaSenseFitxer : nil }
+    /// (ronda 5), `notaSenseFitxer`; sense la carpeta de Warp, `notaWarpMaiObert`. Si `settings.toml` acabava de canviar, res:
+    /// es torna a provar d'aquí a pocs segons.
+    public var nota: String? {
+        switch pendent {
+        case .quanSObriWarp?: Self.notaSenseFitxer
+        case .warpMaiObert?: Self.notaWarpMaiObert
+        case .acabaDeCanviar?, nil: nil
+        }
+    }
     /// Sense `settings.toml` i amb Warp tancat o encara arrencant (ronda 5). No diu que Warp restaurarà res: Warp pot ser
     /// tancat, i potser no té cap finestra desada. «Quan Warp sigui obert»: també és cert si ja ho és i encara no té cap
     /// pestanya, o encara arrenca. «En menys d'un minut»: la vigilància de cada minut.
     public static let notaSenseFitxer = "Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, "
         + "Warp Launch hi desactivarà la restauració de sessió en menys d'un minut."
     /// Sense la carpeta de Warp (0.31.2), l'app no la crea (`AjustRestauracio`). No és que Warp hagi de restaurar res: no ha
-    /// obert mai cap finestra. Quan Warp creï la carpeta, la vigilància de cada minut hi crearà el fitxer, amb Warp obert i
-    /// amb alguna pestanya (ronda 5, `notaSenseFitxer`). No diu «quan l'obris»: no s'ha vist si Warp la crea en obrir-se per
-    /// primer cop.
-    public static let avisWarpMaiObert = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, "
+    /// obert mai cap finestra. Per això és una nota, i no un avís (decisió 5 d'en David, 08/11/2026). Quan Warp creï la
+    /// carpeta, la vigilància de cada minut hi crearà el fitxer, amb Warp obert i amb alguna pestanya (ronda 5,
+    /// `notaSenseFitxer`). No diu «quan l'obris»: no s'ha vist si Warp la crea en obrir-se per primer cop.
+    public static let notaWarpMaiObert = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, "
         + "ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la "
         + "restauració de sessió en menys d'un minut."
     @ObservationIgnored private let entorn: Entorn
@@ -281,7 +292,8 @@ public final class RefrescWarp {
     /// Si `settings.toml` acaba de canviar, no s'hi escriu res, i no és cap error: tornar-ho a provar de seguida no serviria
     /// (`AjustRestauracio.segonsRecent`), i ho fa la vigilància de cada minut, sense avís. Sense el fitxer i amb Warp tancat
     /// o encara arrencant, tampoc (`Pendent.quanSObriWarp`, amb la `nota`): l'avís que hi hagués ja no val (la carpeta de
-    /// Warp hi és). Un error es torna a provar de seguida, fins a tres cops. Retirat, res.
+    /// Warp hi és). Sense la carpeta de Warp, tampoc (`Pendent.warpMaiObert`, amb la `nota`). Un error es torna a provar de
+    /// seguida, fins a tres cops. Retirat, res.
     private func desactiva() {
         guard !retirat else { return }
         var darrer: (any Error)?
@@ -301,14 +313,19 @@ public final class RefrescWarp {
                     darrer = nil
                 }
                 break
+            } catch let refusat as AjustRestauracio.Refusat where refusat.warpMaiObert {
+                // No és cap error (decisió 5): Warp no té res per restaurar, i tornar-ho a provar de seguida no serviria.
+                pendent = .warpMaiObert
+                avis = nil
+                Registre.refresc.notice("sense la carpeta de Warp: Warp no s'ha obert mai en aquest usuari")
+                return
             } catch {
                 darrer = error
             }
         }
         pendent = nil
         if let darrer {
-            avis = (darrer as? AjustRestauracio.Refusat)?.warpMaiObert == true ? Self.avisWarpMaiObert
-                : "No s'ha pogut desactivar la restauració de sessió de Warp: \(darrer). Si Warp es tanca, restaurarà les finestres sense Claude."
+            avis = "No s'ha pogut desactivar la restauració de sessió de Warp: \(darrer). Si Warp es tanca, restaurarà les finestres sense Claude."
             Registre.refresc.error("\(String(describing: darrer), privacy: .public)")
         } else {
             avis = nil

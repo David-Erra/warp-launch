@@ -381,7 +381,8 @@ private struct MenuIcona: View {
             if let avis = aplicacio.refresc?.avis {
                 Label(avis, systemImage: "exclamationmark.triangle")
             }
-            // No és cap error: Warp encara no té `settings.toml`, i l'app el crearà quan Warp sigui obert (ronda 5).
+            // No és cap error, i no porta el triangle: Warp encara no té `settings.toml`, i l'app el crearà quan Warp sigui obert
+            // (ronda 5), o Warp no s'ha obert mai en aquest usuari i no té res per restaurar (decisió 5).
             if let nota = aplicacio.refresc?.nota {
                 Label(nota, systemImage: "info.circle")
             }
