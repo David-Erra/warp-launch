@@ -149,7 +149,8 @@ final class Aplicacio {
         }
         editor.obertura = obertura
         editor.lligam = obertura == nil ? nil
-            : Lligam(editor: editor, sessions: sessions, inici: inici, llegeix: { await warp.llegeixAmbFinestres() })
+            : Lligam(editor: editor, sessions: sessions, inici: inici, llegeix: { await warp.llegeixAmbFinestres() },
+                     ambRefresc: { warp.refresc != nil })
         // Els ítems d'inici de macOS, només amb la configuració de debò: una de prova no s'obre mai sola.
         let arrencada: ArrencadaSessio
         if case .real = arguments.carpeta {

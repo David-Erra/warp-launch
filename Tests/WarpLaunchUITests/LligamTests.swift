@@ -38,6 +38,8 @@ private final class Banc {
     let sessions: EstatSessions
     var lligam: Lligam!
     var lectura: Result<LecturaWarp, EstatWarp.ErrorLectura> = .success(warp)
+    /// Sense refresc, com amb una carpeta de prova (`--config`).
+    var ambRefresc = false
 
     init() throws {
         carpeta = FileManager.default.temporaryDirectory.appending(path: "warp-launch-lligam-\(UUID().uuidString)")
@@ -46,7 +48,8 @@ private final class Banc {
         editor.carrega()
         sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta), rellotge: { t0 })
         sessions.carrega()
-        lligam = Lligam(editor: editor, sessions: sessions, inici: "/Users/prova", llegeix: { [unowned self] in lectura })
+        lligam = Lligam(editor: editor, sessions: sessions, inici: "/Users/prova", llegeix: { [unowned self] in lectura },
+                        ambRefresc: { [unowned self] in ambRefresc })
         editor.lligam = lligam
     }
 
@@ -97,6 +100,30 @@ private final class Banc {
         guard case let .error(motiu) = b.lligam.estat else { Issue.record("\(b.lligam.estat)"); return }
         #expect(motiu.hasPrefix(LecturaWarp.senseFinestres))
         #expect(motiu.contains("pestanyes amb Claude"), "les que no en tenen no es lliguen soles")
+        b.lligam.confirma()
+        #expect(!FileManager.default.fileExists(atPath: b.carpeta.appending(path: EstatApp.nomFitxer).path))
+    }
+
+    /// Sense refresc (una carpeta de prova, `--config`), l'app no toca l'ajust de Warp i no li pot demanar que desi les
+    /// finestres: el full ho diu, amb el mateix text que el d'importar, i que amb la configuració de debò sí que es pot.
+    /// Amb el refresc (la configuració de debò), el text de sempre.
+    @Test func senseFinestresAmbUnaCarpetaDeProvaDiuPerQue() async throws {
+        let b = try Banc()
+        var lectura = warp
+        lectura.warpDesaFinestres = false
+        b.lectura = .success(lectura)
+        await b.lligam.demana()
+        guard case let .error(motiu) = b.lligam.estat else { Issue.record("\(b.lligam.estat)"); return }
+        #expect(motiu == LecturaWarp.senseFinestres + " Amb una configuració de prova (--config), l'app no toca aquest "
+            + "ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp "
+            + "les desi, i el torna a desactivar. Les pestanyes amb Claude que obre l'app es lliguen soles.")
+        #expect(motiu.hasPrefix(MotiuSenseFinestres.deProva.text), "el text del full d'importar")
+
+        b.lligam.cancela()
+        b.ambRefresc = true
+        await b.lligam.demana()
+        #expect(b.lligam.estat == .error(LecturaWarp.senseFinestres
+            + " Les pestanyes amb Claude que obre l'app es lliguen soles."))
         b.lligam.confirma()
         #expect(!FileManager.default.fileExists(atPath: b.carpeta.appending(path: EstatApp.nomFitxer).path))
     }

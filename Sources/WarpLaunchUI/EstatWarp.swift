@@ -92,3 +92,31 @@ public final class EstatWarp {
         return resultat
     }
 }
+
+/// Per què una lectura no té finestres per importar ni lligar (`FullImportacio`, `Lligam`): el mateix text als dos fulls,
+/// i cadascú hi afegeix què es pot fer.
+enum MotiuSenseFinestres: Equatable {
+    /// Sense refresc (D19), l'app no ha pogut demanar a Warp que desi les finestres: és una carpeta de prova (`--config`),
+    /// on l'app no toca l'ajust, i no és que Warp no tingui res. Sense el consentiment tampoc no n'hi ha, però llavors els
+    /// fulls no es poden obrir (D-P4).
+    case deProva
+    /// Amb el refresc, la foto sempre hi és (`BaseWarp.sempre`): per si de cas.
+    case restauracioDesactivada
+
+    /// `nil`: la lectura té les finestres de Warp (`warpDesaFinestres` no és `false`). `ambRefresc`: si l'app gestiona
+    /// l'ajust (`EstatWarp.refresc`).
+    init?(_ lectura: LecturaWarp, ambRefresc: Bool) {
+        guard lectura.warpDesaFinestres == false else { return nil }
+        self = ambRefresc ? .restauracioDesactivada : .deProva
+    }
+
+    var text: String {
+        switch self {
+        case .deProva:
+            LecturaWarp.senseFinestres + " Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot "
+                + "demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i "
+                + "el torna a desactivar."
+        case .restauracioDesactivada: LecturaWarp.senseFinestres
+        }
+    }
+}

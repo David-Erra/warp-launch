@@ -17,7 +17,7 @@ public final class FullImportacio {
     public enum Estat: Equatable {
         case llegint
         case error(String)
-        /// La lectura ha anat bé, però Warp no desa les finestres (`LecturaWarp.senseFinestres`): no hi ha res per importar.
+        /// La lectura ha anat bé, però no en surten finestres (`MotiuSenseFinestres`): no hi ha res per importar.
         case senseFinestres(String)
         case llest(Importacio)
     }
@@ -49,10 +49,12 @@ public final class FullImportacio {
         estat = .llegint
         avisosLectura = []
         switch await warp.llegeixAmbFinestres() {
-        case let .success(lectura) where lectura.warpDesaFinestres == false:
-            // Importar substituiria la configuració per res.
-            estat = .senseFinestres(LecturaWarp.senseFinestres + queFerSenseFinestres)
         case let .success(lectura):
+            if let motiu = MotiuSenseFinestres(lectura, ambRefresc: warp.refresc != nil) {
+                // Importar substituiria la configuració per res.
+                estat = .senseFinestres(motiu.text + queFer(motiu))
+                return
+            }
             avisosLectura = lectura.avisos
             plantillaPrevista = editor.plantillaPerImportar.normalitzada()
             estat = .llest(editor.previsualitza(lectura))
@@ -61,19 +63,15 @@ public final class FullImportacio {
         }
     }
 
-    /// Què fer quan Warp no desa les finestres. Sense refresc (D19), l'app no ha pogut demanar a Warp que les desi: és una
-    /// carpeta de prova (`--config`), on l'app no toca l'ajust, i no és que Warp no tingui res. Sense el consentiment
-    /// tampoc no n'hi ha, però llavors el full no es pot obrir (D-P4). Amb el refresc, la foto sempre hi és
-    /// (`BaseWarp.sempre`): el text de sempre, per si de cas.
-    private var queFerSenseFinestres: String {
-        guard warp.refresc == nil else {
-            return mode == .crea
-                ? " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
-                : " No hi ha res per importar, i la configuració no canvia."
+    /// Què fer quan no hi ha finestres per importar, després del motiu (`MotiuSenseFinestres`, el mateix que «Lliga amb
+    /// Warp…»). Amb una carpeta de prova, el motiu ja diu per què aquí no se'n poden llegir.
+    private func queFer(_ motiu: MotiuSenseFinestres) -> String {
+        switch (motiu, mode) {
+        case (.deProva, .crea): " Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes."
+        case (.deProva, .substitueix): " La configuració no canvia."
+        case (_, .crea): " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
+        case (_, .substitueix): " No hi ha res per importar, i la configuració no canvia."
         }
-        return " Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les "
-            + "desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar."
-            + (mode == .crea ? " Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes." : " La configuració no canvia.")
     }
 
     public var importacio: Importacio? {

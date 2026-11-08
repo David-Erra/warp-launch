@@ -25,17 +25,23 @@ public final class Lligam {
     @ObservationIgnored private let editor: Editor
     @ObservationIgnored private let sessions: EstatSessions
     @ObservationIgnored private let llegeix: @MainActor () async -> Result<LecturaWarp, EstatWarp.ErrorLectura>
+    /// Si l'app gestiona l'ajust de Warp (`EstatWarp.refresc`): sense, és una carpeta de prova, i el full ho diu.
+    @ObservationIgnored private let ambRefresc: @MainActor () -> Bool
     @ObservationIgnored private let inici: String
     /// Si el full es tanca i es torna a obrir mentre es llegia, la lectura vella no hi arriba.
     @ObservationIgnored private var peticio = 0
 
-    /// - Parameter llegeix: la lectura de Warp; a l'app, `EstatWarp.llegeixAmbFinestres`, que també posa al dia `estat.json`.
+    /// - Parameters:
+    ///   - llegeix: la lectura de Warp; a l'app, `EstatWarp.llegeixAmbFinestres`, que també posa al dia `estat.json`.
+    ///   - ambRefresc: a l'app, si `EstatWarp.refresc` hi és (es posa en acceptar el consentiment).
     public init(editor: Editor, sessions: EstatSessions, inici: String,
-                llegeix: @escaping @MainActor () async -> Result<LecturaWarp, EstatWarp.ErrorLectura>) {
+                llegeix: @escaping @MainActor () async -> Result<LecturaWarp, EstatWarp.ErrorLectura>,
+                ambRefresc: @escaping @MainActor () -> Bool) {
         self.editor = editor
         self.sessions = sessions
         self.inici = Rutes.canonica(inici)
         self.llegeix = llegeix
+        self.ambRefresc = ambRefresc
     }
 
     public var mostraFull: Bool { estat != .cap }
@@ -57,9 +63,12 @@ public final class Lligam {
         let resultat = await llegeix()
         guard estat == .llegint, peticio == aquesta else { return }
         switch resultat {
-        case let .success(lectura) where lectura.warpDesaFinestres == false:
-            estat = .error(LecturaWarp.senseFinestres + " Les pestanyes amb Claude que obre l'app es lliguen soles.")
         case let .success(lectura):
+            // El mateix motiu que el full d'importar: amb una carpeta de prova, que és per això.
+            if let motiu = MotiuSenseFinestres(lectura, ambRefresc: ambRefresc()) {
+                estat = .error(motiu.text + " Les pestanyes amb Claude que obre l'app es lliguen soles.")
+                return
+            }
             avisLectura = lectura.avisFoto
             let proposta = LligamWarp.proposa(editor.configuracio, lectura: lectura, estat: sessions.estat, inici: inici)
             estat = .llest(proposta)

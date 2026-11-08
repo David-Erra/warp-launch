@@ -1021,6 +1021,7 @@ private func lecturaVariada() -> LecturaWarp {
             + "ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp "
             + "les desi, i el torna a desactivar. Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes.")
         #expect(!motiu.contains("No hi ha res per importar"))
+        #expect(motiu.hasPrefix(MotiuSenseFinestres.deProva.text), "el text de «Lliga amb Warp…»")
 
         let existent = try editorAmbMostra(tmp)
         let substitueix = try #require(FullImportacio(editor: existent, warp: EstatWarp(lector: { llegida })))
