@@ -533,6 +533,20 @@ private let prohibidesArrossegar = [
         #expect(escapada.isEmpty, "\(escapada)")
     }
 
+    /// D-P4: tancar l'editor o la Configuració amb la pantalla del permís a la vista fa sortir de l'app, sense desar res (la
+    /// Configuració, decisió d'en David del 08/11/2026). Tots dos ho pregunten al consentiment abans de fer res més.
+    @Test func tancarLaPantallaDelPermisFaSortir() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        let guarda = "guard consentiment.continuaEnTancarFinestra(surt: { NSApp.terminate(nil) }) else { return }"
+        for tancar in ["enTancarConfiguracio: {", "enAmagar: {"] {
+            let inici = try #require(app.range(of: tancar), "\(tancar)")
+            let primera = app[inici.upperBound...].split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .first { !$0.isEmpty && !$0.hasPrefix("//") }
+            #expect(primera == guarda, "\(tancar) \(primera ?? "")")
+        }
+        #expect(app.components(separatedBy: "continuaEnTancarFinestra(").count == 3, "només aquestes dues")
+    }
+
     /// La fila d'una finestra decideix si accepta pestanyes en cada arrossegament, no quan es dibuixa: amb `isEnabled`,
     /// la d'una finestra triada en crear-la no les acceptava mai més (prova 7).
     @Test func laFilaDeLaFinestraDecideixEnArrossegar() throws {

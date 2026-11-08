@@ -178,6 +178,31 @@ private func consentiment(_ carpeta: Carpeta, _ ajust: AjustFals, _ demanats: Co
         #expect(try String(contentsOf: carpeta.magatzem.fitxer, encoding: .utf8) == text)
     }
 
+    /// Tancar l'editor o la Configuració amb la pantalla a la vista és no acceptar (la Configuració, decisió d'en David del
+    /// 08/11/2026): surt, sense desar res. Amb el consentiment acceptat, o si no cal, la finestra es tanca i l'app continua.
+    @Test func tancarUnaFinestraSenseConsentimentSurt() throws {
+        let carpeta = try Carpeta()
+        let demanats = Comptador()
+        let c = consentiment(carpeta, AjustFals(), demanats)
+        var sortides = 0
+        #expect(!c.continuaEnTancarFinestra { sortides += 1 })
+        #expect(sortides == 1 && c.estat == .pendent && carpeta.noms.isEmpty && demanats.n == 0)
+        #expect(consentiment(carpeta, AjustFals(), demanats).estat == .pendent, "es torna a preguntar")
+        c.accepta()
+        #expect(c.continuaEnTancarFinestra { sortides += 1 })
+        #expect(sortides == 1)
+
+        // Un `preferencies.json` que no es pot llegir: tampoc no es pot continuar.
+        let malmesa = try Carpeta()
+        try Data(#"{"versio": 9}"#.utf8).write(to: malmesa.magatzem.fitxer)
+        #expect(!consentiment(malmesa, AjustFals(), demanats).continuaEnTancarFinestra { sortides += 1 })
+        #expect(sortides == 2)
+
+        let senseCarpeta = ConsentimentRestauracio(magatzem: nil, creaEntornRefresc: nil)
+        #expect(senseCarpeta.continuaEnTancarFinestra { sortides += 1 })
+        #expect(sortides == 2)
+    }
+
     /// Si «Accepta» no es pot desar, ho diu i no continua ni crea el refresc; es pot tornar a provar.
     @Test func siNoEsPotDesarNoContinua() throws {
         let carpeta = try Carpeta()

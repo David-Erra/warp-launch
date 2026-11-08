@@ -169,13 +169,14 @@ final class Aplicacio {
                                   // Es pot haver canviat a Configuració del Sistema.
                                   arrencada.actualitza()
                               },
-                              enTancarConfiguracio: { editor.desaSiCal() },
+                              enTancarConfiguracio: {
+                                  // D-P4: tancar la pantalla de consentiment és no acceptar-lo, com tancar l'editor.
+                                  guard consentiment.continuaEnTancarFinestra(surt: { NSApp.terminate(nil) }) else { return }
+                                  editor.desaSiCal()
+                              },
                               enAmagar: {
                                   // D-P4: tancar la pantalla de consentiment és no acceptar-lo. No hi ha res per desar.
-                                  guard consentiment.potContinuar else {
-                                      NSApp.terminate(nil)
-                                      return
-                                  }
+                                  guard consentiment.continuaEnTancarFinestra(surt: { NSApp.terminate(nil) }) else { return }
                                   // Un nom a mig escriure es desa: amb l'editor amagat, el camp no es veuria.
                                   editor.acabaNom(desant: true)
                                   // Un camp de l'inspector pot tenir el cursor: el que s'hi escrigui després és un

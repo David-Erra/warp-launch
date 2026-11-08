@@ -19,7 +19,7 @@ final class Activacio {
     ///     mirar les carpetes dels avisos.
     ///   - enAdoptarDesferConfiguracio: rep el Desfés de la finestra de Configuració, que fa servir la plantilla.
     ///   - enMostrarConfiguracio: cada vegada que la Configuració passa al davant.
-    ///   - enTancarConfiguracio: quan es tanca la Configuració: hi desa.
+    ///   - enTancarConfiguracio: quan es tanca la Configuració: hi desa (amb la pantalla del permís, fa sortir de l'app).
     init(enAdoptarDesfer: @escaping @MainActor (UndoManager) -> Void,
          enAdoptarDesferConfiguracio: @escaping @MainActor (UndoManager) -> Void,
          enMostrarConfiguracio: @escaping @MainActor () -> Void,
