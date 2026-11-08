@@ -698,30 +698,48 @@ public enum Diagnostic {
             return Comprovacio(.restauracio, deConsentiment.0, "restore_session: not checked. \(deConsentiment.1)")
         }
         let mostrada = anon.ruta(ruta.path)
-        let perDefecte = "Warp restores its own windows by default (without Claude), and Warp Launch can't turn it off"
+        // Sense la línia (0.31.2, decisió A d'en David): Warp fa servir el valor de sèrie, i l'app l'hi escriu quan gestiona
+        // l'ajust (`AjustRestauracio`), només amb el permís i la configuració de debò (D19).
+        let deSerie = "Warp uses its default, on (after a restart, it restores its own windows, without Claude)."
+        let quan = !consentiment.acceptat ? "when it manages the setting (with consent and the real configuration folder)"
+            : e.configuracioDeProva ? "only with the real configuration folder, not with a test one (--config)"
+            : "within a minute while it's running"
         var info = stat()
         guard lstat(ruta.path, &info) == 0 else {
-            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) doesn't exist: \(perDefecte). "
-                + deConsentiment.1)
+            let carpeta = ruta.deletingLastPathComponent().path
+            var infoCarpeta = stat()
+            // Warp Launch no crea la carpeta de Warp (regla 7: només la línia).
+            let detall = stat(carpeta, &infoCarpeta) == 0
+                ? "\(mostrada) doesn't exist: \(deSerie) Warp Launch creates it with only restore_session = false \(quan). "
+                : "\(anon.ruta(carpeta)) doesn't exist: Warp hasn't been opened yet for this user. \(deSerie) Warp Launch "
+                    + "doesn't create Warp's folder: once Warp has created it, Warp Launch adds restore_session = false \(quan). "
+            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), detall + deConsentiment.1)
         }
         guard let dades = try? Data(contentsOf: ruta) else {
             return Comprovacio(.restauracio, .error, "\(mostrada) can't be read: Warp Launch can't manage restore_session. "
                 + deConsentiment.1)
         }
         let text = String(decoding: dades, as: UTF8.self)
-        guard text.contains("restore_session") else {
-            return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) has no restore_session: "
-                + "\(perDefecte) until it's set once in Warp's settings. " + deConsentiment.1)
-        }
-        let valor: Bool
+        let analisi: AjustRestauracio.Analisi
         do {
-            valor = try AjustRestauracio.analitza(text).valor
+            analisi = try AjustRestauracio.analitza(text)
         } catch {
             // El motiu és el que diu l'app (en català).
             return Comprovacio(.restauracio, .error, "\(mostrada) doesn't have the form Warp Launch expects for "
                 + "restore_session (reason, in Catalan: «\(error.description)»). Warp may have changed its settings file: "
                 + "Warp Launch won't change it. " + deConsentiment.1)
         }
+        if case let .senseLinia(afegida) = analisi.lloc {
+            guard case let .failure(motiu) = afegida else {
+                return Comprovacio(.restauracio, pitjor(.avis, deConsentiment.0), "\(mostrada) has no restore_session: "
+                    + "\(deSerie) Warp Launch adds restore_session = false to [general] \(quan). " + deConsentiment.1)
+            }
+            return Comprovacio(.restauracio, .error, "\(mostrada) has no restore_session: \(deSerie) Warp Launch can't add "
+                + "it to this file (reason, in Catalan: «\(motiu.description)»), and won't change it. To let Warp Launch "
+                + "manage it, turn «Restore windows, tabs, and panes on startup» off once in Warp's settings. "
+                + deConsentiment.1)
+        }
+        let valor = analisi.valor
         if valor, consentiment.acceptat {
             // D19: només amb la configuració de debò. Amb una de prova, l'app no el desactiva mai.
             let qui = e.configuracioDeProva

@@ -455,6 +455,56 @@ private struct MacDeProva {
         #expect(try mac.comprovacio(.restauracio).detall.contains("has no restore_session"))
     }
 
+    /// Sense la línia (0.31.2, decisió A): Warp fa servir el valor de sèrie (activat), i Warp Launch l'hi afegeix quan
+    /// gestiona l'ajust, amb el permís i la configuració de debò. Si no s'hi pot afegir, és un error, amb el motiu.
+    @Test func senseLaLiniaDiuElValorDeSerieIQueLAppLAfegeix() throws {
+        let mac = try MacDeProva()
+        let deSerie = "Warp uses its default, on (after a restart, it restores its own windows, without Claude)."
+        try mac.escriu("[general]\nx = 1\n", a: mac.ajustos)
+        let senseLinia = try mac.comprovacio(.restauracio)
+        #expect(senseLinia.resultat == .avis)
+        #expect(senseLinia.detall == "\(mac.ajustos.path) has no restore_session: \(deSerie) Warp Launch adds "
+            + "restore_session = false to [general] within a minute while it's running. Consent given on 2026-11-04.")
+        // Amb una carpeta de prova (`--config`), l'app no l'afegeix (D19 només val per a la de debò).
+        var deProva = mac.entorn
+        deProva.configuracioDeProva = true
+        let ambProva = try #require(Diagnostic.executa(deProva, anonimitza: false).comprovacio(.restauracio))
+        #expect(ambProva.resultat == .avis)
+        #expect(ambProva.detall.contains("Warp Launch adds restore_session = false to [general] only with the real "
+            + "configuration folder, not with a test one (--config)."), "\(ambProva.detall)")
+        // Si no s'hi pot afegir, error, amb el motiu.
+        try mac.escriu("general.x = 1\n", a: mac.ajustos)
+        let noEsPot = try mac.comprovacio(.restauracio)
+        #expect(noEsPot.resultat == .error)
+        #expect(noEsPot.detall.hasPrefix("\(mac.ajustos.path) has no restore_session: \(deSerie) Warp Launch can't add it "
+            + "to this file (reason, in Catalan: ««restore_session» no hi és, i no s'hi pot afegir: a la línia 1, «general» "
+            + "és una clau, no una taula [general]»), and won't change it."), "\(noEsPot.detall)")
+        // Sense el fitxer, el crea; sense la carpeta de Warp, Warp no s'ha obert mai, i no la crea. El diagnòstic no
+        // escriu res.
+        try FileManager.default.removeItem(at: mac.ajustos)
+        let senseFitxer = try mac.comprovacio(.restauracio)
+        #expect(senseFitxer.resultat == .avis)
+        #expect(senseFitxer.detall.hasPrefix("\(mac.ajustos.path) doesn't exist: \(deSerie) Warp Launch creates it with only "
+            + "restore_session = false within a minute while it's running."), "\(senseFitxer.detall)")
+        let carpetaWarp = mac.ajustos.deletingLastPathComponent()
+        try FileManager.default.removeItem(at: carpetaWarp)
+        let senseCarpeta = try mac.comprovacio(.restauracio)
+        #expect(senseCarpeta.resultat == .avis)
+        #expect(senseCarpeta.detall.hasPrefix("\(carpetaWarp.path) doesn't exist: Warp hasn't been opened yet for this "
+            + "user. \(deSerie) Warp Launch doesn't create Warp's folder: once Warp has created it, Warp Launch adds "
+            + "restore_session = false within a minute while it's running."), "\(senseCarpeta.detall)")
+        #expect(!FileManager.default.fileExists(atPath: carpetaWarp.path))
+        #expect(try !mac.comprovacio(.restauracio, anonimitza: true).detall.contains("maria.prova"))
+        // Sense el permís, quan el gestioni.
+        try FileManager.default.createDirectory(at: carpetaWarp, withIntermediateDirectories: true)
+        try mac.escriu("[general]\nx = 1\n", a: mac.ajustos)
+        try FileManager.default.removeItem(at: mac.configuracio.appending(path: Preferencies.nomFitxer))
+        let senseConsentiment = try mac.comprovacio(.restauracio)
+        #expect(senseConsentiment.resultat == .avis)
+        #expect(senseConsentiment.detall.contains("Warp Launch adds restore_session = false to [general] when it manages "
+            + "the setting (with consent and the real configuration folder). Consent not given yet"), "\(senseConsentiment.detall)")
+    }
+
     @Test func elConsentimentSenseDonarOIlegible() throws {
         let mac = try MacDeProva()
         let preferencies = mac.configuracio.appending(path: Preferencies.nomFitxer)
