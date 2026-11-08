@@ -50,6 +50,20 @@ private let tascaUsuari = #"NSUser[A-Za-z]*Task"#
 private let refrescWarp = #"(^|[^A-Za-z0-9_])RefrescWarp\("#
 private let consentimentRestauracio = #"(^|[^A-Za-z0-9_])ConsentimentRestauracio\("#
 private let ajustRestauracio = #"(^|[^A-Za-z0-9_])AjustRestauracio\("#
+/// Decisió A (0.31.2): sense `settings.toml`, l'ajust el crea, i només si Warp no l'ha creat mentrestant. Les crides que
+/// posen un fitxer al seu lloc només si no n'hi ha cap, o que l'enllacen, i el que fa Warp a les proves (`ganxoDeProva`),
+/// només a `AjustRestauracio.swift`; `O_CREAT`, només on ja era (`nomesLAjustCreaElFitxerDeWarp`).
+private let rutaAjustRestauracio = "Sources/WarpLaunchCore/AjustRestauracio.swift"
+private let creaOEnllaca = [#"renamex_np"#, #"renameatx_np"#, #"RENAME_(EXCL|SWAP)"#, #"(^|[^A-Za-z0-9_])(sym)?link(at)?\("#,
+                            #"(^|[^A-Za-z0-9_])f?clonefile(at)?\("#, #"(^|[^A-Za-z0-9_])ganxoDeProva(?![A-Za-z0-9_])"#]
+private let ambOCreat = ["Sources/WarpLaunchCore/EscripturaAtomica.swift", "Sources/WarpLaunchCore/FitxersLaunchWarp.swift"]
+
+/// Les línies que creen o enllacen un fitxer fora de l'ajust, i les d'`O_CREAT` fora d'on ja era.
+private func creenForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    try aparicions(de: creaOEnllaca, a: codi.filter { $0.ruta != rutaAjustRestauracio })
+        + aparicions(de: [#"O_CREAT"#], a: codi.filter { !ambOCreat.contains($0.ruta) })
+}
+
 /// L'estat del consentiment canvia, també amb `self.estat =`.
 private let assignacioEstat = #"(^|[^A-Za-z0-9_])estat\s*=(?!=)"#
 /// Donar o retirar el consentiment, o construir-ne un: només `MagatzemPreferencies`.
@@ -581,6 +595,73 @@ private let prohibidesArrossegar = [
         // (`elCodiNoObreResNiRegistraArrencades`).
         #expect(app.contains("if case .real = arguments.carpeta, let preferencies {\n            creaEntornRefresc = {\n"
             + "                let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)\n"))
+    }
+
+    /// Decisió A (0.31.2): `settings.toml` de Warp, si no hi és, només el crea `AjustRestauracio`, d'un sol cop i només si
+    /// Warp no l'ha creat mentrestant (`renamex_np` amb `RENAME_EXCL`), des d'un fitxer de la carpeta temporal
+    /// (`EscripturaAtomica.creaFitxerNou`). No crea la carpeta de Warp, ni obre res per escriure-hi directament. Cap altre
+    /// fitxer no fa servir aquestes crides, ni `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
+    @Test func nomesLAjustCreaElFitxerDeWarp() throws {
+        let codi = try fitxers("Sources")
+        let trobades = try creenForaDeLloc(codi)
+        #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        let ajust = try #require(codi.first { $0.ruta == rutaAjustRestauracio })
+        let crides = try aparicions(de: [#"renamex_np"#], a: [ajust])
+        #expect(crides.count == 1, "\(crides)")
+        #expect(ajust.text.contains("guard renamex_np(temporal.path, ruta.path, UInt32(RENAME_EXCL)) == 0 else {"))
+        #expect(try aparicions(de: [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], cridaMkdir, #"mkdirat"#,
+                                    #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#, #"\.write\(to:"#,
+                                    #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#], a: [ajust]).isEmpty)
+        #expect(ajust.text.contains("try EscripturaAtomica.creaFitxerNou(resultat, a: temporal, permisos: permisos)"))
+
+        // La ruta de debò de `settings.toml`: per llegir-la, el lector; per a l'ajust, l'app (`lAjustDeWarpNomesLEscriuLApp`).
+        let deDebo = codi.flatMap { f in
+            f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.hasPrefix("//") }
+                .filter { $0.contains("LectorAjustosWarp.rutaPerDefecte") || $0.contains(".warp/settings")
+                    || (f.ruta.hasSuffix("/LectorAjustosWarp.swift") && $0.contains("rutaPerDefecte")) }
+                .map { "\(f.ruta): \($0)" }
+        }
+        #expect(deDebo.sorted() == [
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let ajust = AjustRestauracio(ruta: LectorAjustosWarp.rutaPerDefecte)",
+            "Sources/WarpLaunchCore/Lector.swift: rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,",
+            "Sources/WarpLaunchCore/LectorAjustosWarp.swift: public init(ruta: URL = LectorAjustosWarp.rutaPerDefecte) {",
+            "Sources/WarpLaunchCore/LectorAjustosWarp.swift: public static let rutaPerDefecte = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".warp/settings.toml\")",
+            "Sources/WarpLaunchCore/OrdreCLI.swift: també l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,",
+        ], "\(deDebo.joined(separator: "\n"))")
+
+        // La mostra: cada línia, a qualsevol altre fitxer (també els que ja creen fitxers), falla; a l'ajust, no. Amb el
+        // mòdul davant, també.
+        let mostra = [
+            "guard renamex_np(temporal.path, ruta.path, UInt32(RENAME_EXCL)) == 0 else {",
+            "Darwin.renameatx_np(AT_FDCWD, a, AT_FDCWD, b, UInt32(RENAME_SWAP))",
+            "link(a, b)",
+            "Darwin.symlink(a, b)",
+            "linkat(AT_FDCWD, a, AT_FDCWD, b, 0)",
+            "clonefile(a, b, 0)",
+            "ajust.ganxoDeProva = { }",
+        ]
+        let altres = ambOCreat + ["Sources/WarpLaunchCore/Diagnostic.swift", "Sources/WarpLaunchCore/LectorAjustosWarp.swift",
+                                  "Sources/WarpLaunchUI/RefrescWarp.swift", rutaAppPrincipal, "Sources/WarpLaunchCLI/main.swift",
+                                  "Sources/WarpLaunchCore/Altre.swift"]
+        for linia in mostra {
+            for ruta in altres {
+                #expect(try !creenForaDeLloc([(ruta: ruta, text: linia)]).isEmpty, "\(ruta): \(linia)")
+            }
+            #expect(try creenForaDeLloc([(ruta: rutaAjustRestauracio, text: linia)]).isEmpty, "\(linia)")
+        }
+        // `O_CREAT`: on ja era, sí; a l'ajust i a qualsevol altre, no.
+        let obre = "let fd = open(ruta, O_WRONLY | O_CREAT | O_EXCL, mode_t(0o644))"
+        for ruta in ambOCreat { #expect(try creenForaDeLloc([(ruta: ruta, text: obre)]).isEmpty) }
+        for ruta in [rutaAjustRestauracio] + altres.filter({ !ambOCreat.contains($0) }) {
+            #expect(try creenForaDeLloc([(ruta: ruta, text: obre)]) == ["\(ruta):1: «O_CREAT»"])
+        }
+        // Un nom que només s'hi assembla, no.
+        #expect(try creenForaDeLloc([(ruta: "Sources/WarpLaunchCore/Altre.swift", text: """
+            let enllac = unlinkat
+            hyperlink(a)
+            let deeplink = 1
+            """)]).isEmpty)
     }
 
     @Test func lesProvesNoLlegeixenLEstatReal() throws {
