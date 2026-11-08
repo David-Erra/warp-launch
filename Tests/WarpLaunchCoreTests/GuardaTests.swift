@@ -144,10 +144,12 @@ private func obrenOTanquen(_ codi: [(ruta: String, text: String)]) throws -> [St
     try codi.flatMap { try aparicions(de: prohibidesCodi(a: $0.ruta), a: [$0]) }
 }
 
-/// Pla A4: a les proves, els lectors de Claude només amb una ruta, i «Copia el diagnòstic» només amb un porta-retalls fals.
-/// Sense `\b`: amb les regles d'Unicode, `WarpLaunchCore.LectorConfianca(` no hi té cap límit de paraula.
-private let lectorTranscripcions = #"(^|[^A-Za-z0-9_])LectorTranscripcions\((?!carpeta:)"#
-private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca\((?!ruta:)"#
+/// Pla A4: a les proves, els lectors de Claude només amb una ruta (també amb `.init(`), i «Copia el diagnòstic» només amb un
+/// porta-retalls fals. Sense `\b`: amb les regles d'Unicode, `WarpLaunchCore.LectorConfianca(` no hi té cap límit de paraula.
+/// Ni `.init()` sense arguments, de cap tipus: `transcripcions: .init()` en crearia un amb la ruta de debò sense dir-ne el nom.
+private let lectorTranscripcions = #"(^|[^A-Za-z0-9_])LectorTranscripcions(\.init)?\((?!carpeta:)"#
+private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca(\.init)?\((?!ruta:)"#
+private let initSenseArguments = #"\.init\(\s*\)"#
 private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
 /// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen`),
@@ -818,9 +820,9 @@ private let prohibidesArrossegar = [
             #"\.claude\.json"#, #"\.claude/projects"#,
             // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
             #"TrobaWarp"#, #"urlForApplication"#, trobaProves, #"perOmissio\.app(?![A-Za-z0-9_])"#,
-            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude), i
-            // «Copia el diagnòstic», sempre amb un porta-retalls fals (a la mateixa línia).
-            lectorTranscripcions, lectorConfianca, copiaDiagnostic,
+            // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude; ni amb
+            // `.init()`, que no en diu el nom), i «Copia el diagnòstic», sempre amb un porta-retalls fals (a la mateixa línia).
+            lectorTranscripcions, lectorConfianca, initSenseArguments, copiaDiagnostic,
         ] + iniciDeDebo
         let trobades = try aparicions(de: prohibides, a: proves)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
@@ -986,7 +988,8 @@ private let prohibidesArrossegar = [
             if lector.warpObert() {}
             """)]) == ["mostra.swift:1: «\(senseInstallacio)»", "mostra.swift:2: «\(senseInstallacio)»"])
         // Pla A4: els lectors de Claude i «Copia el diagnòstic».
-        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca, copiaDiagnostic], a: [(ruta: "mostra.swift", text: """
+        #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca, initSenseArguments, copiaDiagnostic],
+                               a: [(ruta: "mostra.swift", text: """
             LectorTranscripcions()
             LectorTranscripcions(carpeta: tmp.url("p"))
             LectorConfianca()
@@ -996,9 +999,16 @@ private let prohibidesArrossegar = [
             WarpLaunchCore.LectorTranscripcions()
             WarpLaunchCore.LectorConfianca()
             WarpLaunchUI.CopiaDiagnostic(diagnostic: d)
+            let t = LectorTranscripcions.init(carpeta: tmp.url("p"))
+            let c = WarpLaunchCore.LectorConfianca.init()
+            let d = Diagnostic(lector: l, inici: i, transcripcions: .init(), confianca: .init(ruta: tmp.url("c")))
+            let e = type(of: t).init( )
+            let f = LectorTranscripcions.init(carpeta: c), g = Foo.init(x: 1)
             """)]) == ["mostra.swift:1: «\(lectorTranscripcions)»", "mostra.swift:3: «\(lectorConfianca)»",
                        "mostra.swift:5: «\(copiaDiagnostic)»", "mostra.swift:7: «\(lectorTranscripcions)»",
-                       "mostra.swift:8: «\(lectorConfianca)»", "mostra.swift:9: «\(copiaDiagnostic)»"])
+                       "mostra.swift:8: «\(lectorConfianca)»", "mostra.swift:9: «\(copiaDiagnostic)»",
+                       "mostra.swift:11: «\(lectorConfianca)»", "mostra.swift:11: «\(initSenseArguments)»",
+                       "mostra.swift:12: «\(initSenseArguments)»", "mostra.swift:13: «\(initSenseArguments)»"])
         // Ni `MeuLectorConfianca(`, que és un altre nom.
         #expect(try aparicions(de: [lectorConfianca], a: [(ruta: "mostra.swift", text: "MeuLectorConfianca()")]).isEmpty)
         // Ni `LectorAjustosWarp()`, que llegiria el `settings.toml` de debò, ni `LectorWarp()`, que en llegiria la base, ni
