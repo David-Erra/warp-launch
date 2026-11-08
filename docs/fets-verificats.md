@@ -68,6 +68,12 @@ corregeix-lo i deixa'n constància.
   (03/11/2026, `settings_schema.json` del bundle, `settings.toml` llegit sense modificar-lo, i
   `app/src/terminal/general_settings.rs`):
   - Per defecte és `true`: si `settings.toml` no la defineix, està activada.
+  - **Que un usuari nou no té la línia és una deducció, no vista per a aquest ajust** (08/11/2026): al Mac de prova,
+    `settings.toml` no tenia cap línia `login_item` (06/11/2026, «Ni `settings.toml` ni `AppAddedAsLoginItem`…», a sota), un
+    ajust que val `true` de sèrie; d'aquí es dedueix que Warp només hi escriu els ajustos canviats. No s'ha vist amb un Warp
+    net ni amb `restore_session`, i xoca amb el que recorda en David (l'opció de `login_item` sempre desactivada: si era així,
+    Warp tampoc no l'hi va escriure). Sobre aquesta deducció, la 0.31.2 hi afegeix la línia si no hi és (decisió A). Es
+    comprovarà amb un usuari de macOS nou (`docs/disseny.md`, secció 10, «Per provar en un usuari de macOS nou»).
   - Se sincronitza al núvol (`SyncToCloud::Globally`) si Settings Sync és activat (es mira amb
     `defaults read dev.warp.Warp-Stable IsSettingsSyncEnabled`). Si es canvia, es propaga
     a les altres instal·lacions de Warp del compte.
@@ -697,6 +703,13 @@ Mesurat amb un programa a part, sense mostrar cap finestra, per a la 0.30.2 (`Vi
 - **Crides que Swift no deixa fer a macOS** (`swiftc -typecheck`): `popen` i `system` («unavailable in Swift: Use posix_spawn
   APIs or NSTask instead»), i `fork()` i `vfork()` («Please use threads or posix_spawn*()»). En canvi, `execv` i la seva
   família, i `NSUserUnixTask`, compilen: per això la guarda del codi les prohibeix.
+- **La marca d'ordre de bytes (BOM) d'un text UTF-8** (08/11/2026, programa compilat amb `swiftc`, a part del repo, amb
+  `EF BB BF` i `[general]\n`): `String(data:encoding: .utf8)` la treu (10 bytes en UTF-8); `String(decoding:as: UTF8.self)` i
+  `String(validating:as: UTF8.self)` la conserven (`U+FEFF` al principi, 13 bytes). Per això `AjustRestauracio` llegeix amb
+  `String(validating:as:)`: amb la primera, en escriure el fitxer es perdia la marca (revisió de la 0.31.2).
+- **`renamex_np` amb `RENAME_EXCL`** (08/11/2026, el mateix programa, en una carpeta temporal): sense res al destí, mou el
+  fitxer i torna 0; amb un fitxer al destí, torna -1 amb `errno` `EEXIST` (17), i no toca ni el destí ni l'origen. És com
+  `AjustRestauracio` crea `settings.toml` sense trepitjar el que Warp hagi creat mentrestant (0.31.2).
 
 ## Foundation i JSON (03/11/2026, macOS 27.2)
 
