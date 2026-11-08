@@ -74,6 +74,18 @@ corregeix-lo i deixa'n constància.
     net ni amb `restore_session`, i xoca amb el que recorda en David (l'opció de `login_item` sempre desactivada: si era així,
     Warp tampoc no l'hi va escriure). Sobre aquesta deducció, la 0.31.2 hi afegeix la línia si no hi és (decisió A). Es
     comprovarà amb un usuari de macOS nou (`docs/disseny.md`, secció 10, «Per provar en un usuari de macOS nou»).
+  - **Com escriu Warp `settings.toml`** (08/11/2026, codi públic de `warpdotdev/warp` a `abb3fe33`, `master` del 06/11/2026, que
+    potser no és la versió instal·lada; llegit, no vist):
+    - Té tot el document a la memòria (`toml_edit`) i, a cada canvi, el torna a escriure sencer amb `std::fs::write`
+      (`crates/warpui_extras/src/user_preferences/toml_backed.rs`, `flush`). **No és atòmic:** buida el fitxer i l'escriu. Qui el
+      llegeixi en aquell moment el pot veure buit o a mitges. Abans, crea la carpeta si no hi és (`create_dir_all`).
+    - Només escriu quan canvia un ajust: amb el fitxer absent, el document comença buit i no es desa res fins al primer canvi.
+      Això reforça la deducció d'aquí sobre: un usuari nou que no ha canviat res no té `settings.toml`.
+    - **Migració única** (`app/src/settings/init.rs`, `needs_settings_file_migration`): en arrencar, si `settings.toml` no
+      existeix i a les preferències pròpies de Warp (a macOS, `NSUserDefaults`) no hi ha la marca de migració feta, hi passa els
+      ajustos que tenia a les preferències de macOS i després hi posa la marca. Per a un usuari nou no hi passa res, però la
+      marca s'hi escriu igualment. **Si algú crea `settings.toml` abans que aquesta migració s'hagi fet, Warp se la salta:** els
+      ajustos d'un Warp antic (d'abans de `settings.toml`) deixarien de comptar.
   - Se sincronitza al núvol (`SyncToCloud::Globally`) si Settings Sync és activat (es mira amb
     `defaults read dev.warp.Warp-Stable IsSettingsSyncEnabled`). Si es canvia, es propaga
     a les altres instal·lacions de Warp del compte.
