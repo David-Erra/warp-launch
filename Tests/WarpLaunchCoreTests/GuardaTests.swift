@@ -267,6 +267,33 @@ private let prohibidesArrossegar = [
         ])
     }
 
+    /// Decisió 4 (0.31.1): l'`Info.plist` del paquet d'un Warp que corre només el llegeix `FontProcessos.warpDelBinari`. Al
+    /// codi, el de `ProcessosDelSistema`; a les proves, el de `ProcessosFalsos`, que només el mira dins de les carpetes
+    /// temporals. Una crida a `AppWarp.delBinari` en qualsevol altre lloc (fora dels comentaris) fa fallar la llista.
+    @Test func elPaquetDelWarpQueCorreNomesElLlegeixLaFontDeProcessos() throws {
+        func linies(_ codi: [(ruta: String, text: String)]) -> [String] {
+            codi.flatMap { f in
+                f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { $0.contains("delBinari(") && !$0.hasPrefix("//") }.map { "\(f.ruta): \($0)" }
+            }
+        }
+        #expect(linies(try fitxers("Sources")).sorted() == [
+            "Sources/WarpLaunchCore/AppWarp.swift: static func delBinari(_ ruta: String) -> AppWarp? {",
+            "Sources/WarpLaunchCore/Processos.swift: public func warpDelBinari(_ ruta: String) -> AppWarp? { AppWarp.delBinari(ruta) }",
+        ])
+        #expect(linies(try fitxers("Tests")) == [
+            "Tests/WarpLaunchCoreTests/Fixtures.swift: ruta.hasPrefix(CarpetaTemporal.prefix) ? AppWarp.delBinari(ruta) : nil",
+        ])
+        // La mostra: una crida directa, també amb el mòdul, surt; un comentari, no.
+        #expect(linies([(ruta: "mostra.swift", text: """
+            let a = AppWarp.delBinari(info.executable)
+            let b = WarpLaunchCore.AppWarp.delBinari(r)
+            /// `AppWarp.delBinari(_:)`
+            let c = processos.warpDelBinari(r)
+            """)]) == ["mostra.swift: let a = AppWarp.delBinari(info.executable)",
+                       "mostra.swift: let b = WarpLaunchCore.AppWarp.delBinari(r)"])
+    }
+
     /// La crida de `TrobaWarp` (D-P12) només val en aquell fitxer: a qualsevol altre, la guarda falla. I en aquell, només
     /// aquella crida: cap altra de `NSWorkspace`, ni la mateixa amb un altre identificador.
     @Test func laCridaDeTrobaWarpNomesValAlSeuFitxer() throws {

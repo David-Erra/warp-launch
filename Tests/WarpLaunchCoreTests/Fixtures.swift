@@ -8,6 +8,9 @@ import SQLite3
 struct CarpetaTemporal {
     let ruta: String
 
+    /// El començament de la ruta de totes: la carpeta temporal del sistema, canònica, i el nom de les proves.
+    static let prefix = Rutes.canonica(FileManager.default.temporaryDirectory.path) + "/warp-launch-proves-"
+
     init() throws {
         let url = FileManager.default.temporaryDirectory.appending(path: "warp-launch-proves-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -121,6 +124,11 @@ struct ProcessosFalsos: FontProcessos {
     func pids(nom: String) -> [Int32] {
         processos.filter { String(URL(filePath: $0.value.info.executable).lastPathComponent.prefix(16)) == nom }
             .keys.sorted()
+    }
+    /// Decisió 4 (0.31.1): només els paquets de les carpetes temporals de les proves (`CarpetaTemporal`). Un binari
+    /// inventat amb una ruta de debò (`executableWarp`) no llegeix mai l'`Info.plist` del Warp de debò: no és cap Warp.
+    func warpDelBinari(_ ruta: String) -> AppWarp? {
+        ruta.hasPrefix(CarpetaTemporal.prefix) ? AppWarp.delBinari(ruta) : nil
     }
 
     /// `stable terminal-server` de Warp (pid 50) penjant de l'app (pid 40), i un `zsh` de Terminal (pid 60).

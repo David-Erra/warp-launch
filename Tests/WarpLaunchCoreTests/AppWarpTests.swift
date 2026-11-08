@@ -422,6 +422,22 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         }
     }
 
+    /// Un binari inventat amb la ruta de debò (`ProcessosFalsos.executableWarp`) no fa llegir el Warp de debò: els processos
+    /// falsos només llegeixen l'`Info.plist` dins de les carpetes temporals (`warpDelBinari`). Si el llegissin, en un Mac amb
+    /// Warp a Aplicacions, aquí es veuria aquell Warp en lloc de cap.
+    @Test func lesProvesNoLlegeixenElWarpDeDebo() throws {
+        let tmp = try CarpetaTemporal()
+        #expect(tmp.ruta.hasPrefix(CarpetaTemporal.prefix))
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: CercaFalsa().cerca)
+        #expect(!warp.hiHaStable)
+        let processos = ProcessosFalsos.ambWarp()
+        #expect(processos.warpDelBinari(ProcessosFalsos.executableWarp) == nil)
+        #expect(warp.ambLaCopiaOberta(processos) == warp)
+        // Dins de la carpeta temporal, sí.
+        let copia = try paquet(tmp, "inici/Downloads/Warp.app", id: AppWarp.identificador, executable: "stable")
+        #expect(processos.warpDelBinari(copia.appending(path: "Contents/MacOS/stable").path) == AppWarp(url: copia))
+    }
+
     /// Només compta un binari que corre sense arguments dins de `<paquet>.app/Contents/MacOS/`, d'un paquet que diu que és
     /// Warp Stable i que aquell és el seu binari.
     @Test func nomesUnWarpStableDeDebo() throws {

@@ -32,6 +32,10 @@ public protocol FontProcessos: Sendable {
     func fills() -> [Int32: [Int32]]
     /// La carpeta de treball d'un procés, o `nil` si no es pot saber.
     func carpeta(_ pid: Int32) -> String?
+    /// El Warp Stable del paquet d'un binari que corre (`AppWarp.delBinari`, decisió 4, 0.31.1): en llegeix l'`Info.plist`.
+    /// És aquí, i no a `InstallacioWarp.ambLaCopiaOberta`, perquè els processos falsos de les proves només el llegeixin
+    /// dins de la seva carpeta temporal: un binari inventat amb una ruta de debò no ha de llegir el Warp de debò.
+    func warpDelBinari(_ ruta: String) -> AppWarp?
 }
 
 extension FontProcessos {
@@ -46,7 +50,8 @@ extension FontProcessos {
 
     /// Warp és obert: corre l'app sense cap argument, com l'obre macOS (el 04/11/2026, `ps`). Amb arguments és el seu
     /// `terminal-server` o el CLI (`--help`, subcomandes). `executable`: el binari de l'app que s'obriria
-    /// (`InstallacioWarp.executable`, 0.29.2); una còpia de Warp en una altra carpeta no compta.
+    /// (`InstallacioWarp.executable`, 0.29.2); aquí, una còpia de Warp en una altra carpeta no compta. Quina còpia corre ho
+    /// mira abans `InstallacioWarp.ambLaCopiaOberta` (decisió 4, 0.31.1).
     public func warpObert(executable: String) -> Bool {
         processos(executable: executable).contains { $0.info.argv.count <= 1 }
     }
@@ -110,6 +115,8 @@ public struct ProcessosDelSistema: FontProcessos {
     public func fills() -> [Int32: [Int32]] {
         Dictionary(grouping: llista(), by: \.kp_eproc.e_ppid).mapValues { $0.map(\.kp_proc.p_pid) }
     }
+
+    public func warpDelBinari(_ ruta: String) -> AppWarp? { AppWarp.delBinari(ruta) }
 
     /// `PROC_PIDVNODEPATHINFO`: la carpeta de treball del procés.
     public func carpeta(_ pid: Int32) -> String? {

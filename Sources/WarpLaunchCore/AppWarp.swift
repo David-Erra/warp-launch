@@ -39,7 +39,7 @@ public struct AppWarp: Sendable, Equatable {
 
     /// El Warp Stable d'un binari que corre (decisió 4, 0.31.1): el paquet que el conté (`<paquet>.app/Contents/MacOS/`),
     /// si el seu `Info.plist` diu `dev.warp.Warp-Stable` i que aquell és el seu binari. Una còpia a la Paperera no compta
-    /// (0.29.3). Només llegeix l'`Info.plist`.
+    /// (0.29.3). Només llegeix l'`Info.plist`. Només el crida `ProcessosDelSistema` (`FontProcessos.warpDelBinari`).
     static func delBinari(_ ruta: String) -> AppWarp? {
         guard ruta.hasPrefix("/") else { return nil }
         let macos = URL(filePath: ruta).deletingLastPathComponent()
@@ -107,15 +107,15 @@ public struct InstallacioWarp: Sendable, Equatable {
     /// Decisió 4 (0.31.1): si corre Warp Stable, és aquell el que compta, per a «és obert» i per obrir-hi finestres, encara
     /// que macOS en digui un altre (dues còpies, o un Warp que macOS ha traslladat, «App Translocation»). Si corre el que
     /// diu macOS, o no en corre cap, `self`. Es reconeix pels processos, com `warpObert`: l'app sense arguments, amb el
-    /// binari d'un paquet de Warp Stable (`AppWarp.delBinari`). Amb dues còpies obertes, la que diu macOS, si n'és una; si
-    /// no, la de pid més baix. Només llegeix els processos i l'`Info.plist` de cada paquet que corre.
+    /// binari d'un paquet de Warp Stable (`FontProcessos.warpDelBinari`). Amb dues còpies obertes, la que diu macOS, si
+    /// n'és una; si no, la de pid més baix. Només llegeix els processos i l'`Info.plist` de cada paquet que corre.
     public func ambLaCopiaOberta(_ processos: any FontProcessos) -> InstallacioWarp {
         if hiHaStable, processos.warpObert(executable: executable) { return self }
         // El nom que en sap el sistema (`p_comm`, tallat a 16 caràcters): el del binari d'`app` i el de sempre.
         let noms = Set([(executable as NSString).lastPathComponent, Self.nomBinari].map { String($0.prefix(16)) })
         for pid in noms.flatMap({ processos.pids(nom: $0) }).sorted() {
             guard let info = processos.proces(pid), info.argv.count <= 1, info.executable != executable,
-                  let oberta = AppWarp.delBinari(info.executable) else { continue }
+                  let oberta = processos.warpDelBinari(info.executable) else { continue }
             return InstallacioWarp(app: oberta, executable: info.executable, hiHaStable: true,
                                    executablePreview: executablePreview)
         }
