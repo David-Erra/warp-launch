@@ -5,7 +5,8 @@ import WarpLaunchCore
 // Prova de guarda (docs/disseny.md, «Prova de guarda»). Llegeix el codi del repo i falla si:
 // - el codi pot obrir Warp, Claude o qualsevol altra cosa, o registrar una arrencada automàtica;
 // - una prova pot llegir l'estat real (Warp, Claude, ~/.config/warp-launch) o fer sortir el procés al Dock.
-// Aquest fitxer no es revisa a si mateix: hi surten totes les paraules prohibides.
+// Aquest fitxer no es revisa a si mateix: hi surten totes les paraules prohibides. Només una prova el llegeix, per mirar
+// que cap expressió no fa servir el límit de paraula (`capGuardaFaServirElLimitDeParaula`).
 
 private let arrel = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
@@ -229,7 +230,7 @@ private let prohibidesArrossegar = [
             "\(rutaConsentiment): guard estat == .acceptat, refresc == nil, let creaEntornRefresc else { return }",
             "\(rutaConsentiment): refresc = RefrescWarp(entorn: creaEntornRefresc())",
         ].sorted(), "\(esmenta.joined(separator: "\n"))")
-        // L'estat del consentiment només canvia en aquestes quatre línies (també amb `self.estat =`).
+        // L'estat del consentiment només canvia en aquestes línies (també amb `self.estat =`).
         let assignacio = try Regex(assignacioEstat)
         let assignacions = consentiment.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.hasPrefix("//") && $0.contains(assignacio) }
