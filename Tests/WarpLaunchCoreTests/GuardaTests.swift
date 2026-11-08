@@ -118,6 +118,17 @@ private let altresCreenOSobreescriuen = [
     #"(^|[^A-Za-z0-9_])f?truncate(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?copyfile(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
 ]
+/// Les altres maneres d'obrir o de crear un fitxer o una carpeta que no es diuen `open(`, `creat(` o `mkdir(`, de C i de
+/// CoreFoundation: `openx_np` (amb `O_WRONLY`, escriuria sobre un fitxer que ja hi és, i `write(` de C no surt enlloc);
+/// `mkstemp`, `mkstemps`, `mkostemp`, `mkostemps` i `mkdtemp`; `mkdirx_np`, `mkpath_np` i `mkpathat_np`; `mkfifo`,
+/// `mkfifoat`, `mkfifox_np`, `mknod` i `mknodat`; i `CFWriteStreamCreateWithFile`. Com a paraula, també amb el mòdul i sense
+/// cridar-les. Valen per al diagnòstic (`escriuen`), per a la carpeta de Warp (`prohibidesCarpetaWarp`) i per a l'ajust
+/// (`nomesLAjustCreaElFitxerDeWarp`): cap dels tres no en fa servir cap.
+private let altresObrenOCreen = [
+    #"(^|[^A-Za-z0-9_])openx_np(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])(mko?stemps?|mkdtemp)(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])(mkdirx_np|mkpath(at)?_np)(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])mk(fifo|nod)(at|x_np)?(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])CFWriteStreamCreateWithFile(?![A-Za-z0-9_])"#,
+]
 /// Les maneres de canviar els permisos, el propietari, les marques, les dates o els atributs estesos d'un fitxer, o
 /// d'intercanviar-ne el contingut amb un altre, de C, de `FileManager`, d'`URL` i de `CFURL`: `chmod`, `fchmod`, `lchmod`,
 /// `fchmodat`, `chmodx_np` i `fchmodx_np`; `chown`, `fchown`, `lchown` i `fchownat`; `chflags`, `fchflags` i `lchflags`;
@@ -150,12 +161,13 @@ private func canvienAtributs(_ text: String) throws -> [String] {
 }
 /// A `FitxersLaunchWarp`, a més de l'única crida que esborra (`cridaUnlink`), res que sobreescrigui, esborri, mogui o creï
 /// carpetes: tampoc `createFile` (que sobreescriu el que hi ha), cap `.write(` (també `toFile:`), un `FileHandle` per
-/// escriure, `O_RDWR` ni `O_APPEND`. I només les dues crides a `open` d'ara (`obrenAFitxersLaunchWarp`) i la de `fchmod`
+/// escriure, `O_RDWR`, `O_APPEND` ni cap altra manera d'obrir o de crear un fitxer (`altresObrenOCreen`). I només les dues
+/// crides a `open` d'ara (`obrenAFitxersLaunchWarp`) i la de `fchmod`
 /// (`canvienAtributsAFitxersLaunchWarp`).
 private let prohibidesCarpetaWarp = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\("#,
                                      cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#, #"createFile"#,
                                      #"forWriting"#, #"forUpdating"#, #"O_RDWR"#, #"O_APPEND"#]
-    + altresEsborrenOMouen + altresCreenOSobreescriuen
+    + altresEsborrenOMouen + altresCreenOSobreescriuen + altresObrenOCreen
 /// Les dues crides a `open` de `FitxersLaunchWarp`: la que crea el fitxer, només si no n'hi ha cap (`O_EXCL`), i la que en
 /// llegeix la marca. Una altra, també amb `O_WRONLY` sense `O_EXCL`, escriuria sobre un fitxer que ja hi és.
 private let obrenAFitxersLaunchWarp = [
@@ -220,8 +232,8 @@ private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca(\.init)?\((?!ru
 private let initSenseArguments = #"\.init\(\s*\)"#
 private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
-/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen` i
-/// `altresCreenOSobreescriuen`), canviï els permisos o els atributs d'un fitxer (`altresCanvienAtributs`), executi o toqui
+/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen`,
+/// `altresCreenOSobreescriuen` i `altresObrenOCreen`), canviï els permisos o els atributs d'un fitxer (`altresCanvienAtributs`), executi o toqui
 /// el porta-retalls. Sense `\b`: amb les regles d'Unicode, `default.moveItem`
 /// o `Darwin.open` no hi tenen cap límit de paraula.
 private let escriuen = [
@@ -230,7 +242,7 @@ private let escriuen = [
     #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
     #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
     #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#, cridaMkdir,
-] + altresEsborrenOMouen + altresCreenOSobreescriuen + altresCanvienAtributs
+] + altresEsborrenOMouen + altresCreenOSobreescriuen + altresCanvienAtributs + altresObrenOCreen
 
 /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
 /// - posar l'ajust de Warp a un valor que no és el d'un refresc: només `RefrescWarp.retira` (`entorn.posa(`, que fins ara
@@ -915,8 +927,10 @@ private let prohibidesArrossegar = [
                           creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
                           #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#,
                           #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#] + escriuenDirectament
-            + altresCanvienAtributs + esborrenOMouen
+            + altresCanvienAtributs + esborrenOMouen + altresObrenOCreen
         #expect(try aparicions(de: noFaLAjust, a: [ajust]).isEmpty)
+        #expect(try aparicions(de: noFaLAjust, a: [(ruta: rutaAjustRestauracio, text: "let fd = mkstemp(&plantilla)")])
+            == ["\(rutaAjustRestauracio):1: «\(altresObrenOCreen[1])»"])
         // Cada línia, la seva expressió de `esborrenOMouen`; el `renamex_np` de crear-lo, el `rename` de substituir-lo i un
         // mètode que s'hi assembla, cap.
         #expect(try aparicions(de: esborrenOMouen, a: [(ruta: rutaAjustRestauracio, text: """
@@ -1092,6 +1106,11 @@ private let prohibidesArrossegar = [
             utimensat(AT_FDCWD, r, &temps, 0)
             acl_set_file(r, ACL_TYPE_EXTENDED, acl)
             CFURLSetResourcePropertyForKey(u as CFURL, kCFURLIsHiddenKey, kCFBooleanTrue, nil)
+            let fd = openx_np(r, O_WRONLY, nil)
+            let fd = mkstemp(&plantilla)
+            mkpath_np(r, 0o755)
+            mkfifo(r, 0o644)
+            let s = CFWriteStreamCreateWithFile(nil, u as CFURL)
             """)]
         #expect(mostra[0].text.split(separator: "\n").count == escriuen.count, "una línia per expressió")
         #expect(try aparicions(de: escriuen, a: mostra)
@@ -1435,6 +1454,39 @@ private let prohibidesArrossegar = [
         #expect(try canvienAtributs(canvienAtributsMostra[0].text) == Array(mostraAtributs[0..<familia.count]))
         #expect(Set(try aparicions(de: escriuen, a: canvienAtributsMostra).compactMap { Int($0.split(separator: ":")[1]) })
             .sorted() == Array(1...familia.count))
+        // Les altres maneres d'obrir o de crear un fitxer o una carpeta: cada línia, la seva expressió, també amb el mòdul i
+        // sense cridar-les; la carpeta de Warp i el diagnòstic les troben totes. Les que només llegeixen, `open(` (que ja té les
+        // seves guardes) i un nom que només s'hi assembla, no.
+        let obrenOCreenMostra = [(ruta: "mostra.swift", text: """
+            let fd = openx_np(r, O_WRONLY, nil)
+            let fd = Darwin.openx_np(r, O_RDONLY, seguretat)
+            let fd = mkstemp(&plantilla)
+            let fd = mkstemps(&plantilla, 5)
+            let fd = Darwin.mkostemp(&plantilla, O_CLOEXEC)
+            let crea = mkostemps
+            let carpeta = mkdtemp(&plantilla)
+            mkdirx_np(r, seguretat)
+            _ = mkpath_np(r, 0o755)
+            mkpathat_np(AT_FDCWD, r, 0o755)
+            mkfifo(r, 0o644)
+            mkfifoat(AT_FDCWD, r, 0o644)
+            mkfifox_np(r, seguretat)
+            Darwin.mknod(r, S_IFREG | 0o644, 0)
+            mknodat(AT_FDCWD, r, S_IFREG | 0o644, 0)
+            let s = CFWriteStreamCreateWithFile(nil, u as CFURL)
+            let s = CFReadStreamCreateWithFile(nil, u as CFURL)
+            let info = statx_np(r, &estat, seguretat)
+            let mkstempLater = 0
+            let mknods = 0
+            """)]
+        let obrenOCreen = altresObrenOCreen
+        let familiaObren = [0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4]
+        #expect(try aparicions(de: obrenOCreen, a: obrenOCreenMostra)
+            == familiaObren.enumerated().map { "mostra.swift:\($0.offset + 1): «\(obrenOCreen[$0.element])»" })
+        #expect(Set(try aparicions(de: prohibidesCarpetaWarp, a: obrenOCreenMostra).compactMap { Int($0.split(separator: ":")[1]) })
+            .sorted() == Array(1...familiaObren.count))
+        #expect(Set(try aparicions(de: escriuen, a: obrenOCreenMostra).compactMap { Int($0.split(separator: ":")[1]) })
+            .sorted() == Array(1...familiaObren.count))
         // A `FitxersLaunchWarp`, només la crida d'ara: una altra, també amb el mòdul, amb una ruta o sense cridar-la, ja hi surt.
         let fitxersLaunch = "    if fchmod(fd, 0o644) != 0 {\n        error = String(cString: strerror(errno))\n    }"
         #expect(try canvienAtributs(fitxersLaunch) == canvienAtributsAFitxersLaunchWarp)
