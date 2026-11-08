@@ -147,6 +147,30 @@ private final class Banc {
         #expect(!FileManager.default.fileExists(atPath: b.carpeta.appending(path: EstatApp.nomFitxer).path))
     }
 
+    /// Warp Stable instal·lat i que no s'ha obert mai en aquest usuari: no hi ha la base (`warpSenseBase`). El full diu que
+    /// Warp encara no hi ha desat res, com el d'importar i el CLI, i no que la restauració és desactivada; amb Warp Stable,
+    /// les pestanyes que obre l'app es lliguen soles. Amb una carpeta de prova i amb la configuració de debò. No desa res.
+    @Test func senseLaBaseDeWarpDiuQueEncaraNoHiHaDesatRes() async throws {
+        let b = try Banc()
+        for obert in [false, true] {
+            var lectura = warp
+            lectura.finestres = []
+            lectura.warpDesaFinestres = false
+            lectura.warpObert = obert
+            lectura.warpSenseBase = true
+            b.lectura = .success(lectura)
+            for ambRefresc in [false, true] {
+                b.ambRefresc = ambRefresc
+                await b.lligam.demana()
+                #expect(b.lligam.estat == .error(LecturaWarp.senseBase(warpObert: obert)
+                    + " Les pestanyes amb Claude que obre l'app es lliguen soles."), "obert: \(obert), refresc: \(ambRefresc)")
+                b.lligam.confirma()
+                b.lligam.cancela()
+            }
+        }
+        #expect(!FileManager.default.fileExists(atPath: b.carpeta.appending(path: EstatApp.nomFitxer).path))
+    }
+
     /// Amb `estat.json` d'una versió més nova, no es pot lligar (no s'hi escriuria).
     @Test func ambEstatBlocatNoEsPot() async throws {
         let b = try Banc()

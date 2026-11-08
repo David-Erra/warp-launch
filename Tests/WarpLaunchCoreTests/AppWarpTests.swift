@@ -392,13 +392,88 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         let ambBase = try lector.llegeixDeLApp(base: .segonsAjust)
         #expect(ambBase.finestres.count == 1 && ambBase.warpDesaFinestres == true && ambBase.warpPreview == .capWarp)
 
-        // Amb Warp Stable i sense la base: no és que no hi hagi Warp, i l'error de sempre.
+        // Amb Warp Stable i sense la base: no és que no hi hagi Warp, sinó que encara no hi ha desat res (a sota,
+        // `laLecturaDeLAppAmbWarpStableSenseBaseDiuQueNoHiHaDesatRes`).
         try FileManager.default.removeItem(at: tmp.url("warp.sqlite"))
         _ = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
         #expect(lector.senseWarpStable() == nil)
         for base in [BaseWarp.segonsAjust, .sempre] {
-            #expect(throws: ErrorLectura.noHiHaBase(tmp.url("warp.sqlite").path)) { try lector.llegeixDeLApp(base: base) }
+            let lectura = try lector.llegeixDeLApp(base: base)
+            #expect(lectura.warpSenseBase == true && lectura.warpPreview == nil, "\(base)")
         }
+    }
+
+    /// Warp Stable instal·lat i que no s'ha obert mai en aquest usuari: no hi ha la base (ni `settings.toml`). `llegeix`
+    /// continua fallant, i el CLI ho diu amb el seu text (`OrdreCLITests`). La lectura de l'app no: és la de la configuració de
+    /// debò (`.mai`), amb els terminals de Warp si és obert, i diu que Warp encara no hi ha desat res (`warpSenseBase`), no que
+    /// la restauració és desactivada. Amb `restore_session = false`, la base no es llegeix: el motiu és l'ajust, com sempre.
+    @Test func laLecturaDeLAppAmbWarpStableSenseBaseDiuQueNoHiHaDesatRes() throws {
+        let tmp = try CarpetaTemporal()
+        let inici = try tmp.carpeta("inici")
+        try tmp.carpeta("sessions")
+        let stable = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let binari = stable.appending(path: "Contents/MacOS/stable").path
+        let cerca = CercaFalsa()
+        cerca.apps[AppWarp.identificador] = stable
+        func lector(_ processos: ProcessosFalsos) -> Lector {
+            Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"),
+                   carpetaSessions: tmp.url("sessions"), processos: processos,
+                   warp: { InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca) },
+                   inici: inici)
+        }
+        var oberts = ProcessosFalsos()
+        ambWarp(binari, a: &oberts)
+        for (processos, obert) in [(ProcessosFalsos(), false), (oberts, true)] {
+            let lector = lector(processos)
+            #expect(lector.senseWarpStable() == nil)
+            #expect(throws: ErrorLectura.noHiHaBase(tmp.url("warp.sqlite").path)) { try lector.llegeix() }
+            var esperada = try lector.llegeix(base: .mai)
+            #expect(esperada.warpSenseBase == nil && esperada.warpObert == obert && esperada.terminals.count == (obert ? 1 : 0))
+            esperada.warpSenseBase = true
+            for base in [BaseWarp.segonsAjust, .sempre] {
+                #expect(try lector.llegeixDeLApp(base: base) == esperada, "\(base), obert: \(obert)")
+            }
+            // La configuració de debò no llegeix la base: no se'n sap res, com sempre.
+            #expect(try lector.llegeixDeLApp(base: .mai).warpSenseBase == nil)
+        }
+
+        // Amb la restauració desactivada, la base no es llegeix: el motiu és l'ajust.
+        try Data("[general]\nrestore_session = false\n".utf8).write(to: tmp.url("settings.toml"))
+        let desactivada = try lector(oberts).llegeixDeLApp(base: .segonsAjust)
+        #expect(desactivada.warpSenseBase == nil && desactivada.warpDesaFinestres == false)
+
+        // Amb la base, la de sempre.
+        try FileManager.default.removeItem(at: tmp.url("settings.toml"))
+        do {
+            let sqlite = try BaseWarpDeProva(a: tmp.url("warp.sqlite"))
+            try sqlite.finestra(1)
+            try sqlite.pestanya(10, finestra: 1)
+            try sqlite.paneTerminal(100, pestanya: 10, uuid: uuidDeProva("a"), cwd: inici)
+        }
+        let ambBase = try lector(oberts).llegeixDeLApp(base: .segonsAjust)
+        #expect(ambBase.finestres.count == 1 && ambBase.warpSenseBase == nil && ambBase.warpDesaFinestres == true)
+    }
+
+    /// El text sense la base, el mateix a l'app i al CLI: no parla de la restauració de sessió, i amb Warp obert no diu que
+    /// s'obri.
+    @Test func elTextSenseBase() {
+        #expect(LecturaWarp.senseBase(warpObert: false)
+            == "Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar.")
+        #expect(LecturaWarp.senseBase(warpObert: true)
+            == "Warp encara no ha desat cap finestra en aquest usuari: torna-ho a provar d'aquí a uns segons.")
+        for obert in [false, true] {
+            #expect(!LecturaWarp.senseBase(warpObert: obert).contains("restauració"))
+        }
+    }
+
+    /// El camp nou no surt al JSON si no hi és (com `warpPreview`), i s'hi llegeix si hi és.
+    @Test func senseBaseAlJSON() throws {
+        var lectura = LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: [])
+        #expect(!String(decoding: try JSONEncoder().encode(lectura), as: UTF8.self).contains("warpSenseBase"))
+        lectura.warpSenseBase = true
+        let json = try JSONEncoder().encode(lectura)
+        #expect(String(decoding: json, as: UTF8.self).contains(#""warpSenseBase":true"#))
+        #expect(try JSONDecoder().decode(LecturaWarp.self, from: json).warpSenseBase == true)
     }
 
     /// Sense res a dir, el JSON no porta el camp, com el d'abans de la 0.29.2, i es llegeix igual.

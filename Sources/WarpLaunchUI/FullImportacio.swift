@@ -69,6 +69,9 @@ public final class FullImportacio {
         switch (motiu, mode) {
         case (.deProva, .crea): " Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes."
         case (.deProva, .substitueix): " La configuració no canvia."
+        // El motiu ja diu què fer per poder importar: aquí, l'altra opció.
+        case (.senseBase, .crea): " Si no, tria «Comença en blanc» i afegeix-hi les pestanyes."
+        case (.senseBase, .substitueix): " La configuració no canvia."
         case (_, .crea): " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
         case (_, .substitueix): " No hi ha res per importar, i la configuració no canvia."
         }

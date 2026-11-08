@@ -34,8 +34,9 @@ public final class RefrescWarp {
         /// Amb `.mesTard`, no s'hi ha escrit res, i no és cap error (`AjustRestauracio.posa`).
         public var posa: @Sendable (Bool) throws -> AjustRestauracio.Escriptura
         public var warpObert: @Sendable () -> Bool
-        /// La base de Warp, sigui quin sigui l'ajust (`Lector.llegeixDeLApp(base: .sempre)`). Sense cap Warp ni la seva base,
-        /// els processos, sense finestres (`warpDesaFinestres` a `false`).
+        /// La base de Warp, sigui quin sigui l'ajust (`Lector.llegeixDeLApp(base: .sempre)`). Sense la base (cap Warp, o un Warp
+        /// que encara no hi ha desat res, `LecturaWarp.warpSenseBase`), els processos, sense finestres (`warpDesaFinestres` a
+        /// `false`).
         public var llegeixBase: @Sendable () throws -> LecturaWarp
         public var espera: @Sendable (Duration) async throws -> Void
 
@@ -234,6 +235,8 @@ public final class RefrescWarp {
         // Sense poder llegir la base (per exemple, sense permís), activar l'ajust no serviria de res.
         let inicial = await base()
         guard case let .success(lecturaAbans) = inicial else { return inicial }
+        // Sense la base de Warp (`LecturaWarp.warpSenseBase`), com quan no es podia llegir: no s'activa. La lectura ho diu.
+        guard lecturaAbans.warpSenseBase != true else { return inicial }
         // `tanca` o `retira` poden haver arribat durant la lectura, i Warp pot haver-se tancat.
         guard !aturat, !retirat, !Task.isCancelled, entorn.warpObert() else {
             return avisant(inicial, warpTancat: !entorn.warpObert())
@@ -262,8 +265,8 @@ public final class RefrescWarp {
         return avisant(await base(), warpTancat: !entorn.warpObert())
     }
 
-    /// Una foto que pot no ser el que hi ha obert ho ha de dir: a importar i a lligar, i al menú. Sense cap Warp ni la seva
-    /// base, no hi ha cap foto: res a dir.
+    /// Una foto que pot no ser el que hi ha obert ho ha de dir: a importar i a lligar, i al menú. Sense la base (cap Warp, o
+    /// un Warp que encara no hi ha desat res), no hi ha cap foto: res a dir.
     private func avisant(_ resultat: Resultat, warpTancat: Bool) -> Resultat {
         guard case var .success(lectura) = resultat, lectura.warpDesaFinestres != false else { return resultat }
         if warpTancat {

@@ -1090,6 +1090,56 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(motiu.hasPrefix(MotiuSenseFinestres.deProva.text))
     }
 
+    /// Warp Stable instal·lat i que no s'ha obert mai en aquest usuari: no hi ha la base, i la lectura de l'app no té
+    /// finestres (`Lector.llegeixDeLApp`, `warpSenseBase`). El full diu que Warp encara no hi ha desat res, el mateix text que
+    /// el CLI, i no «No s'ha pogut llegir Warp» ni que la restauració és desactivada (de sèrie és activada). Amb una carpeta
+    /// de prova i amb la configuració de debò, amb Warp tancat i obert. No crea ni substitueix res.
+    @Test func senseLaBaseDeWarpDiuQueEncaraNoHiHaDesatRes() async throws {
+        let tmp = try Temporal()
+        for obert in [false, true] {
+            var lectura = lecturaVariada()
+            lectura.finestres = []
+            lectura.warpDesaFinestres = false
+            lectura.warpObert = obert
+            lectura.warpSenseBase = true
+            let llegida = lectura
+            let text = LecturaWarp.senseBase(warpObert: obert)
+            #expect(text == "Warp encara no ha desat cap finestra en aquest usuari: "
+                + (obert ? "torna-ho a provar d'aquí a uns segons." : "obre'l un cop i torna-ho a provar."))
+            func ambRefresc() -> EstatWarp {
+                let warp = EstatWarp(lector: { llegida })
+                warp.refresc = RefrescWarp(entorn: RefrescWarp.Entorn(ajust: { false }, posa: { _ in .jaHiEra },
+                                                                      warpObert: { obert }, llegeixBase: { llegida },
+                                                                      espera: { _ in }))
+                return warp
+            }
+
+            let nova = Editor(magatzem: tmp.magatzem, retardDesat: nil)
+            nova.carrega()
+            for warp in [EstatWarp(lector: { llegida }), ambRefresc()] {
+                let crea = try #require(FullImportacio(editor: nova, warp: warp))
+                await crea.llegeix()
+                #expect(crea.estat == .senseFinestres(text + " Si no, tria «Comença en blanc» i afegeix-hi les pestanyes."),
+                        "obert: \(obert), refresc: \(warp.refresc != nil)")
+                #expect(!crea.potConfirmar && !crea.confirma())
+                #expect(warp.estat == .llegit(ResumWarp(llegida)), "el menú no diu cap error")
+            }
+            #expect(!FileManager.default.fileExists(atPath: tmp.magatzem.carpeta.path))
+
+            let existent = try editorAmbMostra(tmp)
+            let abans = existent.configuracio
+            for warp in [EstatWarp(lector: { llegida }), ambRefresc()] {
+                let substitueix = try #require(FullImportacio(editor: existent, warp: warp))
+                await substitueix.llegeix()
+                #expect(substitueix.estat == .senseFinestres(text + " La configuració no canvia."),
+                        "obert: \(obert), refresc: \(warp.refresc != nil)")
+                #expect(!substitueix.potConfirmar && !substitueix.confirma())
+            }
+            #expect(existent.configuracio == abans)
+            try? FileManager.default.removeItem(at: tmp.magatzem.carpeta)
+        }
+    }
+
     /// «Substitueix» amb una lectura sense cap finestra de terminal deixaria buida la configuració, i Retorn el prem.
     @Test func noSubstitueixPerUnaConfiguracioBuida() async throws {
         let tmp = try Temporal()

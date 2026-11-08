@@ -26,10 +26,23 @@ public struct LecturaWarp: Codable, Sendable, Equatable {
     /// Per què no es pot obrir res a Warp Stable (`InstallacioWarp.preview`): no hi ha cap Warp (0.31.1), només hi ha Warp
     /// Preview, o Warp Preview és obert i Warp Stable no (D-P12, 0.29.2). `nil`: no hi ha res a dir, o no s'ha mirat.
     public var warpPreview: WarpPreview? = nil
+    /// Warp Stable hi és, però la seva base (`warp.sqlite`) no: Warp encara no hi ha desat res, com en un usuari de macOS on
+    /// no s'ha obert mai (`Lector.llegeixDeLApp`). Llavors `finestres` és buit i `warpDesaFinestres` és `false`: el que hi ha
+    /// obert ho diuen els processos, com amb la configuració de debò. `nil`: la base hi és, no s'ha mirat o no hi ha cap Warp
+    /// Stable (ho diu `warpPreview`).
+    public var warpSenseBase: Bool? = nil
 
     /// Per què no es pot importar ni lligar res amb la restauració de sessió desactivada.
     public static let senseFinestres = "Warp no desa les finestres mentre la restauració de sessió està desactivada "
         + "(«general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen."
+
+    /// Per què no es pot importar ni lligar res sense la base de Warp (`warpSenseBase`). L'app i el CLI (`llegeix`, `importa`
+    /// i `obre`) diuen el mateix. No parla de la restauració de sessió: de sèrie és activada, i qui no ha obert mai Warp no
+    /// l'ha desactivada. Amb Warp obert, potser encara arrenca (no s'ha vist quan crea la base); amb Warp tancat, que s'obri.
+    public static func senseBase(warpObert: Bool) -> String {
+        "Warp encara no ha desat cap finestra en aquest usuari: "
+            + (warpObert ? "torna-ho a provar d'aquí a uns segons." : "obre'l un cop i torna-ho a provar.")
+    }
 
     /// Les sessions interactives de Claude vives, lligades o no a una pestanya de Warp.
     public var sessionsInteractives: [SessioClaude] {

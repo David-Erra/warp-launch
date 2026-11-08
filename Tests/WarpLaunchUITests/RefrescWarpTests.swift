@@ -175,6 +175,30 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         #expect(estat.avisFoto == nil && estat.descripcio == "Warp: 0 terminals · 0 sessions de Claude")
     }
 
+    /// Warp Stable sense la seva base (`warpSenseBase`: Warp encara no hi ha desat res). Amb Warp obert, el refresc no activa
+    /// l'ajust, com quan la base no es podia llegir; amb Warp tancat, tampoc. La lectura no és cap error ni cap foto, i el
+    /// menú diu els terminals, com la lectura de cada minut, i no «no s'ha pogut llegir».
+    @Test(arguments: [true, false])
+    func senseLaBaseNoActivaLAjust(obert: Bool) async throws {
+        let mon = Mon()
+        mon.obert = obert
+        mon.base { _, _ in
+            var lectura = LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: [], warpObert: obert,
+                                      terminals: obert ? [TerminalViu(pid: 51)] : [], warpDesaFinestres: false)
+            lectura.warpSenseBase = true
+            return lectura
+        }
+        let lectura = try await RefrescWarp(entorn: mon.entorn).refresca().get()
+        #expect(lectura.warpSenseBase == true && lectura.avisFoto == nil && lectura.avisos.isEmpty)
+        #expect(mon.canvis.isEmpty && mon.posats == 0 && mon.esperes == 0 && !mon.ajust)
+        let estat = EstatWarp(lector: { LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) })
+        estat.refresc = RefrescWarp(entorn: mon.entorn)
+        await estat.llegeixAmbFinestres()
+        #expect(estat.avisFoto == nil)
+        #expect(estat.descripcio == "Warp: \(obert ? "1 terminal" : "0 terminals") · 0 sessions de Claude")
+        #expect(mon.posats == 0)
+    }
+
     /// Warp es tanca a mig refresc: es desactiva de seguida, sense esperar.
     @Test func siWarpEsTancaAMigRefrescEsDesactiva() async throws {
         let mon = Mon()

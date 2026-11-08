@@ -63,16 +63,20 @@ public struct Lector: Sendable {
         return warp.hiHaStable ? nil : warp.preview(processos, stableObert: false)
     }
 
-    /// La lectura de l'app: `llegeix(base:)`, però sense cap Warp Stable ni la seva base (`senseWarpStable`) no falla amb
-    /// «no trobo la base de Warp». Llegeix els processos, com amb la configuració de debò (`.mai`), i la lectura diu que no
-    /// hi ha Warp (`warpPreview`) i que no se'n saben les finestres (`warpDesaFinestres` a `false`). Així, amb una carpeta
-    /// de prova (`.segonsAjust`) i en refrescar la foto (`.sempre`), l'app diu el mateix que amb la configuració de debò.
-    /// El CLI no la fa servir: falla, i diu per què (`OrdreCLI`).
+    /// La lectura de l'app: `llegeix(base:)`, però sense la base de Warp no falla amb «no trobo la base de Warp». Llegeix
+    /// els processos, com amb la configuració de debò (`.mai`), i la lectura diu que no se'n saben les finestres
+    /// (`warpDesaFinestres` a `false`) i per què: que no hi ha cap Warp Stable (`warpPreview`, `senseWarpStable`) o, amb Warp
+    /// Stable, que encara no ha desat res (`warpSenseBase`). Així, amb una carpeta de prova (`.segonsAjust`) i en refrescar la
+    /// foto (`.sempre`), l'app diu el mateix que amb la configuració de debò. El CLI no la fa servir: falla, i diu per què
+    /// (`OrdreCLI`).
     public func llegeixDeLApp(base: BaseWarp) throws -> LecturaWarp {
         do {
             return try llegeix(base: base)
-        } catch ErrorLectura.noHiHaBase where senseWarpStable() != nil {
-            return try llegeix(base: .mai)
+        } catch ErrorLectura.noHiHaBase {
+            let ambStable = senseWarpStable() == nil
+            var lectura = try llegeix(base: .mai)
+            if ambStable { lectura.warpSenseBase = true }
+            return lectura
         }
     }
 
