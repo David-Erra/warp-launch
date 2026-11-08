@@ -51,11 +51,15 @@ private let refrescWarp = #"(^|[^A-Za-z0-9_])RefrescWarp\("#
 private let consentimentRestauracio = #"(^|[^A-Za-z0-9_])ConsentimentRestauracio\("#
 private let ajustRestauracio = #"(^|[^A-Za-z0-9_])AjustRestauracio\("#
 /// Decisió A (0.31.2): sense `settings.toml`, l'ajust el crea, i només si Warp no l'ha creat mentrestant. Les crides que
-/// posen un fitxer al seu lloc només si no n'hi ha cap, o que l'enllacen, i el que fa Warp a les proves (`ganxoDeProva`),
-/// només a `AjustRestauracio.swift`; `O_CREAT`, només on ja era (`nomesLAjustCreaElFitxerDeWarp`).
+/// posen un fitxer al seu lloc només si no n'hi ha cap, o que l'enllacen (també `linkItem` i `createSymbolicLink` de
+/// `FileManager`), les que hi copien un altre fitxer o els seus atributs (`copyfile`, que crearia o sobreescriuria el
+/// destí), i el que fa Warp a les proves (`ganxoDeProva`), només a `AjustRestauracio.swift`; `O_CREAT`, només on ja era
+/// (`nomesLAjustCreaElFitxerDeWarp`).
 private let rutaAjustRestauracio = "Sources/WarpLaunchCore/AjustRestauracio.swift"
 private let creaOEnllaca = [#"renamex_np"#, #"renameatx_np"#, #"RENAME_(EXCL|SWAP)"#, #"(^|[^A-Za-z0-9_])(sym)?link(at)?\("#,
-                            #"(^|[^A-Za-z0-9_])f?clonefile(at)?\("#, #"(^|[^A-Za-z0-9_])ganxoDeProva(?![A-Za-z0-9_])"#]
+                            #"(^|[^A-Za-z0-9_])f?clonefile(at)?\("#, #"(^|[^A-Za-z0-9_])ganxoDeProva(?![A-Za-z0-9_])"#,
+                            #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
+                            #"(^|[^A-Za-z0-9_])f?copyfile(?![A-Za-z0-9_])"#]
 private let ambOCreat = ["Sources/WarpLaunchCore/EscripturaAtomica.swift", "Sources/WarpLaunchCore/FitxersLaunchWarp.swift"]
 
 /// Les línies que creen o enllacen un fitxer fora de l'ajust, i les d'`O_CREAT` fora d'on ja era.
@@ -763,8 +767,9 @@ private let prohibidesArrossegar = [
 
     /// Decisió A (0.31.2): `settings.toml` de Warp, si no hi és, només el crea `AjustRestauracio`, d'un sol cop i només si
     /// Warp no l'ha creat mentrestant (`renamex_np` amb `RENAME_EXCL`), des d'un fitxer de la carpeta temporal
-    /// (`EscripturaAtomica.creaFitxerNou`). No crea la carpeta de Warp, ni obre res per escriure-hi directament. Cap altre
-    /// fitxer no fa servir aquestes crides, ni `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
+    /// (`EscripturaAtomica.creaFitxerNou`). No crea la carpeta de Warp, ni obre res per escriure-hi directament, i l'únic
+    /// `copyfile` hi copia els atributs estesos de l'original, no al revés. Cap altre fitxer no fa servir aquestes crides, ni
+    /// `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
     @Test func nomesLAjustCreaElFitxerDeWarp() throws {
         let codi = try fitxers("Sources")
         let trobades = try creenForaDeLloc(codi)
@@ -773,7 +778,11 @@ private let prohibidesArrossegar = [
         let crides = try aparicions(de: [#"renamex_np"#], a: [ajust])
         #expect(crides.count == 1, "\(crides)")
         #expect(ajust.text.contains("guard renamex_np(temporal.path, ruta.path, UInt32(RENAME_EXCL)) == 0 else {"))
-        #expect(try aparicions(de: [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], cridaMkdir, #"mkdirat"#,
+        let copies = try aparicions(de: [creaOEnllaca[8]], a: [ajust])
+        #expect(copies.count == 1, "\(copies)")
+        #expect(ajust.text.contains("copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))"))
+        #expect(try aparicions(de: [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], creaOEnllaca[6],
+                                    creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
                                     #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#, #"\.write\(to:"#,
                                     #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#], a: [ajust]).isEmpty)
         #expect(ajust.text.contains("try EscripturaAtomica.creaFitxerNou(resultat, a: temporal, permisos: permisos)"))
@@ -804,6 +813,10 @@ private let prohibidesArrossegar = [
             "linkat(AT_FDCWD, a, AT_FDCWD, b, 0)",
             "clonefile(a, b, 0)",
             "ajust.ganxoDeProva = { }",
+            "try FileManager.default.linkItem(at: a, to: b)",
+            "try FileManager.default.createSymbolicLink(atPath: a, withDestinationPath: b)",
+            "copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))",
+            "_ = Darwin.fcopyfile(x, y, nil, copyfile_flags_t(COPYFILE_ALL))",
         ]
         let altres = ambOCreat + ["Sources/WarpLaunchCore/Diagnostic.swift", "Sources/WarpLaunchCore/LectorAjustosWarp.swift",
                                   "Sources/WarpLaunchUI/RefrescWarp.swift", rutaAppPrincipal, "Sources/WarpLaunchCLI/main.swift",
@@ -825,6 +838,8 @@ private let prohibidesArrossegar = [
             let enllac = unlinkat
             hyperlink(a)
             let deeplink = 1
+            let estat = copyfile_state_alloc()
+            let linkItems = 0
             """)]).isEmpty)
     }
 
