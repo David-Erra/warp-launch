@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (07/11/2026, 0.30.1)
+## Estat (08/11/2026, 0.31.1)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -80,21 +80,41 @@ Els requisits són a `docs/especificacio.md`.
   `claude` sense saltar els permisos ni ultracode (`.perOmissio`, continuant la conversa). «Salta els permisos», l'esforç i
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
-- **Per a altres usuaris, de la 0.29.0 a la 0.30.1** (decisions d'en David del 07/11/2026 a `docs/especificacio.md`; passos, proves
-  i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha vist a l'app ni s'ha publicat:** la versió
-  publicada a GitHub és la 0.28.0.
+- **Per a altres usuaris, de la 0.29.0 a la 0.31.1** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
+  passos, proves, el que falta provar a l'app i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha
+  publicat** (la versió de GitHub és la 0.28.0), **i res de la 0.30.3 endavant no s'ha vist a l'app:** la de `build/`, que en
+  David prova, és la 0.30.2.
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
     obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
-    `configuracio.json` o `estat.json` compta com a acceptada (a qui ja feia servir l'app no li pregunta). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
+    `configuracio.json` o `estat.json` compta com a acceptada (a qui ja feia servir l'app no li pregunta; decisió 1, es queda així). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
   - **0.29.1 (D-P5a):** en una configuració nova, les pestanyes on no corria Claude queden només terminal (amb la lectura d'un
     Mac de prova del 04/11/2026, una cinquena part amb Claude i la resta només terminal, en lloc de tres quartes parts amb Claude). Tornar a importar no canvia.
   - **0.29.2 i 0.29.3 (D-P12): Warp Stable a qualsevol carpeta.** On és ho diu macOS, només a `WarpLaunchObridor/TrobaWarp.swift`
     (l'única `urlForApplication`); si no, `/Applications`. Una còpia a la Paperera no compta. El binari surt del paquet
     (`CFBundleExecutable`). Amb només Warp Preview, o Preview obert i Stable no, l'app no obre res i ho diu.
-  - **0.30.0 i 0.30.1: diagnòstic de només lectura.** `warp-launch diagnostica` i Configuració › «Diagnòstic» › «Copia el
-    diagnòstic»: 8 comprovacions dels formats de Warp i de Claude Code que l'app llegeix, en anglès i, si es vol, anonimitzat. No
-    bloqueja res. `VersionsProvades` (Warp 0.2026.10.21, Claude Code 2.1.317 a 2.1.318) es posa al dia a mà.
+  - **0.30.0 i 0.30.1: diagnòstic de només lectura.** `warp-launch diagnostica` i Configuració › General › «Diagnòstic» ›
+    «Copia el diagnòstic»: 8 comprovacions dels formats de Warp i de Claude Code que l'app llegeix, en anglès i, si es vol,
+    anonimitzat. No bloqueja res. `VersionsProvades` (Warp 0.2026.10.21, Claude Code 2.1.317 a 2.1.318) es posa al dia a mà.
+  - **0.30.2: la Configuració en dues pestanyes,** «General» i «Pestanyes noves». Cadascuna fa l'alçada del contingut, com a
+    molt 640 pt, i el que no hi cap es desplaça; en canviar de pestanya, la finestra creix o s'encongeix per baix. Mida fixa per
+    pestanya, com a macOS (decisió 11).
+  - **0.30.3 (decisions 2, 8, 9 i 12):** a la pantalla del permís, Retorn accepta i Escapada no fa res; tancar-hi la
+    Configuració fa sortir de l'app, com tancar l'editor; «Comença en blanc» i després «Torna a importar-ho tot» és com una
+    configuració nova (les pestanyes sense Claude, només terminal; `Importador.SenseSessio.per`, també al CLI); a «Pestanyes
+    noves», la primera secció no repeteix el títol. I tres textos: importar i el diagnòstic amb `--config`, i la versió de Claude
+    Code un sol cop al diagnòstic.
+  - **0.31.0 (decisió 3): deixar de fer servir l'app.** Configuració › General › «Restaura Warp i surt…» treu l'app dels ítems
+    d'inici, torna `restore_session` com era (activat, el de sèrie, si el permís és `migrat`), retira el permís (`retirat` a
+    `preferencies.json`, que ja no compta com a migrat) i surt; després, l'app no torna a tocar l'ajust. És la línia i el camí
+    de la segona excepció de la regla 7 (`RefrescWarp`), però només amb el clic: mai sense l'OK d'en David, perquè deixa la
+    restauració activada. README, «Desinstal·lar».
+  - **0.31.1 (decisió 4): compta el Warp que corre,** també si és una altra còpia de Warp Stable (pels processos,
+    `Lector.installacio()`). Sense cap Warp, ho diu i no proposa obrir res.
+  - **Guardes (08/11/2026, sense versió):** cap expressió de `GuardaTests` no fa servir `\b`, que no veia els noms amb mòdul
+    (`Foundation.Process()`, `NSApp.terminate`); `Process` i `kill` compten com a paraula sencera, i `exec…` i `NSUser…Task` són
+    prohibides; les proves no poden fer servir la carpeta d'inici de debò per cap camí; i `Lector(carpetaSessions:)` és
+    obligatori.
 - **Signatura:** `scripts/build-app.sh` signa amb el certificat «Warp Launch Dev» del clauer d'en David (D12).
   Per llegir les dades de Warp, cal donar a l'app el permís de Privacitat i seguretat › Arxius i carpetes.
 - **Ordre de feina acordat:**
