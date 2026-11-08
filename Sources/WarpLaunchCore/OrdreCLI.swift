@@ -231,7 +231,7 @@ public enum OrdreCLI {
         var lector = entorn.lector
         let o = try opcions(args, ordre: "llegeix", admeses: ["--json", "--warp", "--sessions"], lector: &lector,
                             inici: entorn.inici)
-        let lectura = try llegeixWarp(lector)
+        let lectura = try llegeixWarp(lector, entorn: entorn)
         if o.json {
             let codificador = JSONEncoder()
             codificador.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
@@ -258,7 +258,7 @@ public enum OrdreCLI {
                 + "passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app")
         }
 
-        let lectura = try llegeixWarp(lector)
+        let lectura = try llegeixWarp(lector, entorn: entorn)
         // El CLI no toca mai l'ajust (D19 només és de l'app): no és que Warp no tingui res obert.
         if lectura.warpDesaFinestres == false {
             throw .fallida(LecturaWarp.senseFinestres + " «warp-launch importa» no toca aquest ajust i no pot demanar a Warp "
@@ -452,7 +452,7 @@ public enum OrdreCLI {
         } catch {
             throw .fallida("\(fitxerEstat.path): \(error); l'app no obriria res")
         }
-        let lectura = try llegeixWarp(lector)
+        let lectura = try llegeixWarp(lector, entorn: entorn)
         let ara = entorn.ara()
         // Com l'app: primer posa al dia els lligams amb la lectura, i després calcula.
         let estat = ActualitzaEstat.amb(lectura, configuracio: configuracio, estat: desat, ara: ara)
@@ -692,7 +692,8 @@ public enum OrdreCLI {
         }
     }
 
-    private static func llegeixWarp(_ lector: Lector) throws(ErrorCLI) -> LecturaWarp {
+    /// - Parameter entorn: per saber si la base és la de sempre (`EntornCLI.lector`) o una triada a mà (`--warp`).
+    private static func llegeixWarp(_ lector: Lector, entorn: EntornCLI) throws(ErrorCLI) -> LecturaWarp {
         do {
             return try lector.llegeix()
         } catch let ErrorLectura.noHiHaBase(ruta) {
@@ -700,6 +701,11 @@ public enum OrdreCLI {
             // Warp Preview), com ho diria la lectura, i no només que no es troba la base.
             if let motiu = lector.senseWarpStable() {
                 throw .fallida("\(motiu.text) Tampoc no hi ha la base de Warp (\(ruta)).")
+            }
+            // Amb Warp Stable, Warp encara no hi ha desat res: el text de l'app (`LecturaWarp.senseBase`). Una base triada
+            // a mà que no hi és, l'error de sempre: no és que Warp no hi hagi desat res.
+            if lector.rutaWarp == entorn.lector.rutaWarp {
+                throw .fallida(LecturaWarp.senseBase(warpObert: lector.warpObert()))
             }
             throw .fallida("\(ErrorLectura.noHiHaBase(ruta))")
         } catch {

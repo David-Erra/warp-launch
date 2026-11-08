@@ -672,12 +672,56 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         for args in ordres {
             #expect(executa(entorn, args).1.errors == "warp-launch: \(WarpPreview.nomesPreview.text) \(base)\n", "\(args)")
         }
-        // Amb Warp Stable, no és que no hi hagi Warp: l'error de sempre.
+        // Amb Warp Stable, no és que no hi hagi Warp: que encara no hi ha desat res (a sota,
+        // `ambWarpStableSenseBaseDiuQueNoHiHaDesatRes`).
         var stable = e.entorn
         stable.lector.rutaWarp = senseBase
         for args in ordres {
             let (codi, sortida) = executa(stable, args)
-            #expect(codi == 1 && sortida.errors == "warp-launch: no trobo la base de Warp: \(senseBase.path)\n",
+            #expect(codi == 1 && sortida.errors == "warp-launch: \(LecturaWarp.senseBase(warpObert: true))\n",
+                    "\(args): \(sortida.errors)")
+        }
+        #expect(try instantania(e) == abans)
+    }
+
+    /// Warp Stable instal·lat i que no s'ha obert mai en aquest usuari: no hi ha la base. `llegeix`, `importa` i `obre`
+    /// diuen el mateix que l'app (`LecturaWarp.senseBase`), amb Warp tancat i amb Warp obert, i no «no trobo la base de
+    /// Warp». No escriuen res. Amb una base triada a mà (`--warp`) que no hi és, l'error de sempre.
+    @Test func ambWarpStableSenseBaseDiuQueNoHiHaDesatRes() throws {
+        let e = try Escenari()
+        let carpeta = try ambConfiguracio(e)
+        for fitxer in ["warp.sqlite", "warp.sqlite-wal", "warp.sqlite-shm"] where e.existeix(e.tmp.url(fitxer)) {
+            try FileManager.default.removeItem(at: e.tmp.url(fitxer))
+        }
+        let abans = try instantania(e)
+        let ordres = [["llegeix"], ["llegeix", "--json"], ["importa"], ["obre", "feina", "--config", carpeta.path],
+                      ["obre", "feina", "--json", "--config", carpeta.path]]
+        func executa(_ entorn: EntornCLI, _ args: [String]) -> (Int32, Sortida) {
+            var sortida = Sortida()
+            return (OrdreCLI.executa(args, entorn: entorn, sortida: &sortida), sortida)
+        }
+        var tancat = e.entorn
+        var processos = try #require(tancat.lector.processos as? ProcessosFalsos)
+        processos.processos[40] = nil
+        tancat.lector.processos = processos
+        for (entorn, obert) in [(e.entorn, true), (tancat, false)] {
+            #expect(entorn.lector.warpObert() == obert && entorn.lector.senseWarpStable() == nil)
+            for args in ordres {
+                let (codi, sortida) = executa(entorn, args)
+                #expect(codi == 1 && sortida.text.isEmpty, "\(args)")
+                #expect(sortida.errors == "warp-launch: \(LecturaWarp.senseBase(warpObert: obert))\n",
+                        "\(args), obert: \(obert): \(sortida.errors)")
+                #expect(!sortida.errors.contains("no trobo la base"))
+            }
+        }
+        #expect(LecturaWarp.senseBase(warpObert: false).hasSuffix(": obre'l un cop i torna-ho a provar."))
+
+        // Una base triada a mà: no és la de Warp, i no se sap si Warp hi ha desat res.
+        let triada = e.tmp.url("triada.sqlite")
+        for args in [["llegeix", "--warp", triada.path], ["importa", "--warp", triada.path],
+                     ["obre", "feina", "--warp", triada.path, "--config", carpeta.path]] {
+            let (codi, sortida) = executa(e.entorn, args)
+            #expect(codi == 1 && sortida.errors == "warp-launch: no trobo la base de Warp: \(triada.path)\n",
                     "\(args): \(sortida.errors)")
         }
         #expect(try instantania(e) == abans)
