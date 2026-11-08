@@ -7,7 +7,8 @@
 #     scripts/warp-restauracio.sh activa|desactiva [--aplica]
 #
 # Sense --aplica no escriu res: diu què canviaria (regla 4). No obre, tanca ni reinicia Warp.
-# Si el fitxer no té exactament la forma esperada, no toca res.
+# Si el fitxer no té exactament la forma esperada, no toca res. Si la línia no hi és (o el fitxer), Warp fa servir el valor
+# de sèrie, activat: l'script no l'afegeix mai (ho fa Warp Launch, 0.31.2), i `desactiva` falla.
 set -euo pipefail
 
 # Sense els dos punts: una variable buida per error no ha d'acabar al fitxer de debò.
@@ -35,9 +36,23 @@ if [[ "$ORDRE" != estat ]]; then
     [[ -z "$OPCIO" || "$OPCIO" == --aplica ]] || us
 fi
 
-[[ -f "$FITXER" ]] || refusa "no hi ha $FITXER"
+[[ -n "$FITXER" ]] || refusa "WARP_SETTINGS és buida"
 # `mv` substituiria l'enllaç, no el fitxer.
 [[ ! -L "$FITXER" ]] || refusa "$FITXER és un enllaç"
+
+# Sense la línia, o sense el fitxer, Warp fa servir el valor de sèrie: activat. Aquest script només canvia una línia que ja
+# hi és, i no n'afegeix cap.
+sense_linia() {
+    case "$ORDRE" in
+        estat) echo "restore_session: activat (de sèrie, $1): Warp desa les finestres i les restaura en obrir-se." ;;
+        activa) echo "restore_session ja és activat (de sèrie, $1): no cal canviar res." ;;
+        desactiva) refusa "«restore_session» no hi és ($1): Warp fa servir el valor de sèrie, activat, i aquest script no \
+afegeix la línia. Desactiva l'ajust a Warp («Restore windows, tabs, and panes on startup») o deixa que ho faci Warp Launch" ;;
+    esac
+    exit 0
+}
+[[ -e "$FITXER" ]] || sense_linia "sense el fitxer"
+[[ -f "$FITXER" ]] || refusa "$FITXER no és un fitxer normal"
 
 # Warp l'escriu en calent. Tot es decideix sobre una sola lectura, i abans d'escriure es mira que el fitxer continuï igual.
 TEMPORAL="${TMPDIR:-/tmp}"
@@ -47,11 +62,13 @@ PROVISIONAL=""
 trap 'rm -f "$CANDIDAT" ${LLEGIT:+"$LLEGIT"} ${PROVISIONAL:+"$PROVISIONAL"}' EXIT
 cp -p "$FITXER" "$LLEGIT"
 
+APARICIONS="$(grep -c 'restore_session' "$LLEGIT" || true)"
+[[ "$APARICIONS" != 0 ]] || sense_linia "sense la línia"
+
 # Sense salt de línia final, awk n'hi afegiria un: canviaria alguna cosa més que el valor.
 [[ -z "$(tail -c 1 "$LLEGIT")" ]] || refusa "$FITXER no acaba amb un salt de línia"
 
 # Només una aparició a tot el fitxer, i que sigui una línia de la taula [general], amb un valor true o false.
-APARICIONS="$(grep -c 'restore_session' "$LLEGIT" || true)"
 [[ "$APARICIONS" == 1 ]] || refusa "«restore_session» hi surt $APARICIONS vegades, i n'hi hauria d'haver 1"
 TROBADA="$(awk '
     /^[[:space:]]*\[/ { taula = $0; gsub(/[[:space:]]/, "", taula); next }

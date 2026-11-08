@@ -201,7 +201,6 @@ private let ajustos = """
 
     /// Si no té exactament la forma esperada, no toca res.
     @Test(arguments: [
-        "[general]\nlogin_item = true\n", // No hi és.
         "[altra]\nrestore_session = false\n", // En una altra taula.
         "general.restore_session = false\n", // Fora de la taula.
         "restore_session = false\n[general]\nx = 1\n", // Abans de la taula.
@@ -223,10 +222,39 @@ private let ajustos = """
         let b = try Banc()
         let real = b.carpeta.appending(path: "real.toml")
         try FileManager.default.moveItem(at: b.fitxer, to: real)
-        #expect(try b.executa("activa", "--aplica").codi == 1, "no hi és")
+        #expect(try b.executa("desactiva", "--aplica").codi == 1, "no hi és")
         try FileManager.default.createSymbolicLink(at: b.fitxer, withDestinationURL: real)
         #expect(try b.executa("activa", "--aplica").codi == 1, "és un enllaç")
+        #expect(try b.executa("estat").codi == 1, "és un enllaç")
         #expect(try String(contentsOf: real, encoding: .utf8) == ajustos)
+        // Un enllaç trencat també és un enllaç, no un fitxer que no hi és.
+        try FileManager.default.removeItem(at: real)
+        #expect(try b.executa("estat").codi == 1, "és un enllaç trencat")
+    }
+
+    /// Sense la línia (0.31.2), o sense el fitxer, Warp fa servir el valor de sèrie, activat: `estat` ho diu, `activa` no
+    /// ha de fer res, i `desactiva` falla amb el motiu, perquè l'script no afegeix la línia. No s'escriu res.
+    @Test(arguments: [("[general]\nlogin_item = true\n", "sense la línia"), ("", "sense la línia"),
+                      ("[general]\nx = 1", "sense la línia"), (nil, "sense el fitxer")] as [(String?, String)])
+    func senseLaLiniaEsActivatDeSerie(text: String?, motiu: String) throws {
+        let b = try Banc(text ?? "")
+        if text == nil { try FileManager.default.removeItem(at: b.fitxer) }
+        let estat = try b.executa("estat")
+        #expect(estat.codi == 0, "\(estat.sortida)")
+        #expect(estat.sortida == "restore_session: activat (de sèrie, \(motiu)): Warp desa les finestres i les restaura en obrir-se.\n")
+        for opcio in ["", "--aplica"] {
+            let activa = try opcio.isEmpty ? b.executa("activa") : b.executa("activa", opcio)
+            #expect(activa.codi == 0, "\(activa.sortida)")
+            #expect(activa.sortida == "restore_session ja és activat (de sèrie, \(motiu)): no cal canviar res.\n")
+            let desactiva = try opcio.isEmpty ? b.executa("desactiva") : b.executa("desactiva", opcio)
+            #expect(desactiva.codi == 1, "\(desactiva.sortida)")
+            #expect(desactiva.sortida.hasPrefix("warp-restauracio: «restore_session» no hi és (\(motiu)): Warp fa servir el "
+                + "valor de sèrie, activat, i aquest script no afegeix la línia."), "\(desactiva.sortida)")
+            #expect(desactiva.sortida.hasSuffix("No s'ha tocat res.\n"))
+        }
+        #expect(b.noms == (text == nil ? ["tmp"] : ["settings.toml", "tmp"]))
+        if let text { #expect(b.text == text) }
+        #expect(b.temporals.isEmpty)
     }
 
     @Test func refusaLesOrdresQueNoConeix() throws {
