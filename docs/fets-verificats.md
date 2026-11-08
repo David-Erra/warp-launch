@@ -85,7 +85,23 @@ corregeix-lo i deixa'n constància.
       existeix i a les preferències pròpies de Warp (a macOS, `NSUserDefaults`) no hi ha la marca de migració feta, hi passa els
       ajustos que tenia a les preferències de macOS i després hi posa la marca. Per a un usuari nou no hi passa res, però la
       marca s'hi escriu igualment. **Si algú crea `settings.toml` abans que aquesta migració s'hagi fet, Warp se la salta:** els
-      ajustos d'un Warp antic (d'abans de `settings.toml`) deixarien de comptar.
+      ajustos d'un Warp antic (d'abans de `settings.toml`) deixarien de comptar. D'aquí la decisió de la ronda 5: l'app només
+      crea el fitxer amb Warp obert (0.31.3).
+  - **Quan fa Warp la migració, en arrencar** (08/11/2026, el mateix codi de `abb3fe33`; llegit, no vist):
+    - A `app/src/lib.rs` (`run_internal`), Warp primer llegeix `settings.toml` (`init_public_user_preferences`, l. 1189),
+      després crea el `terminal-server` (`PtySpawner::new`, l. 1221) i després fa la migració (`initialize_app` →
+      `settings::init`, l. 1540). Les finestres, i els seus terminals, només arriben a `launch()`, després d'`initialize_app`.
+      **Per tant, el `terminal-server` sol no diu que la migració ja s'ha fet; un terminal, sí.** És el criteri de la 0.31.3
+      per crear `settings.toml` (`FontProcessos.warpHaAcabatDArrencar`), en lloc d'un temps d'espera.
+    - El `terminal-server` és fill de l'app (`Command::spawn`, `crates/warp_terminal/src/local_tty/server/mod.rs`) i s'atura sol
+      quan canvia de pare (`server/event_loop.rs`, l. 223): un d'orfe no és d'un Warp que corre.
+    - Si el `terminal-server` no es pot fer servir, Warp obre els shells directament (`local_tty/spawner.rs`, `spawn_pty_directly`).
+      Llavors l'app no en veuria cap terminal, i no crearia `settings.toml`. No s'ha vist mai.
+  - **L'onboarding d'un usuari nou** (08/11/2026, especificació `specs/APP-3680/TECH.md` del mateix codi; llegida, no vista):
+    en acabar-lo, Warp n'aplica els ajustos (`apply_agent_settings`, per exemple `DefaultSessionMode`) i, amb dos flags
+    activats, pot escriure `~/.warp/tab_configs/startup_config.toml`. Si aplicar-los desa `settings.toml` (Warp desa cada canvi
+    d'ajust), un usuari nou que l'acaba ja en tindria, i la deducció «un usuari nou no té `settings.toml`» només valdria abans
+    de l'onboarding. Es mira en un usuari de macOS nou (`docs/disseny.md`, secció 10).
   - Se sincronitza al núvol (`SyncToCloud::Globally`) si Settings Sync és activat (es mira amb
     `defaults read dev.warp.Warp-Stable IsSettingsSyncEnabled`). Si es canvia, es propaga
     a les altres instal·lacions de Warp del compte.
@@ -128,6 +144,18 @@ corregeix-lo i deixa'n constància.
   la base (`lower(hex(uuid))`), sense guions, i no n'hi sobra cap. Una mostra: no se sap quant triga si no hi ha cap activitat a Warp, i hi havia sessions en marxa.
 
 - **Ruta:** `~/Library/Group Containers/2BBY89MBSN.dev.warp/Library/Application Support/dev.warp.Warp-Stable/warp.sqlite`, amb WAL.
+- **Quan crea Warp la base** (08/11/2026, codi públic de `warpdotdev/warp` a `abb3fe33`, `master` del 06/11/2026; llegit, no
+  vist):
+  - **A cada arrencada de l'app, sigui quin sigui `restore_session`:** `initialize_app` (`app/src/lib.rs`, l. 1677) →
+    `persistence::initialize` → `init_db` → `setup_database`, que la crea si no hi és. És just després de `settings::init` (la
+    migració dels ajustos). Un Warp Stable sense base és, doncs, un Warp que no s'ha obert mai en aquest usuari o que tot just
+    arrenca, llevat dels dos casos de sota. Com que no depèn de l'ajust, que el refresc no l'activi sense la base (0.31.3) no
+    deixa ningú encallat.
+  - **En tancar la sessió del compte de Warp,** `log_out` l'esborra (`persistence::remove`, `app/src/auth/mod.rs`), i la torna a
+    crear en entrar-hi (`reconstruct`).
+  - **Sense el Group Container** (segons un comentari del codi, a macOS sempre n'hi ha), la desa a
+    `~/Library/Application Support/dev.warp.Warp-Stable/`. Una base antiga d'allà, Warp la mou al Group Container en arrencar,
+    si al Group Container no n'hi ha cap (`migrate_old_sqlite_into_secure_container_if_needed`).
 - **S'escriu en calent** (03/11/2026). Això corregeix el que constava abans, que només es reescrivia en sortir de Warp.
   - **Com s'ha comprovat:**
     - Warp corria des de feia hores (`ps -o lstart`).
@@ -715,6 +743,10 @@ Mesurat amb un programa a part, sense mostrar cap finestra, per a la 0.30.2 (`Vi
 - **Crides que Swift no deixa fer a macOS** (`swiftc -typecheck`): `popen` i `system` («unavailable in Swift: Use posix_spawn
   APIs or NSTask instead»), i `fork()` i `vfork()` («Please use threads or posix_spawn*()»). En canvi, `execv` i la seva
   família, i `NSUserUnixTask`, compilen: per això la guarda del codi les prohibeix.
+- **Crides que canvien els permisos o els atributs i que Swift sí que deixa fer** (08/11/2026, `swiftc -typecheck`): `chmodx_np`,
+  `fchmodx_np`, les de les ACL (`acl_set_file`, `acl_set_fd`, `acl_set_fd_np`, `acl_set_link_np`, `acl_delete_def_file`),
+  `CFURLSetResourcePropertyForKey` i `CFURLSetResourcePropertiesForKeys` compilen. Per això són a la guarda
+  (`altresCanvienAtributs`, `docs/disseny.md`, «Prova de guarda»).
 - **La marca d'ordre de bytes (BOM) d'un text UTF-8** (08/11/2026, programa compilat amb `swiftc`, a part del repo, amb
   `EF BB BF` i `[general]\n`): `String(data:encoding: .utf8)` la treu (10 bytes en UTF-8); `String(decoding:as: UTF8.self)` i
   `String(validating:as: UTF8.self)` la conserven (`U+FEFF` al principi, 13 bytes). Per això `AjustRestauracio` llegeix amb
