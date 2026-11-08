@@ -92,8 +92,9 @@ struct VistaConsentiment: View {
             apartat("Què canvia") {
                 Label {
                     Text("""
-                        A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat. Si tens Settings \
-                        Sync, també als teus altres Macs.
+                        A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa \
+                        al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als \
+                        teus altres Macs.
                         """)
                 } icon: {
                     Image(systemName: "switch.2")

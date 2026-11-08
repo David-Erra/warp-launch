@@ -9,7 +9,9 @@ import WarpLaunchCore
 ///    `ServeiArrencada`, l'únic que toca els ítems d'inici de macOS). Si no es pot, no fa res més; es pot tornar a activar
 ///    amb l'interruptor.
 /// 2. torna `restore_session` com era i retira el permís (`ConsentimentRestauracio.retira`): el refresc queda retirat, i
-///    ni el de cada minut ni sortir no tornen a desactivar l'ajust. Si no es pot, no ha canviat res.
+///    ni el de cada minut ni sortir no tornen a desactivar l'ajust. Si no es pot, no ha canviat res. Si no hi havia la
+///    línia (0.31.2, decisió A), el valor d'abans és el de sèrie, activat: la línia que l'app hi va afegir es queda amb
+///    `true`. Si en aquest moment no hi és (ni el fitxer, ni la carpeta de Warp), ja és activat, i no s'escriu res.
 /// 3. surt de l'app.
 ///
 /// Només amb la configuració de debò i el permís acceptat o migrat (D19, regla 7): si no, el botó és desactivat, i el peu

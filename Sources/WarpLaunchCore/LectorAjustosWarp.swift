@@ -14,8 +14,10 @@ public struct LectorAjustosWarp: Sendable {
         self.ruta = ruta
     }
 
-    /// Si Warp desa les finestres. Per defecte, sí: només `restore_session = false` diu el contrari. Sense fitxer, o si
-    /// no es pot llegir, també (és el valor per defecte de Warp).
+    /// Si Warp desa les finestres. Per defecte, sí: només `restore_session = false` diu el contrari. Sense la línia (qui no
+    /// l'ha canviat mai: Warp només escriu els ajustos canviats), sense fitxer, o si no es pot llegir, també (és el valor
+    /// per defecte de Warp). Ho miren el CLI, el diagnòstic i l'app amb una carpeta de prova (`BaseWarp.segonsAjust`); amb
+    /// la de debò, l'app gestiona l'ajust (`AjustRestauracio`, que hi afegeix la línia si no hi és).
     public func desaFinestres() -> Bool {
         guard let dades = try? Data(contentsOf: ruta) else { return true }
         return Self.desaFinestres(toml: String(decoding: dades, as: UTF8.self))
