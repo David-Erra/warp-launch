@@ -61,6 +61,13 @@ private let creaOEnllaca = [#"renamex_np"#, #"renameatx_np"#, #"RENAME_(EXCL|SWA
                             #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
                             #"(^|[^A-Za-z0-9_])f?copyfile(?![A-Za-z0-9_])"#]
 private let ambOCreat = ["Sources/WarpLaunchCore/EscripturaAtomica.swift", "Sources/WarpLaunchCore/FitxersLaunchWarp.swift"]
+/// A l'ajust, res que obri un fitxer per escriure-hi directament: el `settings.toml` de Warp quedaria a mitges si l'app
+/// s'aturés a mig escriure, i Warp el podria llegir així. Ni `open(` de C (l'ajust llegeix amb `Data(contentsOf:)`), ni
+/// `.write(`, ni un `FileHandle` per escriure, ni els modes d'escriure, ni `fopen`, `openat`, `creat(` o `truncate`
+/// (`altresCreenOSobreescriuen`). Només hi escriu `EscripturaAtomica.creaFitxerNou`, a la carpeta temporal.
+private let escriuenDirectament = [#"(^|[^A-Za-z0-9_])open\("#, #"\.write\("#, #"forWriting"#, #"forUpdating"#,
+                                   #"O_(WRONLY|RDWR|APPEND)"#]
+    + altresCreenOSobreescriuen[0...3]
 
 /// Les línies que creen o enllacen un fitxer fora de l'ajust, i les d'`O_CREAT` fora d'on ja era.
 private func creenForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
@@ -783,8 +790,22 @@ private let prohibidesArrossegar = [
         #expect(ajust.text.contains("copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))"))
         #expect(try aparicions(de: [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], creaOEnllaca[6],
                                     creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
-                                    #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#, #"\.write\(to:"#,
-                                    #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#], a: [ajust]).isEmpty)
+                                    #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#,
+                                    #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#] + escriuenDirectament,
+                               a: [ajust]).isEmpty)
+        // Cada línia, la seva expressió de `escriuenDirectament`; la crida que prepara el fitxer nou, cap.
+        #expect(try aparicions(de: escriuenDirectament, a: [(ruta: rutaAjustRestauracio, text: """
+            let fd = open(ruta.path, banderes)
+            try resultat.write(to: ruta)
+            let h = try FileHandle(forWritingTo: ruta)
+            let h = try FileHandle(forUpdating: ruta)
+            let banderes = O_WRONLY | O_APPEND
+            let f = fopen(ruta.path, "r+")
+            let fd = Darwin.openat(AT_FDCWD, ruta.path, banderes)
+            let fd = creat(ruta.path, 0o644)
+            truncate(ruta.path, 0)
+            try EscripturaAtomica.creaFitxerNou(resultat, a: temporal, permisos: permisos)
+            """)]) == escriuenDirectament.enumerated().map { "\(rutaAjustRestauracio):\($0.offset + 1): «\($0.element)»" })
         #expect(ajust.text.contains("try EscripturaAtomica.creaFitxerNou(resultat, a: temporal, permisos: permisos)"))
 
         // La ruta de debò de `settings.toml`: per llegir-la, el lector; per a l'ajust, l'app (`lAjustDeWarpNomesLEscriuLApp`).
