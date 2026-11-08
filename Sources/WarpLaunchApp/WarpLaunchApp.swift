@@ -137,13 +137,13 @@ final class Aplicacio {
             // L'única connexió amb l'obridor (`ObreWarp`) i amb la carpeta de Warp de debò.
             obertura = Obertura(editor: editor, sessions: sessions, consentiment: consentiment, entorn: Obertura.Entorn(
                 llegeix: { await warp.llegeix() },
-                obre: { try await ObreWarp.obre($0) },
+                obre: { try await ObreWarp.obre($0, warp: lector.installacio()) },
                 // Amb l'ajust activat, Warp restauraria les seves finestres en arrencar.
-                engegaWarp: { consentiment.refresc?.tanca(); try await ObreWarp.engega() },
+                engegaWarp: { consentiment.refresc?.tanca(); try await ObreWarp.engega(warp: lector.installacio()) },
                 fitxers: FitxersLaunchWarp.real,
                 transcripcions: LectorTranscripcions(),
                 confianca: LectorConfianca(),
-                versioWarp: { TrobaWarp.delSistema().app.versio },
+                versioWarp: { lector.installacio().app.versio },
                 inici: inici))
         }
         editor.obertura = obertura

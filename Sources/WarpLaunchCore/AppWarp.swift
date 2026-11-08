@@ -36,16 +36,31 @@ public struct AppWarp: Sendable, Equatable {
         else { return nil }
         return url.appending(path: "Contents/MacOS/\(nom)").path
     }
+
+    /// El Warp Stable d'un binari que corre (decisió 4, 0.31.1): el paquet que el conté (`<paquet>.app/Contents/MacOS/`),
+    /// si el seu `Info.plist` diu `dev.warp.Warp-Stable` i que aquell és el seu binari. Una còpia a la Paperera no compta
+    /// (0.29.3). Només llegeix l'`Info.plist`.
+    static func delBinari(_ ruta: String) -> AppWarp? {
+        guard ruta.hasPrefix("/") else { return nil }
+        let macos = URL(filePath: ruta).deletingLastPathComponent()
+        let contents = macos.deletingLastPathComponent()
+        let paquet = contents.deletingLastPathComponent()
+        guard macos.lastPathComponent == "MacOS", contents.lastPathComponent == "Contents", paquet.pathExtension == "app",
+              !InstallacioWarp.esALaPaperera(paquet) else { return nil }
+        let app = AppWarp(url: paquet)
+        return app.esWarp && app.executable == ruta ? app : nil
+    }
 }
 
 /// On és Warp en aquest Mac (D-P12, 0.29.2): Warp Stable, en qualsevol carpeta, i Warp Preview, si n'hi ha, per dir que
 /// encara no és compatible. Són dades: el que macOS en sap ho pregunta `TrobaWarp` (a l'obridor, on les proves no hi
-/// arriben), que crida `troba(aplicacions:cerca:)`.
+/// arriben), que crida `troba(aplicacions:cerca:)`; el Warp que corre, `ambLaCopiaOberta` (decisió 4, 0.31.1).
 public struct InstallacioWarp: Sendable, Equatable {
-    /// L'app de Warp Stable que s'obre: la que diu macOS, o, si no en sap res, la d'Aplicacions (com fins a la 0.29.1).
+    /// L'app de Warp Stable que compta: la que corre (`ambLaCopiaOberta`), o la que diu macOS, o, si no en sap res, la
+    /// d'Aplicacions (com fins a la 0.29.1).
     public var app: AppWarp
-    /// El binari d'`app`. Només aquest compta com a Warp obert, i el seu `terminal-server`: una còpia de Warp en una altra
-    /// carpeta no és la que s'obriria.
+    /// El binari d'`app`. Només aquest compta com a Warp obert, i el seu `terminal-server`: una altra còpia de Warp que no
+    /// corre no és la que s'obriria.
     public var executable: String
     /// Si `app` és Warp Stable de debò. `false`: no n'hi ha cap, i obrir res fallaria.
     public var hiHaStable: Bool
@@ -68,8 +83,11 @@ public struct InstallacioWarp: Sendable, Equatable {
         url.standardizedFileURL.pathComponents.contains { $0 == ".Trash" || $0 == ".Trashes" }
     }
 
+    /// El nom del binari de Warp Stable (`CFBundleExecutable`), si el paquet no diu quin és (o no hi és).
+    static let nomBinari = "stable"
+
     /// `Contents/MacOS/stable`: el binari de Warp Stable si el paquet no diu quin és (o no hi és).
-    static func binariPerOmissio(_ app: URL) -> String { app.appending(path: "Contents/MacOS/stable").path }
+    static func binariPerOmissio(_ app: URL) -> String { app.appending(path: "Contents/MacOS/\(nomBinari)").path }
 
     /// Busca Warp. `cerca` diu on és l'app amb un identificador (a l'app i al CLI, macOS; a les proves, una de falsa), i
     /// `aplicacions`, on es mira Warp Stable si `cerca` no el troba. Només es fa servir una app si el seu `Info.plist`
@@ -84,6 +102,24 @@ public struct InstallacioWarp: Sendable, Equatable {
         let preview = installada(cerca(AppWarp.identificadorPreview)).flatMap { $0.esPreview ? $0 : nil }
         return InstallacioWarp(app: app, executable: (hiHaStable ? app.executable : nil) ?? binariPerOmissio(app.url),
                                hiHaStable: hiHaStable, executablePreview: preview?.executable)
+    }
+
+    /// Decisió 4 (0.31.1): si corre Warp Stable, és aquell el que compta, per a «és obert» i per obrir-hi finestres, encara
+    /// que macOS en digui un altre (dues còpies, o un Warp que macOS ha traslladat, «App Translocation»). Si corre el que
+    /// diu macOS, o no en corre cap, `self`. Es reconeix pels processos, com `warpObert`: l'app sense arguments, amb el
+    /// binari d'un paquet de Warp Stable (`AppWarp.delBinari`). Amb dues còpies obertes, la que diu macOS, si n'és una; si
+    /// no, la de pid més baix. Només llegeix els processos i l'`Info.plist` de cada paquet que corre.
+    public func ambLaCopiaOberta(_ processos: any FontProcessos) -> InstallacioWarp {
+        if hiHaStable, processos.warpObert(executable: executable) { return self }
+        // El nom que en sap el sistema (`p_comm`, tallat a 16 caràcters): el del binari d'`app` i el de sempre.
+        let noms = Set([(executable as NSString).lastPathComponent, Self.nomBinari].map { String($0.prefix(16)) })
+        for pid in noms.flatMap({ processos.pids(nom: $0) }).sorted() {
+            guard let info = processos.proces(pid), info.argv.count <= 1, info.executable != executable,
+                  let oberta = AppWarp.delBinari(info.executable) else { continue }
+            return InstallacioWarp(app: oberta, executable: info.executable, hiHaStable: true,
+                                   executablePreview: executablePreview)
+        }
+        return self
     }
 
     /// Per què Warp Preview no deixa obrir res, amb aquests processos: no hi ha Warp Stable, o Warp Preview és obert i

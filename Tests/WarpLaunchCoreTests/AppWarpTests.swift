@@ -203,20 +203,25 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         let inici = try tmp.carpeta("inici")
         try tmp.carpeta("sessions")
         try Data("[general]\nrestore_session = false\n".utf8).write(to: tmp.url("settings.toml"))
-        let stable = try paquet(tmp, "inici/Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let stable = try paquet(tmp, "inici/Applications/Warp.app", id: AppWarp.identificador, executable: "stable",
+                                versio: "0.2026.11.04.08.17.01")
         let cerca = CercaFalsa()
-        var processos = ProcessosFalsos()
-        ambWarp(stable.appending(path: "Contents/MacOS/stable").path, a: &processos)
-        let lector = Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"),
-                            carpetaSessions: tmp.url("sessions"), processos: processos,
+        var lector = Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"),
+                            carpetaSessions: tmp.url("sessions"), processos: ProcessosFalsos(),
                             warp: { InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca) },
                             inici: inici)
-        // Encara no s'ha instal·lat: no hi ha Warp, i el que corre no és cap Warp conegut.
+        // Encara no s'ha instal·lat: no hi ha Warp, ni en corre cap.
         let abans = try lector.llegeix()
-        #expect(abans.warpObert == false && abans.terminals.isEmpty && abans.warpPreview == nil)
-        #expect(!lector.warpObert())
-        // Instal·lat a `~/Applications` amb l'app oberta: la lectura següent ja el veu.
+        #expect(abans.warpObert == false && abans.terminals.isEmpty)
+        #expect(!lector.warpObert() && lector.installacio().app.versio == nil)
+        // Instal·lat a `~/Applications`: la lectura següent ja el veu, tancat.
         cerca.apps[AppWarp.identificador] = stable
+        #expect(try lector.llegeix().warpObert == false)
+        #expect(lector.installacio().app.versio == "0.2026.11.04.08.17.01")
+        // I obert, amb un terminal.
+        var processos = ProcessosFalsos()
+        ambWarp(stable.appending(path: "Contents/MacOS/stable").path, a: &processos)
+        lector.processos = processos
         let despres = try lector.llegeix()
         #expect(despres.warpObert == true)
         #expect(despres.terminals == [TerminalViu(pid: 51)])
@@ -262,7 +267,14 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         // Sense Warp Stable: només Preview.
         cerca.apps[AppWarp.identificador] = nil
         lector.warp = { InstallacioWarp.troba(aplicacions: tmp.url("Res/Warp.app"), cerca: cerca.cerca) }
+        processos.processos = processos.processos.filter { $0.key < 80 }
+        lector.processos = processos
         #expect(try lector.llegeix().warpPreview == .nomesPreview)
+        // Si macOS no en sap res però Warp Stable corre, és aquell (decisió 4, 0.31.1): res a dir.
+        ambWarp(stable.appending(path: "Contents/MacOS/stable").path, pid: 80, a: &processos)
+        lector.processos = processos
+        let corre = try lector.llegeix()
+        #expect(corre.warpObert == true && corre.warpPreview == nil)
     }
 
     /// Sense res a dir, el JSON no porta el camp, com el d'abans de la 0.29.2, i es llegeix igual.
@@ -271,5 +283,138 @@ private func ambWarp(_ executable: String, pid: Int32 = 40, a processos: inout P
         #expect(!String(decoding: json, as: UTF8.self).contains("warpPreview"))
         let llegida = try JSONDecoder().decode(LecturaWarp.self, from: json)
         #expect(llegida.warpPreview == nil && llegida.avisos == ["x"])
+    }
+}
+
+/// Decisió 4 (0.31.1): si corre Warp Stable, és aquell el que compta, encara que macOS en digui un altre. Les còpies són
+/// paquets a la carpeta temporal, i els processos, inventats.
+@Suite struct CopiaObertaTests {
+    /// Un lector amb aquests processos i el Warp que diu `cerca`, sense res més (ni base, ni sessions).
+    private func lector(_ tmp: CarpetaTemporal, _ processos: ProcessosFalsos, cerca: CercaFalsa) throws -> Lector {
+        try tmp.carpeta("sessions")
+        try Data("[general]\nrestore_session = false\n".utf8).write(to: tmp.url("settings.toml"))
+        return Lector(rutaWarp: tmp.url("warp.sqlite"), rutaAjustos: tmp.url("settings.toml"),
+                      carpetaSessions: tmp.url("sessions"), processos: processos,
+                      warp: { InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca) },
+                      inici: try tmp.carpeta("inici"))
+    }
+
+    /// Dues còpies: macOS diu la d'Aplicacions, però corre la de Descàrregues. És oberta, se'n veuen els terminals i s'hi
+    /// obririen les finestres; abans, l'app la veia tancada i hauria obert l'altra (dos Warp).
+    @Test func duesCopiesCorreLAltra() throws {
+        let tmp = try CarpetaTemporal()
+        let installada = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable",
+                                    versio: "0.2026.10.21.08.25.02")
+        let copia = try paquet(tmp, "inici/Downloads/Warp.app", id: AppWarp.identificador, executable: "stable",
+                               versio: "0.2026.11.04.08.17.01")
+        let binari = copia.appending(path: "Contents/MacOS/stable").path
+        let cerca = CercaFalsa([AppWarp.identificador: installada])
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca)
+        var processos = ProcessosFalsos()
+        ambWarp(binari, a: &processos)
+        #expect(warp.app == AppWarp(url: installada) && !processos.warpObert(executable: warp.executable), "el que diu macOS")
+
+        #expect(warp.ambLaCopiaOberta(processos) == InstallacioWarp(app: AppWarp(url: copia), executable: binari,
+                                                                     hiHaStable: true))
+        let l = try lector(tmp, processos, cerca: cerca)
+        let lectura = try l.llegeix()
+        #expect(lectura.warpObert == true && lectura.terminals == [TerminalViu(pid: 51)] && lectura.warpPreview == nil)
+        #expect(l.warpObert())
+        #expect(l.installacio().app == AppWarp(url: copia) && l.installacio().app.versio == "0.2026.11.04.08.17.01")
+        // El diagnòstic també mira aquella.
+        let diagnostic = EntornDiagnostic(lector: l, carpetaConfiguracio: nil, transcripcions: LectorTranscripcions(carpeta: tmp.url("p")),
+                                          confianca: LectorConfianca(ruta: tmp.url("c.json")), sistema: "prova")
+        #expect(diagnostic.warp().app == AppWarp(url: copia))
+
+        // Només el `terminal-server` de la còpia, o el seu CLI, no són Warp obert: el que diu macOS.
+        var servidor = processos
+        servidor.processos[40] = nil
+        servidor.processos[70] = (InfoProces(executable: binari, argv: [binari, "--help"]), 1)
+        #expect(warp.ambLaCopiaOberta(servidor) == warp)
+        #expect(try !lector(tmp, servidor, cerca: cerca).warpObert())
+    }
+
+    /// Amb totes dues obertes, la que diu macOS, com fins ara. Amb dues altres, la de pid més baix.
+    @Test func ambTotesDuesObertesLaDeMacOS() throws {
+        let tmp = try CarpetaTemporal()
+        let installada = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let copia = try paquet(tmp, "inici/Downloads/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let altra = try paquet(tmp, "inici/Desktop/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"),
+                                         cerca: CercaFalsa([AppWarp.identificador: installada]).cerca)
+        var processos = ProcessosFalsos()
+        ambWarp(copia.appending(path: "Contents/MacOS/stable").path, pid: 40, a: &processos)
+        ambWarp(installada.appending(path: "Contents/MacOS/stable").path, pid: 80, a: &processos)
+        #expect(warp.ambLaCopiaOberta(processos) == warp)
+        processos.processos = processos.processos.filter { $0.key < 80 }
+        ambWarp(altra.appending(path: "Contents/MacOS/stable").path, pid: 20, a: &processos)
+        #expect(warp.ambLaCopiaOberta(processos).app == AppWarp(url: altra))
+    }
+
+    /// Un Warp que macOS ha traslladat («App Translocation»: l'app corre des d'una còpia que macOS munta a una carpeta
+    /// temporal) compta, encara que macOS no en sàpiga res: sense Warp Stable instal·lat, i amb Warp Preview, tampoc no
+    /// diu que només hi ha Preview.
+    @Test func unaDeTraslladada() throws {
+        let tmp = try CarpetaTemporal()
+        let traslladada = try paquet(tmp, "private/var/folders/zz/prova/T/AppTranslocation/0A1B2C3D-0000-4000-8000-000000000001/d/Warp.app",
+                                     id: AppWarp.identificador, executable: "stable")
+        let preview = try paquet(tmp, "Applications/WarpPreview.app", id: AppWarp.identificadorPreview, executable: "preview")
+        let binari = traslladada.appending(path: "Contents/MacOS/stable").path
+        let cerca = CercaFalsa([AppWarp.identificadorPreview: preview])
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca)
+        #expect(!warp.hiHaStable)
+        var processos = ProcessosFalsos()
+        ambWarp(binari, a: &processos)
+        let oberta = warp.ambLaCopiaOberta(processos)
+        #expect(oberta == InstallacioWarp(app: AppWarp(url: traslladada), executable: binari, hiHaStable: true,
+                                          executablePreview: tmp.ruta + "/Applications/WarpPreview.app/Contents/MacOS/preview"))
+        #expect(oberta.app.esWarp)
+        let lectura = try lector(tmp, processos, cerca: cerca).llegeix()
+        #expect(lectura.warpObert == true && lectura.terminals == [TerminalViu(pid: 51)] && lectura.warpPreview == nil)
+    }
+
+    /// Una còpia a la Paperera continua sense comptar (0.29.3), encara que corri: el Warp que compta és el que diu macOS,
+    /// tancat.
+    @Test func laPapereraContinuaSenseComptar() throws {
+        let tmp = try CarpetaTemporal()
+        _ = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let cerca = CercaFalsa()
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: cerca.cerca)
+        for ruta in ["inici/.Trash/Warp.app", "Volumes/Disc/.Trashes/501/Warp.app"] {
+            let paperera = try paquet(tmp, ruta, id: AppWarp.identificador, executable: "stable")
+            var processos = ProcessosFalsos()
+            ambWarp(paperera.appending(path: "Contents/MacOS/stable").path, a: &processos)
+            #expect(warp.ambLaCopiaOberta(processos) == warp, "\(ruta)")
+            #expect(try !lector(tmp, processos, cerca: cerca).warpObert(), "\(ruta)")
+        }
+    }
+
+    /// Només compta un binari que corre sense arguments dins de `<paquet>.app/Contents/MacOS/`, d'un paquet que diu que és
+    /// Warp Stable i que aquell és el seu binari.
+    @Test func nomesUnWarpStableDeDebo() throws {
+        let tmp = try CarpetaTemporal()
+        _ = try paquet(tmp, "Applications/Warp.app", id: AppWarp.identificador, executable: "stable")
+        let warp = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: CercaFalsa().cerca)
+        let preview = try paquet(tmp, "Altres/WarpPreview.app", id: AppWarp.identificadorPreview, executable: "stable")
+        let dev = try paquet(tmp, "Altres/WarpDev.app", id: "dev.warp.Warp-Dev", executable: "stable")
+        let unAltreBinari = try paquet(tmp, "Altres/Warp.app", id: AppWarp.identificador, executable: "warp-stable")
+        let senseApp = try paquet(tmp, "Altres/Warp", id: AppWarp.identificador, executable: "stable")
+        try tmp.carpeta("bin")
+        for binari in [preview.appending(path: "Contents/MacOS/stable").path, dev.appending(path: "Contents/MacOS/stable").path,
+                       unAltreBinari.appending(path: "Contents/MacOS/stable").path,
+                       senseApp.appending(path: "Contents/MacOS/stable").path, tmp.url("bin/stable").path,
+                       "Altres/Warp.app/Contents/MacOS/stable"] {
+            var processos = ProcessosFalsos()
+            ambWarp(binari, a: &processos)
+            #expect(warp.ambLaCopiaOberta(processos) == warp, "\(binari)")
+        }
+        // El nom del binari surt del paquet: si el de macOS no és `stable`, també es busca aquell.
+        let nou = try paquet(tmp, "inici/Applications/Warp nou.app", id: AppWarp.identificador, executable: "warp-stable")
+        let copiaNova = try paquet(tmp, "inici/Downloads/Warp nou.app", id: AppWarp.identificador, executable: "warp-stable")
+        let ambNom = InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"),
+                                           cerca: CercaFalsa([AppWarp.identificador: nou]).cerca)
+        var processos = ProcessosFalsos()
+        ambWarp(copiaNova.appending(path: "Contents/MacOS/warp-stable").path, a: &processos)
+        #expect(ambNom.ambLaCopiaOberta(processos).app == AppWarp(url: copiaNova))
     }
 }

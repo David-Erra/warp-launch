@@ -53,6 +53,8 @@ private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
 /// que li passa `InstallacioWarp.troba` (`nomesTrobaWarpPreguntaOnEsWarp`). A la resta del codi, `workspace` la prohibeix.
 private let trobaWarp = "Sources/WarpLaunchObridor/TrobaWarp.swift"
 private let workspaceTrobaWarp = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\)|\.shared\.urlForApplication\(withBundleIdentifier: \$0\))"#
+/// Decisió 4 (0.31.1): el Warp de macOS sense mirar quin corre (`Lector.installacio()`). Ningú no el fa servir.
+private let senseInstallacio = #"lector\.warp(?![A-Za-z0-9_])"#
 
 /// Les expressions de `prohibidesCodi` que valen per a un fitxer de `Sources`: totes, menys les excepcions, cadascuna en
 /// un sol fitxer. `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`).
@@ -199,7 +201,8 @@ private let prohibidesArrossegar = [
     }
 
     /// D-P12 (0.29.2): on és Warp només ho pregunta `TrobaWarp`, amb una sola crida, i només per als dos identificadors de
-    /// Warp (`InstallacioWarp.troba`). Només el fan servir l'app i el CLI (també `ObreWarp`, per defecte), cap prova.
+    /// Warp (`InstallacioWarp.troba`). Només el fan servir l'app i el CLI, al seu lector, cap prova. Decisió 4 (0.31.1): el
+    /// Warp que compta és el del lector, que també mira quin corre (`Lector.installacio()`), i l'obridor no en té cap altre.
     @Test func nomesTrobaWarpPreguntaOnEsWarp() throws {
         let codi = try fitxers("Sources")
         func linies(_ text: String) -> [String] {
@@ -233,12 +236,34 @@ private let prohibidesArrossegar = [
         ])
         // Fora dels comentaris.
         #expect(Set(linies("TrobaWarp.delSistema").filter { !$0.contains(": //") }.map { String($0.prefix { $0 != ":" }) }) == [
-            "Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCLI/main.swift", "Sources/WarpLaunchObridor/ObreWarp.swift",
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCLI/main.swift",
         ])
         // L'app i el CLI llegeixen Warp on és de debò: el lector de cadascun en porta la crida.
         #expect(linies("Lector(processos:").sorted() == [
             "Sources/WarpLaunchApp/WarpLaunchApp.swift: let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)",
             "Sources/WarpLaunchCLI/main.swift: let lector = Lector(processos: processos, warp: TrobaWarp.delSistema)",
+        ])
+        // Decisió 4 (0.31.1): l'app i el CLI obren al Warp del lector (el que corre, si n'hi ha un), i la versió del full
+        // és la d'aquell. L'obridor no té cap Warp per defecte, i ningú no se salta el lector amb `lector.warp`.
+        let app = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
+        let cli = "Sources/WarpLaunchCLI/main.swift"
+        #expect(linies("ObreWarp.obre(").sorted() == [
+            "\(app): obre: { try await ObreWarp.obre($0, warp: lector.installacio()) },",
+            "\(cli): let obridor = ObridorCLI(obre: { try await ObreWarp.obre($0, warp: lector.installacio()) },",
+        ])
+        #expect(linies("ObreWarp.engega(").sorted() == [
+            "\(app): engegaWarp: { consentiment.refresc?.tanca(); try await ObreWarp.engega(warp: lector.installacio()) },",
+            "\(cli): engega: { try await ObreWarp.engega(warp: lector.installacio()) },",
+        ])
+        #expect(linies("versioWarp: {") == ["\(app): versioWarp: { lector.installacio().app.versio },"])
+        let obridor = try #require(codi.first { $0.ruta == "Sources/WarpLaunchObridor/ObreWarp.swift" }).text
+        #expect(obridor.contains("warp: InstallacioWarp) async throws(ErrorObrir) {")
+                && !obridor.contains("warp: InstallacioWarp ="))
+        #expect(try aparicions(de: [senseInstallacio], a: codi).isEmpty)
+        // El Warp que corre només el mira el lector: `ambLaCopiaOberta` només es crida a `Lector.installacio()`.
+        #expect(linies("ambLaCopiaOberta(").filter { !$0.contains(": //") }.sorted() == [
+            "Sources/WarpLaunchCore/AppWarp.swift: public func ambLaCopiaOberta(_ processos: any FontProcessos) -> InstallacioWarp {",
+            "Sources/WarpLaunchCore/Lector.swift: public func installacio() -> InstallacioWarp { warp().ambLaCopiaOberta(processos) }",
         ])
     }
 
@@ -546,6 +571,13 @@ private let prohibidesArrossegar = [
             InstallacioWarp.perOmissio.app.versio
             InstallacioWarp.perOmissio.executable
             """)]) == ["mostra.swift:1: «\(troba)»", "mostra.swift:2: «\(troba)»", "mostra.swift:4: «perOmissio\\.app(?![A-Za-z0-9_])»"])
+        // Decisió 4 (0.31.1): el Warp de `lector.warp` sense passar per `installacio()`, sí; `warpObert()`, no.
+        #expect(try aparicions(de: [senseInstallacio], a: [(ruta: "mostra.swift", text: """
+            let w = lector.warp()
+            versioWarp: { lector.warp().app.versio }
+            obre: { try await ObreWarp.obre($0, warp: lector.installacio()) }
+            if lector.warpObert() {}
+            """)]) == ["mostra.swift:1: «\(senseInstallacio)»", "mostra.swift:2: «\(senseInstallacio)»"])
         // Pla A4: els lectors de Claude i «Copia el diagnòstic».
         #expect(try aparicions(de: [lectorTranscripcions, lectorConfianca, copiaDiagnostic], a: [(ruta: "mostra.swift", text: """
             LectorTranscripcions()

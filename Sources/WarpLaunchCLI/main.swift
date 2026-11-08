@@ -26,7 +26,9 @@ if CommandLine.arguments.contains("--obre") {
     }
     senyal.resume()
 }
-let obridor = ObridorCLI(obre: { try await ObreWarp.obre($0) }, engega: { try await ObreWarp.engega() },
+// El Warp on s'obre és el de la lectura: el que corre, si n'hi ha un (decisió 4, 0.31.1).
+let obridor = ObridorCLI(obre: { try await ObreWarp.obre($0, warp: lector.installacio()) },
+                         engega: { try await ObreWarp.engega(warp: lector.installacio()) },
                          fitxers: FitxersLaunchWarp.real,
                          appOberta: { !processos.pids(nom: WarpLaunch.executableApp).isEmpty },
                          avisa: { FileHandle.standardOutput.write(Data($0.utf8)) },

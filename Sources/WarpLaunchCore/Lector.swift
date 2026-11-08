@@ -18,8 +18,9 @@ public struct Lector: Sendable {
     public var rutaAjustos: URL?
     public var carpetaSessions: URL
     public var processos: any FontProcessos
-    /// On és Warp Stable, i si hi ha Warp Preview (D-P12, 0.29.2). Es mira a cada lectura: Warp es pot instal·lar o moure
-    /// amb l'app oberta. L'app i el CLI hi posen `TrobaWarp.delSistema` (l'obridor); les proves, una de fixa.
+    /// On és Warp Stable, segons macOS, i si hi ha Warp Preview (D-P12, 0.29.2). Es mira a cada lectura: Warp es pot
+    /// instal·lar o moure amb l'app oberta. L'app i el CLI hi posen `TrobaWarp.delSistema` (l'obridor); les proves, una de
+    /// fixa. El Warp que compta és `installacio()`, que també mira quin corre.
     public var warp: @Sendable () -> InstallacioWarp
     /// Carpeta d'inici de l'usuari. Un pane amb aquesta carpeta probablement l'ha perduda en restaurar-se.
     public var inici: String
@@ -40,8 +41,13 @@ public struct Lector: Sendable {
         self.inici = inici
     }
 
-    /// Si Warp Stable és obert (el de `warp`), sense llegir res més.
-    public func warpObert() -> Bool { processos.warpObert(executable: warp().executable) }
+    /// El Warp que compta (decisió 4, 0.31.1): el Warp Stable que corre, si n'hi ha un, encara que no sigui el que diu
+    /// macOS (`InstallacioWarp.ambLaCopiaOberta`), i si no, el de `warp`. És el que la lectura mira si és obert, i on
+    /// l'app i el CLI obren les finestres (`ObreWarp`).
+    public func installacio() -> InstallacioWarp { warp().ambLaCopiaOberta(processos) }
+
+    /// Si Warp Stable és obert (el d'`installacio()`), sense llegir res més.
+    public func warpObert() -> Bool { processos.warpObert(executable: installacio().executable) }
 
     public func llegeix(base: BaseWarp = .segonsAjust) throws -> LecturaWarp {
         // Si Warp no desa les finestres, la base és d'abans: ni es llegeix.
@@ -91,7 +97,7 @@ public struct Lector: Sendable {
                 })
         }
         sessions.removeAll { lligades.contains($0.pid) }
-        let warp = self.warp()
+        let warp = installacio()
         let obert = processos.warpObert(executable: warp.executable)
         return LecturaWarp(finestres: finestres, sessionsSensePestanya: sessions, avisos: avisos,
                            sessionsNoInteractives: noInteractives, warpObert: obert,

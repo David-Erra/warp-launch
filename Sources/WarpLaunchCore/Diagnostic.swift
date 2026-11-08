@@ -78,7 +78,8 @@ public struct EntornDiagnostic: Sendable {
                 transcripcions: LectorTranscripcions, confianca: LectorConfianca, usuari: String? = nil,
                 sistema: String = ProcessInfo.processInfo.operatingSystemVersionString) {
         processos = lector.processos
-        warp = lector.warp
+        // El Warp que compta, com a la lectura: el que corre, si n'hi ha un (decisió 4, 0.31.1).
+        warp = { lector.installacio() }
         rutaWarp = lector.rutaWarp
         rutaAjustos = lector.rutaAjustos
         carpetaSessions = lector.carpetaSessions
