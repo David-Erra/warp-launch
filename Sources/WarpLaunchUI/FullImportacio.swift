@@ -150,8 +150,8 @@ public final class FullImportacio {
     }
 
     /// L'ordre de les pestanyes que no tenien Claude obert (la plantilla), o `nil` si no n'hi ha cap. En tornar a
-    /// importar, s'hi obrirà; en una configuració nova, queden només terminal i és la que hi tindran si s'hi activa
-    /// Claude (`notaSenseClaudeObert`).
+    /// importar sobre alguna pestanya, s'hi obrirà; en una configuració nova o sense cap pestanya, queden només terminal
+    /// i és la que hi tindran si s'hi activa Claude (`notaSenseClaudeObert`).
     public var ordrePlantilla: String? {
         guard let importacio else { return nil }
         let pestanyes = importacio.configuracio.finestres.flatMap(\.pestanyes)

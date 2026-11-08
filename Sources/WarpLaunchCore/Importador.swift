@@ -6,10 +6,10 @@ public enum Importador {
     /// Què reben les pestanyes on no hi corria Claude. Les de `~` i les d'una carpeta que no existeix queden sempre
     /// sense Claude (D11).
     public enum SenseSessio: Sendable, Equatable {
-        /// Una configuració nova: només terminal (D-P5a, en David, 07/11/2026). Si s'hi activa Claude, ja té les opcions
-        /// de la plantilla.
+        /// Una configuració nova, o una que encara no té cap pestanya: només terminal (D-P5a, en David, 07/11/2026). Si
+        /// s'hi activa Claude, ja té les opcions de la plantilla.
         case nomesTerminal
-        /// Tornar a importar sobre una configuració que ja existeix: Claude, amb la plantilla (D11).
+        /// Tornar a importar sobre una configuració que ja té alguna pestanya: Claude, amb la plantilla (D11).
         case plantilla
 
         /// La de cada importació (l'app i `warp-launch importa`). Sense configuració, o amb una que encara no té cap
@@ -200,9 +200,9 @@ public struct Importacio: Sendable, Equatable {
 public enum OrigenClaude: String, Sendable, Equatable {
     /// Hi corria una sessió: les opcions de la seva ordre.
     case sessio
-    /// No hi corria Claude, i es torna a importar: la plantilla (D11).
+    /// No hi corria Claude, i es torna a importar sobre alguna pestanya: la plantilla (D11).
     case plantilla
-    /// No hi corria Claude, i la configuració és nova: només terminal (D-P5a).
+    /// No hi corria Claude, i la configuració és nova o no té cap pestanya: només terminal (D-P5a).
     case nomesTerminal
     /// A `~`: sense Claude (probablement Warp ha perdut la carpeta).
     case carpetaInici
@@ -285,8 +285,8 @@ public struct ResumImportacio: Sendable, Equatable {
     /// Pestanyes només terminal: les de `~`, les d'una carpeta que no existeix, les de `senseClaudeObert` i, si la
     /// plantilla no obre Claude, les que la prenen.
     public var senseClaude: Int
-    /// D'aquestes, les que no tenien Claude obert, en una configuració nova (D-P5a). En tornar a importar, sempre 0:
-    /// aquestes pestanyes prenen la plantilla (`ambPlantilla`).
+    /// D'aquestes, les que no tenien Claude obert, en una configuració nova o sense cap pestanya (D-P5a). En tornar a
+    /// importar sobre alguna pestanya, sempre 0: aquestes pestanyes prenen la plantilla (`ambPlantilla`).
     public var senseClaudeObert: Int
     /// Pestanyes amb Claude que salten els permisos (`--dangerously-skip-permissions`).
     public var saltenPermisos: Int
@@ -302,9 +302,9 @@ public struct ResumImportacio: Sendable, Equatable {
         self.saltenPermisos = saltenPermisos
     }
 
-    /// En tornar a importar, «4 finestres · 30 pestanyes · 24 amb Claude (6 amb la seva ordre, 18 amb la plantilla) ·
-    /// 6 només terminal». En una configuració nova, la plantilla no hi surt: «4 finestres · 30 pestanyes · 6 amb
-    /// Claude, amb la seva ordre · 24 només terminal (18 sense Claude obert)» (D-P5a).
+    /// En tornar a importar sobre alguna pestanya, «4 finestres · 30 pestanyes · 24 amb Claude (6 amb la seva ordre, 18
+    /// amb la plantilla) · 6 només terminal». En una configuració nova o sense cap pestanya, la plantilla no hi surt:
+    /// «4 finestres · 30 pestanyes · 6 amb Claude, amb la seva ordre · 24 només terminal (18 sense Claude obert)» (D-P5a).
     public var descripcio: String {
         let finestresIPestanyes = "\(Plural.compta(finestres, "finestra", "finestres")) · "
             + Plural.compta(pestanyes, "pestanya", "pestanyes")

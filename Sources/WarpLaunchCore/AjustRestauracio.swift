@@ -134,8 +134,8 @@ extension LecturaWarp {
     }
 
     /// L'avís quan Warp és tancat: no se sap de quan és, i no hi ha cap sessió viva d'on treure les opcions de Claude.
-    /// No diu què en surt: en tornar a importar, la plantilla (D11); en una configuració nova, només terminal (D-P5a).
-    /// Les xifres del full ho diuen.
+    /// No diu què en surt: en tornar a importar sobre alguna pestanya, la plantilla (D11); en una configuració nova o
+    /// sense cap pestanya, només terminal (D-P5a). Les xifres del full ho diuen.
     public static let avisFotoWarpTancat = "Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. "
         + "Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre."
 
