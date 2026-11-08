@@ -9,7 +9,8 @@ public struct LectorSessions: Sendable {
     public var carpeta: URL
     public var processos: any FontProcessos
 
-    public init(carpeta: URL = LectorSessions.carpetaPerDefecte, processos: any FontProcessos = ProcessosDelSistema()) {
+    /// Sense valors per defecte, com `Lector`: una prova que se'ls oblidés llegiria les sessions i els processos de debò.
+    public init(carpeta: URL, processos: any FontProcessos) {
         self.carpeta = carpeta
         self.processos = processos
     }

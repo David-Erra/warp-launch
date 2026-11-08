@@ -101,7 +101,8 @@ final class Aplicacio {
         self.editor = editor
         self.sessions = sessions
         let processos = ProcessosDelSistema()
-        let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)
+        let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,
+                            inici: inici)
         let entornDiagnostic = EntornDiagnostic(lector: lector, carpetaConfiguracio: carpeta,
                                                 configuracioDeProva: arguments.deProva,
                                                 transcripcions: LectorTranscripcions(), confianca: LectorConfianca())

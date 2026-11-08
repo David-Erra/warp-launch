@@ -52,6 +52,7 @@ private let paraulaRegister = #"(^|[^A-Za-z0-9_])register(?![A-Za-z0-9_])"#
 /// A les proves, les lectures de Warp només amb rutes de prova, i res de l'app (`lesProvesNoLlegeixenLEstatReal`).
 private let lectorProves = #"(^|[^A-Za-z0-9_])Lector\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#
 private let lectorAjustosProves = #"(^|[^A-Za-z0-9_])LectorAjustosWarp\((?!ruta:)"#
+private let lectorWarpProves = #"(^|[^A-Za-z0-9_])LectorWarp\((?!ruta:)"#
 private let ajustRestauracioProves = #"(^|[^A-Za-z0-9_])AjustRestauracio\((?!ruta: b\.fitxer|ruta: tmp\.url)"#
 private let trobaProves = #"(^|[^A-Za-z0-9_])InstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
 private let nsApp = #"(^|[^A-Za-z0-9_])NSApp(?![A-Za-z0-9_])"#
@@ -144,6 +145,22 @@ private let retirada: [(expressio: String, fitxer: String, mostra: String)] = [
 /// Les línies de la retirada que són fora del seu fitxer.
 private func retiradaForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
     try retirada.flatMap { r in try aparicions(de: [r.expressio], a: codi.filter { $0.ruta != r.fitxer }) }
+}
+
+/// Les sessions de Claude (`~/.claude/sessions`) i els processos de debò. Cap paràmetre no els té per defecte (`Lector`,
+/// `LectorSessions`): una prova que se'ls oblidés els llegiria, i cap guarda de línia no ho veuria, perquè el valor per
+/// defecte no surt a la crida i els arguments poden ocupar diverses línies. Les línies de `Sources` que els esmenten, fora
+/// dels comentaris.
+private let rutaLectorSessions = "Sources/WarpLaunchCore/LectorSessions.swift"
+private func sessionsIProcessosDeDebo(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    let rutaEscrita = try Regex(#""[^"]*\.claude/sessions"#)
+    return codi.flatMap { f in
+        f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.hasPrefix("//") }
+            .filter { $0.contains("LectorSessions.carpetaPerDefecte") || $0.contains("ProcessosDelSistema") || $0.contains(rutaEscrita)
+                      || (f.ruta == rutaLectorSessions && $0.contains("carpetaPerDefecte")) }
+            .map { "\(f.ruta): \($0)" }
+    }
 }
 
 /// El que s'arrossega no surt de l'app: ni fitxers, ni text, ni `ShareLink`.
@@ -270,9 +287,9 @@ private let prohibidesArrossegar = [
             "Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCLI/main.swift",
         ])
         // L'app i el CLI llegeixen Warp on és de debò: el lector de cadascun en porta la crida.
-        #expect(linies("Lector(processos:").sorted() == [
-            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let lector = Lector(processos: processos, warp: TrobaWarp.delSistema, inici: inici)",
-            "Sources/WarpLaunchCLI/main.swift: let lector = Lector(processos: processos, warp: TrobaWarp.delSistema)",
+        #expect(linies("Lector(carpetaSessions:").sorted() == [
+            "Sources/WarpLaunchApp/WarpLaunchApp.swift: let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
+            "Sources/WarpLaunchCLI/main.swift: let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema)",
         ])
         // Decisió 4 (0.31.1): l'app i el CLI obren al Warp del lector (el que corre, si n'hi ha un), i la versió del full
         // és la d'aquell. L'obridor no té cap Warp per defecte, i ningú no se salta el lector amb `lector.warp`.
@@ -484,6 +501,44 @@ private let prohibidesArrossegar = [
         }
     }
 
+    /// Les sessions de Claude i els processos de debò només els posen l'app i el CLI, al seu lector, i cap paràmetre no els té
+    /// per defecte (`sessionsIProcessosDeDebo`). Una prova no pot crear un `Lector` ni un `LectorSessions` sense dir-los.
+    @Test func lesSessionsIElsProcessosDeDeboNomesDeLAppIDelCLI() throws {
+        let codi = try fitxers("Sources")
+        let app = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
+        let cli = "Sources/WarpLaunchCLI/main.swift"
+        let deDebo = try sessionsIProcessosDeDebo(codi)
+        #expect(deDebo.sorted() == [
+            "\(app): let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,",
+            "\(app): let processos = ProcessosDelSistema()",
+            "\(cli): let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema)",
+            "\(cli): let processos = ProcessosDelSistema()",
+            "\(rutaLectorSessions): .appending(path: \".claude/sessions\")",
+            "\(rutaLectorSessions): public static let carpetaPerDefecte = FileManager.default.homeDirectoryForCurrentUser",
+            "Sources/WarpLaunchCore/Processos.swift: public struct ProcessosDelSistema: FontProcessos {",
+        ], "\(deDebo.joined(separator: "\n"))")
+        func text(_ ruta: String) throws -> String { try #require(codi.first { $0.ruta == ruta }).text }
+        #expect(try text("Sources/WarpLaunchCore/Lector.swift").contains("\n                carpetaSessions: URL,\n"))
+        #expect(try text(rutaLectorSessions).contains("\n    public init(carpeta: URL, processos: any FontProcessos) {\n"))
+        // La mostra: un valor per defecte, també amb la ruta escrita o dins de `LectorSessions`, surt; un comentari, no.
+        #expect(try sessionsIProcessosDeDebo([
+            (ruta: "Sources/WarpLaunchCore/Lector.swift", text: """
+                carpetaSessions: URL = LectorSessions.carpetaPerDefecte,
+                processos: any FontProcessos = ProcessosDelSistema(),
+                carpetaSessions: URL = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".claude/sessions"),
+                carpetaSessions: URL,
+                /// `LectorSessions.carpetaPerDefecte` i `ProcessosDelSistema`
+                """),
+            (ruta: rutaLectorSessions, text: "public init(carpeta: URL = carpetaPerDefecte, processos: any FontProcessos) {"),
+            (ruta: "Sources/WarpLaunchCore/OrdreCLI.swift", text: "    Només llegeix Warp, ~/.claude/sessions i ~/.claude/projects."),
+        ]) == [
+            "Sources/WarpLaunchCore/Lector.swift: carpetaSessions: URL = LectorSessions.carpetaPerDefecte,",
+            "Sources/WarpLaunchCore/Lector.swift: processos: any FontProcessos = ProcessosDelSistema(),",
+            "Sources/WarpLaunchCore/Lector.swift: carpetaSessions: URL = FileManager.default.homeDirectoryForCurrentUser.appending(path: \".claude/sessions\"),",
+            "\(rutaLectorSessions): public init(carpeta: URL = carpetaPerDefecte, processos: any FontProcessos) {",
+        ])
+    }
+
     /// D19 i regla 7: l'ajust de debò només l'escriu l'app, i només amb la carpeta `.real`. `AjustRestauracio` només es pot
     /// crear a l'app: ni el CLI ni el core poden fer-ho, amb cap ruta.
     @Test func lAjustDeWarpNomesLEscriuLApp() throws {
@@ -502,8 +557,9 @@ private let prohibidesArrossegar = [
         #expect(proves.count > 5, "no s'han trobat les proves a \(arrel.path)")
         let prohibides = [
             // `Lector(` només amb les rutes de prova: `Lector()`, `Lector(inici:)` o sense `rutaAjustos` llegirien Warp i
-            // Claude de debò.
-            lectorProves, lectorAjustosProves, ajustRestauracioProves, #"ProcessosDelSistema"#,
+            // Claude de debò; `LectorWarp()`, la base de Warp. Les sessions i els processos no tenen valor per defecte
+            // (`lesSessionsIElsProcessosDeDeboNomesDeLAppIDelCLI`).
+            lectorProves, lectorAjustosProves, lectorWarpProves, ajustRestauracioProves, #"ProcessosDelSistema"#,
             #"rutaPerDefecte"#, #"carpetaPerDefecte"#,
             #"\.config/warp-launch"#, nsApp, #"NSApplication"#, #"NSWindow"#, #"NSHostingView"#,
             #"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#,
@@ -687,19 +743,24 @@ private let prohibidesArrossegar = [
                        "mostra.swift:8: «\(lectorConfianca)»", "mostra.swift:9: «\(copiaDiagnostic)»"])
         // Ni `MeuLectorConfianca(`, que és un altre nom.
         #expect(try aparicions(de: [lectorConfianca], a: [(ruta: "mostra.swift", text: "MeuLectorConfianca()")]).isEmpty)
-        // Ni `LectorAjustosWarp()`, que llegiria el `settings.toml` de debò, ni `NSApp`, que és l'app de les proves (també
-        // davant d'un punt). `NSApplication` és un altre nom.
-        #expect(try aparicions(de: [lectorAjustosProves, nsApp], a: [(ruta: "mostra.swift", text: """
+        // Ni `LectorAjustosWarp()`, que llegiria el `settings.toml` de debò, ni `LectorWarp()`, que en llegiria la base, ni
+        // `NSApp`, que és l'app de les proves (també davant d'un punt). `LlegeixLectorWarp(` i `NSApplication` són altres noms.
+        #expect(try aparicions(de: [lectorAjustosProves, lectorWarpProves, nsApp], a: [(ruta: "mostra.swift", text: """
             LectorAjustosWarp().desaFinestres()
             LectorAjustosWarp(ruta: tmp)
             WarpLaunchCore.LectorAjustosWarp().desaFinestres()
+            try LectorWarp().llegeix()
+            try LectorWarp(ruta: base.url).llegeix()
+            try WarpLaunchCore.LectorWarp().llegeix()
+            @Test func lEsquemaEsTotElQueLlegeixLectorWarp() throws {
             NSApp.terminate(nil)
             AppKit.NSApp.setActivationPolicy(.regular)
             let a = NSApp
             NSApplication.shared.hide(nil)
             """)]) == [
             "mostra.swift:1: «\(lectorAjustosProves)»", "mostra.swift:3: «\(lectorAjustosProves)»",
-            "mostra.swift:4: «\(nsApp)»", "mostra.swift:5: «\(nsApp)»", "mostra.swift:6: «\(nsApp)»",
+            "mostra.swift:4: «\(lectorWarpProves)»", "mostra.swift:6: «\(lectorWarpProves)»",
+            "mostra.swift:8: «\(nsApp)»", "mostra.swift:9: «\(nsApp)»", "mostra.swift:10: «\(nsApp)»",
         ])
         #expect(try aparicions(de: [#"PortaRetallsSistema\.(enganxa|hiHaPestanyes|escriu)"#], a: mostra) == [
             "mostra.swift:7: «PortaRetallsSistema\\.(enganxa|hiHaPestanyes|escriu)»",

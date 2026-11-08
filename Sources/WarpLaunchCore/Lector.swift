@@ -27,8 +27,11 @@ public struct Lector: Sendable {
 
     public init(rutaWarp: URL = LectorWarp.rutaPerDefecte,
                 rutaAjustos: URL? = LectorAjustosWarp.rutaPerDefecte,
-                carpetaSessions: URL = LectorSessions.carpetaPerDefecte,
-                // Sense valor per defecte: una prova que se l'oblidés llegiria els processos de debò.
+                // Sense valor per defecte: una prova que se l'oblidés llegiria les sessions de Claude de debò, i cap guarda
+                // de línia no ho veuria (els arguments poden ocupar diverses línies). L'app i el CLI hi posen
+                // `LectorSessions.carpetaPerDefecte`.
+                carpetaSessions: URL,
+                // Tampoc: una prova que se l'oblidés llegiria els processos de debò.
                 processos: any FontProcessos,
                 // Tampoc: les proves hi han de posar una instal·lació fixa, i l'app i el CLI, la de macOS.
                 warp: @escaping @Sendable () -> InstallacioWarp,
