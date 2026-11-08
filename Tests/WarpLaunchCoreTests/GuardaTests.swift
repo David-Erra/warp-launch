@@ -547,6 +547,16 @@ private let prohibidesArrossegar = [
         #expect(app.components(separatedBy: "continuaEnTancarFinestra(").count == 3, "només aquestes dues")
     }
 
+    /// A la pestanya «Pestanyes noves» de la Configuració, cap secció no repeteix el títol de la pestanya (decisió d'en David
+    /// del 08/11/2026): només el porta la pestanya. El peu de la primera secció es queda.
+    @Test func laPestanyaPestanyesNovesNoRepeteixElTitol() throws {
+        let vista = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/VistaConfiguracio.swift"), encoding: .utf8)
+        let titols = vista.split(separator: "\n").filter { $0.contains(#""Pestanyes noves""#) }
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        #expect(titols == [#"case .pestanyesNoves: "Pestanyes noves""#], "\(titols)")
+        #expect(vista.contains(#"Text(editor.motiuPlantillaNoEditable ?? "S'aplica a les pestanyes noves i a les que s'importen sense ""#))
+    }
+
     /// La fila d'una finestra decideix si accepta pestanyes en cada arrossegament, no quan es dibuixa: amb `isEnabled`,
     /// la d'una finestra triada en crear-la no les acceptava mai més (prova 7).
     @Test func laFilaDeLaFinestraDecideixEnArrossegar() throws {

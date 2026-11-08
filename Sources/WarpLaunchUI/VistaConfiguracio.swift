@@ -97,8 +97,9 @@ public struct VistaConfiguracio: View {
         if let plantilla = editor.plantillaVisible {
             seccionsPlantilla(plantilla)
         } else {
-            // Carregant, o el fitxer no es pot llegir: cap valor, perquè no se sap quina és la plantilla.
-            Section("Pestanyes noves") {
+            // Carregant, o el fitxer no es pot llegir: cap valor, perquè no se sap quina és la plantilla. Sense títol, com
+            // la de la plantilla.
+            Section {
                 Text(editor.motiuPlantillaNoEditable ?? "")
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -106,6 +107,7 @@ public struct VistaConfiguracio: View {
         }
     }
 
+    /// La primera secció no té títol: repetiria el de la pestanya (decisió d'en David del 08/11/2026). El peu es queda.
     @ViewBuilder
     private func seccionsPlantilla(_ plantilla: ClaudePestanya) -> some View {
         Section {
@@ -136,8 +138,6 @@ public struct VistaConfiguracio: View {
                 }
                 .help("Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom")
             }
-        } header: {
-            Text("Pestanyes noves")
         } footer: {
             Text(editor.motiuPlantillaNoEditable ?? "S'aplica a les pestanyes noves i a les que s'importen sense "
                 + "sessió de Claude. Les que ja hi són no canvien.")
