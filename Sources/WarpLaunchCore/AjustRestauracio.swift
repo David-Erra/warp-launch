@@ -21,7 +21,7 @@ import os
 /// ser Warp a mig escriure; buit i antic és buit de debò, i s'hi pot escriure. L'única data recent que no compta és la del
 /// fitxer que acaba de posar aquest mateix ajust, si encara és igual (`escrit`): si no, un refresc no podria tornar a
 /// desactivar l'ajust fins passats 2 s, ni en sortir de l'app. I just abans del `rename`, el fitxer encara ha de ser el que
-/// s'ha llegit.
+/// s'ha llegit, pel contingut i per `stat`.
 public struct AjustRestauracio: Sendable {
     public struct Refusat: Error, Equatable, CustomStringConvertible {
         public var description: String
@@ -99,7 +99,7 @@ public struct AjustRestauracio: Sendable {
             // Sense la línia, el valor és `true`: aquí només s'hi arriba per desactivar-lo.
             case let .senseLinia(afegida): try afegida.get()
             }
-            return try substitueix(dades, per: Data(resultat.utf8))
+            return try substitueix(dades, llegit: identitat, per: Data(resultat.utf8))
         }
     }
 
@@ -113,7 +113,7 @@ public struct AjustRestauracio: Sendable {
 
     /// Substitueix el fitxer d'un sol cop (`rename`), amb els permisos i els atributs estesos de l'original, si encara és
     /// el que s'ha llegit (si no, `.mesTard`).
-    private func substitueix(_ dades: Data, per resultat: Data) throws(Refusat) -> Escriptura {
+    private func substitueix(_ dades: Data, llegit: Identitat, per resultat: Data) throws(Refusat) -> Escriptura {
         var fitxer = stat(), carpeta = stat()
         guard stat(ruta.path, &fitxer) == 0, stat(carpetaTemporal.path, &carpeta) == 0 else {
             throw Refusat(description: "no es pot mirar on és «\(ruta.path)»")
@@ -128,9 +128,10 @@ public struct AjustRestauracio: Sendable {
         copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))
         ganxoDeProva?()
         let nou = try identitatPreparada(temporal)
-        // Warp l'escriu en calent: el que s'acaba de llegir encara ha de ser el que hi ha. Si no, Warp l'acaba d'escriure: no
-        // és cap error, i es torna a provar més tard.
-        guard (try? Data(contentsOf: ruta)) == dades else {
+        // Warp l'escriu en calent: el que s'acaba de llegir encara ha de ser el que hi ha, segons `stat` (la mida, la data i
+        // l'inode) i pel contingut. Si no, Warp l'acaba d'escriure: no és cap error, i es torna a provar més tard.
+        var ara = stat()
+        guard lstat(ruta.path, &ara) == 0, Identitat(ara) == llegit, (try? Data(contentsOf: ruta)) == dades else {
             try? FileManager.default.removeItem(at: temporal)
             return .mesTard
         }

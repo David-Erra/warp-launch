@@ -376,6 +376,42 @@ final class RellotgeDeProva: @unchecked Sendable {
         #expect(b.contingut == text)
     }
 
+    /// Just abans del `rename`, el fitxer ha de ser el que s'ha llegit també segons `stat`, encara que el contingut sigui el
+    /// mateix: si n'ha canviat la data (Warp l'ha tornat a escriure igual) o l'inode (l'ha substituït per un d'igual, amb la
+    /// mateixa data), no s'hi escriu res, i es torna a provar més tard.
+    @Test(arguments: [false, true])
+    func siStatCanviaAbansDelRenameNoEscriu(substituit: Bool) throws {
+        var b = try Banc()
+        let fitxer = b.fitxer, copia = b.tmp.url("copia.toml"), ara = b.rellotge.ara
+        var info = stat()
+        #expect(lstat(fitxer.path, &info) == 0)
+        let abans = info
+        b.ajust.ganxoDeProva = {
+            if substituit {
+                // El mateix contingut, la mateixa mida i la mateixa data, fins al nanosegon: només canvia l'inode.
+                try? Data(text.utf8).write(to: copia)
+                var dates = [timespec(tv_sec: 0, tv_nsec: Int(UTIME_OMIT)), abans.st_mtimespec]
+                _ = utimensat(AT_FDCWD, copia.path, &dates, 0)
+                _ = rename(copia.path, fitxer.path)
+            } else {
+                try? FileManager.default.setAttributes([.modificationDate: ara - 30], ofItemAtPath: fitxer.path)
+            }
+        }
+        #expect(try b.ajust.posa(true) == .mesTard)
+        var despres = stat()
+        #expect(lstat(fitxer.path, &despres) == 0)
+        #expect(despres.st_size == abans.st_size)
+        if substituit {
+            #expect(despres.st_ino != abans.st_ino)
+            #expect(despres.st_mtimespec.tv_sec == abans.st_mtimespec.tv_sec)
+            #expect(despres.st_mtimespec.tv_nsec == abans.st_mtimespec.tv_nsec)
+        } else {
+            #expect(despres.st_ino == abans.st_ino)
+        }
+        #expect(b.contingut == text)
+        #expect(b.temporals.isEmpty)
+    }
+
     /// La data recent del fitxer que acaba de posar l'ajust no compta (si no, un refresc no el podria tornar a desactivar fins
     /// passats 2 s), també des d'una còpia de l'ajust, com les de l'app. Si després hi escriu Warp, encara que sigui el mateix
     /// text, ja no és seu.
