@@ -1737,6 +1737,16 @@ private let prohibidesArrossegar = [
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
         #expect(try obertures(fitxer.text) == obrenAFitxersLaunchWarp)
         #expect(try canvienAtributs(fitxer.text) == canvienAtributsAFitxersLaunchWarp)
+        // I és la del fitxer que `escriu` acaba de crear: entre l'`open` amb `O_EXCL` i el `fchmod`, cap altra funció ni cap
+        // altre `fd`. A `comencaAmbLaMarca`, el descriptor de només lectura també deixaria canviar els permisos d'un fitxer
+        // que ja hi era.
+        let creat = try #require(fitxer.text.range(of: obrenAFitxersLaunchWarp[0]))
+        let permisos = try #require(fitxer.text.range(of: canvienAtributsAFitxersLaunchWarp[0]))
+        #expect(creat.upperBound < permisos.lowerBound)
+        if creat.upperBound < permisos.lowerBound {
+            let entremig = fitxer.text[creat.upperBound..<permisos.lowerBound]
+            #expect(!entremig.contains("func ") && !entremig.contains("fd ="), "\(entremig)")
+        }
     }
 
     /// A les proves, `Process` només és als helpers que fan llegir una línia a zsh o executen un script de `scripts/`. Com a
