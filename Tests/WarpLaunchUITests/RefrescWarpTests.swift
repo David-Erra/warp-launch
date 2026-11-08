@@ -381,9 +381,9 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         mon.ajustMesTard = 1
         let r = RefrescWarp(entorn: mon.entorn)
         r.vigila()
-        #expect(mon.ajust && mon.posats == 0 && r.avis == nil && !r.desactivacioPendent)
+        #expect(mon.ajust && mon.posats == 0 && r.avis == nil && r.pendent == .acabaDeCanviar)
         r.vigila()
-        #expect(!mon.ajust && mon.canvis == [false] && r.avis == nil)
+        #expect(!mon.ajust && mon.canvis == [false] && r.avis == nil && !r.desactivacioPendent)
     }
 
     /// Si en desactivar-lo el fitxer acaba de canviar, no és cap error: cap avís, i no es torna a provar de seguida (no
@@ -554,6 +554,49 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
         mon.ajust = false
         r.vigila()
         #expect(r.avis == nil && r.pendent == nil)
+    }
+
+    /// Sense haver pogut mirar mai el valor (per exemple, l'app s'acaba d'obrir i el fitxer ja no parava de canviar), l'ajust
+    /// tampoc no es pot desactivar, i pot ser activat: també avisa passats 5 minuts seguits, sense escriure res. Quan se'n
+    /// pot saber el valor, el desactiva, i l'avís marxa.
+    @Test func siFaMesDe5MinutsQueNoSeSapElValorTambeAvisa() {
+        let mon = Mon()
+        mon.ajust = true
+        mon.ajustMesTard = 1
+        let r = RefrescWarp(entorn: mon.entorn)
+        r.vigila()
+        for minut in 1...5 {
+            mon.ara += 60
+            mon.ajustMesTard = 1
+            r.vigila()
+            #expect(mon.ajust && mon.posats == 0 && r.avis == nil, "minut \(minut)")
+        }
+        let canvis = Comptador()
+        withObservationTracking { _ = r.avis } onChange: { canvis.suma() }
+        mon.ara += 1
+        mon.ajustMesTard = 1
+        r.vigila()
+        #expect(canvis.valor == 1, "el menú ho ha de veure")
+        #expect(r.avis == RefrescWarp.avisNoParaDeCanviar && r.nota == nil)
+        #expect(mon.ajust && mon.posats == 0, "no se'n sap el valor: no s'hi escriu res")
+        mon.ara += 60
+        r.vigila()
+        #expect(!mon.ajust && mon.canvis == [false] && r.avis == nil && r.pendent == nil)
+    }
+
+    /// Si el fitxer apareix i no para de canviar, la nota que no hi és (o que no hi ha la carpeta de Warp) ja no és certa.
+    @Test func siNoSeSapElValorLaNotaQueNoHiHaElFitxerMarxa() {
+        for pendent in [RefrescWarp.Pendent.quanSObriWarp, .warpMaiObert] {
+            let mon = Mon()
+            mon.ajust = true
+            if pendent == .quanSObriWarp { mon.quanSObriWarp = 1 } else { mon.warpMaiObert = 1 }
+            let r = RefrescWarp(entorn: mon.entorn)
+            r.vigila()
+            #expect(r.pendent == pendent && r.nota != nil)
+            mon.ajustMesTard = 1
+            r.vigila()
+            #expect(r.pendent == .acabaDeCanviar && r.nota == nil && r.avis == nil)
+        }
     }
 
     /// L'avís diu el que se sap: que el fitxer no para de canviar i que no s'hi pot desactivar la restauració, i que ho
