@@ -118,9 +118,35 @@ private let altresCreenOSobreescriuen = [
     #"(^|[^A-Za-z0-9_])f?truncate(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?copyfile(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
 ]
+/// Les maneres de canviar els permisos, el propietari, les marques, les dates o els atributs estesos d'un fitxer, o
+/// d'intercanviar-ne el contingut amb un altre, de C, de `FileManager` i d'`URL`: `chmod`, `fchmod`, `lchmod` i `fchmodat`;
+/// `chown`, `fchown`, `lchown` i `fchownat`; `chflags`, `fchflags` i `lchflags`; `setAttributes`; `setResourceValue` i
+/// `setResourceValues`; `exchangedata` i `fexchangedata`; `setxattr`, `fsetxattr`, `removexattr` i `fremovexattr`;
+/// `setattrlist`, `fsetattrlist` i `setattrlistat`; i `utimes`, `futimes`, `lutimes`, `utime`, `utimensat` i `futimens`. Com a
+/// paraula, també amb el mòdul i sense cridar-les; les que només llegeixen (`getxattr`, `listxattr`, `getattrlist`,
+/// `attributesOfItem`, `resourceValues`), no. Valen per al diagnòstic (`escriuen`), per a l'ajust
+/// (`nomesLAjustCreaElFitxerDeWarp`) i per a la carpeta de Warp, on només hi ha la crida que posa 0644 al fitxer que
+/// `FitxersLaunchWarp` acaba de crear (`canvienAtributsAFitxersLaunchWarp`).
+private let altresCanvienAtributs = [
+    #"(^|[^A-Za-z0-9_])(f|l)?chmod(at)?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])(f|l)?chown(at)?(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])(f|l)?chflags(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])setAttributes(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])setResourceValues?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?exchangedata(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])f?(set|remove)xattr(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?setattrlist(at)?(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])((f|l)?utimes|utimensat|futimens|utime)(?![A-Za-z0-9_])"#,
+]
+/// L'única crida de `FitxersLaunchWarp` que canvia els permisos d'un fitxer: la del que acaba de crear amb `O_EXCL`, pel seu
+/// descriptor, abans d'escriure-hi. Una altra, també amb el mòdul o amb una ruta, ja hi surt (`canvienAtributs`).
+private let canvienAtributsAFitxersLaunchWarp = ["if fchmod(fd, 0o644) != 0 {"]
+/// Les línies que canvien els permisos o els atributs d'un fitxer (`altresCanvienAtributs`), sense els espais del principi.
+private func canvienAtributs(_ text: String) throws -> [String] {
+    let regs = try altresCanvienAtributs.map { try Regex($0) }
+    return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        .filter { linia in regs.contains { linia.contains($0) } }
+}
 /// A `FitxersLaunchWarp`, a més de l'única crida que esborra (`cridaUnlink`), res que sobreescrigui, esborri, mogui o creï
 /// carpetes: tampoc `createFile` (que sobreescriu el que hi ha), cap `.write(` (també `toFile:`), un `FileHandle` per
-/// escriure, `O_RDWR` ni `O_APPEND`. I només les dues crides a `open` d'ara (`obrenAFitxersLaunchWarp`).
+/// escriure, `O_RDWR` ni `O_APPEND`. I només les dues crides a `open` d'ara (`obrenAFitxersLaunchWarp`) i la de `fchmod`
+/// (`canvienAtributsAFitxersLaunchWarp`).
 private let prohibidesCarpetaWarp = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\("#,
                                      cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#, #"createFile"#,
                                      #"forWriting"#, #"forUpdating"#, #"O_RDWR"#, #"O_APPEND"#]
@@ -190,7 +216,8 @@ private let initSenseArguments = #"\.init\(\s*\)"#
 private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
 /// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen` i
-/// `altresCreenOSobreescriuen`), executi o toqui el porta-retalls. Sense `\b`: amb les regles d'Unicode, `default.moveItem`
+/// `altresCreenOSobreescriuen`), canviï els permisos o els atributs d'un fitxer (`altresCanvienAtributs`), executi o toqui
+/// el porta-retalls. Sense `\b`: amb les regles d'Unicode, `default.moveItem`
 /// o `Darwin.open` no hi tenen cap límit de paraula.
 private let escriuen = [
     #"\.desa\("#, #"\.posa\("#, #"\.accepta\("#, #"EscripturaAtomica"#, #"\.write\("#, #"createFile"#,
@@ -198,7 +225,7 @@ private let escriuen = [
     #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
     #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
     #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#, cridaMkdir,
-] + altresEsborrenOMouen + altresCreenOSobreescriuen
+] + altresEsborrenOMouen + altresCreenOSobreescriuen + altresCanvienAtributs
 
 /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
 /// - posar l'ajust de Warp a un valor que no és el d'un refresc: només `RefrescWarp.retira` (`entorn.posa(`, que fins ara
@@ -803,8 +830,9 @@ private let prohibidesArrossegar = [
     /// Decisió A (0.31.2): `settings.toml` de Warp, si no hi és, només el crea `AjustRestauracio`, d'un sol cop i només si
     /// Warp no l'ha creat mentrestant (`renamex_np` amb `RENAME_EXCL`), des d'un fitxer de la carpeta temporal
     /// (`EscripturaAtomica.creaFitxerNou`). No crea la carpeta de Warp, ni obre res per escriure-hi directament, i l'únic
-    /// `copyfile` hi copia els atributs estesos de l'original, no al revés. Cap altre fitxer no fa servir aquestes crides, ni
-    /// `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
+    /// `copyfile` hi copia els atributs estesos de l'original, no al revés. Tampoc no canvia els permisos ni els atributs de
+    /// cap fitxer (`altresCanvienAtributs`): els del fitxer nou els posa `EscripturaAtomica.creaFitxerNou`. Cap altre fitxer no
+    /// fa servir aquestes crides, ni `O_CREAT` fora d'on ja era, i la ruta de debò només la tenen el lector i l'app.
     @Test func nomesLAjustCreaElFitxerDeWarp() throws {
         let codi = try fitxers("Sources")
         let trobades = try creenForaDeLloc(codi)
@@ -816,11 +844,15 @@ private let prohibidesArrossegar = [
         let copies = try aparicions(de: [creaOEnllaca[8]], a: [ajust])
         #expect(copies.count == 1, "\(copies)")
         #expect(ajust.text.contains("copyfile(ruta.path, temporal.path, nil, copyfile_flags_t(COPYFILE_XATTR))"))
-        #expect(try aparicions(de: [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], creaOEnllaca[6],
-                                    creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
-                                    #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#,
-                                    #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#] + escriuenDirectament,
-                               a: [ajust]).isEmpty)
+        let noFaLAjust = [#"renameatx_np"#, #"RENAME_SWAP"#, creaOEnllaca[3], creaOEnllaca[4], creaOEnllaca[6],
+                          creaOEnllaca[7], cridaMkdir, #"mkdirat"#,
+                          #"createDirectory"#, #"O_CREAT"#, #"O_TRUNC"#, #"createFile"#,
+                          #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#] + escriuenDirectament
+            + altresCanvienAtributs
+        #expect(try aparicions(de: noFaLAjust, a: [ajust]).isEmpty)
+        // La crida de `fchmod` de `FitxersLaunchWarp`, a l'ajust, surt.
+        #expect(try aparicions(de: noFaLAjust, a: [(ruta: rutaAjustRestauracio, text: canvienAtributsAFitxersLaunchWarp[0])])
+            == ["\(rutaAjustRestauracio):1: «\(altresCanvienAtributs[0])»"])
         // Cada línia, la seva expressió de `escriuenDirectament`; la crida que prepara el fitxer nou, cap.
         #expect(try aparicions(de: escriuenDirectament, a: [(ruta: rutaAjustRestauracio, text: """
             let fd = open(ruta.path, banderes)
@@ -967,14 +999,29 @@ private let prohibidesArrossegar = [
             copyfile(a, b, nil, copyfile_flags_t(COPYFILE_ALL))
             try FileManager.default.linkItem(at: u, to: v)
             try FileManager.default.createSymbolicLink(at: u, withDestinationURL: v)
+            Darwin.chmod(r, 0o777)
+            fchown(fd, uid, gid)
+            lchflags(r, 0)
+            try FileManager.default.setAttributes([.posixPermissions: 0o777], ofItemAtPath: r)
+            try url.setResourceValues(valors)
+            exchangedata(a, b, 0)
+            fsetxattr(fd, nom, valor, mida, 0, 0)
+            setattrlist(r, &llista, &dades, mida, 0)
+            utimensat(AT_FDCWD, r, &temps, 0)
             """)]
         #expect(mostra[0].text.split(separator: "\n").count == escriuen.count, "una línia per expressió")
         #expect(try aparicions(de: escriuen, a: mostra)
             == escriuen.enumerated().map { "mostra.swift:\($0.offset + 1): «\($0.element)»" })
+        // Tampoc la crida de `fchmod` de `FitxersLaunchWarp`, que només val allà.
+        #expect(try aparicions(de: escriuen, a: [(ruta: "Sources/WarpLaunchCore/Diagnostic.swift",
+                                                 text: canvienAtributsAFitxersLaunchWarp[0])])
+            == ["Sources/WarpLaunchCore/Diagnostic.swift:1: «\(altresCanvienAtributs[0])»"])
         #expect(try aparicions(de: escriuen, a: [(ruta: "mostra.swift", text: """
             try AjustRestauracio.analitza(text).valor
             try MagatzemPreferencies(carpeta: c).carrega()
             try LectorWarp(ruta: r).queFalta()
+            let permisos = try FileManager.default.attributesOfItem(atPath: r)[.posixPermissions]
+            let mida = getxattr(r, nom, nil, 0, 0, 0)
             """)]).isEmpty)
     }
 
@@ -1239,6 +1286,64 @@ private let prohibidesArrossegar = [
         }
         #expect(try liniesCreen(prohibidesCarpetaWarp) == Array(1...11))
         #expect(try liniesCreen(escriuen) == Array(1...11))
+        // Les maneres de canviar els permisos o els atributs d'un fitxer, o d'intercanviar-lo, també amb el mòdul i sense
+        // cridar-les. Les que només llegeixen, un nom que només s'hi assembla i el `copyfile` dels atributs estesos (que és a
+        // `altresCreenOSobreescriuen`), no.
+        let canvienAtributsMostra = [(ruta: "mostra.swift", text: """
+            chmod(r, 0o777)
+            Darwin.fchmod(fd, 0o600)
+            let canvia = lchmod
+            fchmodat(AT_FDCWD, r, 0o644, 0)
+            chown(r, 0, 0)
+            Darwin.fchown(fd, uid, gid)
+            lchown(r, uid, gid)
+            fchownat(AT_FDCWD, r, uid, gid, 0)
+            chflags(r, UInt32(UF_IMMUTABLE))
+            fchflags(fd, 0)
+            lchflags(r, 0)
+            try FileManager.default.setAttributes([.posixPermissions: 0o777], ofItemAtPath: r)
+            try url.setResourceValues(valors)
+            try (url as NSURL).setResourceValue(true, forKey: .isHiddenKey)
+            exchangedata(a, b, 0)
+            Darwin.fexchangedata(x, y, 0)
+            setxattr(r, nom, valor, mida, 0, 0)
+            fsetxattr(fd, nom, valor, mida, 0, 0)
+            removexattr(r, nom, 0)
+            Darwin.fremovexattr(fd, nom, 0)
+            setattrlist(r, &llista, &dades, mida, 0)
+            fsetattrlist(fd, &llista, &dades, mida, 0)
+            setattrlistat(AT_FDCWD, r, &llista, &dades, mida, 0)
+            utimes(r, nil)
+            Darwin.futimes(fd, &temps)
+            lutimes(r, nil)
+            utime(r, nil)
+            utimensat(AT_FDCWD, r, &temps, 0)
+            futimens(fd, &temps)
+            let mida = getxattr(r, nom, nil, 0, 0, 0)
+            let noms = listxattr(r, nil, 0, 0)
+            getattrlist(r, &llista, &dades, mida, 0)
+            let permisos = try FileManager.default.attributesOfItem(atPath: r)[.posixPermissions]
+            let valors = try url.resourceValues(forKeys: [.isHiddenKey])
+            let chmodBits = 0o644
+            let p = MeuChown(r)
+            let utimesPerDefecte = 0
+            """)]
+        let atributs = altresCanvienAtributs
+        let familia = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8]
+        #expect(try aparicions(de: atributs, a: canvienAtributsMostra)
+            == familia.enumerated().map { "mostra.swift:\($0.offset + 1): «\(atributs[$0.element])»" })
+        // La carpeta de Warp (`canvienAtributs`) i el diagnòstic (`escriuen`) troben les mateixes línies, i cap de les altres.
+        let mostraAtributs = canvienAtributsMostra[0].text.split(separator: "\n").map(String.init)
+        #expect(try canvienAtributs(canvienAtributsMostra[0].text) == Array(mostraAtributs[0..<familia.count]))
+        #expect(Set(try aparicions(de: escriuen, a: canvienAtributsMostra).compactMap { Int($0.split(separator: ":")[1]) })
+            .sorted() == Array(1...familia.count))
+        // A `FitxersLaunchWarp`, només la crida d'ara: una altra, també amb el mòdul, amb una ruta o sense cridar-la, ja hi surt.
+        let fitxersLaunch = "    if fchmod(fd, 0o644) != 0 {\n        error = String(cString: strerror(errno))\n    }"
+        #expect(try canvienAtributs(fitxersLaunch) == canvienAtributsAFitxersLaunchWarp)
+        for altra in ["if Darwin.fchmod(fd, 0o644) != 0 {", "chmod(ruta, 0o644)", "if fchmod(fd, 0o666) != 0 {",
+                      "let canvia = fchmod", "_ = fsetxattr(fd, nom, valor, mida, 0, 0)"] {
+            #expect(try canvienAtributs(fitxersLaunch + "\n" + altra) == canvienAtributsAFitxersLaunchWarp + [altra])
+        }
         // A la carpeta de Warp, tampoc cap altra manera d'escriure-hi: cada línia, la seva expressió. La crida `write` de C, que
         // escriu al fitxer que s'acaba de crear, no.
         let sobreescriuen = [#"createFile"#, #"\.write\("#, #"forWriting"#, #"forUpdating"#, #"O_RDWR"#, #"O_APPEND"#]
@@ -1532,6 +1637,7 @@ private let prohibidesArrossegar = [
         #expect(trobades.isEmpty, "\(trobades)")
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
         #expect(try obertures(fitxer.text) == obrenAFitxersLaunchWarp)
+        #expect(try canvienAtributs(fitxer.text) == canvienAtributsAFitxersLaunchWarp)
     }
 
     /// A les proves, `Process` només és als helpers que fan llegir una línia a zsh o executen un script de `scripts/`. Com a
