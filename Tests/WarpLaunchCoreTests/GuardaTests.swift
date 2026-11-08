@@ -96,10 +96,33 @@ private let altresEsborrenOMouen = [
     #"(^|[^A-Za-z0-9_])mkdirat(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])trashItem(?![A-Za-z0-9_])"#,
     #"(^|[^A-Za-z0-9_])removefile(at)?(?![A-Za-z0-9_])"#,
 ]
+/// Les altres maneres de crear, sobreescriure o enllaçar un fitxer, de C i de `FileManager` (revisió de la 0.31.2): `fopen` i
+/// `freopen`, `openat`, `creat(` (la variable `creat` de `FitxersLaunchWarp`, no), `truncate` i `ftruncate`, `copyfile` i
+/// `fcopyfile`, `linkItem` i `createSymbolicLink`. Com `altresEsborrenOMouen`, per a la carpeta de Warp i el diagnòstic, que
+/// només miren el seu fitxer: el `copyfile` de l'ajust no hi té res a veure.
+private let altresCreenOSobreescriuen = [
+    #"(^|[^A-Za-z0-9_])f(re)?open(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])openat(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])creat\("#,
+    #"(^|[^A-Za-z0-9_])f?truncate(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])f?copyfile(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])linkItem(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])createSymbolicLink(?![A-Za-z0-9_])"#,
+]
 /// A `FitxersLaunchWarp`, a més de l'única crida que esborra (`cridaUnlink`), res que sobreescrigui, esborri, mogui o creï
-/// carpetes.
-private let prohibidesCarpetaWarp = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\(to:"#,
-                                     cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#] + altresEsborrenOMouen
+/// carpetes: tampoc `createFile` (que sobreescriu el que hi ha), cap `.write(` (també `toFile:`), un `FileHandle` per
+/// escriure, `O_RDWR` ni `O_APPEND`. I només les dues crides a `open` d'ara (`obrenAFitxersLaunchWarp`).
+private let prohibidesCarpetaWarp = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\("#,
+                                     cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#, #"createFile"#,
+                                     #"forWriting"#, #"forUpdating"#, #"O_RDWR"#, #"O_APPEND"#]
+    + altresEsborrenOMouen + altresCreenOSobreescriuen
+/// Les dues crides a `open` de `FitxersLaunchWarp`: la que crea el fitxer, només si no n'hi ha cap (`O_EXCL`), i la que en
+/// llegeix la marca. Una altra, també amb `O_WRONLY` sense `O_EXCL`, escriuria sobre un fitxer que ja hi és.
+private let obrenAFitxersLaunchWarp = [
+    "let fd = open(ruta, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, mode_t(0o600))",
+    "let fd = open(ruta, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)",
+]
+/// Les línies amb `open` com a paraula (també `Darwin.open(` i `let o = open`), sense els espais del principi.
+private func obertures(_ text: String) throws -> [String] {
+    let open = try Regex(#"(^|[^A-Za-z0-9_])open(?![A-Za-z0-9_])"#)
+    return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { $0.contains(open) }
+}
 /// D-P4: Escapada, a la pantalla del permís (`elPermisSAcceptaAmbRetornINoAmbEscapada`).
 private let escapada = [#"cancelAction"#, #"\.escape(?![A-Za-z0-9_])"#, #"onExitCommand"#, #"onKeyPress"#, #"cancelOperation"#,
                         #"\\u\{1[bB]\}"#]
@@ -152,16 +175,16 @@ private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca(\.init)?\((?!ru
 private let initSenseArguments = #"\.init\(\s*\)"#
 private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
-/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen`),
-/// executi o toqui el porta-retalls. Sense `\b`: amb les regles d'Unicode, `default.moveItem` o `Darwin.open` no hi tenen
-/// cap límit de paraula.
+/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen` i
+/// `altresCreenOSobreescriuen`), executi o toqui el porta-retalls. Sense `\b`: amb les regles d'Unicode, `default.moveItem`
+/// o `Darwin.open` no hi tenen cap límit de paraula.
 private let escriuen = [
     #"\.desa\("#, #"\.posa\("#, #"\.accepta\("#, #"EscripturaAtomica"#, #"\.write\("#, #"createFile"#,
     #"createDirectory"#, #"removeItem"#, #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#,
     #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
     #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
     #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#, cridaMkdir,
-] + altresEsborrenOMouen
+] + altresEsborrenOMouen + altresCreenOSobreescriuen
 
 /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
 /// - posar l'ajust de Warp a un valor que no és el d'un refresc: només `RefrescWarp.retira` (`entorn.posa(`, que fins ara
@@ -870,6 +893,13 @@ private let prohibidesArrossegar = [
             Darwin.mkdirat(AT_FDCWD, r, 0o755)
             try FileManager.default.trashItem(at: u, resultingItemURL: nil)
             removefile(r, nil, removefile_flags_t(REMOVEFILE_RECURSIVE))
+            let f = fopen(r, "w")
+            let fd = Darwin.openat(AT_FDCWD, r, O_WRONLY)
+            let fd = creat(r, 0o644)
+            ftruncate(fd, 0)
+            copyfile(a, b, nil, copyfile_flags_t(COPYFILE_ALL))
+            try FileManager.default.linkItem(at: u, to: v)
+            try FileManager.default.createSymbolicLink(at: u, withDestinationURL: v)
             """)]
         #expect(mostra[0].text.split(separator: "\n").count == escriuen.count, "una línia per expressió")
         #expect(try aparicions(de: escriuen, a: mostra)
@@ -1101,6 +1131,60 @@ private let prohibidesArrossegar = [
         }
         #expect(try linies(prohibidesCarpetaWarp) == Array(1...10))
         #expect(try linies(escriuen) == Array(1...10))
+        // Les altres maneres de crear, sobreescriure o enllaçar (revisió de la 0.31.2), també amb el mòdul i sense cridar-les.
+        // Un nom que només s'hi assembla, la variable `creat` de `FitxersLaunchWarp` i les funcions de l'estat de `copyfile`,
+        // no.
+        let creenOSobreescriuen = [(ruta: "mostra.swift", text: """
+            let f = fopen(r, "w")
+            Darwin.freopen(r, "a", stdout)
+            let fd = Darwin.openat(AT_FDCWD, r, O_WRONLY)
+            let fd = creat(r, 0o644)
+            truncate(r, 0)
+            Darwin.ftruncate(fd, 0)
+            copyfile(a, b, nil, copyfile_flags_t(COPYFILE_ALL))
+            fcopyfile(x, y, nil, copyfile_flags_t(COPYFILE_DATA))
+            try FileManager.default.linkItem(at: u, to: v)
+            try FileManager.default.createSymbolicLink(atPath: a, withDestinationPath: b)
+            let obre = fopen
+            var creat = stat()
+            if fstat(fd, &creat) == 0, creat.st_ino == ara.st_ino {}
+            let s = copyfile_state_alloc()
+            let t = "untruncated"
+            let fopened = 1
+            """)]
+        let creen = altresCreenOSobreescriuen
+        #expect(try aparicions(de: creen, a: creenOSobreescriuen) == [
+            "mostra.swift:1: «\(creen[0])»", "mostra.swift:2: «\(creen[0])»", "mostra.swift:3: «\(creen[1])»",
+            "mostra.swift:4: «\(creen[2])»", "mostra.swift:5: «\(creen[3])»", "mostra.swift:6: «\(creen[3])»",
+            "mostra.swift:7: «\(creen[4])»", "mostra.swift:8: «\(creen[4])»", "mostra.swift:9: «\(creen[5])»",
+            "mostra.swift:10: «\(creen[6])»", "mostra.swift:11: «\(creen[0])»",
+        ])
+        func liniesCreen(_ expressions: [String]) throws -> [Int] {
+            Set(try aparicions(de: expressions, a: creenOSobreescriuen).compactMap { Int($0.split(separator: ":")[1]) }).sorted()
+        }
+        #expect(try liniesCreen(prohibidesCarpetaWarp) == Array(1...11))
+        #expect(try liniesCreen(escriuen) == Array(1...11))
+        // A la carpeta de Warp, tampoc cap altra manera d'escriure-hi: cada línia, la seva expressió. La crida `write` de C, que
+        // escriu al fitxer que s'acaba de crear, no.
+        let sobreescriuen = [#"createFile"#, #"\.write\("#, #"forWriting"#, #"forUpdating"#, #"O_RDWR"#, #"O_APPEND"#]
+        #expect(try aparicions(de: prohibidesCarpetaWarp, a: [(ruta: "mostra.swift", text: """
+            FileManager.default.createFile(atPath: r, contents: d)
+            try text.write(toFile: r, atomically: false, encoding: .utf8)
+            let h = try FileHandle(forWritingTo: u)
+            let h = FileHandle(forUpdatingAtPath: r)
+            let fd = open(ruta, O_RDWR | O_NOFOLLOW)
+            let fd = open(ruta, O_WRONLY | O_APPEND)
+            let n = write(fd, bytes.baseAddress! + escrits, bytes.count - escrits)
+            """)]) == sobreescriuen.enumerated().map { "mostra.swift:\($0.offset + 1): «\($0.element)»" })
+        // I només les dues crides a `open` d'ara: una altra, també sense cap d'aquestes expressions, ja hi surt.
+        let dues = obrenAFitxersLaunchWarp.joined(separator: "\n")
+        #expect(try obertures("    " + dues.replacingOccurrences(of: "\n", with: "\n        ")) == obrenAFitxersLaunchWarp)
+        for altra in ["let fd = open(ruta, O_WRONLY | O_NOFOLLOW)", "let fd = Darwin.open(ruta, banderes, 0o644)",
+                      "let obre = open"] {
+            #expect(try obertures(dues + "\n" + altra) == obrenAFitxersLaunchWarp + [altra])
+        }
+        // Un nom que només s'hi assembla, no (`openat` ja és a `altresCreenOSobreescriuen`).
+        #expect(try obertures("let fd = openat(d, r, 0)\nlet o = reopen(x)\nlet obert = isOpen").isEmpty)
         // D-P4: Escapada a la pantalla del permís, de totes les maneres; el botó per defecte, no.
         #expect(try aparicions(de: escapada, a: [(ruta: "mostra.swift", text: """
             .keyboardShortcut(.cancelAction)
@@ -1361,7 +1445,8 @@ private let prohibidesArrossegar = [
 
     /// Fase 3.1: només `FitxersLaunchWarp` sap on és la carpeta de Warp, i dins seu només esborra una crida (`treu`), a
     /// la qual només s'arriba amb totes les comprovacions o just després de crear el fitxer. Sense sobreescriure,
-    /// canviar de nom, esborrar de cap altra manera ni crear carpetes (`prohibidesCarpetaWarp`).
+    /// canviar de nom, esborrar de cap altra manera ni crear carpetes (`prohibidesCarpetaWarp`), i sense cap altra crida a
+    /// `open` que les dues d'ara (`obrenAFitxersLaunchWarp`).
     @Test func nomesFitxersLaunchWarpTocaLaCarpetaDeWarp() throws {
         let codi = try fitxers("Sources")
         #expect(codi.filter { $0.text.contains("launch_configurations") }.map(\.ruta)
@@ -1371,6 +1456,7 @@ private let prohibidesArrossegar = [
         let trobades = try aparicions(de: prohibidesCarpetaWarp, a: [fitxer])
         #expect(trobades.isEmpty, "\(trobades)")
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
+        #expect(try obertures(fitxer.text) == obrenAFitxersLaunchWarp)
     }
 
     /// A les proves, `Process` només és als helpers que fan llegir una línia a zsh o executen un script de `scripts/`. Com a
