@@ -3,7 +3,7 @@
 App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestres i pestanyes de Warp,
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
-**Estat (08/11/2026, 0.31.2 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
+**Estat (08/11/2026, 0.31.3 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
 obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.28.0: el que
 aquí diu «des de la 0.29», «des de la 0.30» o «des de la 0.31» encara no s'ha publicat ni provat a l'app. Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
@@ -91,6 +91,9 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
   desactivada, perquè és ella qui torna a obrir les finestres, amb Claude. Només l'activa uns segons quan demanes
   «Torna a llegir Warp», «Importa de Warp» o «Lliga amb Warp», per llegir-ne les finestres. Si tens Settings Sync, l'ajust arriba
   a les altres instal·lacions de Warp. Per deixar-la de fer servir, «Restaura Warp i surt…» torna l'ajust (vegeu «Desinstal·lar»).
+  Si encara no tens `~/.warp/settings.toml` (per exemple, si no has canviat mai cap ajust de Warp), des de la 0.31.3 l'app només
+  el crea quan Warp és obert amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos; fins llavors, Warp fa
+  servir la restauració de sèrie, activada, i el menú de la icona ho diu.
 - **Res no s'obre sense el teu clic.** Obrir una finestra o totes passa sempre per un full que diu quantes
   pestanyes i sessions de Claude s'obriran.
 - **Ordre de Claude per defecte:** a les configuracions noves, Claude s'obre sense saltar els permisos (`claude`, continuant
