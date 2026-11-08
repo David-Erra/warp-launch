@@ -310,8 +310,16 @@ no hi ha ordre, o Claude s'aturaria). El CLI en mostra els avisos i els errors.
 ### Plantilla i Configuració (pas 11)
 
 - La `plantilla` (les opcions de Claude de les pestanyes noves i de les importades sense sessió) es canvia a la
-  finestra de Configuració (⌘,): les opcions, l'ordre que en surt amb els seus avisos, les «Altres opcions» (només
-  lectura) i el fitxer (carpeta, «Mostra al Finder», versió, i l'error de desat si n'hi ha).
+  Configuració (⌘,) › «Pestanyes noves»: les opcions, l'ordre que en surt amb els seus avisos i les «Altres opcions» (només
+  lectura). El fitxer (carpeta, «Mostra al Finder», versió, i l'error de desat si n'hi ha) és a «General».
+- **Dues pestanyes (0.30.2):** «General» (En iniciar sessió, Fitxer, Diagnòstic i, des de la 0.31.0, «Deixar de fer servir
+  Warp Launch») i «Pestanyes noves» (la plantilla, l'Ordre i les Altres opcions; des de la 0.30.3, la primera secció no té
+  títol, decisió 12 del 08/11/2026). Cada pestanya és un `Form` agrupat de 520 pt d'amplada, tan alt com el contingut i com a
+  molt de 640 pt; el que no hi cap es desplaça a dins (`frame(maxHeight:)` i `fixedSize` vertical, amb
+  `.windowResizability(.contentSize)`: `fets-verificats.md`). En canviar de pestanya, la finestra canvia d'alçada per baix, amb
+  la vora de dalt i les pestanyes quietes (`windowResizeAnchor(.top)`). Mida fixa per pestanya, com a macOS (decisió 11 del
+  08/11/2026). L'app no desa quina pestanya es veia. Fins a la 0.30.1, una sola pàgina feia l'alçada de tot el contingut, més
+  que la pantalla, i el «Diagnòstic» del final no s'hi podia fer servir.
 - **Dos Desfés que no es barregen.** El de la plantilla és el de la finestra de Configuració
   (`Editor.desferPlantilla`); el de l'editor només desfà finestres, pestanyes i selecció. ⌘Z a la Configuració no
   toca l'editor, ni al revés. Tornar a carregar els buida tots dos.
@@ -343,7 +351,8 @@ i no toca el disc.
 - **Claude** (decisió d'en David, D11; la plantilla d'importar és la segura des de la 0.28.0, vegeu «Plantilla i Configuració»):
   - **amb sessió viva:** les opcions del seu argv, més `continua: true` (R4). El nom fix només si venia de `-n`;
   - **sense sessió:** en una configuració nova (sense fitxer), **només terminal** (0.29.1, D-P5a, en David, 07/11/2026): la
-    plantilla amb `activat: false`, origen `.nomesTerminal`. Tornant a importar sobre una que ja existeix, la plantilla (D11).
+    plantilla amb `activat: false`, origen `.nomesTerminal`; des de la 0.30.3, també en una que encara no té cap pestanya
+    (`Importador.SenseSessio.per`). Tornant a importar sobre una que en té alguna, la plantilla (D11).
     Ho tria qui importa (`Importador.importa(…, senseSessio:)`, sense valor per defecte; `Editor.senseSessioPerImportar` i el CLI);
   - **a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
     les opcions);
@@ -387,10 +396,12 @@ i no toca el disc.
 ### Prova de guarda
 
 Una prova llegeix el codi del repo (`#filePath`) i falla si:
-- a `Sources/` hi ha `warp://`, `Process(`, `NSWorkspace` (excepte `NSWorkspace.shared.activateFileViewerSelecting(`,
-  «Mostra al Finder», que només pot ser a `Finder.swift`), `openURL`, `NSAppleScript`, `posix_spawn`, `system(`,
-  `SMAppService`, `LaunchAgents`, `UserDefaults`, `@AppStorage`, `NSRunningApplication`, `forceTerminate`,
-  `launchApplication`, `openApplication`, `kill(` o `killpg(` (regla 2: no tancar Warp ni Claude);
+- a `Sources/` hi ha `warp://`, `Process`, `NSWorkspace` (excepte `NSWorkspace.shared.activateFileViewerSelecting(`,
+  «Mostra al Finder», que només pot ser a `Finder.swift`), `openURL`, `NSAppleScript`, `posix_spawn`, `system(`, la família
+  `exec` (`execv`, `execvp`…), les `NSUser…Task`, `SMAppService`, `LaunchAgents`, `UserDefaults`, `@AppStorage`,
+  `NSRunningApplication`, `forceTerminate`, `launchApplication`, `openApplication`, `kill` o `killpg` (regla 2: no tancar
+  Warp ni Claude). `Process`, `kill` i `killpg` compten com a paraula sencera, també sense cridar (`Process.init()`, `let k =
+  kill`; 08/11/2026);
 - «Obre la finestra a Warp…» no és `.disabled(true)` o té drecera, o `Ordres.swift` substitueix `.saveItem` (es
   perdrien ⌘W i ⌥⌘W);
 - a `Sources/` hi ha `ShareLink`, `ProxyRepresentation`, `FileRepresentation`, `CodableRepresentation`, `.onDrag`,
@@ -399,14 +410,22 @@ Una prova llegeix el codi del repo (`#filePath`) i falla si:
   `visibility: .all`, `exportedContentType` o `DataRepresentation(contentType:`;
 - la fila d'una finestra de `VistaEditor.swift` té `isEnabled: editor.acceptaPestanyes`, o no decideix l'operació
   amb `dropConfiguration` (`PaquetTests.laFilaDeLaFinestraDecideixEnArrossegar`);
-- a `Tests/` hi ha `Lector(` sense `rutaWarp:` (`Lector()` o `Lector(inici:)`), `ProcessosDelSistema`,
-  `rutaPerDefecte`, `carpetaPerDefecte`, `.config/warp-launch`, `homeDirectoryForCurrentUser`, `NSHomeDirectory`,
-  `NSApp`, `NSApplication`, `NSWindow`, `NSHostingView`, `NSPasteboard` o
+- a `Tests/` hi ha `Lector(` sense `rutaWarp:` i `rutaAjustos:` (`Lector()` o `Lector(inici:)`), `LectorWarp(` sense ruta,
+  `ProcessosDelSistema`, `rutaPerDefecte`, `carpetaPerDefecte`, `.config/warp-launch`, la carpeta d'inici de debò per
+  qualsevol camí (`homeDirectoryForCurrentUser`, `NSHomeDirectory`, `URL.homeDirectory`, `expandingTildeInPath`, `getenv(`,
+  `environment["HOME"]`, `getpwuid`; 08/11/2026), `NSApp`, `NSApplication`, `NSWindow`, `NSHostingView`, `NSPasteboard` o
   `PortaRetallsSistema.enganxa/hiHaPestanyes/escriu` (el porta-retalls d'en David).
+- `Lector(carpetaSessions:)` i `LectorSessions(carpeta:processos:)` tornen a tenir un valor per defecte, o hi ha una línia de
+  `Sources/` amb `carpetaPerDefecte`, `.claude/sessions` o `ProcessosDelSistema` fora de la llista fixa (l'app i el CLI hi
+  posen `LectorSessions.carpetaPerDefecte`; 08/11/2026). Una prova que s'oblidés la carpeta no compila.
 
 Una altra prova comprova que cada expressió troba el que ha de trobar. Així les proves no poden llegir l'estat real,
-ni tocar el porta-retalls, ni fer sortir el procés de proves al Dock. Les guardes de la fase 3.1 són a la secció 7
-(«Seguretat»), i les del consentiment, de trobar Warp i del diagnòstic, a la secció 10.
+ni tocar el porta-retalls, ni fer sortir el procés de proves al Dock. **Cap expressió no fa servir `\b`** (08/11/2026): a les
+expressions regulars de Swift, el límit de paraula és el d'Unicode, i `Foundation.Process()` o `NSApp.terminate(nil)` hi són
+una sola paraula (`fets-verificats.md`). Davant del nom va `(^|[^A-Za-z0-9_])` i darrere, `(?![A-Za-z0-9_])`, i una prova
+falla si una línia que no és un comentari torna a fer servir `\b` (`capGuardaFaServirElLimitDeParaula`). Les guardes de la
+fase 3.1 són a la secció 7 («Seguretat»), i les del consentiment, de trobar Warp, del diagnòstic i de deixar de fer servir l'app,
+a la secció 10.
 
 ## 4. Passos
 
@@ -1433,44 +1452,51 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
     era desactivada segons en David, 07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
     registra, i amb el Mac encès fa menys de 10 minuts el full surt igualment.
 
-## 10. Per a altres usuaris (07/11/2026, de la 0.29.0 a la 0.30.1)
+## 10. Per a altres usuaris (07 i 08/11/2026, de la 0.29.0 a la 0.31.1)
 
 Les vuit decisions d'en David del 07/11/2026 són a `especificacio.md` («Per a altres usuaris»). El codi i els commits les
 anomenen D-P4 (la 4, el consentiment), D-P5a (la 5, importar) i D-P12 (trobar Warp, de la 8). El diagnòstic (pla A4) no surt
-de cap decisió. Cada pas va tenir una revisió, amb correccions. **Cap pas no s'ha vist a l'app** (regla 4): el que falta
-provar, sempre amb l'OK d'en David, és al final de cada pas.
+de cap decisió. Les dotze decisions que resolen el que aquí quedava per decidir són a la fila del 08/11/2026 d'`especificacio.md`;
+el codi les cita pel número («decisió 3», «decisió 4»…). Cada pas va tenir una revisió, amb correccions. **Res de la 0.30.3
+endavant no s'ha vist a l'app** (regla 4): la de `build/`, la que en David prova, és la 0.30.2. El que falta provar d'aquestes
+versions, sempre amb l'OK d'en David, és a «Per provar a l'app», al final; el de la 0.29 i la 0.30, a cada pas («A l'app»).
 
 ### Consentiment de la restauració (0.29.0, D-P4)
 
 - **`preferencies.json`** (versió 1, al costat de la configuració, escriptura atòmica): el consentiment (`senseTriar`,
-  `acceptat` amb la data o `migrat`) i el `restore_session` d'abans del primer canvi de l'app, desat un sol cop (cap botó no el
-  torna, de moment). Un fitxer d'una versió més nova, mal fet o un enllaç trencat no se sobreescriu: la pantalla només deixa
-  sortir, amb l'error i la ruta. `configuracio.json` no canvia (regla 11).
+  `acceptat` amb la data, `migrat` o, des de la 0.31.0, `retirat` amb la data) i el `restore_session` d'abans del primer canvi
+  de l'app, desat un sol cop i només amb el permís (el torna «Restaura Warp i surt…», 0.31.0). Un fitxer d'una versió més nova,
+  mal fet o un enllaç trencat no se sobreescriu: la pantalla només deixa sortir, amb l'error i la ruta. `configuracio.json` no
+  canvia (regla 11).
 - **Migració:** una carpeta amb `configuracio.json` o `estat.json` i sense `preferencies.json` compta com a acceptada, sense
-  preguntar ni escriure res. Qui ja tenia una configuració no veu la pantalla; el fitxer s'escriu el primer cop que l'app canvia
-  l'ajust, amb el valor d'aquell moment (si l'app ja el gestionava, `false`, no el d'abans de D19).
+  preguntar ni escriure res. Qui ja tenia una configuració no veu la pantalla (decisió 1: el permís, només als nous); el fitxer
+  s'escriu el primer cop que l'app canvia l'ajust, amb el valor d'aquell moment (si l'app ja el gestionava, `false`, no el
+  d'abans de D19). Un `retirat` no torna a comptar mai com a migrat.
 - **Sense consentiment, l'app no toca Warp:** ni `RefrescWarp` ni `AjustRestauracio` (tampoc en sortir), ni llegeix Warp, ni
   neteja els seus fitxers temporals, ni proposa obrir res (una finestra, «Obre-ho tot», el full d'inici de sessió). El menú de la
   icona només té «Mostra Warp Launch» i «Surt».
 - **La pantalla** (`VistaConsentiment`, a l'editor i a la Configuració) diu per què cal i què canvia (l'ajust «Restore windows,
   tabs, and panes on startup», Settings Sync i els segons en què l'app l'activa quan es demana llegir Warp). «Accepta» o «Surt de
-  Warp Launch», sense botó per defecte ni drecera. Sortir, o tancar l'editor, tanca l'app sense desar res, i la propera vegada ho
-  torna a preguntar. Amb una carpeta de prova (`--config`) també surt, i diu que l'app no tocarà l'ajust. En iniciar sessió, primer
-  la pantalla i després el full de «Obre-ho tot».
+  Warp Launch». **Des de la 0.30.3, «Accepta» és el botó per defecte** (decisió 2): Retorn el prem, si es pot acceptar. Escapada
+  no fa res: a macOS vol dir «Cancel·la» i tornar on eres, i aquí «Surt» tanca l'app (per sortir hi ha ⌘Q i tancar la finestra).
+  Sortir, o tancar l'editor o, des de la 0.30.3, la Configuració (decisió 8; tots dos ho pregunten a
+  `ConsentimentRestauracio.continuaEnTancarFinestra`), tanca l'app sense desar res, i la propera vegada ho torna a preguntar. Amb
+  el permís acceptat, o sense carpeta, la finestra es tanca i l'app continua. Amb una carpeta de prova (`--config`) també surt, i
+  diu que l'app no tocarà l'ajust. En iniciar sessió, primer la pantalla i després el full de «Obre-ho tot».
 - **Guarda:** el refresc només el crea `ConsentimentRestauracio`, un cop i amb el consentiment acceptat; l'entorn de l'ajust,
-  només l'app i amb `.real`. La revisió hi va afegir cada línia amb `creaEntornRefresc`, les 4 assignacions de l'estat, `accepta(`
-  només des del botó i del model, i `.acceptat(`, `.migrat` i `.restauracio =` només a `Preferencies.swift`: tres camins que la
-  primera guarda no veia ara fallen.
+  només l'app i amb `.real`. La revisió hi va afegir cada línia amb `creaEntornRefresc`, les assignacions de l'estat (5 des de la
+  0.31.0), `accepta(` només des del botó i del model, i `.acceptat(`, `.migrat`, `.retirat(` (0.31.0) i `.restauracio =` només a
+  `Preferencies.swift`: tres camins que la primera guarda no veia ara fallen. Des de la 0.30.3, «Accepta» porta `.defaultAction`,
+  és l'única drecera del fitxer i no s'hi pot enganxar Escapada (`elPermisSAcceptaAmbRetornINoAmbEscapada`).
 - **Proves:** `PreferenciesTests` (13), `ConsentimentRestauracioTests` (8, amb un ajust fals que sense consentiment no rep cap
   `posa`) i 2 a `OberturaTests`.
 - **A l'app, amb `--config` i una carpeta nova:** surt la pantalla; «Surt de Warp Launch» i tancar l'editor tanquen l'app sense
   crear `preferencies.json`; «Accepta» el crea i passa a l'editor (barra d'eines i mida); amb `{"versio": 9}`, l'error amb la
   ruta. Amb la configuració real, no pregunta res.
-- **Per decidir:** la migració també val per a qui ja feia servir la 0.28.0 sense haver decidit D19. Si se li ha de
-  preguntar: o la migració només compta per a la carpeta d'en David, o es pregunta a tothom un cop (i en David accepta
-  una vegada). Tancar la Configuració amb la pantalla no surt de l'app (tancar l'editor, sí): és una línia si ha de sortir.
+- **Decidit (08/11/2026):** la migració també val per a qui ja feia servir la 0.28.0 (decisió 1); Retorn accepta (decisió 2) i
+  tancar la Configuració amb la pantalla fa sortir de l'app (decisió 8), tots dos a la 0.30.3.
 
-### Importar una configuració nova (0.29.1, D-P5a)
+### Importar una configuració nova (0.29.1, D-P5a, i 0.30.3)
 
 - Les pestanyes on no corria Claude queden només terminal, a l'app («Crea») i a `warp-launch importa` sense configuració real
   (secció 2, «Importació (R2)»). Tornar a importar no canvia.
@@ -1482,13 +1508,23 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   importar: només difereixen les pestanyes sense Claude obert).
 - **A l'app, amb `--config` i una carpeta nova:** el full «Importa de Warp», i que després de «Crea», «Obre Claude Code en
   aquesta pestanya» hi posi `claude`.
-- **Per decidir:** amb Warp tancat i sense configuració (la primera importació després d'un reinici, de l'última foto), cap
-  sessió no és viva i totes queden només terminal (recomanació: mantenir-ho); «Comença en blanc» i després «Torna a importar-ho
-  tot» compta com a tornar a importar; `importa` amb la configuració real malmesa fa servir la plantilla segura. Risc de D4: moltes
+- **Una configuració sense cap pestanya (0.30.3, decisió 9):** «Comença en blanc» i després «Torna a importar-ho tot de Warp»
+  és com una importació nova: les pestanyes sense Claude obert queden només terminal, amb la plantilla de la configuració. El
+  full continua sent el de substituir, amb còpia i Desfés. Una configuració amb només finestres buides també compta com a sense
+  pestanyes. La regla és en un sol lloc (`Importador.SenseSessio.per`), per a l'editor i per a `warp-launch importa` (que hi
+  afegeix «(la configuració encara no té cap pestanya)», i l'ajuda ho diu). Proves a `ImportadorTests`, `EditorTests` i
+  `OrdreCLITests`.
+- **Amb una carpeta de prova (0.30.3):** sense refresc no hi ha finestres per importar, i el full «Importa de Warp» ho explica:
+  amb `--config` l'app no toca l'ajust ni pot demanar a Warp que desi les finestres, i amb la configuració de debò, sí. El CLI
+  diu que ell no toca l'ajust i que l'app, amb la configuració de debò, sí. «Lliga amb Warp…» té la mateixa causa i no ho diu
+  (no enganya; no s'ha tocat).
+- **Decidit (08/11/2026):** amb Warp tancat i sense configuració (la primera importació després d'un reinici, de l'última foto),
+  cap sessió no és viva i totes queden només terminal, com ara (decisió 10). **Per decidir:** `importa` amb la configuració real
+  malmesa fa servir la plantilla segura. Risc de D4: moltes
   més pestanyes només terminal (en una lectura real, més del triple), que es poden confondre si dues finestres en tenen a la
   mateixa carpeta.
 
-### Warp Stable a qualsevol carpeta, i Warp Preview (0.29.2 i 0.29.3, D-P12)
+### Warp Stable a qualsevol carpeta, i Warp Preview (0.29.2 i 0.29.3, D-P12; 0.31.1, decisió 4)
 
 - **On és Warp:** ho diu macOS (`NSWorkspace.shared.urlForApplication(withBundleIdentifier:)`), en una sola línia de
   `WarpLaunchObridor/TrobaWarp.swift`, on cap prova no arriba. El core en rep el resultat (`InstallacioWarp.troba(aplicacions:cerca:)`,
@@ -1496,7 +1532,23 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   `/Applications/Warp.app`, com fins ara. Una còpia a la Paperera (`.Trash` o `.Trashes`) no compta (0.29.3).
 - **El binari** surt del paquet (`CFBundleExecutable`): és el que compta com a Warp obert, el del seu `terminal-server`
   (`warpObert(executable:)`, `terminalsDeWarp(executable:)`) i el que obre `ObreWarp`. `executableWarp` ja no existeix. Es mira a
-  cada lectura (`Lector.warp`).
+  cada lectura (des de la 0.31.1, `Lector.installacio()`).
+- **El Warp que corre (0.31.1, decisió 4: les dues còpies, arreglat abans de convidar ningú).** Si corre una còpia de Warp
+  Stable que no és la que diu macOS (una segona còpia, o una que macOS executa des d'una carpeta temporal, App Translocation),
+  compta aquella: per a «és obert», els terminals, el diagnòstic, la versió del full i on s'obren les finestres. Es reconeix pels
+  processos, pel mateix camí que `warpObert`: l'app sense arguments, dins de `<paquet>.app/Contents/MacOS/`, d'un paquet
+  `dev.warp.Warp-Stable` amb aquell binari (`InstallacioWarp.ambLaCopiaOberta`, només des de `Lector.installacio()`). La
+  Paperera no compta. Si no en corre cap, la que diu macOS; amb totes dues obertes, també; amb dues obertes i cap de macOS, la de
+  pid més baix. `ObreWarp.obre` i `engega` ja no tenen cap Warp per defecte: l'app i el CLI hi passen `lector.installacio()`.
+- **Sense cap Warp (0.31.1):** la lectura ho diu (`WarpPreview.capWarp`: «No s'ha trobat Warp en aquest Mac: cal Warp Stable.»),
+  com amb Warp Preview: ni una finestra, ni «Obre-ho tot», ni el full d'inici de sessió proposen obrir res; `llegeix` ho mostra
+  amb ⚠, `obre` amb ✗ i el codi 1, i `obre --obre` falla sense escriure res. Si tampoc no hi ha la base de Warp, el CLI ho diu
+  igual, en lloc de «no trobo la base de Warp» (revisió). `capWarp` és dins de `WarpPreview` per no canviar el JSON de
+  `llegeix --json`.
+- **Guarda de la 0.31.1:** `TrobaWarp.delSistema` només a l'app i al CLI (abans també a `ObreWarp`); les línies exactes
+  d'`ObreWarp.obre(` i `ObreWarp.engega(` amb `warp: lector.installacio()`; ningú no fa servir `lector.warp`; i `AppWarp.delBinari`
+  només a la font de processos, la de debò i la falsa de les proves, que només llegeix dins de les seves carpetes temporals: una
+  prova no pot llegir l'Info.plist del Warp de debò (`lesProvesNoLlegeixenElWarpDeDebo`).
 - **Warp Preview** (`dev.warp.Warp-Preview`) no és compatible. Si només hi ha Preview, o és obert i Stable no
   (`LecturaWarp.warpPreview`: `.nomesPreview` o `.obert`), no s'obre res, tampoc Warp Stable: «Warp Preview encara no és compatible:
   cal Warp Stable.» (una finestra, «Obre-ho tot» i l'inici de sessió). `obre --obre` falla sense escriure res; `llegeix` ho
@@ -1511,10 +1563,14 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   terminals.
 - **Per provar:** Warp a `~/Applications` (el mou en David) i Warp Preview (l'identificador no s'ha verificat amb un Preview
   instal·lat).
-- **Per decidir:** amb Preview obert i Stable tancat, l'app no obre res i demana obrir Stable a mà (recomanació: mantenir-ho, no
-  obre un segon Warp sense avisar). Amb dues còpies de Stable, macOS en tria una i, si corre l'altra, l'app la veu tancada
-  (recomanació: reconèixer el Warp obert pels processos, abans de convidar ningú). Sense comprovar: un Warp que corre sense
-  moure'l de Descàrregues (App Translocation). Sense cap Warp, el full encara proposa obrir-lo i falla en confirmar.
+- **Decidit (en David):** amb Preview obert i Stable tancat, l'app no obre res i demana obrir Stable a mà, com ara (decisió 5);
+  les dues còpies, fet a la 0.31.1 (decisió 4).
+- **Per decidir:** un Warp que corre des de la Paperera no es reconeix: l'app el veu tancat i n'obriria l'instal·lat (dos Warp),
+  o, si no n'hi ha cap més, diu «No s'ha trobat Warp» amb un Warp a la vista (recomanació: mantenir-ho, és rar). Dues còpies amb
+  el binari amb un nom diferent de `stable` i del de la còpia de macOS: la que corre no es reconeix (avui Warp sempre fa servir
+  `stable`; recomanació: deixar-ho). Amb una carpeta de prova i sense cap Warp, l'app llegeix la base i diu «no trobo la base de
+  Warp» en lloc del text nou (amb la de debò, no passa).
+- **Sense comprovar:** que obrir el fitxer amb la ruta d'un Warp traslladat (App Translocation) el lliuri al Warp que ja corre.
 
 ### Diagnòstic (0.30.0 i 0.30.1, pla A4)
 
@@ -1529,12 +1585,17 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
 - **CLI:** `warp-launch diagnostica [--json] [--anonimitza]`; codi 1 si alguna dona error, 64 si l'ús és incorrecte.
   `--anonimitza` treu el nom d'usuari, la carpeta d'inici i els noms de carpeta, també dins dels errors, i en deixa la forma
   (`~/Codi-Prova` → `~/Aaaa-Aaaaa`); es queden els noms que l'app llegeix (`.claude`, `sessions`, `Warp.app`…).
-- **App:** Configuració › «Diagnòstic»: «Copia el diagnòstic» (anonimitzat) i, al seu menú, «Copia el diagnòstic complet»; al
-  costat, què s'ha copiat («Copiat (anonimitzat): 6 bé, 2 avisos, 0 errors.»). Llegeix fora del fil principal amb el mateix
-  `Lector` (`CopiaDiagnostic`). Només es veu amb el consentiment acceptat.
+- **App:** Configuració › General › «Diagnòstic» (a la pestanya «General» des de la 0.30.2): «Copia el diagnòstic»
+  (anonimitzat) i, al seu menú, «Copia el diagnòstic complet»; al costat, què s'ha copiat («Copiat (anonimitzat): 6 bé, 2
+  avisos, 0 errors.»). Llegeix fora del fil principal amb el mateix `Lector` (`CopiaDiagnostic`). Només es veu amb el consentiment acceptat.
 - **Revisió (0.30.1):** `daemon` és un `kind` conegut; el binari de Claude que corre com a `ugrep` no compta; un `claude` sense
   fitxer en una carpeta on Claude no confia (espera la pregunta de confiança) és una nota, no un error; un fitxer d'un procés viu
   que l'app no veu com a `claude` és un avís; l'anonimització treu també les rutes relatives.
+- **Textos (0.30.3):** amb una carpeta de prova, la comprovació de `restore_session` diu «With a test configuration folder
+  (--config), Warp Launch doesn't turn it off», en lloc de prometre desactivar-lo en un minut (`EntornDiagnostic.configuracioDeProva`:
+  l'app hi passa el seu valor; el CLI llegeix la de debò). La versió de Claude Code surt un sol cop, com la de Warp; si se'n
+  barregen de provades i no provades, cada no provada porta «not tested with Warp Launch». Des de la 0.31.0, també diu quan es
+  va retirar el permís.
 - **Guarda:** `Diagnostic.swift` no conté cap de 23 maneres d'escriure, d'executar o de tocar el porta-retalls; `CopiaDiagnostic`
   només a l'app (a les proves, amb un porta-retalls fals); a les proves, `LectorTranscripcions` i `LectorConfianca` amb una ruta
   de prova. Aquestes guardes veuen els noms amb mòdul (`(^|[^A-Za-z0-9_])`, no `\b`).
@@ -1542,16 +1603,99 @@ provar, sempre amb l'OK d'en David, és al final de cada pas.
   canvia cap fitxer; 1 a la guarda) i 1 a la UI (`CopiaDiagnosticTests`).
 - **Per provar (amb l'OK d'en David):** `warp-launch diagnostica` sobre l'estat real, que no és a la regla 4 (amb Warp
   0.2026.11.04 i Claude Code 2.1.319, més noves que `VersionsProvades`, s'esperen 2 avisos de «no provada»), i el botó a la Configuració.
-- **Pendents:** `VersionsProvades` es posa al dia a mà després de cada prova real amb una versió nova. Amb una carpeta de prova,
-  la comprovació de `restore_session` diu que l'app el desactiva en un minut, i no és cert. No s'ha vist amb un dimoni real que
-  `claude daemon run` escrigui el fitxer de `kind` `daemon`. Els motius d'`AjustRestauracio` i `Preferencies` surten en català
-  dins de l'informe fins a la traducció. Les guardes antigues (`\bProcess\(`, `\bkill(pg)?\(`, `\bLector\(`) no veuen els noms
-  amb mòdul, i a les proves un `Lector(` sense `carpetaSessions` llegiria el `~/.claude/sessions` de debò (recomanació: una tasca
-  a part).
+- **Pendents:** `VersionsProvades` es posa al dia a mà després de cada prova real amb una versió nova. No s'ha vist amb un dimoni
+  real que `claude daemon run` escrigui el fitxer de `kind` `daemon`. Els motius d'`AjustRestauracio` i `Preferencies` surten en
+  català dins de l'informe fins a la traducció. Les guardes antigues que no veien els noms amb mòdul, i el `Lector(` de les proves
+  sense `carpetaSessions`, es van arreglar el 08/11/2026 (vegeu «Guardes», a sota).
+
+### Deixar de fer servir l'app (0.31.0, decisió 3)
+
+- **On:** al final de Configuració › General, la secció «Deixar de fer servir Warp Launch»: la fila «Torna a deixar Warp com
+  era», que diu com quedarà l'ajust, i el botó vermell «Restaura Warp i surt…». La confirmació diu què passarà (també Settings
+  Sync, si l'ajust es torna a activar), i «Cancel·la» és el botó per defecte.
+- **Què fa** (`Desinstallacio.confirma`), en ordre; si un pas falla, ho diu a la secció i no fa els següents:
+  1. treu l'app dels ítems d'inici, si hi és (`ArrencadaSessio.treuDelsItemsDInici`, que va a `ServeiArrencada`);
+  2. torna `restore_session` com era: el valor desat, si se sap; amb `migrat`, activat, el de sèrie de Warp (el text ho diu
+     abans); si l'app no l'ha canviat mai, no hi toca;
+  3. retira el permís (`retirat`, amb la data; el valor original desat s'esborra);
+  4. surt de l'app.
+
+  Abans de cap pas, comprova que `preferencies.json` encara diu el que ha mostrat la confirmació (revisió).
+- **Després,** l'app no torna a tocar l'ajust: ni la vigilància de cada minut, ni un refresc a mitges (s'atura), ni sortir. Si
+  l'ajust no es pot posar, no canvia res; si el permís no es pot desar, l'ajust torna a quedar desactivat (i, si tampoc no es pot,
+  ho diu). La propera vegada, l'app torna a preguntar, encara que hi hagi `configuracio.json`. La configuració no s'esborra.
+- **Només** amb la configuració de debò i el permís acceptat o migrat; si no, el botó és desactivat i el peu diu per què.
+- **Guarda:** cada pas és una excepció en un sol fitxer, i una prova demostra que la mateixa línia falla a qualsevol altre:
+  posar l'ajust a un valor que no és el d'un refresc, només `RefrescWarp.swift`; retirar el permís, només
+  `ConsentimentRestauracio.swift`; tot plegat, i treure l'app dels ítems d'inici fora de l'interruptor, només
+  `Desinstallacio.swift`; confirmar, només el botó de `VistaConfiguracio.swift` (`deixarDeFerServirLAppNomesDesDelBoto`,
+  `laRetiradaNomesValAlSeuFitxer`).
+- **Proves:** `DesinstallacioTests` (12), i més a `PreferenciesTests`, `RefrescWarpTests`, `ArrencadaSessioTests`,
+  `DiagnosticTests` i la guarda. README.md, «Desinstal·lar».
+- **Per decidir:**
+  - **`settings.toml` sense la línia `restore_session`** (deduït de `login_item`, no verificat: Warp no hi escriu els valors de
+    sèrie). Un usuari nou que no ha tocat mai l'opció no té la línia: l'app no la pot desactivar, l'avís hi és sempre, i Warp
+    restaura les pestanyes sense Claude. Amb `migrat`, el botó falla cada vegada. Afecta la decisió 4 («abans de convidar
+    ningú»). Recomanació: primer verificar-ho amb un `settings.toml` net; després, comptar la línia que falta com a activada (en
+    desinstal·lar no cal escriure res) i decidir si l'app pot afegir la línia (seria una excepció nova a la regla 7).
+  - `retirat` és un valor nou dins de la versió 1 de `preferencies.json`: la 0.29 i la 0.30 (no publicades) el llegirien com un
+    error i no tocarien res; la 0.28.0 no llegeix el fitxer. Recomanació: deixar-ho a la versió 1.
+  - Esborrar només `preferencies.json` i deixar `configuracio.json` torna a comptar com a migrat (ve de D-P4; el README diu
+    d'esborrar tota la carpeta). Recomanació: deixar-ho així.
+  - Cas rar: si la sortida es cancel·la perquè la configuració no s'ha pogut desar, la pantalla «Has deixat de fer servir Warp
+    Launch» tapa l'editor i només deixa sortir sense desar.
+
+### Guardes (08/11/2026, sense versió)
+
+Dos forats de `GuardaTests`, tancats sense canviar el que fa l'app (secció 3, «Prova de guarda»):
+- **Els noms amb mòdul:** cap expressió no fa servir `\b`, que no veia `Foundation.Process()`, `Darwin.kill(`,
+  `NSApp.terminate(nil)`, `self.estat =` ni `SMAppService.mainApp.register()` (la guarda dels ítems d'inici rebia una llista buida
+  i la donava per bona). La revisió hi va afegir `Process` i `kill` com a paraula sencera, la família `exec` i les `NSUser…Task`
+  al codi, i, a les proves, la carpeta d'inici de debò per qualsevol camí (`iniciDeDebo`).
+- **La carpeta de les sessions:** `Lector(carpetaSessions:)` i `LectorSessions(carpeta:processos:)` ja no tenen valor per
+  defecte; l'app i el CLI hi posen el de sempre. Qualsevol `carpetaPerDefecte` de `Sources/` és en una llista fixa.
+- **Per decidir:** la guarda de la carpeta de Warp no veu `rmdir`, `unlinkat`, `renameat`, `renamex_np`, `mkdirat`, `trashItem`
+  ni `removefile` (avui no surten enlloc; recomanació: afegir-les, menys el `remove(` de C, que no es distingeix de
+  `llista.remove(at:)`). Un `= LectorTranscripcions()` com a valor per defecte a `Sources/` no el veu cap guarda (recomanació:
+  llistar les línies amb `LectorTranscripcions(` i `LectorConfianca(`). A les proves, la ruta escrita `.claude/sessions` no és
+  prohibida (`DiagnosticTests` la fa servir en una carpeta temporal), i `rutaWarp` i `rutaAjustos` de `Lector` encara tenen valor
+  per defecte, protegits per la guarda de línia.
+
+### Per provar a l'app (de la 0.30.3 a la 0.31.1)
+
+Cada prova, amb l'OK d'en David. Primer, recompilar (`scripts/build-app.sh`, ho fa en David): la de `build/` és la 0.30.2. Si no
+es diu el contrari, amb `--config` i una carpeta nova buida.
+1. **Retorn i Escapada (0.30.3):** a la pantalla del permís, Escapada no fa res; Retorn accepta, crea `preferencies.json` i
+   passa a l'editor. A la Configuració (⌘,), igual: si Escapada la tanqués, l'app sortiria (les proves no ho poden veure).
+2. **Tancar la Configuració (0.30.3),** amb una altra carpeta nova: amb la pantalla del permís, l'app surt i no hi ha
+   `preferencies.json`; amb el permís acceptat, l'app continua.
+3. **Importar amb la carpeta de prova (0.30.3):** amb la restauració desactivada, «Importa de Warp…» diu per què no hi ha
+   finestres i acaba amb «Comença en blanc»; després de «Comença en blanc», «Torna a importar-ho tot de Warp…» diu el mateix i
+   acaba amb «La configuració no canvia.». La decisió 9 no es pot veure amb una carpeta de prova (cap finestra per importar): la
+   cobreixen les proves.
+4. **Pestanyes noves (0.30.3):** la primera secció no té títol, i el peu hi és.
+5. **Diagnòstic (0.30.3):** Configuració › General › «Copia el diagnòstic complet»: amb una versió de Claude Code fora de les
+   provades, la línia la diu un sol cop.
+6. **Deixar de fer servir l'app (0.31.0):** amb una carpeta de prova amb el permís, el botó és desactivat i el peu diu per què;
+   la pestanya General no passa de 640 pt i el peu es veu sencer. Amb la configuració de debò, només mirar: la fila diu com
+   quedarà l'ajust, la confirmació surt un sol cop i ho repeteix (amb Settings Sync), i Retorn i Escapada la cancel·len. Provar-ho
+   de debò deixa `restore_session` activat (si Warp es reinicia, restaura les pestanyes sense Claude): es comprova amb
+   `scripts/warp-restauracio.sh estat` i a `preferencies.json` («retirat»), i es desfà tornant a obrir l'app i acceptant (i, si
+   hi era, tornant a activar l'interruptor de l'inici de sessió).
+7. **Dues còpies de Warp (0.31.1):** en David tanca Warp (es tancarien els Claude que hi corren, regla 2), en fa una còpia a
+   Descàrregues i obre aquella. «Torna a llegir Warp» diu que Warp és obert, amb els seus terminals; «Obre a Warp…» d'una finestra
+   d'1 pestanya sense Claude l'obre en aquella còpia, amb un sol Warp al Monitor d'Activitat i la seva versió al full. El mateix
+   amb un Warp baixat (amb la quarantena) obert des de Descàrregues sense moure'l (App Translocation). En acabar, esborrar la
+   còpia: si no, macOS la podria triar més endavant.
+8. **Sense cap Warp (0.31.1),** en un altre Mac o un altre usuari: «Obre a Warp…» i «Obre-ho tot a Warp…» diuen «No s'ha trobat
+   Warp en aquest Mac: cal Warp Stable.» sense proposar obrir res; `llegeix` i `obre <finestra>` diuen el mateix i surten amb 1.
+9. **Guardes (08/11/2026):** l'app passa al lector la mateixa carpeta de sessions que abans; la llista continua marcant les
+   pestanyes amb una sessió de Claude.
 
 ### Resum
 
-- Proves: de 443 a 506 al core i de 232 a 249 a la UI, totes bé. `prototip/` surt del repo (és a l'historial, 114c97d).
+- Proves: de 443 a 534 al core i de 232 a 275 a la UI, totes bé. `prototip/` surt del repo (és a l'historial, 114c97d).
 - Cap versió del lot no és publicada: la de GitHub és la 0.28.0.
-- De les vuit decisions, falten la signatura amb Developer ID (1), l'idioma (3), Sparkle (6) i les excepcions de la guarda per a
-  la pàgina del permís i per a Sparkle (8).
+- De les vuit decisions del 07/11/2026, falten la signatura amb Developer ID (1), l'idioma (3; al llançament, anglès i català,
+  decisió 7 del 08/11/2026), Sparkle (6) i les excepcions de la guarda per a la pàgina del permís i per a Sparkle (8). De les
+  dotze de la fila del 08/11/2026, totes les que tocaven el codi són fetes (0.30.3, 0.31.0 i 0.31.1), menys l'idioma.
