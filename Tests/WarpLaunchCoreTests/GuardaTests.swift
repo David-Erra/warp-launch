@@ -85,6 +85,21 @@ private let iniciDeDebo = [#"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#,
 private let cridaUnlink = #"(^|[^A-Za-z0-9_])unlink\("#
 private let cridaRename = #"(^|[^A-Za-z0-9_])rename\("#
 private let cridaMkdir = #"(^|[^A-Za-z0-9_])mkdir\("#
+/// Les altres maneres d'esborrar, moure o crear un fitxer o una carpeta, de C i de `FileManager` (revisió de la 0.31.2).
+/// Com a paraula, sense demanar el parèntesi (`let f = rmdir` també hi surt), i amb tota la família (`renameatx_np`,
+/// `removefileat`). `remove(` de C, no: no es distingeix de `llista.remove(at:)`. Valen per a la carpeta de Warp
+/// (`prohibidesCarpetaWarp`) i per al diagnòstic (`escriuen`), que només miren el seu fitxer: el `renamex_np` de l'ajust
+/// (`nomesLAjustCreaElFitxerDeWarp`) no hi té res a veure.
+private let altresEsborrenOMouen = [
+    #"(^|[^A-Za-z0-9_])rmdir(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])unlinkat(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])renameat(x_np)?(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])renamex_np(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])mkdirat(?![A-Za-z0-9_])"#, #"(^|[^A-Za-z0-9_])trashItem(?![A-Za-z0-9_])"#,
+    #"(^|[^A-Za-z0-9_])removefile(at)?(?![A-Za-z0-9_])"#,
+]
+/// A `FitxersLaunchWarp`, a més de l'única crida que esborra (`cridaUnlink`), res que sobreescrigui, esborri, mogui o creï
+/// carpetes.
+private let prohibidesCarpetaWarp = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\(to:"#,
+                                     cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#] + altresEsborrenOMouen
 /// D-P4: Escapada, a la pantalla del permís (`elPermisSAcceptaAmbRetornINoAmbEscapada`).
 private let escapada = [#"cancelAction"#, #"\.escape(?![A-Za-z0-9_])"#, #"onExitCommand"#, #"onKeyPress"#, #"cancelOperation"#,
                         #"\\u\{1[bB]\}"#]
@@ -135,15 +150,16 @@ private let lectorTranscripcions = #"(^|[^A-Za-z0-9_])LectorTranscripcions\((?!c
 private let lectorConfianca = #"(^|[^A-Za-z0-9_])LectorConfianca\((?!ruta:)"#
 private let copiaDiagnostic = #"(^|[^A-Za-z0-9_])CopiaDiagnostic\((?![^\n]*escriu:)"#
 
-/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, executi o toqui el porta-retalls. Sense `\b`: amb les
-/// regles d'Unicode, `default.moveItem` o `Darwin.open` no hi tenen cap límit de paraula.
+/// Pla A4: el diagnòstic només llegeix. Res que escrigui, esborri, mogui, creï carpetes (també `altresEsborrenOMouen`),
+/// executi o toqui el porta-retalls. Sense `\b`: amb les regles d'Unicode, `default.moveItem` o `Darwin.open` no hi tenen
+/// cap límit de paraula.
 private let escriuen = [
     #"\.desa\("#, #"\.posa\("#, #"\.accepta\("#, #"EscripturaAtomica"#, #"\.write\("#, #"createFile"#,
     #"createDirectory"#, #"removeItem"#, #"(^|[^A-Za-z0-9_])moveItem"#, #"copyItem"#, #"replaceItem"#,
     #"(^|[^A-Za-z0-9_])unlink\("#, #"(^|[^A-Za-z0-9_])rename\("#, #"(^|[^A-Za-z0-9_])open\("#, #"sqlite3_open"#,
     #"forWriting"#, #"forUpdating"#, #"(^|[^A-Za-z0-9_])AjustRestauracio\("#, #"posaRestauracio"#,
-    #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#,
-]
+    #"recordaRestauracioOriginal"#, paraulaProcess, #"NSPasteboard"#, #"copiaText"#, cridaMkdir,
+] + altresEsborrenOMouen
 
 /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch». Cada pas és una excepció, i només val al seu fitxer:
 /// - posar l'ajust de Warp a un valor que no és el d'un refresc: només `RefrescWarp.retira` (`entorn.posa(`, que fins ara
@@ -698,7 +714,7 @@ private let prohibidesArrossegar = [
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
         let copies = try aparicions(de: [#"(^|[^A-Za-z0-9_])CopiaDiagnostic\("#], a: codi)
         #expect(copies.count == 1 && copies[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift:"), "\(copies)")
-        // Cada expressió troba la seva línia.
+        // Cada expressió troba la seva línia, i només aquella.
         let mostra = [(ruta: "mostra.swift", text: """
             try magatzem.desa(p)
             try ajust.posa(false)
@@ -723,8 +739,18 @@ private let prohibidesArrossegar = [
             Process()
             NSPasteboard.general.clearContents()
             PortaRetallsSistema.copiaText(t)
+            Darwin.mkdir(r, 0o755)
+            rmdir(r)
+            Darwin.unlinkat(AT_FDCWD, r, 0)
+            renameat(AT_FDCWD, r, AT_FDCWD, s)
+            renamex_np(r, s, UInt32(RENAME_EXCL))
+            Darwin.mkdirat(AT_FDCWD, r, 0o755)
+            try FileManager.default.trashItem(at: u, resultingItemURL: nil)
+            removefile(r, nil, removefile_flags_t(REMOVEFILE_RECURSIVE))
             """)]
-        #expect(try aparicions(de: escriuen, a: mostra).count == escriuen.count)
+        #expect(mostra[0].text.split(separator: "\n").count == escriuen.count, "una línia per expressió")
+        #expect(try aparicions(de: escriuen, a: mostra)
+            == escriuen.enumerated().map { "mostra.swift:\($0.offset + 1): «\($0.element)»" })
         #expect(try aparicions(de: escriuen, a: [(ruta: "mostra.swift", text: """
             try AjustRestauracio.analitza(text).valor
             try MagatzemPreferencies(carpeta: c).carrega()
@@ -911,6 +937,39 @@ private let prohibidesArrossegar = [
             let n = renameFile(a)
             """)]) == ["mostra.swift:1: «\(cridaUnlink)»", "mostra.swift:2: «\(cridaUnlink)»", "mostra.swift:3: «\(cridaRename)»",
                        "mostra.swift:4: «\(cridaMkdir)»"])
+        // Les altres maneres d'esborrar, moure o crear (revisió de la 0.31.2), també amb el mòdul i sense cridar-les. Un nom
+        // que només s'hi assembla, `remove(at:)` i les funcions de l'estat de `removefile`, que no esborren res, no.
+        let altresManeres = [(ruta: "mostra.swift", text: """
+            rmdir(ruta)
+            Darwin.unlinkat(AT_FDCWD, ruta, 0)
+            renameat(AT_FDCWD, a, AT_FDCWD, b)
+            Darwin.renameatx_np(AT_FDCWD, a, AT_FDCWD, b, UInt32(RENAME_EXCL))
+            renamex_np(a, b, UInt32(RENAME_EXCL))
+            Darwin.mkdirat(AT_FDCWD, r, 0o755)
+            try FileManager.default.trashItem(at: u, resultingItemURL: nil)
+            removefile(r, nil, removefile_flags_t(REMOVEFILE_RECURSIVE))
+            Darwin.removefileat(fd, r, nil, 0)
+            let esborra = rmdir
+            llista.remove(at: 0)
+            func rmdirs() {}
+            let trashItems = 0
+            removefile_state_free(estat)
+            elMeuunlinkat(r)
+            let nom = "renameatLater"
+            """)]
+        let noves = altresEsborrenOMouen
+        #expect(try aparicions(de: noves, a: altresManeres) == [
+            "mostra.swift:1: «\(noves[0])»", "mostra.swift:2: «\(noves[1])»", "mostra.swift:3: «\(noves[2])»",
+            "mostra.swift:4: «\(noves[2])»", "mostra.swift:5: «\(noves[3])»", "mostra.swift:6: «\(noves[4])»",
+            "mostra.swift:7: «\(noves[5])»", "mostra.swift:8: «\(noves[6])»", "mostra.swift:9: «\(noves[6])»",
+            "mostra.swift:10: «\(noves[0])»",
+        ])
+        // Les dues guardes que les fan servir troben les mateixes línies, i cap de les altres.
+        func linies(_ expressions: [String]) throws -> [Int] {
+            Set(try aparicions(de: expressions, a: altresManeres).compactMap { Int($0.split(separator: ":")[1]) }).sorted()
+        }
+        #expect(try linies(prohibidesCarpetaWarp) == Array(1...10))
+        #expect(try linies(escriuen) == Array(1...10))
         // D-P4: Escapada a la pantalla del permís, de totes les maneres; el botó per defecte, no.
         #expect(try aparicions(de: escapada, a: [(ruta: "mostra.swift", text: """
             .keyboardShortcut(.cancelAction)
@@ -1171,16 +1230,15 @@ private let prohibidesArrossegar = [
 
     /// Fase 3.1: només `FitxersLaunchWarp` sap on és la carpeta de Warp, i dins seu només esborra una crida (`treu`), a
     /// la qual només s'arriba amb totes les comprovacions o just després de crear el fitxer. Sense sobreescriure,
-    /// canviar de nom ni crear carpetes.
+    /// canviar de nom, esborrar de cap altra manera ni crear carpetes (`prohibidesCarpetaWarp`).
     @Test func nomesFitxersLaunchWarpTocaLaCarpetaDeWarp() throws {
         let codi = try fitxers("Sources")
         #expect(codi.filter { $0.text.contains("launch_configurations") }.map(\.ruta)
             == ["Sources/WarpLaunchCore/FitxersLaunchWarp.swift"])
         let fitxer = try #require(codi.first { $0.ruta.hasSuffix("/FitxersLaunchWarp.swift") })
         #expect(try aparicions(de: [cridaUnlink], a: [fitxer]).count == 1)
-        let prohibides = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\(to:"#,
-                          cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#]
-        #expect(try aparicions(de: prohibides, a: [fitxer]).isEmpty)
+        let trobades = try aparicions(de: prohibidesCarpetaWarp, a: [fitxer])
+        #expect(trobades.isEmpty, "\(trobades)")
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
     }
 
