@@ -85,10 +85,7 @@ struct FullObertura: View {
             }
             Text(p.text)
             if p.warpTancat, !finestres.isEmpty {
-                Label(p.warpDesaFinestres
-                        ? "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude."
-                        : "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.",
-                      systemImage: "power")
+                Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres), systemImage: "power")
             }
             if p.terminalsDesconeguts > 0, !finestres.isEmpty {
                 Label("Warp ja té " + Plural.compta(p.terminalsDesconeguts, "pestanya que l'app no reconeix",
@@ -177,10 +174,7 @@ struct FullObertura: View {
             }
             Text(pla.xifres.text)
             if p.warpTancat, !pla.aObrir.isEmpty {
-                Label(p.warpDesaFinestres
-                        ? "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude."
-                        : "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.",
-                      systemImage: "power")
+                Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres), systemImage: "power")
             }
             if pla.potserObertes > 0 {
                 Label(Plural.compta(pla.potserObertes, "pestanya sense lligam potser ja és oberta",

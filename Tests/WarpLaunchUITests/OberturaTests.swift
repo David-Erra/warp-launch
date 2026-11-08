@@ -403,6 +403,10 @@ private struct NoObre: Error, CustomStringConvertible {
         await b.obertura.demana(id(100))
         let proposta = try #require(b.proposta)
         #expect(proposta.warpTancat && proposta.warpDesaFinestres == senseFitxer)
+        // Decisió 1 (08/11/2026): el full ho diu, i no demana d'obrir Warp primer. «Obre» continua obrint-lo.
+        #expect(Obertura.textWarpTancat(restaura: proposta.warpDesaFinestres) == "Warp és tancat: l'app l'obrirà abans. "
+            + (senseFitxer ? "Warp també restaurarà les finestres d'abans, sense Claude."
+                : "En arrencar, Warp obre també una finestra buida, que pots tancar."))
         b.llegides = 0
         // Mentre Warp arrenca, la vigilància de cada minut el veu obert amb un terminal, i crea el fitxer.
         b.enEngegar = {
@@ -1032,6 +1036,9 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         await b.obertura.demanaTot()
         let p = try #require(proposta(b))
         #expect(p.warpTancat && p.warpDesaFinestres == senseFitxer)
+        // Decisió 1 (08/11/2026): el full ho diu, i no demana d'obrir Warp primer. «Obre» continua obrint-lo.
+        #expect(Obertura.textWarpTancat(restaura: p.warpDesaFinestres).hasSuffix(senseFitxer
+            ? " Warp també restaurarà les finestres d'abans, sense Claude." : " Warp obre també una finestra buida, que pots tancar."))
         b.llegides = 0
         b.enEngegar = {
             ajust.warpArrencat = true

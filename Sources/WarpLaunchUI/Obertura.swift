@@ -458,6 +458,15 @@ public final class Obertura {
 
     static let warpRestaurara = "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar."
 
+    /// Què diuen els fulls d'«Obre a Warp…» i «Obre-ho tot…» amb Warp tancat: si Warp, en arrencar, restaurarà les seves
+    /// finestres (`Proposta.warpDesaFinestres`, `warpRestauraEnArrencar`), o si n'obrirà una de buida. Sense `settings.toml`,
+    /// diu que les restaurarà, i no demana d'obrir Warp primer, perquè no ho evitaria (decisió 1 d'en David, 08/11/2026).
+    static func textWarpTancat(restaura: Bool) -> String {
+        "Warp és tancat: l'app l'obrirà abans. "
+            + (restaura ? "Warp també restaurarà les finestres d'abans, sense Claude."
+                : "En arrencar, Warp obre també una finestra buida, que pots tancar.")
+    }
+
     /// Desa la configuració i llegeix Warp (la lectura posa al dia els lligams, `EstatWarp.enLlegir`). Amb Warp Preview
     /// (`LecturaWarp.warpPreview`, D-P12), o sense cap Warp (0.31.1), no es pot obrir res: ho diu el full.
     func llegeixPerObrir() async -> Result<LecturaWarp, Motiu> {
