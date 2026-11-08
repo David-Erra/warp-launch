@@ -47,6 +47,12 @@ public final class RefrescWarp {
 
     /// Per què l'app no pot fer la seva feina amb l'ajust: el menú de la icona ho diu.
     public private(set) var avis: String?
+    /// Sense la carpeta de Warp (0.31.2), l'app no la crea (`AjustRestauracio`). No és que Warp hagi de restaurar res: no ha
+    /// obert mai cap finestra. Quan Warp creï la carpeta, la vigilància de cada minut hi afegirà la línia. No diu «quan
+    /// l'obris»: no s'ha vist si Warp la crea en obrir-se per primer cop.
+    public static let avisWarpMaiObert = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, "
+        + "ni cap finestra per restaurar. Quan Warp la creï, Warp Launch en desactivarà la restauració de sessió en menys "
+        + "d'un minut."
     @ObservationIgnored private let entorn: Entorn
     @ObservationIgnored private var enCurs: Task<Resultat, Never>?
     /// L'app està sortint: cap cicle pot tornar a activar l'ajust (`atura`).
@@ -190,7 +196,8 @@ public final class RefrescWarp {
             }
         }
         if let darrer {
-            avis = "No s'ha pogut desactivar la restauració de sessió de Warp: \(darrer). Si Warp es tanca, restaurarà les finestres sense Claude."
+            avis = (darrer as? AjustRestauracio.Refusat)?.warpMaiObert == true ? Self.avisWarpMaiObert
+                : "No s'ha pogut desactivar la restauració de sessió de Warp: \(darrer). Si Warp es tanca, restaurarà les finestres sense Claude."
             Registre.refresc.error("\(String(describing: darrer), privacy: .public)")
         } else {
             avis = nil

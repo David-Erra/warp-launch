@@ -231,7 +231,7 @@ private let senseGeneral = text.replacingOccurrences(of: "[general]\nlogin_item 
         #expect(try ajust.valor() == true)
         #expect(try !ajust.posa(true))
         #expect(throws: AjustRestauracio.Refusat(description: "Warp encara no s'ha obert mai en aquest usuari: no hi ha la "
-            + "carpeta «\(tmp.url("warp").path)», i Warp Launch no la crea")) { try ajust.posa(false) }
+            + "carpeta «\(tmp.url("warp").path)», i Warp Launch no la crea", warpMaiObert: true)) { try ajust.posa(false) }
         #expect(!FileManager.default.fileExists(atPath: tmp.url("warp").path))
         #expect(try FileManager.default.contentsOfDirectory(atPath: temporal).isEmpty)
     }

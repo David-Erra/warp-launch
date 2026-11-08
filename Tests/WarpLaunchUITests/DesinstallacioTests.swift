@@ -501,15 +501,34 @@ extension Carpeta {
         #expect(mon.contingut == "[general]\nrestore_session = false\n")
     }
 
-    /// Sense la carpeta de Warp, no la crea: el menú diu per què.
+    /// Sense la carpeta de Warp, no la crea: el menú diu per què, i que quan Warp l'hagi creada ho farà. No diu que Warp
+    /// restaurarà finestres: no n'ha obert mai cap. Quan Warp crea la carpeta, la vigilància hi posa la línia.
     @Test func senseLaCarpetaDeWarpElRefrescNoLaCrea() throws {
         let mon = try MonSenseLinia(nil, carpetaWarp: false)
         let c = mon.consentiment()
         c.accepta()
         let refresc = try #require(c.refresc)
         refresc.vigila()
-        #expect(refresc.avis?.contains("Warp encara no s'ha obert mai en aquest usuari") == true, "\(refresc.avis ?? "")")
+        #expect(refresc.avis == RefrescWarp.avisWarpMaiObert, "\(refresc.avis ?? "")")
+        #expect(RefrescWarp.avisWarpMaiObert.hasPrefix("Warp encara no s'ha obert mai en aquest usuari: "))
+        #expect(!RefrescWarp.avisWarpMaiObert.contains("restaurarà"))
         #expect(!FileManager.default.fileExists(atPath: mon.tmp.url("warp").path))
+        try FileManager.default.createDirectory(at: mon.tmp.url("warp"), withIntermediateDirectories: true)
+        refresc.vigila()
+        #expect(refresc.avis == nil, "\(refresc.avis ?? "")")
+        #expect(mon.contingut == "[general]\nrestore_session = false\n")
+    }
+
+    /// Si no s'hi pot afegir la línia per una altra raó, l'avís és el de sempre: Warp sí que pot restaurar les finestres.
+    @Test func siNoSHiPotAfegirLAvisDiuQueWarpRestaurara() throws {
+        let mon = try MonSenseLinia("general.x = 1\n")
+        let c = mon.consentiment()
+        c.accepta()
+        let refresc = try #require(c.refresc)
+        refresc.vigila()
+        #expect(refresc.avis?.hasPrefix("No s'ha pogut desactivar la restauració de sessió de Warp: ") == true, "\(refresc.avis ?? "")")
+        #expect(refresc.avis?.hasSuffix("Si Warp es tanca, restaurarà les finestres sense Claude.") == true)
+        #expect(mon.contingut == "general.x = 1\n")
     }
 
     /// Amb `migrat` (el de sèrie) i sense la línia, sense el fitxer o sense la carpeta de Warp, «Restaura Warp i surt…»

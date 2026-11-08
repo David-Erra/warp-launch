@@ -14,6 +14,9 @@ import Foundation
 public struct AjustRestauracio: Sendable {
     public struct Refusat: Error, Equatable, CustomStringConvertible {
         public var description: String
+        /// No hi ha la carpeta de Warp: Warp no s'ha obert mai en aquest usuari, i no té res per restaurar. Quan la creï, la
+        /// vigilància de cada minut hi afegirà la línia (`RefrescWarp.avisWarpMaiObert`).
+        public var warpMaiObert = false
     }
 
     public var ruta: URL
@@ -48,7 +51,7 @@ public struct AjustRestauracio: Sendable {
             guard !nou else { return false }
             // No es crea: seria la carpeta de Warp abans que Warp, i l'excepció de la regla 7 és només la línia.
             throw Refusat(description: "Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta "
-                + "«\(ruta.deletingLastPathComponent().path)», i Warp Launch no la crea")
+                + "«\(ruta.deletingLastPathComponent().path)», i Warp Launch no la crea", warpMaiObert: true)
         case .senseFitxer:
             guard !nou else { return false }
             try crea(Data("[general]\n\(Self.liniaNova)\n".utf8))
