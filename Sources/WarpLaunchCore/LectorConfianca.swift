@@ -39,7 +39,10 @@ public struct LectorConfianca: Sendable {
 
     public var ruta: URL
 
-    public init(ruta: URL = LectorConfianca.rutaPerDefecte) {
+    /// Sense valor per defecte, com `LectorSessions`: una prova que se l'oblidés llegiria el `~/.claude.json` de debò, i cap
+    /// guarda de línia no ho veuria (el valor per defecte no surt a la crida). L'app i el CLI hi posen
+    /// `LectorConfianca.rutaPerDefecte`.
+    public init(ruta: URL) {
         self.ruta = ruta
     }
 

@@ -38,7 +38,10 @@ public struct LectorTranscripcions: Sendable {
 
     public var carpeta: URL
 
-    public init(carpeta: URL = LectorTranscripcions.carpetaPerDefecte) {
+    /// Sense valor per defecte, com `LectorSessions`: una prova que se l'oblidés llegiria les transcripcions de debò, i cap
+    /// guarda de línia no ho veuria (el valor per defecte no surt a la crida). L'app i el CLI hi posen
+    /// `LectorTranscripcions.carpetaPerDefecte`.
+    public init(carpeta: URL) {
         self.carpeta = carpeta
     }
 

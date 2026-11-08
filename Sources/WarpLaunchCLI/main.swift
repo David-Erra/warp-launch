@@ -11,7 +11,8 @@ let processos = ProcessosDelSistema()
 let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema)
 let entorn = EntornCLI(lector: lector, inici: lector.inici,
                        carpetaReal: Rutes.carpetaConfiguracio(inici: lector.inici),
-                       transcripcions: LectorTranscripcions(), confianca: LectorConfianca())
+                       transcripcions: LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte),
+                       confianca: LectorConfianca(ruta: LectorConfianca.rutaPerDefecte))
 // Ctrl-C a mig `obre --obre`: s'esborra el fitxer temporal (que no quedi a Warp, ⌃⌘L) i es desa el llançament.
 var interrupcio: (@MainActor () -> Void)?
 let senyal = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)

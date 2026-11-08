@@ -103,9 +103,12 @@ final class Aplicacio {
         let processos = ProcessosDelSistema()
         let lector = Lector(carpetaSessions: LectorSessions.carpetaPerDefecte, processos: processos, warp: TrobaWarp.delSistema,
                             inici: inici)
+        // Les transcripcions i la confiança de Claude de debò (només lectura): els lectors no tenen cap ruta per defecte.
+        let transcripcions = LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte)
+        let confianca = LectorConfianca(ruta: LectorConfianca.rutaPerDefecte)
         let entornDiagnostic = EntornDiagnostic(lector: lector, carpetaConfiguracio: carpeta,
                                                 configuracioDeProva: arguments.deProva,
-                                                transcripcions: LectorTranscripcions(), confianca: LectorConfianca())
+                                                transcripcions: transcripcions, confianca: confianca)
         copiaDiagnostic = CopiaDiagnostic(diagnostic: { Diagnostic.executa(entornDiagnostic, anonimitza: $0) })
         // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.
         // D-P4: `ConsentimentRestauracio` només crida `creaEntornRefresc` (i només llavors es crea l'ajust) amb el
@@ -144,8 +147,8 @@ final class Aplicacio {
                 // Amb l'ajust activat, Warp restauraria les seves finestres en arrencar.
                 engegaWarp: { await consentiment.refresc?.tancaEsperant(); try await ObreWarp.engega(warp: lector.installacio()) },
                 fitxers: FitxersLaunchWarp.real,
-                transcripcions: LectorTranscripcions(),
-                confianca: LectorConfianca(),
+                transcripcions: transcripcions,
+                confianca: confianca,
                 versioWarp: { lector.installacio().app.versio },
                 inici: inici))
         }
@@ -163,7 +166,6 @@ final class Aplicacio {
         self.arrencada = arrencada
         let desinstallacio = Desinstallacio(consentiment: consentiment, arrencada: arrencada, surt: { NSApp.terminate(nil) })
         self.desinstallacio = desinstallacio
-        let transcripcions = LectorTranscripcions()
         editor.conversaDe = { sessions.conversaAReprendre($0, transcripcions: transcripcions) }
         editor.enImportar = { sessions.vincula($0.vincles) }
         // Sense configuració, `estat.json` no s'escriu.
