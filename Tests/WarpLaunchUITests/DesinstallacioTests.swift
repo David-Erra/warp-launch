@@ -379,6 +379,28 @@ private final class Mon {
         #expect(!mon.ajust.valor, "la vigilància continua")
     }
 
+    /// 0.31.3: si en tornar-lo a desactivar `settings.toml` acaba de canviar, no hi ha cap avís (no és cap error), però l'ajust
+    /// ha quedat activat: no diu que s'ha desactivat. La vigilància de cada minut el desactiva.
+    @Test func siAcabaDeCanviarEnTornarADesactivarNoDiuQueSHaDesactivat() throws {
+        let mon = try Mon(ajust: true)
+        let c = mon.consentiment()
+        c.accepta()
+        try #require(c.refresc).vigila()
+        let d = mon.desinstallacio(c)
+        d.demana()
+        try mon.carpeta.posaPermisos(0o555)
+        mon.ajust.mesTardDesactivar = 1
+        d.confirma()
+        try mon.carpeta.posaPermisos(0o755)
+        let error = try #require(d.error)
+        #expect(error.hasSuffix("L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho "
+            + "tornarà a provar d'aquí a un minut. El permís no ha canviat."), "\(error)")
+        #expect(c.refresc?.avis == nil && c.refresc?.desactivacioPendent == true)
+        #expect(mon.ajust.valor && mon.ajust.posats == [false, true] && mon.sortides == 0 && c.estat == .acceptat)
+        c.refresc?.vigila()
+        #expect(!mon.ajust.valor && c.refresc?.desactivacioPendent == false, "la vigilància continua")
+    }
+
     /// 0.31.3: si `settings.toml` acaba de canviar, «Restaura Warp i surt…» no hi escriu res, ho diu (l'ha demanat l'usuari) i
     /// no surt. Es pot tornar a provar.
     @Test func siAcabaDeCanviarNoRetiraResINoSurt() throws {

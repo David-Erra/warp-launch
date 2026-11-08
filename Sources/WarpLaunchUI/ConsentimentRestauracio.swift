@@ -186,8 +186,10 @@ public final class ConsentimentRestauracio {
             refresc.desfesRetirada()
             Registre.consentiment.error("retirar: \(error.description, privacy: .public)")
             // Desactivar-lo també pot fallar (Warp l'escriu en calent): llavors el refresc té l'avís, i la vigilància de cada
-            // minut ho torna a provar (revisió de la 0.31.0).
-            let ajust = refresc.avis == nil ? "L'ajust de Warp torna a quedar desactivat, i el permís"
+            // minut ho torna a provar (revisió de la 0.31.0). Si `settings.toml` acabava de canviar (0.31.3), no hi ha avís,
+            // però tampoc no s'ha desactivat.
+            let desactivat = refresc.avis == nil && !refresc.desactivacioPendent
+            let ajust = desactivat ? "L'ajust de Warp torna a quedar desactivat, i el permís"
                 : "L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar "
                     + "d'aquí a un minut. El permís"
             throw ErrorRetirada(description: "No s'ha pogut retirar el permís: \(error.description). \(ajust) no ha canviat.")
