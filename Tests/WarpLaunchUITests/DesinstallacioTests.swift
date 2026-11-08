@@ -362,4 +362,22 @@ private final class Mon {
         #expect(mon.sortides == 0 && c.estat == .acceptat && !mon.ajust.valor)
         #expect(d.retirada == .disponible(.original(true)))
     }
+
+    /// Revisió de la 0.31.0: si ha canviat mentrestant, tampoc no la treu dels ítems d'inici (la confirmació deia una altra
+    /// cosa de l'ajust): cap pas no es fa.
+    @Test func siHaCanviatMentrestantNoLaTreuDelsItemsDInici() throws {
+        let mon = try Mon(ajust: false)
+        let c = mon.consentiment()
+        c.accepta()
+        mon.items.estat = .activada
+        let d = mon.desinstallacio(c)
+        d.demana()
+        #expect(d.missatgeConfirmacio.contains("sortirà dels ítems d'inici de sessió"))
+        mon.ajust.valor = true
+        c.refresc?.vigila()
+        d.confirma()
+        #expect(d.error == "Mentrestant, «preferencies.json» ha canviat: torna-ho a provar.")
+        #expect(mon.items.crides.isEmpty && mon.items.estat == .activada)
+        #expect(mon.sortides == 0 && c.estat == .acceptat)
+    }
 }

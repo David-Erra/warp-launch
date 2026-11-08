@@ -39,6 +39,10 @@ public final class ConsentimentRestauracio {
 
     public struct ErrorRetirada: Error, Equatable, CustomStringConvertible {
         public var description: String
+
+        /// El que ha dit la confirmació ja no és el que es faria (`preferencies.json` ha canviat).
+        public static let haCanviat = ErrorRetirada(description: "Mentrestant, «\(Preferencies.nomFitxer)» ha canviat: torna-ho a "
+            + "provar.")
     }
 
     public private(set) var estat: Estat
@@ -167,9 +171,7 @@ public final class ConsentimentRestauracio {
     public func retira(_ retorn: Preferencies.Retorn) throws(ErrorRetirada) {
         let ara = retirada()
         if case let .noDisponible(motiu) = ara { throw ErrorRetirada(description: motiu) }
-        guard ara == .disponible(retorn), let magatzem, let refresc else {
-            throw ErrorRetirada(description: "Mentrestant, «\(Preferencies.nomFitxer)» ha canviat: torna-ho a provar.")
-        }
+        guard ara == .disponible(retorn), let magatzem, let refresc else { throw .haCanviat }
         do {
             try refresc.retira(posant: retorn.valor)
         } catch {

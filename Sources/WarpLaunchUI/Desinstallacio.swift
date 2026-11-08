@@ -4,7 +4,7 @@ import WarpLaunchCore
 
 /// «Deixa de fer servir Warp Launch» (0.31.0, decisió 3 d'en David, 07/11/2026), al final de Configuració › General: qui
 /// deixa de fer servir l'app torna a deixar Warp com era abans que l'app hi toqués, amb un botó i una confirmació. En
-/// confirmar, en aquest ordre:
+/// confirmar, si `preferencies.json` encara diu el que ha mostrat la confirmació (si no, no fa res i ho diu), en aquest ordre:
 /// 1. treu l'app dels ítems d'inici de sessió, si hi és (`ArrencadaSessio.treuDelsItemsDInici`, que va a
 ///    `ServeiArrencada`, l'únic que toca els ítems d'inici de macOS). Si no es pot, no fa res més; es pot tornar a activar
 ///    amb l'interruptor.
@@ -61,6 +61,13 @@ public final class Desinstallacio {
     public func confirma() {
         confirmant = false
         guard case let .disponible(retorn) = retirada else { return }
+        // Abans de cap pas, tampoc els ítems d'inici: el que ha dit la confirmació encara ha de ser el que es farà (revisió de
+        // la 0.31.0). `ConsentimentRestauracio.retira` ho torna a mirar.
+        guard consentiment.retirada() == retirada else {
+            error = ConsentimentRestauracio.ErrorRetirada.haCanviat.description
+            actualitza()
+            return
+        }
         arrencada.actualitza()
         let eraALInici = arrencada.activada
         if let motiu = arrencada.treuDelsItemsDInici() {
