@@ -92,6 +92,10 @@ public final class RefrescWarp {
     /// (`Pendent`). La vigilància de cada minut ho torna a provar. S'observa: el menú en treu la `nota`.
     public private(set) var pendent: Pendent?
     public var desactivacioPendent: Bool { pendent != nil }
+    /// Si Warp, en arrencar ara, faria servir la restauració de sèrie, activada, perquè l'app encara no l'hi ha pogut
+    /// desactivar: sense `settings.toml`, i amb Warp tancat o encara arrencant (ronda 5, `Pendent.quanSObriWarp`). Llavors
+    /// pot restaurar les finestres d'abans, sense Claude, i no n'obre cap de buida: els fulls d'obrir ho diuen (`Obertura`).
+    public var warpRestauraEnArrencar: Bool { pendent == .quanSObriWarp }
     /// Què diu el menú de la icona quan no és cap error, però l'ajust encara no s'ha pogut desactivar: sense `settings.toml`
     /// (ronda 5), `notaSenseFitxer`. Si `settings.toml` acabava de canviar, res: es torna a provar d'aquí a pocs segons.
     public var nota: String? { pendent == .quanSObriWarp ? Self.notaSenseFitxer : nil }

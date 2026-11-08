@@ -119,8 +119,12 @@ private final class Banc {
     var mentreObre: (() -> Void)?
     /// Es crida abans de cada lectura, amb el seu número (0…).
     var abansDeLlegir: ((Int) -> Void)?
+    /// Es crida quan es demana obrir Warp (per exemple, perquè l'app creï `settings.toml` mentre Warp arrenca).
+    var enEngegar: (() -> Void)?
 
-    init(estat: Data? = nil, configuracio: Configuracio = configuracio, consentiment acceptat: Bool = true) throws {
+    /// - Parameter refresc: l'ajust de Warp, fals (`AjustSenseFitxer`). Sense, no hi ha refresc, com amb una carpeta de prova.
+    init(estat: Data? = nil, configuracio: Configuracio = configuracio, consentiment acceptat: Bool = true,
+         refresc: RefrescWarp.Entorn? = nil) throws {
         carpeta = FileManager.default.temporaryDirectory.appending(path: "warp-launch-ui-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: carpeta.appending(path: "warp"), withIntermediateDirectories: true)
         let config = carpeta.appending(path: "config")
@@ -133,7 +137,10 @@ private final class Banc {
         sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: config), rellotge: { rellotge.ara })
         sessions.carrega()
         if !acceptat { try MagatzemPreferencies(carpeta: config).desa(Preferencies(restauracio: .senseTriar)) }
-        consentiment = ConsentimentRestauracio(magatzem: MagatzemPreferencies(carpeta: config), creaEntornRefresc: nil)
+        var creaEntornRefresc: (@MainActor () -> RefrescWarp.Entorn)?
+        if let refresc { creaEntornRefresc = { refresc } }
+        consentiment = ConsentimentRestauracio(magatzem: MagatzemPreferencies(carpeta: config),
+                                               creaEntornRefresc: creaEntornRefresc)
         obertura = Obertura(editor: editor, sessions: sessions, consentiment: consentiment, entorn: Obertura.Entorn(
             llegeix: { [unowned self] in
                 abansDeLlegir?(llegides)
@@ -158,6 +165,7 @@ private final class Banc {
             engegaWarp: { [unowned self] in
                 engegades += 1
                 urlsEnEngegar = urls.count
+                enEngegar?()
                 if let fallaEngegar { throw fallaEngegar }
                 if engegarNoTorna { try await Task.sleep(for: .seconds(3600)) }
             },
@@ -191,6 +199,33 @@ private final class Banc {
 
 private final class Rellotge: @unchecked Sendable {
     var ara = t0
+}
+
+/// L'ajust de Warp, fals, per al refresc del `Banc`. Sense `settings.toml` (`senseFitxer`), és activat, de sèrie, i l'ajust
+/// no el crea fins que Warp és obert amb algun terminal (ronda 5, `AjustRestauracio.Escriptura.quanSObriWarp`); llavors el
+/// crea desactivat. Amb el fitxer, desactivat.
+private final class AjustSenseFitxer: @unchecked Sendable {
+    private let pany = NSLock()
+    private var estat: (senseFitxer: Bool, warpArrencat: Bool)
+
+    init(senseFitxer: Bool = true) { estat = (senseFitxer, false) }
+
+    var senseFitxer: Bool { pany.withLock { estat.senseFitxer } }
+    var warpArrencat: Bool { get { pany.withLock { estat.warpArrencat } } set { pany.withLock { estat.warpArrencat = newValue } } }
+
+    var entorn: RefrescWarp.Entorn {
+        RefrescWarp.Entorn(ajust: { [self] in senseFitxer },
+                           posa: { [self] nou in
+                               pany.withLock {
+                                   guard !nou, estat.senseFitxer else { return .jaHiEra }
+                                   guard estat.warpArrencat else { return .quanSObriWarp }
+                                   estat.senseFitxer = false
+                                   return .escrit
+                               }
+                           },
+                           warpObert: { [self] in warpArrencat },
+                           llegeixBase: { LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []) })
+    }
 }
 
 private struct NoObre: Error, CustomStringConvertible {
@@ -344,6 +379,36 @@ private struct NoObre: Error, CustomStringConvertible {
         await b.obertura.confirmaIObre()
         #expect(b.engegades == 1 && b.urls.count == 1)
         #expect(b.obertura.resultat?.text == "S'ha obert «W» a Warp: 2 pestanyes, 1 amb Claude.")
+    }
+
+    /// Ronda 5: sense `settings.toml` i amb Warp tancat, l'app encara no hi ha pogut desactivar la restauració, i Warp
+    /// arrencarà amb la de sèrie, activada. El full diu que Warp restaurarà les finestres d'abans, i no que n'obrirà una de
+    /// buida; el bàner tampoc no en parla, encara que l'app creï el fitxer mentre Warp arrenca. Amb el fitxer, com sempre.
+    @Test(arguments: [true, false])
+    func senseFitxerDAjustosWarpRestauraraEnArrencar(senseFitxer: Bool) async throws {
+        let ajust = AjustSenseFitxer(senseFitxer: senseFitxer)
+        let b = try Banc(refresc: ajust.entorn)
+        let refresc = try #require(b.consentiment.refresc)
+        refresc.vigila()
+        #expect(refresc.pendent == (senseFitxer ? .quanSObriWarp : nil))
+        b.lectures = [senseBase([], warpObert: false)]
+        await b.obertura.demana(id(100))
+        let proposta = try #require(b.proposta)
+        #expect(proposta.warpTancat && proposta.warpDesaFinestres == senseFitxer)
+        b.llegides = 0
+        // Mentre Warp arrenca, la vigilància de cada minut el veu obert amb un terminal, i crea el fitxer.
+        b.enEngegar = {
+            ajust.warpArrencat = true
+            refresc.vigila()
+        }
+        let restaurat = TerminalViu(pid: 500, carpeta: "/Users/prova")
+        b.lectures = [senseBase([], warpObert: false), senseBase([], warpObert: false), senseBase([restaurat]),
+                      senseBase([restaurat]), senseBase([restaurat] + terminalsNous, sessions: [claudeT1()])]
+        await b.obertura.confirmaIObre()
+        #expect(b.engegades == 1 && b.urls.count == 1)
+        #expect(!ajust.senseFitxer && refresc.pendent == nil, "l'app ha creat el fitxer mentre Warp arrencava")
+        #expect(b.obertura.resultat?.text == "S'ha obert «W» a Warp: 2 pestanyes, 1 amb Claude."
+            + (senseFitxer ? "" : " En arrencar, Warp ha obert també una finestra buida: la pots tancar."))
     }
 
     /// Si en arrencar Warp ha restaurat alguna pestanya, el pla canvia: no s'obre res, i es torna al full. El segon «Obre» ja
@@ -905,6 +970,33 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         #expect(b.obertura.resultat?.correcte == true)
         #expect(b.obertura.resultat?.text == "S'han obert 2 finestres a Warp, amb 2 pestanyes, 2 amb Claude.")
         #expect(b.obertura.estat == .cap)
+    }
+
+    /// Ronda 5: sense `settings.toml` i amb Warp tancat, Warp arrencarà amb la restauració de sèrie, activada. El full no diu
+    /// que obrirà una finestra buida, sinó que restaurarà les d'abans, i el resum tampoc no en parla, encara que l'app creï el
+    /// fitxer mentre Warp arrenca. Amb el fitxer, com sempre.
+    @Test(arguments: [true, false])
+    func senseFitxerDAjustosWarpRestauraraEnArrencar(senseFitxer: Bool) async throws {
+        let ajust = AjustSenseFitxer(senseFitxer: senseFitxer)
+        let b = try Banc(configuracio: duesFinestres, refresc: ajust.entorn)
+        let refresc = try #require(b.consentiment.refresc)
+        refresc.vigila()
+        b.lectures = [senseBase([], warpObert: false)]
+        await b.obertura.demanaTot()
+        let p = try #require(proposta(b))
+        #expect(p.warpTancat && p.warpDesaFinestres == senseFitxer)
+        b.llegides = 0
+        b.enEngegar = {
+            ajust.warpArrencat = true
+            refresc.vigila()
+        }
+        b.lectures = [senseBase([], warpObert: false), senseBase([], warpObert: false), senseBase([]), senseBase([]),
+                      obertesTotes([(id(1), "/x/t1", 601), (id(11), "/x/u1", 701)])]
+        await b.obertura.confirmaIObreTot()
+        #expect(b.engegades == 1 && b.urls.count == 2)
+        #expect(!ajust.senseFitxer && refresc.pendent == nil, "l'app ha creat el fitxer mentre Warp arrencava")
+        #expect(b.obertura.resultat?.text == "S'han obert 2 finestres a Warp, amb 2 pestanyes, 2 amb Claude."
+            + (senseFitxer ? "" : "\nEn arrencar, Warp ha obert també una finestra buida: la pots tancar."))
     }
 
     /// Totes de cop (D4): la segona es demana a Warp sense esperar que s'hagi vist la primera, que aquí no es veu mai

@@ -129,11 +129,13 @@ extension Obertura {
                 estat = .noEsPot(motiu)
                 return
             }
-            guard let nova = await comprovaTot(vista) else { return }
+            guard var nova = await comprovaTot(vista) else { return }
             guard !nova.warpTancat else {
                 estat = .noEsPot("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar.")
                 return
             }
+            // Com ha arrencat Warp: l'app pot haver creat `settings.toml` mentre l'esperava (ronda 5), i ja seria tard.
+            nova.warpDesaFinestres = proposta.warpDesaFinestres
             proposta = nova
         }
 
@@ -239,7 +241,7 @@ extension Obertura {
         }
         var proposta = PropostaTot(finestres: finestres,
                                    triades: marcades.intersection(finestres.filter(PropostaTot.esPotObrir).map(\.pla.finestra.id)),
-                                   warpTancat: warpTancat, warpDesaFinestres: lectura.warpDesaFinestres != false,
+                                   warpTancat: warpTancat, warpDesaFinestres: warpRestauraEnArrencar(lectura),
                                    versioWarp: entorn.versioWarp())
         if !warpTancat {
             // Els reconeguts sense marca (pestanyes de terminal, per la carpeta) ja són a `obertes`.

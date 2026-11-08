@@ -73,6 +73,7 @@ public final class Obertura {
         /// Warp és tancat: «Obre» primer l'obrirà.
         public var warpTancat = false
         /// `false`: la restauració de sessió és desactivada. Warp no desa les finestres, i en arrencar n'obre una de buida.
+        /// `true` també si Warp no té `settings.toml` i és tancat (ronda 5, `warpRestauraEnArrencar`).
         public var warpDesaFinestres = true
         /// Els panes de Warp abans d'obrir: la finestra nova és la que només en té de nous.
         var panesAbans: Set<String>
@@ -228,11 +229,13 @@ public final class Obertura {
                 estat = .noEsPot(motiu)
                 return
             }
-            guard let nova = await comprova(vista) else { return }
+            guard var nova = await comprova(vista) else { return }
             guard !nova.warpTancat else {
                 estat = .noEsPot("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar.")
                 return
             }
+            // Com ha arrencat Warp: l'app pot haver creat `settings.toml` mentre l'esperava (ronda 5), i ja seria tard.
+            nova.warpDesaFinestres = proposta.warpDesaFinestres
             proposta = nova
         }
         guard case let .success(fitxer)? = proposta.fitxer else { return }
@@ -498,8 +501,15 @@ public final class Obertura {
         let panes = Set(lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid))
         return Proposta(pla: pla, llancament: llancament, fitxer: fitxer, versioWarp: entorn.versioWarp(),
                         warpTancat: lectura.warpObert != true,
-                        warpDesaFinestres: lectura.warpDesaFinestres != false, panesAbans: panes,
+                        warpDesaFinestres: warpRestauraEnArrencar(lectura), panesAbans: panes,
                         terminalsAbans: Set(lectura.terminals.map(\.pid)))
+    }
+
+    /// Si Warp, en arrencar, restaurarà les seves finestres (`Proposta.warpDesaFinestres`, només per als textos del full i
+    /// del resultat): segons la lectura, o perquè Warp no té `settings.toml` i l'app encara no hi ha pogut desactivar la
+    /// restauració (ronda 5, `RefrescWarp.warpRestauraEnArrencar`). Llavors no obre cap finestra buida.
+    func warpRestauraEnArrencar(_ lectura: LecturaWarp) -> Bool {
+        lectura.warpDesaFinestres != false || consentiment.refresc?.warpRestauraEnArrencar == true
     }
 
     /// Les converses en curs dels darrers 10 min; les més velles s'obliden.
