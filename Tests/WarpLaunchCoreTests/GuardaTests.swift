@@ -32,19 +32,50 @@ private func aparicions(de expressions: [String], a fitxers: [(ruta: String, tex
     return trobades
 }
 
+/// Cap expressió d'aquest fitxer no fa servir `\b` (`capGuardaFaServirElLimitDeParaula`): amb les expressions de Swift, `\b`
+/// segueix les regles d'Unicode, i un punt o dos punts entre lletres no hi fan cap límit de paraula. `\bProcess\(` no veia
+/// `Foundation.Process(`, `\bNSApp\b` no veia `NSApp.terminate(nil)`, i `\bregister\b` no veia `mainApp.register()`.
+/// Davant d'un nom, `(^|[^A-Za-z0-9_])`; darrere, `(?![A-Za-z0-9_])`.
+private let cridaProcess = #"(^|[^A-Za-z0-9_])Process\("#
+private let cridaKill = #"(^|[^A-Za-z0-9_])kill(pg)?\("#
+/// D19 i D-P4: el refresc de l'ajust de Warp, el consentiment i l'ajust de debò, cadascun creat en un sol lloc
+/// (`elCodiNoObreResNiRegistraArrencades`, `lAjustDeWarpNomesLEscriuLApp`).
+private let refrescWarp = #"(^|[^A-Za-z0-9_])RefrescWarp\("#
+private let consentimentRestauracio = #"(^|[^A-Za-z0-9_])ConsentimentRestauracio\("#
+private let ajustRestauracio = #"(^|[^A-Za-z0-9_])AjustRestauracio\("#
+/// L'estat del consentiment canvia, també amb `self.estat =`.
+private let assignacioEstat = #"(^|[^A-Za-z0-9_])estat\s*=(?!=)"#
+/// Donar o retirar el consentiment, o construir-ne un: només `MagatzemPreferencies`.
+private let donenConsentiment = [#"\.acceptat\("#, #"\.migrat(?![A-Za-z0-9_])"#, #"\.restauracio\s*=(?!=)"#, #"\.retirat\("#]
+/// D3: qualsevol aparició de la paraula `register`, també en un comentari.
+private let paraulaRegister = #"(^|[^A-Za-z0-9_])register(?![A-Za-z0-9_])"#
+/// A les proves, les lectures de Warp només amb rutes de prova, i res de l'app (`lesProvesNoLlegeixenLEstatReal`).
+private let lectorProves = #"(^|[^A-Za-z0-9_])Lector\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#
+private let lectorAjustosProves = #"(^|[^A-Za-z0-9_])LectorAjustosWarp\((?!ruta:)"#
+private let ajustRestauracioProves = #"(^|[^A-Za-z0-9_])AjustRestauracio\((?!ruta: b\.fitxer|ruta: tmp\.url)"#
+private let trobaProves = #"(^|[^A-Za-z0-9_])InstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
+private let nsApp = #"(^|[^A-Za-z0-9_])NSApp(?![A-Za-z0-9_])"#
+/// Fase 3.1: el que `FitxersLaunchWarp` no pot fer amb la carpeta de Warp (`nomesFitxersLaunchWarpTocaLaCarpetaDeWarp`).
+private let cridaUnlink = #"(^|[^A-Za-z0-9_])unlink\("#
+private let cridaRename = #"(^|[^A-Za-z0-9_])rename\("#
+private let cridaMkdir = #"(^|[^A-Za-z0-9_])mkdir\("#
+/// D-P4: Escapada, a la pantalla del permís (`elPermisSAcceptaAmbRetornINoAmbEscapada`).
+private let escapada = [#"cancelAction"#, #"\.escape(?![A-Za-z0-9_])"#, #"onExitCommand"#, #"onKeyPress"#, #"cancelOperation"#,
+                        #"\\u\{1[bB]\}"#]
+
 /// El codi no obre res ni tanca res (regles 1 a 4 de CLAUDE.md). De `NSWorkspace`, només «Mostra al Finder»
 /// (`activateFileViewerSelecting`, a `Finder.swift`), que selecciona el fitxer en una finestra del Finder, i l'obridor
 /// de la fase 3.1 (`ObreWarp`, vegeu `nomesLObridorObreWarp`). De les URL de Warp, només la de llançament (D5), i en un
 /// sol lloc (`nomesHiHaLURLDeLlancament`).
 private let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
 private let prohibidesCodi = [
-    #"warp://(?!launch/")"#, #"\bProcess\("#,
+    #"warp://(?!launch/")"#, cridaProcess,
     workspace, #"openURL"#,
     #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
     #"@AppStorage"#,
     // Tancar o matar Warp o Claude (regla 2), o obrir apps. La paraula `openApplication` només pot ser a l'obridor, per
     // obrir Warp si és tancat (`nomesLObridorObreWarp`).
-    #"NSRunningApplication"#, #"forceTerminate"#, #"launchApplication"#, #"\bkill(pg)?\("#,
+    #"NSRunningApplication"#, #"forceTerminate"#, #"launchApplication"#, cridaKill,
 ]
 
 private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
@@ -116,8 +147,9 @@ private func retiradaForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -
 }
 
 /// El que s'arrossega no surt de l'app: ni fitxers, ni text, ni `ShareLink`.
+private let onDrag = #"\.onDrag(?![A-Za-z0-9_])"#
 private let prohibidesArrossegar = [
-    #"ShareLink"#, #"ProxyRepresentation"#, #"FileRepresentation"#, #"CodableRepresentation"#, #"\.onDrag\b"#,
+    #"ShareLink"#, #"ProxyRepresentation"#, #"FileRepresentation"#, #"CodableRepresentation"#, onDrag,
     #"NSFilePromiseProvider"#, #"suggestedFileName"#, #"registerObject"#, #"\.register\("#,
 ]
 
@@ -131,7 +163,7 @@ private let prohibidesArrossegar = [
         // D19 i D-P4 (0.29.0): el refresc de l'ajust de Warp només el crea `ConsentimentRestauracio`, un sol cop i només amb
         // el consentiment acceptat; l'app no en guarda cap altre, ni tampoc per sortir.
         let rutaConsentiment = "Sources/WarpLaunchUI/ConsentimentRestauracio.swift"
-        let refrescos = try aparicions(de: [#"\bRefrescWarp\("#], a: codi)
+        let refrescos = try aparicions(de: [refrescWarp], a: codi)
         #expect(refrescos.count == 1 && refrescos[0].hasPrefix("\(rutaConsentiment):"), "\(refrescos)")
         let consentiment = try #require(codi.first { $0.ruta == rutaConsentiment }).text
         #expect(consentiment.contains("    private func creaRefresc() {\n"
@@ -149,7 +181,7 @@ private let prohibidesArrossegar = [
         #expect(desa.upperBound < accepta.lowerBound)
         // A l'app: l'únic consentiment i l'únic entorn de l'ajust, i el refresc només és el del consentiment.
         let app = try #require(codi.first { $0.ruta == "Sources/WarpLaunchApp/WarpLaunchApp.swift" }).text
-        for unic in [#"\bConsentimentRestauracio\("#, #"RefrescWarp\.Entorn\("#, #"^\s*creaEntornRefresc = "#] {
+        for unic in [consentimentRestauracio, #"RefrescWarp\.Entorn\("#, #"^\s*creaEntornRefresc = "#] {
             let llocs = try aparicions(de: [unic], a: codi)
             #expect(llocs.count == 1 && llocs[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift:"), "\(llocs)")
         }
@@ -175,7 +207,7 @@ private let prohibidesArrossegar = [
             "\(rutaConsentiment): refresc = RefrescWarp(entorn: creaEntornRefresc())",
         ].sorted(), "\(esmenta.joined(separator: "\n"))")
         // L'estat del consentiment només canvia en aquestes quatre línies (també amb `self.estat =`).
-        let assignacio = try Regex(#"\bestat\s*=(?!=)"#)
+        let assignacio = try Regex(assignacioEstat)
         let assignacions = consentiment.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.hasPrefix("//") && $0.contains(assignacio) }
         #expect(assignacions == [
@@ -194,8 +226,7 @@ private let prohibidesArrossegar = [
         #expect(vista.contains(#"Button("Accepta") { consentiment.accepta() }"#))
         // Retirar-lo (`.retirat(`, 0.31.0) tampoc: només `MagatzemPreferencies.retira`.
         let preferencies = "Sources/WarpLaunchCore/Preferencies.swift"
-        let consentiments = try aparicions(de: [#"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#, #"\.retirat\("#],
-                                           a: codi)
+        let consentiments = try aparicions(de: donenConsentiment, a: codi)
         #expect(!consentiments.isEmpty && consentiments.allSatisfy { $0.hasPrefix("\(preferencies):") }, "\(consentiments)")
         #expect(consentiments.contains { $0.hasSuffix("«\\.retirat\\(»") }, "\(consentiments)")
     }
@@ -362,7 +393,8 @@ private let prohibidesArrossegar = [
         #expect(model.components(separatedBy: "entorn.desactiva()").count == 3)
         // Dins del servei, `entorn` només es defineix, i `register` només és a la seva línia; enlloc més no hi és.
         #expect(servei.components(separatedBy: "entorn").count == 2)
-        #expect(try aparicions(de: [#"\bregister\b"#], a: codi).allSatisfy { $0.hasPrefix("\(serveiArrencada):18:") })
+        // Amb `\b`, `mainApp.register()` no hi sortia, i la llista buida ho donava per bo: n'hi ha d'haver exactament una.
+        #expect(try aparicions(de: [paraulaRegister], a: codi) == ["\(serveiArrencada):18: «\(paraulaRegister)»"])
     }
 
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch» (vegeu `retirada`). Cada pas, al seu fitxer i amb la seva línia,
@@ -456,7 +488,7 @@ private let prohibidesArrossegar = [
     /// crear a l'app: ni el CLI ni el core poden fer-ho, amb cap ruta.
     @Test func lAjustDeWarpNomesLEscriuLApp() throws {
         let codi = try fitxers("Sources").filter { $0.ruta != "Sources/WarpLaunchCore/AjustRestauracio.swift" }
-        let trobades = try aparicions(de: [#"\bAjustRestauracio\("#], a: codi)
+        let trobades = try aparicions(de: [ajustRestauracio], a: codi)
         #expect(trobades.count == 1 && trobades[0].hasPrefix("Sources/WarpLaunchApp/WarpLaunchApp.swift"), "\(trobades)")
         let app = try fitxers("Sources/WarpLaunchApp").map(\.text).joined()
         // D-P4: dins de l'entorn que `ConsentimentRestauracio` només demana amb el consentiment acceptat
@@ -471,9 +503,9 @@ private let prohibidesArrossegar = [
         let prohibides = [
             // `Lector(` només amb les rutes de prova: `Lector()`, `Lector(inici:)` o sense `rutaAjustos` llegirien Warp i
             // Claude de debò.
-            #"\bLector\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#, #"\bLectorAjustosWarp\((?!ruta:)"#, #"\bAjustRestauracio\((?!ruta: b\.fitxer|ruta: tmp\.url)"#, #"ProcessosDelSistema"#,
+            lectorProves, lectorAjustosProves, ajustRestauracioProves, #"ProcessosDelSistema"#,
             #"rutaPerDefecte"#, #"carpetaPerDefecte"#,
-            #"\.config/warp-launch"#, #"\bNSApp\b"#, #"NSApplication"#, #"NSWindow"#, #"NSHostingView"#,
+            #"\.config/warp-launch"#, nsApp, #"NSApplication"#, #"NSWindow"#, #"NSHostingView"#,
             #"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#,
             // El porta-retalls d'en David: una prova el buidaria, o hi deixaria pestanyes fictícies.
             #"NSPasteboard"#, #"PortaRetallsSistema\.(enganxa|hiHaPestanyes|escriu)"#,
@@ -481,7 +513,7 @@ private let prohibidesArrossegar = [
             #"NSWorkspace"#, #"openURL"#, #"ObreWarp"#, #"FitxersLaunchWarp\.real"#, #"\.warp/"#, #"launch_configurations"#,
             #"\.claude\.json"#, #"\.claude/projects"#,
             // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
-            #"TrobaWarp"#, #"urlForApplication"#, #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#, #"perOmissio\.app(?![A-Za-z0-9_])"#,
+            #"TrobaWarp"#, #"urlForApplication"#, trobaProves, #"perOmissio\.app(?![A-Za-z0-9_])"#,
             // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova (sense, llegirien ~/.claude), i
             // «Copia el diagnòstic», sempre amb un porta-retalls fals (a la mateixa línia).
             lectorTranscripcions, lectorConfianca, copiaDiagnostic,
@@ -551,7 +583,7 @@ private let prohibidesArrossegar = [
     }
 
     @Test func laGuardaDetectaElQueHaDeDetectar() throws {
-        // Si una expressió estigués mal escrita, la guarda no trobaria mai res.
+        // Si una expressió estigués mal escrita, la guarda no trobaria mai res. Els noms, també amb el mòdul davant.
         let mostra = [(ruta: "mostra.swift", text: """
             let p = Process()
             system("ls")
@@ -560,22 +592,45 @@ private let prohibidesArrossegar = [
             Lector(rutaWarp: url)
             Lector(inici: inici)
             PortaRetallsSistema.escriu(dades)
+            let q = Foundation.Process()
+            WarpLaunchCore.Lector().llegeix()
+            let m = MeuProcess()
+            MeuLector()
             """)]
-        let lector = #"\bLector\((?!rutaWarp:[^,]+,\s*rutaAjustos:)"#
-        #expect(try aparicions(de: [#"\bProcess\("#, #"(^|[^.\w])system\("#, lector], a: mostra) == [
-            "mostra.swift:1: «\\bProcess\\(»", "mostra.swift:2: «(^|[^.\\w])system\\(»",
-            "mostra.swift:4: «\(lector)»", "mostra.swift:5: «\(lector)»", "mostra.swift:6: «\(lector)»",
+        #expect(try aparicions(de: [cridaProcess, #"(^|[^.\w])system\("#, lectorProves], a: mostra) == [
+            "mostra.swift:1: «\(cridaProcess)»", "mostra.swift:2: «(^|[^.\\w])system\\(»",
+            "mostra.swift:4: «\(lectorProves)»", "mostra.swift:5: «\(lectorProves)»", "mostra.swift:6: «\(lectorProves)»",
+            "mostra.swift:8: «\(cridaProcess)»", "mostra.swift:9: «\(lectorProves)»",
         ])
-        #expect(try aparicions(de: [lector], a: [(ruta: "mostra.swift", text: "Lector(rutaWarp: url, rutaAjustos: altra)")]).isEmpty)
+        #expect(try aparicions(de: [lectorProves], a: [(ruta: "mostra.swift", text: "Lector(rutaWarp: url, rutaAjustos: altra)")]).isEmpty)
         // El refresc de l'ajust (D-P4): crear-lo sí; el seu entorn, no.
-        #expect(try aparicions(de: [#"\bRefrescWarp\("#], a: [(ruta: "mostra.swift", text: """
+        #expect(try aparicions(de: [refrescWarp], a: [(ruta: "mostra.swift", text: """
             let r = RefrescWarp(entorn: e)
             let e = RefrescWarp.Entorn(ajust: a)
             let x = AltreRefrescWarp(entorn: e)
-            """)]) == ["mostra.swift:1: «\\bRefrescWarp\\(»"])
+            let m = WarpLaunchUI.RefrescWarp(entorn: e)
+            """)]) == ["mostra.swift:1: «\(refrescWarp)»", "mostra.swift:4: «\(refrescWarp)»"])
+        // El consentiment i l'ajust de debò, crear-los; l'estat del consentiment, canviar-lo (també amb `self.`), i no
+        // comparar-lo.
+        #expect(try aparicions(de: [consentimentRestauracio, ajustRestauracio, assignacioEstat], a: [(ruta: "mostra.swift", text: """
+            let c = ConsentimentRestauracio(magatzem: p, creaEntornRefresc: nil)
+            let d = WarpLaunchUI.ConsentimentRestauracio(magatzem: p, creaEntornRefresc: nil)
+            let a = AjustRestauracio(ruta: u)
+            let b = WarpLaunchCore.AjustRestauracio(ruta: u)
+            let v = try AjustRestauracio.analitza(text)
+            estat = .acceptat
+            self.estat = .acceptat
+            if estat == .acceptat {}
+            subestat = 1
+            """)]) == [
+            "mostra.swift:1: «\(consentimentRestauracio)»", "mostra.swift:2: «\(consentimentRestauracio)»",
+            "mostra.swift:3: «\(ajustRestauracio)»", "mostra.swift:4: «\(ajustRestauracio)»",
+            "mostra.swift:6: «\(assignacioEstat)»", "mostra.swift:7: «\(assignacioEstat)»",
+        ])
         // El consentiment (revisió de la 0.29.0): acceptar-lo i construir-ne un d'acceptat, sí; definir `accepta` o
         // comparar-hi, no.
-        let consentiment = [#"\.accepta\("#, #"\.acceptat\("#, #"\.migrat\b"#, #"\.restauracio\s*=(?!=)"#, #"\.retirat\("#]
+        let consentiment = [#"\.accepta\("#] + donenConsentiment
+        let migrat = donenConsentiment[1]
         #expect(try aparicions(de: consentiment, a: [(ruta: "mostra.swift", text: """
             consentiment.accepta()
             public func accepta(ara: Date) {}
@@ -585,19 +640,30 @@ private let prohibidesArrossegar = [
             if p.restauracio == .migrat {}
             Preferencies(restauracio: .retirat(ara))
             estat = .retirat
+            Preferencies(restauracio: Restauracio.migrat.normalitzat)
+            if p.restauracio == .migratDeProva {}
             """)]) == [
             "mostra.swift:1: «\\.accepta\\(»", "mostra.swift:4: «\\.acceptat\\(»", "mostra.swift:4: «\\.restauracio\\s*=(?!=)»",
-            "mostra.swift:5: «\\.migrat\\b»", "mostra.swift:6: «\\.migrat\\b»", "mostra.swift:7: «\\.retirat\\(»",
+            "mostra.swift:5: «\(migrat)»", "mostra.swift:6: «\(migrat)»", "mostra.swift:7: «\\.retirat\\(»",
+            "mostra.swift:9: «\(migrat)»",
         ])
+        // D3: la paraula `register`, també darrere d'un punt i en un comentari; `unregister` i `registerUndo`, no.
+        #expect(try aparicions(de: [paraulaRegister], a: [(ruta: "mostra.swift", text: """
+            activa: { try SMAppService.mainApp.register() },
+            desactiva: { try SMAppService.mainApp.unregister() },
+            desfer.registerUndo(withTarget: self) { _ in }
+            // `register()`
+            """)]) == ["mostra.swift:1: «\(paraulaRegister)»", "mostra.swift:4: «\(paraulaRegister)»"])
         // D-P12: `troba` només amb una carpeta temporal.
-        let troba = #"\bInstallacioWarp\.troba\((?!aplicacions: tmp\.)"#
-        #expect(try aparicions(de: [troba, #"perOmissio\.app(?![A-Za-z0-9_])"#], a: [(ruta: "mostra.swift", text: """
+        #expect(try aparicions(de: [trobaProves, #"perOmissio\.app(?![A-Za-z0-9_])"#], a: [(ruta: "mostra.swift", text: """
             InstallacioWarp.troba(aplicacions: AppWarp.rutaPerDefecte, cerca: c)
             InstallacioWarp.troba(aplicacions: url, cerca: c)
             InstallacioWarp.troba(aplicacions: tmp.url("Applications/Warp.app"), cerca: c)
             InstallacioWarp.perOmissio.app.versio
             InstallacioWarp.perOmissio.executable
-            """)]) == ["mostra.swift:1: «\(troba)»", "mostra.swift:2: «\(troba)»", "mostra.swift:4: «perOmissio\\.app(?![A-Za-z0-9_])»"])
+            WarpLaunchCore.InstallacioWarp.troba(aplicacions: url, cerca: c)
+            """)]) == ["mostra.swift:1: «\(trobaProves)»", "mostra.swift:2: «\(trobaProves)»",
+                       "mostra.swift:4: «perOmissio\\.app(?![A-Za-z0-9_])»", "mostra.swift:6: «\(trobaProves)»"])
         // Decisió 4 (0.31.1): el Warp de `lector.warp` sense passar per `installacio()`, sí; `warpObert()`, no.
         #expect(try aparicions(de: [senseInstallacio], a: [(ruta: "mostra.swift", text: """
             let w = lector.warp()
@@ -621,10 +687,20 @@ private let prohibidesArrossegar = [
                        "mostra.swift:8: «\(lectorConfianca)»", "mostra.swift:9: «\(copiaDiagnostic)»"])
         // Ni `MeuLectorConfianca(`, que és un altre nom.
         #expect(try aparicions(de: [lectorConfianca], a: [(ruta: "mostra.swift", text: "MeuLectorConfianca()")]).isEmpty)
-        // `\b` no ha de deixar passar `LectorAjustosWarp()`, que llegiria el `settings.toml` d'en David.
-        let ajustos = #"\bLectorAjustosWarp\((?!ruta:)"#
-        #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp().desaFinestres()")]).count == 1)
-        #expect(try aparicions(de: [ajustos], a: [(ruta: "mostra.swift", text: "LectorAjustosWarp(ruta: tmp)")]).isEmpty)
+        // Ni `LectorAjustosWarp()`, que llegiria el `settings.toml` de debò, ni `NSApp`, que és l'app de les proves (també
+        // davant d'un punt). `NSApplication` és un altre nom.
+        #expect(try aparicions(de: [lectorAjustosProves, nsApp], a: [(ruta: "mostra.swift", text: """
+            LectorAjustosWarp().desaFinestres()
+            LectorAjustosWarp(ruta: tmp)
+            WarpLaunchCore.LectorAjustosWarp().desaFinestres()
+            NSApp.terminate(nil)
+            AppKit.NSApp.setActivationPolicy(.regular)
+            let a = NSApp
+            NSApplication.shared.hide(nil)
+            """)]) == [
+            "mostra.swift:1: «\(lectorAjustosProves)»", "mostra.swift:3: «\(lectorAjustosProves)»",
+            "mostra.swift:4: «\(nsApp)»", "mostra.swift:5: «\(nsApp)»", "mostra.swift:6: «\(nsApp)»",
+        ])
         #expect(try aparicions(de: [#"PortaRetallsSistema\.(enganxa|hiHaPestanyes|escriu)"#], a: mostra) == [
             "mostra.swift:7: «PortaRetallsSistema\\.(enganxa|hiHaPestanyes|escriu)»",
         ])
@@ -638,6 +714,26 @@ private let prohibidesArrossegar = [
             """)]
         #expect(try aparicions(de: [#"FitxersLaunchWarp\.real"#, #"\.claude\.json"#, #"\.claude/projects"#, #"\.warp/"#],
                                a: carpetes).count == 4)
+        // Fase 3.1: esborrar, canviar de nom i crear carpetes a la de Warp, també amb el mòdul.
+        #expect(try aparicions(de: [cridaUnlink, cridaRename, cridaMkdir], a: [(ruta: "mostra.swift", text: """
+            unlink(ruta)
+            Darwin.unlink(ruta)
+            Darwin.rename(a, b)
+            Darwin.mkdir(r, 0o755)
+            let n = renameFile(a)
+            """)]) == ["mostra.swift:1: «\(cridaUnlink)»", "mostra.swift:2: «\(cridaUnlink)»", "mostra.swift:3: «\(cridaRename)»",
+                       "mostra.swift:4: «\(cridaMkdir)»"])
+        // D-P4: Escapada a la pantalla del permís, de totes les maneres; el botó per defecte, no.
+        #expect(try aparicions(de: escapada, a: [(ruta: "mostra.swift", text: """
+            .keyboardShortcut(.cancelAction)
+            .keyboardShortcut(KeyEquivalent.escape)
+            .onExitCommand { }
+            .onKeyPress(keys: [.return]) { _ in .handled }
+            override func cancelOperation(_ sender: Any?) {}
+            .keyboardShortcut(KeyEquivalent("\\u{1b}"))
+            .keyboardShortcut(.defaultAction)
+            .keyboardShortcut(.escapeDeProva)
+            """)]) == escapada.enumerated().map { "mostra.swift:\($0.offset + 1): «\($0.element)»" })
         // Arrossegar: cada expressió troba la seva línia (i `.onDragSessionUpdated`, que no fa sortir res, no).
         let arrossegar = [(ruta: "mostra.swift", text: """
             ShareLink(item: x)
@@ -654,7 +750,7 @@ private let prohibidesArrossegar = [
             """)]
         let trobades = try aparicions(de: prohibidesArrossegar, a: arrossegar)
         #expect(trobades == prohibidesArrossegar.enumerated().map { "mostra.swift:\($0.offset + 1): «\($0.element)»" }
-            + ["mostra.swift:10: «\\.onDrag\\b»"])
+            + ["mostra.swift:10: «\(onDrag)»"])
         // Obrir o tancar: cada línia, la seva expressió; «Mostra al Finder», cap; `kill` com a part d'un nom, cap.
         // De Warp, totes les URL menys la de llançament. `NSWorkspace.shared.open(` passa aquesta expressió, però
         // `nomesLObridorObreWarp` el deixa en un sol lloc.
@@ -671,6 +767,9 @@ private let prohibidesArrossegar = [
             URL(string: "warp://action/new_window")
             URL(string: "warp://launch/" + nom)
             URL(string: "warp://launch/x")
+            Darwin.kill(pid, SIGKILL)
+            Darwin.killpg(grup, SIGKILL)
+            let p = Foundation.Process()
             """)]
         let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
         #expect(try aparicions(de: prohibidesCodi, a: obrir) == [
@@ -678,11 +777,37 @@ private let prohibidesArrossegar = [
             "mostra.swift:3: «forceTerminate»",
             "mostra.swift:4: «\(workspace)»",
             "mostra.swift:4: «launchApplication»",
-            "mostra.swift:6: «\\bkill(pg)?\\(»",
-            "mostra.swift:9: «\\bkill(pg)?\\(»",
+            "mostra.swift:6: «\(cridaKill)»",
+            "mostra.swift:9: «\(cridaKill)»",
             "mostra.swift:10: «warp://(?!launch/\")»",
             "mostra.swift:12: «warp://(?!launch/\")»",
+            "mostra.swift:13: «\(cridaKill)»",
+            "mostra.swift:14: «\(cridaKill)»",
+            "mostra.swift:15: «\(cridaProcess)»",
         ])
+    }
+
+    /// Cap expressió d'aquest fitxer no fa servir `\b` (vegeu `cridaProcess`): una guarda nova que el fes servir no veuria els
+    /// noms amb el mòdul davant. És l'única prova que llegeix aquest fitxer, i només en mira les línies que no són comentaris.
+    @Test func capGuardaFaServirElLimitDeParaula() throws {
+        let limit = "\\" + "b"
+        func ambLimit(_ text: String) -> [Int] {
+            text.split(separator: "\n", omittingEmptySubsequences: false).enumerated()
+                .filter { !$0.element.trimmingCharacters(in: .whitespaces).hasPrefix("//") && $0.element.contains(limit) }
+                .map { $0.offset + 1 }
+        }
+        let aquest = try String(contentsOf: URL(filePath: #filePath), encoding: .utf8)
+        #expect(aquest.contains("@Test func capGuardaFaServirElLimitDeParaula()"), "no s'ha llegit aquest fitxer")
+        #expect(ambLimit(aquest).isEmpty, "\(ambLimit(aquest).map { "GuardaTests.swift:\($0)" })")
+        // La mostra: una expressió, una cadena del resultat o una de nova, amb `\b`, surt; un comentari, no.
+        #expect(ambLimit("""
+            private let p = #"\(limit)Process\\("#
+            /// Sense `\(limit)`.
+            "mostra.swift:1: «\\\(limit)Process\\\\(»"
+            #expect(try aparicions(de: [#"(^|[^A-Za-z0-9_])Process\\("#], a: mostra).isEmpty)
+                // `\(limit)NSApp\(limit)`
+            let r = try Regex(#"\\.migrat\(limit)"#)
+            """) == [1, 3, 6])
     }
 }
 
@@ -712,9 +837,8 @@ private let prohibidesArrossegar = [
         let dreceres = vista.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { $0.contains("keyboardShortcut") && !$0.hasPrefix("//") }
         #expect(dreceres == [".keyboardShortcut(.defaultAction)"], "\(dreceres)")
-        let escapada = try aparicions(de: [#"cancelAction"#, #"\.escape\b"#, #"onExitCommand"#, #"onKeyPress"#,
-                                           #"cancelOperation"#, #"\\u\{1[bB]\}"#], a: [vista])
-        #expect(escapada.isEmpty, "\(escapada)")
+        let escapades = try aparicions(de: escapada, a: [vista])
+        #expect(escapades.isEmpty, "\(escapades)")
     }
 
     /// D-P4: tancar l'editor o la Configuració amb la pantalla del permís a la vista fa sortir de l'app, sense desar res (la
@@ -846,9 +970,9 @@ private let prohibidesArrossegar = [
         #expect(codi.filter { $0.text.contains("launch_configurations") }.map(\.ruta)
             == ["Sources/WarpLaunchCore/FitxersLaunchWarp.swift"])
         let fitxer = try #require(codi.first { $0.ruta.hasSuffix("/FitxersLaunchWarp.swift") })
-        #expect(try aparicions(de: [#"\bunlink\("#], a: [fitxer]).count == 1)
-        let prohibides = [#"removeItem"#, #"\brename\("#, #"createDirectory"#, #"O_TRUNC"#, #"\.write\(to:"#,
-                          #"\bmkdir\("#, #"replaceItem"#, #"moveItem"#, #"copyItem"#]
+        #expect(try aparicions(de: [cridaUnlink], a: [fitxer]).count == 1)
+        let prohibides = [#"removeItem"#, cridaRename, #"createDirectory"#, #"O_TRUNC"#, #"\.write\(to:"#,
+                          cridaMkdir, #"replaceItem"#, #"moveItem"#, #"copyItem"#]
         #expect(try aparicions(de: prohibides, a: [fitxer]).isEmpty)
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
     }
