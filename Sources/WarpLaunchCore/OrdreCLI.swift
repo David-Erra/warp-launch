@@ -100,8 +100,8 @@ public enum OrdreCLI {
               Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya.
           warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]
               La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.
-              Les pestanyes on no corre Claude prenen la plantilla de ~/.config/warp-launch, o, si no n'hi ha,
-              queden només terminal, com en crear la configuració a l'app.
+              Les pestanyes on no corre Claude prenen la plantilla de ~/.config/warp-launch. Si no hi ha
+              configuració, o encara no té cap pestanya, queden només terminal, com a l'app.
               --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:
               la configuració real només es crea des de l'app.
           warp-launch configuracio valida [--config <carpeta>]

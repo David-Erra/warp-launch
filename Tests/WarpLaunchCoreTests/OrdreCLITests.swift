@@ -80,6 +80,17 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(sortida.text == "Warp Launch \(WarpLaunch.versio)\n")
     }
 
+    /// L'ajuda d'`importa` diu quan queden només terminal les pestanyes on no corre Claude: sense configuració, i també amb
+    /// una que encara no té cap pestanya (decisió d'en David del 08/11/2026). Abans deia que, amb configuració, sempre
+    /// prenien la plantilla.
+    @Test func lAjudaDImportaDiuQuanQuedenNomesTerminal() throws {
+        let ajuda = OrdreCLI.ajuda.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .joined(separator: " ")
+        // Sense escriure la carpeta real: les proves no l'esmenten mai (`lesProvesNoLlegeixenLEstatReal`).
+        #expect(ajuda.contains("Les pestanyes on no corre Claude prenen la plantilla de "))
+        #expect(ajuda.contains(". Si no hi ha configuració, o encara no té cap pestanya, queden només terminal, com a l'app."))
+    }
+
     @Test func usIncorrecte() throws {
         let e = try Escenari()
         for args in [["fes"], ["llegeix", "--desa"], ["importa", "--res"], ["configuracio"], ["configuracio", "mostra"],
