@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Testing
 
@@ -27,6 +28,32 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
 }
 
 @Suite struct ScriptPublicaTests {
+    /// L'eina de debò, amb una clau d'un sol ús que només existeix durant la prova: bona 0, un byte canviat 1, una altra clau 1, entrada mal formada 64.
+    @Test func laVerificacioDeLaSignatura() throws {
+        let carpeta = FileManager.default.temporaryDirectory.appending(path: "warp-launch-verifica-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: carpeta, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: carpeta) }
+        let eina = script.deletingLastPathComponent().appending(path: "verifica-signatura.swift")
+        let entorn = ["HOME": carpeta.path, "TMPDIR": carpeta.path, "PATH": "/usr/bin:/bin"]
+        let clau = Curve25519.Signing.PrivateKey()
+        let publica = clau.publicKey.rawRepresentation.base64EncodedString()
+        let altra = Curve25519.Signing.PrivateKey().publicKey.rawRepresentation.base64EncodedString()
+        let contingut = Data("un zip de prova".utf8)
+        let signatura = try clau.signature(for: contingut).base64EncodedString()
+        let zip = carpeta.appending(path: "prova.zip")
+        let tocat = carpeta.appending(path: "tocat.zip")
+        try contingut.write(to: zip)
+        try Data("un zip de provb".utf8).write(to: tocat)
+        for (arguments, esperat) in [
+            ([publica, signatura, zip.path], 0), ([publica, signatura, tocat.path], 1), ([altra, signatura, zip.path], 1),
+            ([publica, signatura], 64), (["no-es-base64", signatura, zip.path], 64), ([publica, "no-es-base64", zip.path], 64),
+            ([publica, signatura, carpeta.appending(path: "no-hi-es").path], 64),
+        ] as [([String], Int32)] {
+            let (codi, sortida) = try executaPrograma("/usr/bin/swift", [eina.path] + arguments, entorn: entorn)
+            #expect(codi == esperat, "\(arguments): \(sortida)")
+        }
+    }
+
     private struct Banc {
         let carpeta: URL
         var repo: URL { carpeta.appending(path: "repo") }
