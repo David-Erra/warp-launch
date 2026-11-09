@@ -646,6 +646,10 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"))
         #expect(sortida.contains("git revert \(commitDelTap)"))
         #expect(sortida.contains(tapDeProva))
+        // Primer la recepta: si no, Homebrew demanaria un zip que ja no hi és.
+        let revert = try #require(sortida.range(of: "git revert"))
+        let esborra = try #require(sortida.range(of: "gh release delete"))
+        #expect(revert.lowerBound < esborra.lowerBound, "\(sortida)")
     }
 
     /// Si la publicació falla, la recepta no es toca.
@@ -673,6 +677,8 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(sortida.contains("Casks/warp-launch.rb"))
         #expect(sortida.contains("version \"0.28.0\""))
         #expect(sortida.contains("sha256 \"\(b.zipPujat)\""))
+        #expect(sortida.contains("Homebrew continua instal·lant la 0.27.0"), "\(sortida)")
+        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"), "\(sortida)")
         #expect(!sortida.contains("Fet:"))
     }
 }

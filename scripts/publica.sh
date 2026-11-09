@@ -220,8 +220,9 @@ if ! COMMIT_TAP="$(gh api --method PUT "repos/$TAP/contents/$CAMI_RECEPTA" \
         else
             echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
         fi
+        echo "O, per desfer la versió: gh release delete ${ETIQUETA} --repo ${REPO} --cleanup-tag"
     } >&2
     exit 2
 fi
 echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}), i la recepta de ${TAP} ja la instal·la (sha256 ${SHA256_ZIP})."
-echo "Es desfà amb: gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag, i revertint el commit ${COMMIT_TAP} de ${TAP} (git revert ${COMMIT_TAP} en un clon del tap, i push)."
+echo "Es desfà, en aquest ordre (perquè Homebrew no demani un zip que ja no hi és): git revert ${COMMIT_TAP} en un clon de ${TAP}, i push; després, gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag"
