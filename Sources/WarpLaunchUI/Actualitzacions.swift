@@ -18,6 +18,9 @@ public final class Actualitzacions {
         public var potComprovar: @MainActor () -> Bool
         public var automatiques: @MainActor () -> Bool
         public var posaAutomatiques: @MainActor (Bool) -> Void
+        /// La segona preferència de l'actualitzador, la de la casella de la seva finestra. A l'app, la mana l'interruptor.
+        public var baixaSola: @MainActor () -> Bool
+        public var restauraBaixaSola: @MainActor () -> Void
         public var segonsInactiu: @MainActor () -> TimeInterval
         /// Quan es va mirar per última vegada, si mai.
         public var darreraComprovacio: @MainActor () -> Date?
@@ -29,6 +32,7 @@ public final class Actualitzacions {
         public init(comprovaIBaixa: @escaping @MainActor () -> Void, nomesMira: @escaping @MainActor () -> Void,
                     actualitzaAra: @escaping @MainActor () -> Void, potComprovar: @escaping @MainActor () -> Bool,
                     automatiques: @escaping @MainActor () -> Bool, posaAutomatiques: @escaping @MainActor (Bool) -> Void,
+                    baixaSola: @escaping @MainActor () -> Bool, restauraBaixaSola: @escaping @MainActor () -> Void,
                     segonsInactiu: @escaping @MainActor () -> TimeInterval, darreraComprovacio: @escaping @MainActor () -> Date?,
                     models: @escaping @MainActor () -> SituacioApp.Models, rellotge: @escaping @MainActor () -> Date) {
             self.comprovaIBaixa = comprovaIBaixa
@@ -37,6 +41,8 @@ public final class Actualitzacions {
             self.potComprovar = potComprovar
             self.automatiques = automatiques
             self.posaAutomatiques = posaAutomatiques
+            self.baixaSola = baixaSola
+            self.restauraBaixaSola = restauraBaixaSola
             self.segonsInactiu = segonsInactiu
             self.darreraComprovacio = darreraComprovacio
             self.models = models
@@ -237,11 +243,18 @@ public final class Actualitzacions {
         estat = .aplicant(versio)
     }
 
-    /// L'actualitzador ha canviat sense cap esdeveniment: si es pot comprovar, o quan es va comprovar per última vegada.
+    /// L'actualitzador ha canviat sense cap esdeveniment: si es pot comprovar, quan es va comprovar per última vegada o la casella de la seva finestra.
     public func canviEntorn() {
         guard let entorn else { return }
         revisio &+= 1
         if case .inicial = estat { estat = .inicial(entorn.darreraComprovacio()) }
+        // Desmarcar «Descarrega i instal·la les actualitzacions automàticament» a la finestra de l'actualitzador no tocava l'interruptor: hauria
+        // quedat dient que sí, i l'app no hauria baixat res. Una sola preferència, la de l'interruptor, i la casella l'apaga. Primer es restaura:
+        // amb l'interruptor apagat, l'actualitzador ja no deixa canviar-la, i en tornar a encendre'l no baixaria sola.
+        if entorn.automatiques(), !entorn.baixaSola() {
+            entorn.restauraBaixaSola()
+            posaAutomatiques(false)
+        }
     }
 
     // MARK: - El que passa

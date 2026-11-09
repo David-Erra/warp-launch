@@ -2751,6 +2751,11 @@ private let prohibidesArrossegar = [
         #expect(servei.contains("immediateInstallationBlock bloc: @escaping () -> Void) -> Bool {\n"
             + "        model?.rep(.aPunt(item.displayVersionString, aplica: { bloc() }), ara: ara)\n        return true\n    }"))
         #expect(servei.contains("guard !handleShowingUpdate else { return }"))
+        // La casella de la finestra de Sparkle: si es desmarca, el model ho ha de saber per apagar l'interruptor (`canviEntorn`).
+        #expect(servei.contains(#"updater.observe(\.automaticallyDownloadsUpdates) { _, _ in canvia() }"#))
+        #expect(servei.contains("restauraBaixaSola: { [unowned self] in updater.automaticallyDownloadsUpdates = true }"))
+        // El reinici des de la finestra també caduca, si l'app no surt.
+        #expect(servei.contains("model?.reiniciaDesDeLaFinestra(versio: versioInstallant, ara: ara)"))
     }
 
     /// El reinici surt per `applicationShouldTerminate`: desa, atura el refresc i no surt amb l'ajust de Warp a mig desactivar.

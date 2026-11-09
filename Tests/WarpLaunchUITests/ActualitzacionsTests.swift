@@ -18,6 +18,7 @@ private let tranquils = SituacioApp.Models(
 private final class Banc {
     var potComprovar = true
     var auto = true
+    var baixaSola = true
     var inactiu: TimeInterval = 1000
     var darrera: Date?
     var models = tranquils
@@ -36,6 +37,12 @@ private final class Banc {
             potComprovar: { [unowned self] in potComprovar },
             automatiques: { [unowned self] in auto },
             posaAutomatiques: { [unowned self] in auto = $0 },
+            baixaSola: { [unowned self] in baixaSola },
+            // Com l'actualitzador: amb l'interruptor apagat, no es pot canviar (`SPUUpdaterSettings.m`, `setAutomaticallyDownloadsUpdates:`).
+            restauraBaixaSola: { [unowned self] in
+                crides.append("restauraBaixaSola")
+                if auto { baixaSola = true }
+            },
             segonsInactiu: { [unowned self] in inactiu },
             darreraComprovacio: { [unowned self] in darrera },
             models: { [unowned self] in models },
@@ -189,6 +196,26 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         b.darrera = t0.addingTimeInterval(9)
         m.canviEntorn()
         #expect(m.estat == estat, "«al dia» no es torna a «inicial»")
+    }
+
+    /// Si no, l'interruptor diria «sí» i la baixada sola no hi seria: una sola preferència, i la casella de la finestra de Sparkle l'apaga.
+    @Test func desmarcarLaCasellaApagaLInterruptor() throws {
+        let b = try Banc()
+        let m = b.model()
+        b.baixaSola = false
+        m.canviEntorn()
+        #expect(b.crides == ["restauraBaixaSola"] && !b.auto && !m.automatiques)
+        #expect(b.baixaSola, "en tornar a encendre l'interruptor, ha de baixar sola")
+        b.baixaSola = false
+        m.canviEntorn()
+        #expect(b.crides == ["restauraBaixaSola"], "amb l'interruptor apagat, ja no és cap contradicció")
+    }
+
+    @Test func laCasellaMarcadaNoCanviaRes() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.canviEntorn()
+        #expect(b.crides.isEmpty && b.auto && m.automatiques)
     }
 
     @Test func elDiagnosticDiuComEsta() throws {

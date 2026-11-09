@@ -89,6 +89,8 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
             potComprovar: { [unowned self] in updater.canCheckForUpdates && !updater.sessionInProgress },
             automatiques: { [unowned self] in updater.automaticallyChecksForUpdates },
             posaAutomatiques: { [unowned self] in updater.automaticallyChecksForUpdates = $0 },
+            baixaSola: { [unowned self] in updater.automaticallyDownloadsUpdates },
+            restauraBaixaSola: { [unowned self] in updater.automaticallyDownloadsUpdates = true },
             segonsInactiu: { CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!) },
             darreraComprovacio: { [unowned self] in updater.lastUpdateCheckDate },
             models: models,
@@ -114,6 +116,8 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
             updater.observe(\.canCheckForUpdates) { _, _ in canvia() },
             updater.observe(\.sessionInProgress) { _, _ in canvia() },
             updater.observe(\.lastUpdateCheckDate) { _, _ in canvia() },
+            // La casella de la finestra de Sparkle (`SUUpdateAlert.xib:119`).
+            updater.observe(\.automaticallyDownloadsUpdates) { _, _ in canvia() },
         ]
     }
 
