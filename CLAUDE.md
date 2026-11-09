@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (09/11/2026, 0.32.6 al codi; publicada, 0.31.5)
+## Estat (09/11/2026, 0.32.7 al codi; publicada, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -83,7 +83,7 @@ Els requisits són a `docs/especificacio.md`.
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
 - **Per a altres usuaris, de la 0.29.0 a la 0.31.4** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
-  passos, proves i el que queda per decidir a `docs/disseny.md`, secció 10). **La versió de GitHub és la 0.31.4,** i en David
+  passos, proves i el que queda per decidir a `docs/disseny.md`, secció 10). **La versió de GitHub és la 0.31.5** (09/11/2026, la va publicar en David); la 0.31.4, en David
   l'ha provada a l'app i en un usuari de macOS nou (09/11/2026, ho ha dit ell).
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
@@ -151,7 +151,7 @@ Els requisits són a `docs/especificacio.md`.
     - **Guardes:** `Lector`, `LectorWarp` i `LectorAjustosWarp` ja no tenen cap valor per defecte (l'app i el CLI hi posen les
       rutes de debò, `lectorsDeWarpDeDebo`; una prova que se n'oblidi una no compila), i a tot `Sources/` només dues crides
       canvien permisos o atributs de fitxers: el `fchmod` del fitxer acabat de crear a `EscripturaAtomica` i a `FitxersLaunchWarp`.
-  - **0.31.5 (cinc decisions d'en David del 09/11/2026; sense publicar; proves 2, 3 i 5 de `docs/disseny.md`, secció 10, fetes a l'app amb Warp de debò el mateix dia).**
+  - **0.31.5 (cinc decisions d'en David del 09/11/2026; publicada el mateix dia; proves 2, 3 i 5 de `docs/disseny.md`, secció 10, fetes a l'app amb Warp de debò el mateix dia).**
     - **La carpeta:** si Warp i Claude no coincideixen i Claude és viu, mana la de Claude, excepte si és `~` o no existeix. Avís a
       «Per revisar» (`Validacio.avisCarpetaDeClaude`): la carpeta de Warp només és a la memòria (`estat.json` no canvia de format),
       i després d'un reinici l'avís només surt si l'última carpeta de Claude no és la de la pestanya. «Lliga amb Warp…» compara
@@ -170,7 +170,7 @@ Els requisits són a `docs/especificacio.md`.
     a l'app i al CLI (`lectorsDeClaudeDeDebo`).
 - **0.32.6 (en David, 09/11/2026): la mateixa funció es diu igual als dos menús.** «Actualitza l'estat de Warp» (abans, «Torna a llegir Warp», només
   al menú de la icona) és també al menú Arxiu, i al peu del full d'importació: una sola vista (`ItemActualitzaWarp`), desactivada
-  sense el permís i mentre ja es llegeix (`OrdreActualitzaWarp`). «Obre la finestra a Warp…» és «Obre a Warp…». El menú de la icona
+  sense el permís, mentre ja es llegeix i, des de la 0.32.7, mentre s'obre res a Warp o s'aplica una actualització (`OrdreActualitzaWarp`). «Obre la finestra a Warp…» és «Obre a Warp…». El menú de la icona
   i la pantalla del permís diuen «Sobre l’app Warp Launch» i «Surt de l’app Warp Launch», com el menú que posa macOS. Guarda:
   `laMateixaOrdreEsDiuIgualAlsDosMenus`. Només proves i codi llegit: no s'ha vist a l'app.
 - **Actualització automàtica amb Sparkle 2.10.1 (de la 0.32.0 a la 0.32.5, 09/11/2026): al codi, sense publicar.** Les 13 decisions
@@ -183,7 +183,7 @@ Els requisits són a `docs/especificacio.md`.
     s'actualitza); `auto_updates true` i `zap` a la recepta del tap (pas 12; sense, `publica.sh` refusa); publicar (l'autor); i la
     primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia. Si les rondes B o E no surten netes, s'espera el
     Developer ID (decisió 11).
-  - **Les còpies d'abans (0.31.4 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
+  - **Les còpies d'abans (0.31.5 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
     avisar-ne. Com a molt 5 instal·lacions.
   - **Com va:** l'únic `import Sparkle` és a `ServeiActualitzacions.swift`; la lògica, sense Sparkle i amb proves, a
     `PoliticaActualitzacions`, `IntentActualitzacio` i el model `Actualitzacions`. Mira un cop al dia, va encès de sèrie, té pestanya

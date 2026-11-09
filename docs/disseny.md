@@ -135,7 +135,7 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 | Duplica la pestanya / les pestanyes / la finestra (sense nom fix) | Fitxer | ⌘D | menú contextual |
 | Canvia el nom | Fitxer | cap al menú; Retorn a la llista i a la barra lateral | menú contextual |
 | Importa de Warp… / Torna a importar-ho tot de Warp… | Fitxer | — | estat buit |
-| Actualitza l'estat de Warp (0.32.6; abans, «Torna a llegir Warp») | Fitxer | — | menú de la icona i peu del full d'importació; desactivada sense el permís i mentre ja es llegeix |
+| Actualitza l'estat de Warp (0.32.6; abans, «Torna a llegir Warp») | Fitxer | — | menú de la icona i peu del full d'importació; desactivada sense el permís, mentre ja es llegeix i mentre s'obre res a Warp o s'aplica una actualització (0.32.7) |
 | Mostra el fitxer al Finder (el fitxer, o la carpeta si encara no n'hi ha) | Fitxer | — | Configuració |
 | Obre a Warp… | Fitxer | **cap** | desactivat fins a la fase 3, sempre amb confirmació |
 | Tanca / Tanca-ho tot | Fitxer | ⌘W / ⌥⌘W | les del sistema |
@@ -2134,8 +2134,8 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
   - `GH_TOKEN` d'un compte que pugui escriure al repo i al tap, només per a aquesta ordre; la compilació no el veu. Proves:
     `ScriptPublicaTests`, amb un `gh` fals.
 - **Què falta:**
-  - **`publica.sh` encara no ha escrit mai al tap de debò:** la recepta de la 0.31.4 es va escriure en crear el tap, i la primera
-    que escrigui l'script serà la de la versió següent. Contra el tap de debò només s'ha provat la lectura.
+  - **`publica.sh` només ha escrit al tap de debò una vegada:** la recepta de la 0.31.4 es va escriure en crear el tap, i la de la
+    0.31.5 (09/11/2026, commit `cd8c304` del tap) és la primera que ha escrit l'script, ho va executar en David.
   - **Quan hi hagi notarització** (decisió 1 de la fila del 07/11/2026): treure de la recepta el pas de la quarantena, i les
     frases que l'expliquen al README d'aquí i al del tap.
   - **Amb Sparkle** (decisió 6 de la mateixa fila; encara no és a la recepta: pas 12 de la secció 11, i `publica.sh` refusa sense): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
@@ -2192,7 +2192,7 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
 - Proves: de 443 a 627 al core i de 232 a 331 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
   i 313; a la 0.31.4, 573 i 323).
   `prototip/` surt del repo (és a l'historial, 114c97d).
-- De les versions del lot, només la 0.31.4 és publicada (09/11/2026), i s'instal·la també amb Homebrew.
+- De les versions del lot, són publicades la 0.31.4 i la 0.31.5 (09/11/2026), i s'instal·len també amb Homebrew.
 - De les vuit decisions del 07/11/2026, falten la signatura amb Developer ID (1), l'idioma (3; al llançament, anglès i català,
   decisió 7 del 08/11/2026), publicar Sparkle (6: al codi des de la 0.32.0, secció 11, sense publicar) i l'excepció de la guarda per a la pàgina
   del permís (8). De les
@@ -2202,7 +2202,7 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
 
 ## 11. Actualització automàtica amb Sparkle 2.10.1 (disseny del 09/11/2026)
 
-Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** cap còpia no porta encara l'adreça ni la clau, i les còpies d'abans (0.31.4 o anteriors) necessiten una última actualització a mà.
+Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** cap còpia no porta encara l'adreça ni la clau, i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
 **Res d'això s'ha vist funcionar.** Cap app s'ha obert per a aquest disseny: la descàrrega, la instal·lació, la reobertura i l'efecte sobre els permisos de
 macOS es comproven a les rondes de la secció 8, abans de publicar.
 
@@ -2243,7 +2243,7 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
   «Actualitza automàticament» per apagar-ho. Apagat, l'app no es connecta sola.
 - **Al menú de la icona:** «Comprova si hi ha actualitzacions…» o, si n'hi ha una a punt, «Reinicia i actualitza a la X».
 - **Si no s'ha pogut instal·lar,** la icona pot desaparèixer una vegada. Quan tornis a obrir l'app, la secció diu què ha passat, i no ho torna a intentar sola amb aquella versió.
-- **Qui ja té la 0.31.4 o anterior ha d'actualitzar a mà una última vegada** (`brew upgrade --cask warp-launch` o l'ordre del README): aquelles versions no porten res per actualitzar-se. Des de llavors, és automàtic.
+- **Qui ja té la 0.31.5 o anterior ha d'actualitzar a mà una última vegada** (`brew upgrade --cask warp-launch` o l'ordre del README): aquelles versions no porten res per actualitzar-se. Des de llavors, és automàtic.
 - **Privacitat:** GitHub veu l'adreça IP i la versió de l'app. És la primera connexió a internet de l'app.
 
 ### Què ha de fer o decidir l'autor
@@ -2577,7 +2577,7 @@ No toca el clauer, comprova amb una eina independent de Sparkle i ho fa **amb la
 
 - **Abans de `depends_on`:** és l'ordre que exigeix `brew style` [L: `HB/rubocops/cask/constants/stanza.rb:35-38`]. La recepta actual [P: `gh api`, només lectura] té els dos `depends_on` seguits.
 - `zap`: afegir `~/Library/Caches/cat.davide.warp-launch` [L: `SPULocalCacheDirectory.m:49-54`] i `~/Library/HTTPStorages/cat.davide.warp-launch` [S: C9].
-- El primer `brew upgrade` des de la 0.31.4 actualitza, perquè el paquet és més vell que la recepta, i no ho trepitja després [L: `HB/cask/cask.rb:489-494`].
+- El primer `brew upgrade` des de la 0.31.5 actualitza, perquè el paquet és més vell que la recepta, i no ho trepitja després [L: `HB/cask/cask.rb:489-494`].
 - `brew style` i `brew audit` amb el nom complet.
 - **Ha d'anar abans de la primera publicació:** `publica.sh` la refusaria.
 
@@ -2625,8 +2625,8 @@ Cap versió publicada porta Sparkle ni cap codi de xarxa [P: `grep`], de manera 
 
 | Té | Via | Un sol cop |
 |---|---|---|
-| 0.31.4 | Homebrew | `brew upgrade --cask warp-launch` |
-| 0.31.4 o 0.28.0 | L'ordre amb `gh` | Sortir de l'app i tornar a fer l'ordre del README |
+| 0.31.4 o 0.31.5 | Homebrew | `brew upgrade --cask warp-launch` |
+| 0.31.5, 0.31.4 o 0.28.0 | L'ordre amb `gh` | Sortir de l'app i tornar a fer l'ordre del README |
 
 Són com a molt 5 instal·lacions [P: `download_count`, API de GitHub, 3 + 2 baixades]. S'avisa a les notes i al README, on també es diu que les actualitzacions van encès de sèrie.
 

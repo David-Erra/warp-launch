@@ -1074,7 +1074,7 @@ Per veure el permís d'Arxius i carpetes i l'ítem d'inici, caldrà una actualit
 
 ### Què impedeix o canvia el plantejament
 
-1. **Qui té la 0.31.4 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.
+1. **Qui té la 0.31.5 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.
 2. **Si es canvia la clau EdDSA i la signatura alhora, es perden les actualitzacions.** El pas a Developer ID ha de mantenir la clau; **una versió publicada amb signatura ad hoc** trencaria la identitat: `publica.sh:131` ja ho refusa amb un requisit, i s'ha de mantenir.
 3. **Instal·lar en tancar no n'hi ha prou** en una app de barra de menú: cal el bloc immediat en un moment segur.
 4. **`build-app.sh` i `publica.sh` han de canviar:** copiar el framework, l'rpath, signar de dins cap a fora i `--deep` a la verificació.

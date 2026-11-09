@@ -5,7 +5,7 @@ cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessi
 
 **Estat (09/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
 obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.5, i
-s'instal·la amb Homebrew. El codi del repo és a la 0.32.6, amb actualització automàtica, però **no s'ha publicat ni s'ha vist
+s'instal·la amb Homebrew. El codi del repo és a la 0.32.7, amb actualització automàtica, però **no s'ha publicat ni s'ha vist
 funcionar** (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
@@ -104,13 +104,13 @@ s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, a
 
 ## Actualitzacions automàtiques
 
-**Encara no les porta cap còpia publicada.** El codi és al repo des de la 0.32.0, però l'última versió publicada és la 0.31.4.
+**Encara no les porta cap còpia publicada.** El codi és al repo des de la 0.32.0, però l'última versió publicada és la 0.31.5.
 **Res d'això no s'ha vist funcionar a l'app:** només hi ha proves amb falsos, i el que depèn de Sparkle i de macOS s'ha llegit al
 codi o es dona per suposat. Abans de publicar-les falten la clau de signatura de l'autor, les proves reals (rondes A a F de
 [`docs/disseny.md`](docs/disseny.md), secció 11) i la primera actualització real amb l'adreça i la clau de debò. Si les rondes B o E
 no surten netes, s'esperarà el Developer ID d'Apple, i l'app continuarà com avui. El que segueix diu com funcionaran.
 
-- **Qui tingui la 0.31.4 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
+- **Qui tingui la 0.31.5 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
   versions no porten res per actualitzar-se ni per avisar-ne. Des de llavors, és automàtic.
 - **Normalment no veuràs res.** Un cop al dia, l'app mira a GitHub si hi ha una versió nova. Si n'hi ha, la baixa (uns 5 MB), en
   comprova la signatura i es reinicia sola quan no fas servir ni el Mac (2 minuts sense teclat ni ratolí) ni l'app (cap finestra
