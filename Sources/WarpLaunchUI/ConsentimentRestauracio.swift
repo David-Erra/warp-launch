@@ -89,11 +89,11 @@ public final class ConsentimentRestauracio {
     /// Es pot prémer «Accepta».
     public var potAcceptar: Bool { estat == .pendent }
 
-    /// Què passa si no s'accepta, per a la pantalla. Amb un `preferencies.json` que no es pot llegir, la propera vegada no
-    /// es pregunta (torna a sortir l'error): diu on és el fitxer, que s'ha d'arreglar o esborrar (revisió de la 0.29.0).
     /// Decisió 7 de Sparkle: qui veu aquesta pantalla sap que l'app es connecta abans d'acceptar.
     public static let textActualitzacions = "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració."
 
+    /// Què passa si no s'accepta, per a la pantalla. Amb un `preferencies.json` que no es pot llegir, la propera vegada no
+    /// es pregunta (torna a sortir l'error): diu on és el fitxer, que s'ha d'arreglar o esborrar (revisió de la 0.29.0).
     public var textSortir: String {
         if estat == .retirat {
             // Amb «migrat», no és el d'abans, sinó el de sèrie de Warp: el que ha dit la confirmació (revisió de la 0.31.0).
