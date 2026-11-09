@@ -2084,6 +2084,14 @@ private let prohibidesArrossegar = [
                                                permisos: canvienAtributsAFitxersLaunchWarp[0]))
     }
 
+    /// 0.31.5: l'avís de la carpeta de Claude només arriba a «Per revisar» amb aquestes dues connexions, que les proves del model
+    /// no veuen: `Editor.avisCarpetaDeClaude` té un valor de sèrie que no avisa de res, i fusionar l'app les podria perdre.
+    @Test func lAppConnectaLAvisDeLaCarpetaDeClaude() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        #expect(app.contains("editor.avisCarpetaDeClaude = { sessions.avisCarpeta($0, inici: $1, carpetaExisteix: $2) }"))
+        #expect(app.contains("sessions.enCanviar = { editor.refrescaAvisos() }"))
+    }
+
     /// Decisió d'en David del 09/11/2026: els dos fulls d'obrir (una finestra i «Obre-ho tot») i el README avisen de les feines
     /// en segon pla.
     @Test func elsDosFullsAvisenDeLesFeinesEnSegonPla() throws {
