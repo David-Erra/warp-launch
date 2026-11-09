@@ -632,8 +632,14 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
     @Test func siLaPublicacioFallaNoEscriuLaRecepta() throws {
         let b = try Banc()
         let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_RELEASE_FALLA": "1"]) { $1 })
-        #expect(codi != 0, "\(sortida)")
+        #expect(codi == 1, "\(sortida)")
         #expect(!b.ordresGh.contains("--method PUT"))
+        #expect(sortida.contains("no s'ha pogut crear la v0.28.0 a exemple/prova"), "\(sortida)")
+        #expect(sortida.contains("la recepta de Homebrew no s'ha tocat"), "\(sortida)")
+        #expect(sortida.contains("gh release view v0.28.0 --repo exemple/prova"), "\(sortida)")
+        // Una pujada a mitges pot deixar un esborrany: dir que no s'ha publicat res podria no ser veritat.
+        #expect(!sortida.contains("No s'ha publicat res."), "\(sortida)")
+        #expect(!sortida.contains("Fet:"), "\(sortida)")
     }
 
     /// Si l'escriptura de la recepta falla, la versió es queda publicada i el missatge diu què cal canviar a mà.

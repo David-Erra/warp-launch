@@ -192,7 +192,10 @@ if [[ "$APLICA" -eq 0 ]]; then
     exit 0
 fi
 
-gh release create "$ETIQUETA" "$ZIP" --repo "$REPO" --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"
+if ! gh release create "$ETIQUETA" "$ZIP" --repo "$REPO" --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"; then
+    echo "publica: no s'ha pogut crear la ${ETIQUETA} a ${REPO}, i la recepta de Homebrew no s'ha tocat. Abans de tornar-ho a provar, mira si n'ha quedat un esborrany o l'etiqueta: gh release view ${ETIQUETA} --repo ${REPO}" >&2
+    exit 1
+fi
 
 if [[ "$RECEPTA_CANVIA" -eq 0 ]]; then
     echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}). La recepta de ${TAP} ja deia aquesta versió i aquest sha256, i no s'ha escrit."
