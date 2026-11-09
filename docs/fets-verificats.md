@@ -1107,9 +1107,9 @@ no s'ha obert, i Warp i Claude no s'han tocat. Disseny de la ronda: `docs/dissen
   (corregit a la 0.32.9; a sota, per què).
 - **PROVAT, interruptor apagat (A7):** 0 peticions en 2 minuts (`SULastCheckTime` esborrat i el registre del servidor buidat abans de comptar). El control amb l'interruptor encès, sí que en fa.
 - **PROVAT, instal·lació fallida (A8):** **es confirma el supòsit [S] de `chflags uchg`** al paquet, posat després de quedar a punt: «Reinicia i actualitza» tanca l'app, la instal·lació falla i
-  l'app no torna. El paquet continua a la 1.0.0. En tornar-la a obrir a mà, `fallades=1 versioFallada=1.0.1`, i la secció ho diu.
-- **PROVAT, cap reinici sol després d'una fallada (A8b):** més de 8 minuts seguits amb la mateixa versió a punt i el Mac sense tocar (`CGEventSource` diu més de 8.000 s d'inactivitat):
-  `espera=«Ara no: aquesta versió no s'ha pogut instal·lar sola»`, i l'app no surt.
+  l'app no torna. El paquet continua a la 1.0.0. En tornar-la a obrir (amb `open`, des del guió), `fallades=1 versioFallada=1.0.1`, i la secció ho diu.
+- **PROVAT, cap reinici sol després d'una fallada (A8b):** més de 8 minuts seguits amb la mateixa versió a punt i el Mac sense tocar (`CGEventSource` diu més de 8.000 s d'inactivitat), i l'app no surt.
+  Els primers 5 minuts (registre, línies 41 i 42), el motiu era «l'app s'acaba d'obrir»; els 4 minuts següents, `espera=«Ara no: aquesta versió no s'ha pogut instal·lar sola»`, l'únic motiu per no reiniciar-se.
 - **PROVAT, sense servidor (A9):** «No s'ha pogut comprovar: Hi ha hagut un error obtenint la informació d'actualització…», i ja no diu «Tens l'última versió». Després de reobrir-la, no afirma res.
 - **PROVAT, appcasts refusats (A10):** informativa, crítica i zip en un altre domini: «la versió publicada no té la forma esperada», cap finestra i cap `.zip` al registre del servidor.
 - **PROVAT, la finestra de baixada acabada (A11):** es titula «Actualitzant Warp Launch» i **només té el botó «Instal·la i reinicia»**; `performClose` no la tanca (8 s després hi continua).

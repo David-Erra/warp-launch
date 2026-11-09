@@ -2216,8 +2216,8 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
 
 **Fet (09/11/2026): els passos 0 a 10** (secció 9): els 1 a 4 i el 9, sense versió, i els 5 a 8, de la 0.32.0 a la 0.32.3, amb dues revisions (0.32.4 i 0.32.5).
 - **Provat:** només amb falsos i carpetes temporals (`scripts/test.sh`), la compilació i el paquet (`otool`, `codesign --verify --deep --strict`).
-- **Llegit o suposat, res vist funcionar:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Cap app no s'ha obert.
-- **Falta:** les rondes A a F (Porta 1); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
+- **Llegit o suposat, res vist funcionar a l'app de debò:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Warp Launch no s'ha obert cap vegada amb Sparkle; una app de prova, a la ronda A (`docs/fets-verificats.md`, «Sparkle», secció 15).
+- **Falta:** les rondes B a F (Porta 1; la A és feta, 09/11/2026); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
 - **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
 
 El codi s'aparta del que hi ha a sota en això:
@@ -2227,6 +2227,7 @@ El codi s'aparta del que hi ha a sota en això:
 - `enclosureValid` és més estricte: també refusa que la resta de l'adreça surti de la carpeta del feed (`..`, `%`, `?`, `#`, trossos buits).
 - `cicleAcabat` també treu de `.baixant`, i un error de baixada també: si no, «Baixant…» es podria quedar per sempre. Un error d'una comprovació sola no amaga una versió ja `.trobada`.
 - `.aplicant` que caduca sense bloc (camí de la finestra, `postposada`) torna a `.trobada`.
+- `Actualitzacions.Entorn` també té `baixaSola` i `restauraBaixaSola` (0.32.9): la casella de la finestra de Sparkle, a 2.1.
 - Si no es pot escriure l'intent en un reinici automàtic, compta com un intent (pausa d'1 h). El botó diu l'error (`errorPreparant`).
 - **Pestanya pròpia «Actualitzacions»** (pas 7), no una secció de «General»: amb la secció, «General» faria 738 pt, més dels 640 de la norma (mesurat amb un programa a part, sense finestres).
 - Una finestra minimitzada de l'app compta com a oberta (0.32.5), i `posaAlDavant` mostra l'app si era amagada (una precaució: no s'ha vist que sense això falli).
@@ -2483,10 +2484,10 @@ public enum Esdeveniment {
 - `updater(_:shouldProceedWithUpdate:updateCheck:)` **llança** si `isInformationOnlyUpdate`, `isCriticalUpdate`, `isMajorUpgrade`, `fileURL == nil` o `!enclosureValid`. Es crida abans de `deferInformationalUpdate` [L: `SPUBasicUpdateDriver.m:150-158`]; amb error, no mostra res ni torna a començar [L: `SPUAutomaticUpdateDriver.m:150-155`]. L'appcast no va signat, i aquests camps podrien obrir finestres i enllaços [L: `SPUAutomaticUpdateDriver.m:82-96`].
 - `enclosureValid(feed:enclosure:)`, pura: carpeta del feed, canviant `/releases/latest/download` per `/releases/download`; l'enclosure hi ha de començar. Amb el feed real i el local (rondes).
 - `didAbortWithError`: només si `esErrorVisible(codi:)`, és a dir, ni `SUNoUpdateError` (1001) ni `SUInstallationCanceledError` (4007). Sparkle hi passa sempre el 1001 quan no hi ha res de nou [L: `SPUBasicUpdateDriver.m:257-276`, `SPUUpdater.m:798-804`].
-- `didFinishUpdateCycleFor` envia `.cicleAcabat`: si encara és `.comprovant`, torna a `.inicial`. A més, `vigila` hi posa un límit de 180 s.
+- `didFinishUpdateCycleFor` envia `.cicleAcabat`: si encara és `.comprovant` o `.baixant`, torna a `.inicial`. Des de la 0.32.9, també oblida la finestra i el reinici ajornat. A més, `vigila` hi posa un límit de 180 s a `.comprovant`.
 - `standardUserDriverShouldHandleShowingScheduledUpdate` torna **sempre `false`**, i `standardUserDriverWillHandleShowingUpdate(handle: false, …)` envia `.trobada(versio)`. És l'exemple de `documentation/gentle-reminders`. Mai cap finestra sense demanar-la. `supportsGentleScheduledUpdateReminders = true`.
 - `updaterWillRelaunchApplication`: només per al camí de la finestra de Sparkle sense ajornar (escriu un intent `demanada` i passa a `.aplicant`, 0.32.9, perquè també caduqui si l'app no surt). Sparkle només el crida el primer cop [L: `SPUInstallerDriver.m:551-554`]: per això, al camí del bloc i al de la postposada l'intent l'escriu el model cada vegada. **Sparkle també el crida al camí del bloc** [L: `SPUCoreBasedUpdateDriver.m:322-335`]: si el model ja és `.aplicant`, no s'ha de tocar l'intent, o un reinici sol quedaria com a `demanada` i obriria l'editor.
-- KVO de `canCheckForUpdates`, `sessionInProgress` i `lastUpdateCheckDate` [P].
+- KVO de `canCheckForUpdates`, `sessionInProgress` i `lastUpdateCheckDate` [P], i, des de la 0.32.9, `automaticallyDownloadsUpdates` (la casella de la finestra de Sparkle) [L: `SPUUpdater.m:1064-1067`, `SPUUpdaterSettings.m:65-77`].
 - Sense `feedURLString`, `setFeedURL`, `sendsSystemProfile`, `allowedChannels` ni `startUpdater()`.
 - Retenir els delegats: són febles [L: `SPUStandardUpdaterController.h`].
 
