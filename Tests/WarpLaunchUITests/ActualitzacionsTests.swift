@@ -411,6 +411,15 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         #expect(b.blocs.isEmpty, "espera la pausa d'1 h, com qualsevol intent")
     }
 
+    /// Una versió que `actualitzacio.json` no podria tornar a llegir: se'n perdrien les fallades.
+    @Test func ambUnaVersioNoValidaNoEscriuNiCrida() throws {
+        let b = try Banc()
+        let m = aPunt(b, versio: "0.32.1-beta")
+        m.reinicia(ara: t)
+        #expect(b.blocs.isEmpty && m.errorPreparant != nil && m.estat == .aPunt("0.32.1-beta"))
+        #expect(b.magatzem.carrega() == .absent)
+    }
+
     @Test func installacioFallidaAturaElReiniciSol() throws {
         let b = try Banc()
         let m = aPunt(b, intent: IntentActualitzacio(fallades: 1, versioFallada: "0.32.1"))

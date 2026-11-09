@@ -296,6 +296,12 @@ public final class Actualitzacions {
     private func aplica(_ tipus: IntentActualitzacio.Tipus, versio: String, bloc: (@MainActor () -> Void)?, entorn: Entorn,
                         ara: TimeInterval) -> Bool {
         guard let bloc, let magatzem else { return false }
+        // `actualitzacio.json` no la podria tornar a llegir: es perdrien les fallades, i ho tornaria a provar sense límit.
+        guard P.Versio(versio) != nil else {
+            errorPreparant = "la versió «\(versio)» no té la forma que toca"
+            Registre.actualitzacions.error("versió no vàlida: \(versio, privacy: .public)")
+            return false
+        }
         var nou = intent
         nou.pendent = IntentActualitzacio.Pendent(objectiu: versio, tipus: tipus, hora: entorn.rellotge())
         do {
