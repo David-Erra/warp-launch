@@ -49,8 +49,8 @@ public final class Actualitzacions {
         case trobada(String), alDia, baixant(String), cicleAcabat
         /// A punt per instal·lar. `aplica` instal·la i reobre l'app.
         case aPunt(String, aplica: @MainActor () -> Void)
-        /// Reinici demanat des de la finestra de l'actualitzador, ajornat per un motiu. Es fa una sola vegada.
-        case postposada(aplica: @MainActor () -> Void)
+        /// Reinici demanat des de la finestra de l'actualitzador, ajornat per un motiu, i la versió. Es fa una sola vegada.
+        case postposada(String, aplica: @MainActor () -> Void)
         case error(String, demanat: Bool)
     }
 
@@ -100,9 +100,7 @@ public final class Actualitzacions {
     @ObservationIgnored private let versioActual: String
     @ObservationIgnored private var intent: IntentActualitzacio
     @ObservationIgnored private var bloc: (@MainActor () -> Void)?
-    @ObservationIgnored private var postposat: (@MainActor () -> Void)?
-    /// L'última versió coneguda: la de l'estat, i la de la postposada.
-    @ObservationIgnored private var versioActiva: String?
+    @ObservationIgnored private var postposat: (versio: String, aplica: @MainActor () -> Void)?
     @ObservationIgnored private var aPuntDes: Date?
     @ObservationIgnored private var comprovantDes: TimeInterval?
     @ObservationIgnored private var aplicantDes: TimeInterval?
@@ -167,7 +165,7 @@ public final class Actualitzacions {
         let situacio = situacio(entorn, ara: ara, candidat: versio)
         posaMotius(situacio)
         guard motiuDemanatAra == nil else { return }
-        _ = aplica(.demanada, versio: versio, entorn: entorn, ara: ara)
+        _ = aplica(.demanada, versio: versio, bloc: bloc, entorn: entorn, ara: ara)
     }
 
     public func posaAutomatiques(_ valor: Bool) {
@@ -186,25 +184,22 @@ public final class Actualitzacions {
         switch esdeveniment {
         case let .trobada(versio):
             guard !ocupat else { return }
-            versioActiva = versio
             estat = .trobada(versio)
         case .alDia:
             guard !ocupat, !baixant else { return }
             estat = .alDia(entorn.rellotge())
         case let .baixant(versio):
             guard !ocupat else { return }
-            versioActiva = versio
             estat = .baixant(versio)
         case .cicleAcabat:
             if estat == .comprovant || baixant { tornaAInicial(entorn) }
         case let .aPunt(versio, aplica):
             if case .aPunt(versio) = estat {} else { aPuntDes = entorn.rellotge() }
-            versioActiva = versio
             bloc = aplica
             quietDes = nil
             estat = .aPunt(versio)
-        case let .postposada(aplica):
-            postposat = aplica
+        case let .postposada(versio, aplica):
+            postposat = (versio, aplica)
         case let .error(missatge, demanat):
             guard !ocupat else { return }
             // Una comprovació que falla sola no amaga que ja se sap d'una versió.
@@ -219,13 +214,10 @@ public final class Actualitzacions {
         guard let entorn else { return }
         caducaEsperes(entorn, ara: ara)
 
-        if let postposat, motiu(entorn, ara: ara, candidat: nil, demanat: true) == nil {
+        // Si no es pot escriure l'intent, no es crida: es torna a provar al minut següent.
+        if let postposat, motiu(entorn, ara: ara, candidat: nil, demanat: true) == nil,
+           aplica(.demanada, versio: postposat.versio, bloc: postposat.aplica, entorn: entorn, ara: ara) {
             self.postposat = nil
-            if let versioActiva {
-                estat = .aplicant(versioActiva)
-                aplicantDes = ara
-            }
-            postposat()
         }
 
         guard case let .aPunt(versio) = estat else {
@@ -246,7 +238,7 @@ public final class Actualitzacions {
             return
         }
         guard ara - quiet >= P.quietud else { return }
-        if !aplica(.automatica, versio: versio, entorn: entorn, ara: ara) {
+        if !aplica(.automatica, versio: versio, bloc: bloc, entorn: entorn, ara: ara) {
             intents += 1
             pausaFins = ara + P.pausaEntreIntents
         }
@@ -301,7 +293,8 @@ public final class Actualitzacions {
     }
 
     /// Escriu l'intent i crida el bloc, en aquest ordre i cada vegada: si no es pot escriure, no es crida.
-    private func aplica(_ tipus: IntentActualitzacio.Tipus, versio: String, entorn: Entorn, ara: TimeInterval) -> Bool {
+    private func aplica(_ tipus: IntentActualitzacio.Tipus, versio: String, bloc: (@MainActor () -> Void)?, entorn: Entorn,
+                        ara: TimeInterval) -> Bool {
         guard let bloc, let magatzem else { return false }
         var nou = intent
         nou.pendent = IntentActualitzacio.Pendent(objectiu: versio, tipus: tipus, hora: entorn.rellotge())

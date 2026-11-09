@@ -2433,7 +2433,7 @@ public struct Entorn {                                        // al model; l'omp
 public enum Esdeveniment {
     case trobada(String), alDia, baixant(String), cicleAcabat
     case aPunt(String, aplica: @MainActor () -> Void)
-    case postposada(aplica: @MainActor () -> Void)
+    case postposada(String, aplica: @MainActor () -> Void)   // amb la versió: també en aquest camí, l'intent s'escriu abans de cridar
     case error(String, demanat: Bool)
 }
 ```
@@ -2445,7 +2445,7 @@ public enum Esdeveniment {
 - `didAbortWithError`: només si `esErrorVisible(codi:)`, és a dir, ni `SUNoUpdateError` (1001) ni `SUInstallationCanceledError` (4007). Sparkle hi passa sempre el 1001 quan no hi ha res de nou [L: `SPUBasicUpdateDriver.m:257-276`, `SPUUpdater.m:798-804`].
 - `didFinishUpdateCycleFor` envia `.cicleAcabat`: si encara és `.comprovant`, torna a `.inicial`. A més, `vigila` hi posa un límit de 180 s.
 - `standardUserDriverShouldHandleShowingScheduledUpdate` torna **sempre `false`**, i `standardUserDriverWillHandleShowingUpdate(handle: false, …)` envia `.trobada(versio)`. És l'exemple de `documentation/gentle-reminders`. Mai cap finestra sense demanar-la. `supportsGentleScheduledUpdateReminders = true`.
-- `updaterWillRelaunchApplication`: només per al camí de la finestra de Sparkle (escriu un intent `demanada`). Sparkle només el crida el primer cop [L: `SPUInstallerDriver.m:551-554`]: per això, al camí del bloc l'intent l'escriu el model cada vegada.
+- `updaterWillRelaunchApplication`: només per al camí de la finestra de Sparkle sense ajornar (escriu un intent `demanada`). Sparkle només el crida el primer cop [L: `SPUInstallerDriver.m:551-554`]: per això, al camí del bloc i al de la postposada l'intent l'escriu el model cada vegada. **Sparkle també el crida al camí del bloc** [L: `SPUCoreBasedUpdateDriver.m:322-335`]: si el model ja és `.aplicant`, no s'ha de tocar l'intent, o un reinici sol quedaria com a `demanada` i obriria l'editor.
 - KVO de `canCheckForUpdates`, `sessionInProgress` i `lastUpdateCheckDate` [P].
 - Sense `feedURLString`, `setFeedURL`, `sendsSystemProfile`, `allowedChannels` ni `startUpdater()`.
 - Retenir els delegats: són febles [L: `SPUStandardUpdaterController.h`].

@@ -444,30 +444,53 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
     @Test func postposadaEsperaIEsCridaUnSolCop() throws {
         let b = try Banc()
         let m = b.model()
-        var crides = 0
         m.rep(.trobada("0.32.1"), ara: t)
         b.models.fullObert = true
-        m.rep(.postposada(aplica: { crides += 1 }), ara: t)
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
         m.vigila(ara: t)
-        #expect(crides == 0)
+        #expect(b.blocs.isEmpty)
         b.models.fullObert = false
         m.vigila(ara: t + 60)
-        #expect(crides == 1 && m.estat == .aplicant("0.32.1"))
+        #expect(b.blocs.count == 1 && m.estat == .aplicant("0.32.1"))
         m.vigila(ara: t + 120)
         m.vigila(ara: t + 180)
-        #expect(crides == 1, "una sola vegada")
+        #expect(b.blocs.count == 1, "una sola vegada")
         #expect(m.estat == .trobada("0.32.1"), "sense bloc: torna a la versió trobada")
     }
 
     @Test func postposadaNoLaAturenElsMotiusDelReiniciSol() throws {
         let b = try Banc()
         let m = b.model()
-        var crides = 0
         b.inactiu = 1
         b.models.finestraVisible = true
-        m.rep(.postposada(aplica: { crides += 1 }), ara: t)
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
         m.vigila(ara: t)
-        #expect(crides == 1)
+        #expect(b.blocs.count == 1)
+    }
+
+    /// També al camí de la finestra: si no, una instal·lació que falla després de sortir no es veuria en tornar a obrir l'app.
+    @Test func postposadaEscriuLIntentAbansDeLaCrida() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
+        m.vigila(ara: t)
+        guard b.blocs.count == 1, case let .llegit(intent) = b.blocs[0] else { Issue.record("\(b.blocs)"); return }
+        #expect(intent.pendent == IntentActualitzacio.Pendent(objectiu: "0.32.1", tipus: .demanada, hora: t0))
+    }
+
+    @Test func postposadaSiNoPotEscriureNoCridaITornaAProvar() throws {
+        let b = try Banc()
+        let m = b.model()
+        try b.trencaLaCarpeta()
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
+        m.vigila(ara: t)
+        #expect(b.blocs.isEmpty && m.errorPreparant != nil && !m.aplicant)
+        try FileManager.default.removeItem(at: b.carpeta)
+        try FileManager.default.createDirectory(at: b.carpeta, withIntermediateDirectories: true)
+        m.vigila(ara: t + 60)
+        #expect(b.blocs.count == 1 && m.errorPreparant == nil && m.aplicant)
+        m.vigila(ara: t + 120)
+        #expect(b.blocs.count == 1, "una sola vegada")
     }
 
     // MARK: - Els dies
