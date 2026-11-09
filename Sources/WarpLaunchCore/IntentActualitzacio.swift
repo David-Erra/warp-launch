@@ -70,7 +70,9 @@ public struct IntentActualitzacio: Equatable, Sendable {
 
     /// En arrencar: mira què hi havia pendent, ho treu i ho desa. Es fa una sola vegada per arrencada: una segona crida ja no hi
     /// trobaria res. Només amb la configuració de debò.
-    public static func enArrencar(magatzem: MagatzemIntent, versioActual: String, ara: Date) -> Arrencada {
+    /// - Parameter segonsEncesa: des que el Mac s'ha encès. Si l'intent és d'abans, el Mac s'ha reiniciat entremig: és l'inici de
+    ///   sessió, encara que l'intent sigui de fa poc, i ha de sortir el full d'«Obre-ho tot».
+    public static func enArrencar(magatzem: MagatzemIntent, versioActual: String, ara: Date, segonsEncesa: TimeInterval) -> Arrencada {
         let intent: IntentActualitzacio
         switch magatzem.carrega() {
         case .absent: return Arrencada(reobertura: nil, intent: IntentActualitzacio(), efecte: .res)
@@ -92,6 +94,7 @@ public struct IntentActualitzacio: Equatable, Sendable {
             if actual >= objectiu {
                 let passat = ara.timeIntervalSince(pendent.hora)
                 let recent = passat >= -PoliticaActualitzacions.margeReoberturaEnrere && passat <= PoliticaActualitzacions.margeReobertura
+                    && passat < segonsEncesa
                 reobertura = recent ? pendent.tipus : nil
                 nou.fallades = 0
                 efecte = .exit

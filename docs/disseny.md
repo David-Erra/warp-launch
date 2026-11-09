@@ -2358,7 +2358,7 @@ En arrencar, només amb `.real` (`IntentActualitzacio.enArrencar`), i llegint-lo
 | Cas | Efecte |
 |---|---|
 | Sense fitxer o sense `pendent` | Res |
-| Versió actual ≥ `objectiu` | Èxit: `reobertura` = `tipus` si l'hora és de 5 s enrere a 300 s (si no, `nil`). `pendent` fora, `fallades = 0` |
+| Versió actual ≥ `objectiu` | Èxit: `reobertura` = `tipus` si l'hora és de 5 s enrere a 300 s i posterior a l'encesa del Mac (si no, `nil`: amb un reinici entremig, és l'inici de sessió). `pendent` fora, `fallades = 0` |
 | Versió actual < `objectiu` | Fallada: `reobertura = nil`, `fallades + 1`, `versioFallada = objectiu`, `pendent` fora |
 | Fitxer mal format, o `versio` més nova | Com si no hi fos, i ho apunta al registre. No bloqueja res |
 | Versió actual ≥ `versioFallada`, amb pendent o sense (s'hi ha arribat en sortir, amb Homebrew o a mà) | `fallades = 0` i `versioFallada` fora. Si no, amb dues fallades no es tornaria a reiniciar sola mai més |

@@ -5,6 +5,8 @@ import Testing
 // docs/disseny.md, secció 11, 2.3. Sempre en una carpeta temporal.
 
 private let t0 = Date(timeIntervalSince1970: 1_793_750_400)
+/// Un Mac encès fa molta estona.
+private let encesa: TimeInterval = 100_000
 
 private final class Carpeta {
     let url: URL
@@ -25,7 +27,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
 @Suite struct IntentActualitzacioTests {
     @Test func senseFitxerNoEsCreaRes() throws {
         let c = try Carpeta()
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
         #expect(r == .init(reobertura: nil, intent: IntentActualitzacio(), efecte: .res))
         #expect(!FileManager.default.fileExists(atPath: c.magatzem.fitxer.path))
     }
@@ -35,7 +37,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
         let intent = IntentActualitzacio(fallades: 1, versioFallada: "0.32.2")
         try c.magatzem.desa(intent)
         let abans = try Data(contentsOf: c.magatzem.fitxer)
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
         #expect(r.efecte == .res && r.reobertura == nil && r.intent == intent)
         #expect(try Data(contentsOf: c.magatzem.fitxer) == abans)
     }
@@ -44,7 +46,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     func exitAmbLaVersioObjectiuOMesNova(actual: String, tipus: IntentActualitzacio.Tipus) throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1", tipus), fallades: 1, versioFallada: "0.32.0"))
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: actual, ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: actual, ara: t0, segonsEncesa: encesa)
         #expect(r.efecte == .exit && r.reobertura == tipus)
         #expect(r.intent == IntentActualitzacio(), "ni el pendent ni la fallada, que ja s'ha superat")
         #expect(c.alDisc == .llegit(r.intent), "el pendent ja no és al fitxer")
@@ -56,7 +58,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     func unaFalladaSuperadaSensePendentSOblida(actual: String) throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(fallades: 2, versioFallada: "0.32.1"))
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: actual, ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: actual, ara: t0, segonsEncesa: encesa)
         #expect(r.efecte == .res && r.reobertura == nil)
         #expect(r.intent == IntentActualitzacio())
         #expect(!r.intent.bloquejaAutomatic(candidat: "0.32.3"))
@@ -66,7 +68,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     @Test func unaFalladaNoSuperadaEsConserva() throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(fallades: 2, versioFallada: "0.32.1"))
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.0", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.0", ara: t0, segonsEncesa: encesa)
         #expect(r.intent == IntentActualitzacio(fallades: 2, versioFallada: "0.32.1"))
         #expect(r.intent.bloquejaAutomatic(candidat: "0.32.3"))
     }
@@ -74,7 +76,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     @Test func falladaAmbUnaVersioAnterior() throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1"), fallades: 0))
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.0", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.0", ara: t0, segonsEncesa: encesa)
         #expect(r.efecte == .fallada && r.reobertura == nil)
         #expect(r.intent == IntentActualitzacio(fallades: 1, versioFallada: "0.32.1"))
         #expect(c.alDisc == .llegit(r.intent))
@@ -83,10 +85,10 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     @Test func lesFalladesSAcumulenFinsQueUnaActualitzacioVaBe() throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1"), fallades: 1, versioFallada: "0.32.0"))
-        var r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.31.9", ara: t0)
+        var r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.31.9", ara: t0, segonsEncesa: encesa)
         #expect(r.intent.fallades == 2 && r.intent.versioFallada == "0.32.1")
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.2"), fallades: 2, versioFallada: "0.32.1"))
-        r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.2", ara: t0)
+        r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.2", ara: t0, segonsEncesa: encesa)
         #expect(r.intent.fallades == 0 && r.intent.versioFallada == nil)
     }
 
@@ -98,24 +100,34 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     func laReoberturaNomesSiLHoraEsRecent(fa segons: TimeInterval, reoberta: Bool) throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1", .automatica, fa: segons)))
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
         #expect(r.efecte == .exit)
         #expect(r.reobertura == (reoberta ? .automatica : nil), "\(segons)")
         #expect(r.intent.pendent == nil && r.intent.fallades == 0)
     }
 
+    /// Un intent de fa poc, però d'abans d'encendre el Mac: és un reinici, i ha de sortir el full d'«Obre-ho tot».
+    @Test(arguments: [(30.0, 120.0, true), (120.0, 30.0, false), (120.0, 120.0, false)])
+    func unReiniciDelMacNoEsUnaReobertura(fa segons: TimeInterval, encesa: TimeInterval, reoberta: Bool) throws {
+        let c = try Carpeta()
+        try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1", .demanada, fa: segons)))
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
+        #expect(r.efecte == .exit)
+        #expect(r.reobertura == (reoberta ? .demanada : nil))
+    }
+
     @Test func nomesUnCop() throws {
         let c = try Carpeta()
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1")))
-        let primera = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
-        let segona = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
+        let primera = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
+        let segona = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
         #expect(primera.reobertura == .automatica)
         #expect(segona.reobertura == nil && segona.efecte == .res)
 
         // Una fallada tampoc no es compta dues vegades.
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.2")))
-        _ = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
-        let altra = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
+        _ = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
+        let altra = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
         #expect(altra.intent.fallades == 1 && altra.efecte == .res)
     }
 
@@ -137,7 +149,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
     func unFitxerMalFormatEsComSiNoHiFos(text: String) throws {
         let c = try Carpeta()
         try c.escriu(text)
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.31.0", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.31.0", ara: t0, segonsEncesa: encesa)
         guard case .ignorat = r.efecte else {
             Issue.record("\(r.efecte)")
             return
@@ -169,7 +181,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1")))
         try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: c.url.path)
         defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: c.url.path) }
-        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0, segonsEncesa: encesa)
         #expect(r.efecte == .exit && r.reobertura == .automatica)
         #expect(r.errorDesant != nil)
     }
