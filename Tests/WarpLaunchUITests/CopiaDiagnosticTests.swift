@@ -15,6 +15,19 @@ import Testing
         ])
     }
 
+    /// L'app demana el text de les actualitzacions al fil principal des del diagnòstic: mentre es copia, el fil principal ha de quedar lliure.
+    @Test func elDiagnosticPotPreguntarAlFilPrincipal() async {
+        let diagnostic: @Sendable (Bool) -> InformeDiagnostic = { anonimitzat in
+            var informe = Self.informe(anonimitzat: anonimitzat)
+            informe.actualitzacions = DispatchQueue.main.sync { MainActor.assumeIsolated { "des del fil principal" } }
+            return informe
+        }
+        let c = CopiaDiagnostic(diagnostic: diagnostic, escriu: { _ in })
+        await c.copia(anonimitzat: false)
+        #expect(c.copiat != nil)
+        #expect(!c.calculant)
+    }
+
     @Test func copiaLAnonimitzatOElComplet() async {
         let demanats = Demanats()
         let portaRetalls = PortaRetallsFals()
