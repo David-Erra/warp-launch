@@ -1503,7 +1503,7 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
     era desactivada segons en David, 07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
     registra, i amb el Mac encès fa menys de 10 minuts el full surt igualment.
 
-## 10. Per a altres usuaris (07 i 08/11/2026, de la 0.29.0 a la 0.31.4)
+## 10. Per a altres usuaris (del 07 al 09/11/2026, de la 0.29.0 a la 0.31.4)
 
 Les vuit decisions d'en David del 07/11/2026 són a `especificacio.md` («Per a altres usuaris»). El codi i els commits les
 anomenen D-P4 (la 4, el consentiment), D-P5a (la 5, importar) i D-P12 (trobar Warp, de la 8). El diagnòstic (pla A4) no surt
@@ -1513,9 +1513,9 @@ el codi les cita pel número («decisió 3», «decisió 4»…). Les de la rond
 amb Warp obert), a la fila de després. Les set de la ronda 6 (08/11/2026, 0.31.4), a l'última: el codi les cita amb la data o
 amb la ronda («decisió 3 d'en David, 08/11/2026», «decisió 7 (ronda 6)»), i aquí, «ronda 6, decisió 3». Cada pas va tenir una
 revisió, amb correccions.
-**Res de la 0.30.3 endavant no s'ha donat per provat a l'app** (regla 4): en David prova ara la 0.31.1, compilada a part, i de
-la 0.31.2 a la 0.31.4 no s'han vist. El que falta provar d'aquestes versions, sempre amb l'OK d'en David, és a «Per provar a
-l'app» i «Per provar en un usuari de macOS nou», al final; el de la 0.29 i la 0.30, a cada pas («A l'app»).
+**La 0.31.4 és publicada a GitHub, i en David l'ha provada a l'app i en un usuari de macOS nou** (09/11/2026, ho ha dit ell).
+«Per provar a l'app» i «Per provar en un usuari de macOS nou», al final, i els apartats «A l'app» de cada pas queden com a guia:
+no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'en David (regla 4).
 
 ### Consentiment de la restauració (0.29.0, D-P4)
 
@@ -1969,9 +1969,8 @@ Dos forats de `GuardaTests`, tancats sense canviar el que fa l'app (secció 3, �
 
 ### Per provar a l'app (de la 0.30.3 a la 0.31.4)
 
-Cada prova, amb l'OK d'en David. En David prova ara la 0.31.1, compilada a part: de l'1 al 9 s'hi poden veure. Del 10 al 21,
-cal recompilar des de `main` (`scripts/build-app.sh`, ho fa en David). Si no es diu el contrari, amb `--config` i una carpeta
-nova buida. Del 14 al 18, el 20 i el 21, amb la configuració de debò i Warp obert, i abans i després de cada pas,
+Cada prova, amb l'OK d'en David. En David ha provat la 0.31.4 a l'app el 09/11/2026 (ho ha dit ell), sense anotar punt per
+punt què s'hi ha vist: la llista queda com a guia. Si no es diu el contrari, amb `--config` i una carpeta nova buida. Del 14 al 18, el 20 i el 21, amb la configuració de debò i Warp obert, i abans i després de cada pas,
 `scripts/warp-restauracio.sh estat` (només llegeix).
 1. **Retorn i Escapada (0.30.3):** a la pantalla del permís, Escapada no fa res; Retorn accepta, crea `preferencies.json` i
    passa a l'editor. A la Configuració (⌘,), igual: si Escapada la tanqués, l'app sortiria (les proves no ho poden veure).
@@ -2035,7 +2034,8 @@ nova buida. Del 14 al 18, el 20 i el 21, amb la configuració de debò i Warp ob
 
 ### Per provar en un usuari de macOS nou (0.31.2, decisió A; 0.31.3, ronda 5; 0.31.4, ronda 6)
 
-Cada pas, amb l'OK d'en David, i amb un usuari de macOS que no ha obert mai Warp. Serveix també per comprovar el que s'ha llegit
+En David ho ha provat amb la 0.31.4 el 09/11/2026 (ho ha dit ell), sense anotar pas per pas què s'hi ha vist: la llista queda
+com a guia. Cada pas, amb l'OK d'en David, i amb un usuari de macOS que no ha obert mai Warp. Serveix també per comprovar el que s'ha llegit
 al codi de Warp i no s'ha vist (`fets-verificats.md`): què escriu un Warp net (també l'onboarding), quan crea la base i que la
 migració es fa abans del primer terminal. L'ordre compta.
 1. **Warp instal·lat, sense obrir-lo:** Warp Stable a `/Applications` (un Mac on ja hi és serveix: tots els usuaris el veuen),
@@ -2079,12 +2079,51 @@ migració es fa abans del primer terminal. L'ordre compta.
    fitxer d'ajustos de Warp no para de canviar…», amb el triangle. No cal clicar «Torna a llegir Warp». Atura el bucle: en menys
    d'un minut l'avís marxa, i `scripts/warp-restauracio.sh estat` diu `restore_session = false (línia N)`.
 
+### Homebrew (09/11/2026)
+
+Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat de Homebrew: `fets-verificats.md`, «Homebrew».
+
+- **El tap:** el repo públic `David-Erra/homebrew-tap`, amb `Casks/warp-launch.rb`, `README.md` i `LICENSE`. S'instal·la amb
+  `brew install --cask david-erra/tap/warp-launch`, s'actualitza amb `brew upgrade --cask warp-launch` i es treu amb
+  `brew uninstall --cask warp-launch`.
+- **La recepta:**
+  - El zip de la versió de GitHub, amb `#{version}` a la URL (`v#{version}/WarpLaunch-#{version}.zip`). Apple Silicon i, com a
+    mínim, macOS 26.
+  - Després de copiar l'app, un pas de `postflight_steps` li treu la quarantena (`xattr -dr com.apple.quarantine`): no és
+    notaritzada i, sense això, macOS no la deixaria obrir.
+  - `uninstall quit:` tanca l'app si és oberta, en actualitzar i en desinstal·lar.
+  - `zap` només esborra les preferències i l'estat de les finestres que desa macOS, mai `~/.config/warp-launch`.
+  - L'avís de la recepta diu de fer «Restaura Warp i surt…» abans de desinstal·lar: Homebrew no ho pot fer per l'usuari.
+- **Com s'actualitza:** a cada versió publicada, `scripts/publica.sh` (regla 3).
+  - Abans de compilar, llegeix la recepta del tap amb un sol GET (el contingut i el sha del blob). Refusa publicar si no s'hi
+    arriba, si el sha de git del que ha descodificat no és el que diu GitHub, si no té exactament una línia `  version "X.Y.Z"`,
+    una `  sha256 "…"` i la `  url` amb `#{version}`, si ja va per davant de `VERSION`, o si falten `git config user.name` o
+    `user.email`.
+  - El mode de prova diu la versió i el sha256 d'abans i de després, i no escriu res.
+  - Amb `--aplica`, després de `gh release create`, un `gh api --method PUT` amb el sha del blob llegit: si la recepta ha canviat
+    mentrestant, GitHub refusa l'escriptura. Només canvien les dues línies, i el sha256 és el del zip pujat. Si la recepta ja diu
+    això mateix, no escriu res.
+  - Si l'escriptura falla, la versió no s'esborra: l'script diu les dues línies per canviar a mà i surt amb el codi 2.
+  - Es desfà en aquest ordre, perquè Homebrew no demani un zip que ja no hi és: `git revert <commit>` en un clon del tap, i push;
+    després, `gh release delete vX.Y.Z --repo David-Erra/warp-launch --cleanup-tag`.
+  - `GH_TOKEN` d'un compte que pugui escriure al repo i al tap, només per a aquesta ordre; la compilació no el veu. Proves:
+    `ScriptPublicaTests`, amb un `gh` fals.
+- **Què falta:**
+  - **`publica.sh` encara no ha escrit mai al tap de debò:** la recepta de la 0.31.4 es va escriure en crear el tap, i la primera
+    que escrigui l'script serà la de la versió següent. Contra el tap de debò només s'ha provat la lectura.
+  - **Quan hi hagi notarització** (decisió 1 de la fila del 07/11/2026): treure de la recepta el pas de la quarantena, i les
+    frases que l'expliquen al README d'aquí i al del tap.
+  - **Amb Sparkle** (decisió 6 de la mateixa fila): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
+    versió del paquet és més vella que la de la recepta, i no hi passa pel damunt quan Sparkle ja l'ha posada al dia (llegit a
+    `cask/cask.rb` i `env_config.rb` de Homebrew).
+  - **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de tancar-la i tornar-la a obrir en actualitzar.
+
 ### Resum
 
 - Proves: de 443 a 573 al core i de 232 a 323 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
   i 313).
   `prototip/` surt del repo (és a l'historial, 114c97d).
-- Cap versió del lot no és publicada: la de GitHub és la 0.28.0.
+- De les versions del lot, només la 0.31.4 és publicada (09/11/2026), i s'instal·la també amb Homebrew.
 - De les vuit decisions del 07/11/2026, falten la signatura amb Developer ID (1), l'idioma (3; al llançament, anglès i català,
   decisió 7 del 08/11/2026), Sparkle (6) i les excepcions de la guarda per a la pàgina del permís i per a Sparkle (8). De les
   dotze de la fila del 08/11/2026, totes les que tocaven el codi són fetes (0.30.3, 0.31.0 i 0.31.1), menys l'idioma. De la
