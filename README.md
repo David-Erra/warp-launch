@@ -3,9 +3,9 @@
 App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestres i pestanyes de Warp,
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
-**Estat (09/11/2026, 0.31.4 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
-obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.28.0: el que
-aquí diu «des de la 0.29», «des de la 0.30» o «des de la 0.31» encara no s'ha publicat ni provat a l'app. Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
+**Estat (09/11/2026, 0.31.4):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
+obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.4, i
+s'instal·la amb Homebrew. Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
 
@@ -17,22 +17,14 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
 - Provat el 05/11/2026 amb macOS 27.2, Warp 0.2026.10.21 i Claude Code 2.1.318. Llegeix formats interns de Warp i de Claude Code que
   no estan documentats, i una versió nova els pot trencar: el diagnòstic («Si alguna cosa falla», a sota) diu si encara quadren.
 
-1. **L'eina de GitHub, `gh`** (només la primera vegada): `brew install gh`, o el paquet de https://cli.github.com.
-   Després, entra a `gh` amb un compte de GitHub i comprova que és el que surt com a actiu:
+1. **Instal·la-la amb Homebrew.** Cal tenir [Homebrew](https://brew.sh). Si no el vols fer servir, vegeu «Sense Homebrew», a sota.
    ```bash
-   gh auth login
-   gh auth status
+   brew install --cask david-erra/tap/warp-launch
    ```
-2. **Instal·la-la** (o actualitza-la) amb una sola comanda, des de qualsevol carpeta:
-   ```bash
-   s="$(gh api -H 'Accept: application/vnd.github.raw' repos/David-Erra/warp-launch/contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --aplica
-   ```
-   Si surt `gh: Not Found (HTTP 404)`, `gh` no troba el repo: revisa la comanda i el pas 1. No la facis amb `sudo`.
-   Baixa l'última versió publicada, comprova que està signada amb el certificat d'en David («Warp Launch Dev») i la
-   copia a `/Applications`. No l'obre, no la registra a l'inici de sessió i no toca cap configuració. Si l'app és oberta,
-   s'atura i et demana que en surtis. Sense `--aplica`, només diu què faria; amb `--versio x.y.z` (per exemple,
-   `--versio 0.28.0`), n'instal·la una de concreta. Al repo hi ha les versions des de la 0.28.0.
-3. **Obre Warp Launch** des d'Aplicacions. Surt com una icona a la barra de menú (no al Dock).
+   Afegeix el tap `David-Erra/homebrew-tap` i confia només en aquesta recepta. Baixa l'última versió publicada, en comprova
+   el sha256, la copia a `/Applications` i li treu la marca de baixada d'internet, perquè encara no està notaritzada per Apple.
+   No l'obre, no la registra a l'inici de sessió i no toca cap configuració.
+2. **Obre Warp Launch** des d'Aplicacions. Surt com una icona a la barra de menú (no al Dock).
    - **El primer cop, el teu permís** (des de la 0.29.0): l'app explica que ha de desactivar l'ajust de Warp «Restore windows,
      tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
      llegeixi les finestres de Warp. Si no acceptes («Surt de Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
@@ -41,17 +33,41 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
    - **Permís per llegir les dades de Warp:** macOS no pregunta; la primera vegada, l'app no les pot llegir i surt un avís
      («Accés a les dades bloquejat», amb el botó «Gestiona»). Activa-ho a Configuració del Sistema › Privacitat i seguretat ›
      Arxius i carpetes › Warp Launch.app › «Dades compartides per l'app Warp i les apps afiliades», i torna a obrir l'app.
-4. **Crea la configuració:** a l'editor, **Importa de Warp…** amb les finestres que vulguis ja obertes a Warp.
+3. **Crea la configuració:** a l'editor, **Importa de Warp…** amb les finestres que vulguis ja obertes a Warp.
    Es desa a `~/.config/warp-launch/`. Les pestanyes on corria Claude conserven l'ordre amb què es va obrir. Les altres
    queden només terminal (des de la 0.29.1; abans hi obria `claude`): per obrir-hi Claude, marca «Obre Claude Code en aquesta
    pestanya» a l'inspector, amb les opcions de Configuració (⌘,) › «Pestanyes noves». Les de la carpeta d'inici o d'una carpeta
    que ja no existeix també queden sense Claude.
-5. Si vols que s'obri sola en iniciar sessió: Configuració (⌘,) › General › **Obre Warp Launch en iniciar sessió**.
+4. Si vols que s'obri sola en iniciar sessió: Configuració (⌘,) › General › **Obre Warp Launch en iniciar sessió**.
    Si a Warp tens activada «Start Warp at login», desactiva-la, perquè no s'obri pel seu compte (en un reinici, amb l'opció
    desactivada, Warp es va obrir igualment, i encara no se sap per què).
 
-**Per actualitzar-la:** surt de l'app i torna a fer la comanda del pas 2.
+**Per actualitzar-la:** `brew upgrade --cask warp-launch`. Si l'app és oberta, Homebrew la tanca, hi posa la versió nova i
+la torna a obrir.
 **Per desinstal·lar-la:** vegeu «Desinstal·lar», a sota.
+
+### Sense Homebrew
+
+Amb l'eina de GitHub, `gh`:
+
+1. **Instal·la `gh`** (només la primera vegada), amb el paquet de https://cli.github.com.
+   Després, entra a `gh` amb un compte de GitHub i comprova que és el que surt com a actiu:
+   ```bash
+   gh auth login
+   gh auth status
+   ```
+2. **Instal·la Warp Launch** amb una sola comanda, des de qualsevol carpeta:
+   ```bash
+   s="$(gh api -H 'Accept: application/vnd.github.raw' repos/David-Erra/warp-launch/contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --aplica
+   ```
+   Si surt `gh: Not Found (HTTP 404)`, `gh` no troba el repo: revisa la comanda i el pas 1. No la facis amb `sudo`.
+   Baixa l'última versió publicada, comprova que està signada amb el certificat d'en David («Warp Launch Dev») i la
+   copia a `/Applications`. No l'obre, no la registra a l'inici de sessió i no toca cap configuració. Si l'app és oberta,
+   s'atura i et demana que en surtis. Sense `--aplica`, només diu què faria; amb `--versio x.y.z` (per exemple,
+   `--versio 0.28.0`), n'instal·la una de concreta. Al repo hi ha les versions des de la 0.28.0.
+3. Continua amb «Obre Warp Launch» (el pas 2 de dalt).
+
+**Per actualitzar-la:** surt de l'app i torna a fer la comanda anterior.
 
 ### Des del codi
 
@@ -65,10 +81,13 @@ scripts/instal·la.sh --aplica    # la copia a /Applications (sense --aplica, no
 
 ### Publicar una versió (en David)
 
-Cal que el compte actiu de `gh` pugui escriure a `David-Erra/warp-launch` (`gh auth status`).
-`scripts/publica.sh` compila la versió de `VERSION`, comprova la signatura «Warp Launch Dev» i diu què publicaria; amb
-`--aplica`, la publica a GitHub (`vX.Y.Z`, amb `WarpLaunch-X.Y.Z.zip`), i és la que instal·la la comanda del pas 2.
-Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui.
+Amb `--aplica`, cal `GH_TOKEN` d'un compte que pugui escriure a `David-Erra/warp-launch` i a `David-Erra/homebrew-tap`,
+passat només a aquesta ordre.
+`scripts/publica.sh` compila la versió de `VERSION`, comprova la signatura «Warp Launch Dev» i diu què publicaria i quin canvi
+faria a la recepta de Homebrew; amb `--aplica`, la publica a GitHub (`vX.Y.Z`, amb `WarpLaunch-X.Y.Z.zip`) i posa al dia la
+versió i el sha256 de la recepta (`Casks/warp-launch.rb` del tap). És la que instal·len `brew` i la comanda de «Sense Homebrew».
+Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui. Si la recepta no
+es pot escriure, la versió no s'esborra, i l'script diu què cal canviar a mà.
 
 ## Desinstal·lar
 
@@ -78,7 +97,8 @@ Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una 
    mai, com és. En confirmar, treu l'app dels ítems d'inici de sessió, torna l'ajust com ha dit, retira el permís i surt. Si un
    pas no es pot fer, ho diu i no fa els següents. Si la tornes a obrir, et torna a demanar permís. Si no li has donat mai el
    permís, aquest pas no cal: sense permís, Warp Launch no toca Warp.
-2. Arrossega `/Applications/Warp Launch.app` a la Paperera.
+2. Si la vas instal·lar amb Homebrew, `brew uninstall --cask warp-launch`. Si no, arrossega `/Applications/Warp Launch.app` a
+   la Paperera.
 3. Si no vols conservar la configuració, esborra `~/.config/warp-launch/`.
 
 Amb una versió sense el botó (d'abans de la 0.31.0): desactiva l'interruptor de l'inici de sessió, surt de l'app i, si vols que
@@ -87,7 +107,7 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
 ## Què has de saber
 
 - **L'app gestiona la restauració de sessió de Warp** (`restore_session` a `~/.warp/settings.toml`), amb el teu permís del
-  primer ús (pas 3): la deixa sempre
+  primer ús (pas 2): la deixa sempre
   desactivada, perquè és ella qui torna a obrir les finestres, amb Claude. Només l'activa uns segons quan demanes
   «Torna a llegir Warp», «Importa de Warp» o «Lliga amb Warp», per llegir-ne les finestres. Si tens Settings Sync, l'ajust arriba
   a les altres instal·lacions de Warp. Per deixar-la de fer servir, «Restaura Warp i surt…» torna l'ajust (vegeu «Desinstal·lar»).
@@ -106,10 +126,10 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
   atura ni escriu res. Des del codi: `warp-launch diagnostica [--json] [--anonimitza]`.
 - **Signatura:** les versions publicades porten el certificat «Warp Launch Dev» d'en David, sempre el mateix: macOS
   hauria de mantenir els permisos en actualitzar (deduït, encara no provat en un altre Mac). No és un certificat d'Apple:
-  baixada amb el navegador, macOS no l'obriria. La comanda del pas 2 en comprova la signatura i li treu la marca de
-  baixada d'internet. Compilada des del codi en un altre Mac, `build-app.sh`
-  la signa ad hoc, i llavors, després de cada actualització, macOS pot tornar a demanar el permís d'Arxius i carpetes
-  i el de l'inici de sessió.
+  baixada amb el navegador, macOS no l'obriria. La recepta de Homebrew en comprova el sha256 i li treu la marca de baixada
+  d'internet; la comanda de «Sense Homebrew» en comprova la signatura i també la hi treu. Compilada des del codi en un altre
+  Mac, `build-app.sh` la signa ad hoc, i llavors, després de cada actualització, macOS pot tornar a demanar el permís d'Arxius i
+  carpetes i el de l'inici de sessió.
 
 ## Desenvolupament
 
