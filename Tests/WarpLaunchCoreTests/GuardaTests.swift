@@ -255,7 +255,9 @@ private let nomesAlServei = [#"import Sparkle"#, #"SPU[A-Z]"#, #"(^|[^A-Za-z0-9_
 private let obrirAppAlServei = #"(^|[^e])launchApplication|(^|[^R]e)launchApplication|(^|[^l]Re)launchApplication"#
 /// La firma del delegat que avisa que es baixarà: l'única línia que pot tenir el tipus, i el valor no es fa servir.
 private let firmaBaixada = "with request: NSMutableURLRequest) {"
-private let prohibitsAlServei = [#"feedURLString"#, #"setFeedURL"#, #"sendsSystemProfile"#, #"allowedChannels"#, #"startUpdater\(\)"#]
+/// `updaterShouldRelaunchApplication` amb `false` avorta la instal·lació; `feedParameters` afegiria dades a la petició.
+private let prohibitsAlServei = [#"feedURLString"#, #"setFeedURL"#, #"sendsSystemProfile"#, #"allowedChannels"#, #"startUpdater\(\)"#,
+                                 #"updaterShouldRelaunchApplication"#, #"updaterShouldPromptForPermission"#, #"feedParameters"#]
 /// Xarxa, a tot `Sources/` i sense excepcions (`capCodiNoFaServirLaXarxa`).
 private let xarxa = [#"URLSession"#, #"URLRequest"#, #"NSURLConnection"#, #"import Network"#, #"NWConnection"#, #"NWPathMonitor"#,
                      #"CFNetwork"#, #"WKWebView"#, #"https?://"#]
@@ -2343,7 +2345,8 @@ private let prohibidesArrossegar = [
         var codi = try fitxers("Sources")
         let i = try #require(codi.firstIndex { $0.ruta == serveiActualitzacions })
         #expect(codi[i].text.components(separatedBy: firmaBaixada).count == 2)
-        #expect(!codi[i].text.contains("request."))
+        // El valor no es fa servir: el cos del delegat és només aquesta línia.
+        #expect(codi[i].text.contains(firmaBaixada + "\n        model?.rep(.baixant(item.displayVersionString), ara: ara)\n    }"))
         codi[i].text = codi[i].text.replacingOccurrences(of: firmaBaixada, with: "")
         let trobades = try aparicions(de: xarxa, a: codi)
         #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
@@ -2362,7 +2365,9 @@ private let prohibidesArrossegar = [
         #expect(try aparicions(de: prohibidesCodi(a: serveiActualitzacions), a: obrir).contains { $0.contains("launchApplication") })
         let delegat = [(ruta: serveiActualitzacions, text: "func updaterWillRelaunchApplication(_ u: SPUUpdater) {}")]
         #expect(try aparicions(de: prohibidesCodi(a: serveiActualitzacions), a: delegat).isEmpty)
-        for mostra in ["u.feedURLString", "u.setFeedURL(a)", "sendsSystemProfile", "allowedChannels", "c.startUpdater()"] {
+        for mostra in ["u.feedURLString", "u.setFeedURL(a)", "sendsSystemProfile", "allowedChannels", "c.startUpdater()",
+                       "func updaterShouldRelaunchApplication(_ u: X) -> Bool", "func updaterShouldPromptForPermissionToCheckForUpdates(_ u: X)",
+                       "func feedParameters(for u: X, sendingSystemProfile s: Bool)"] {
             #expect(!(try aparicions(de: prohibitsAlServei, a: [(ruta: "mostra", text: mostra)])).isEmpty, "\(mostra)")
         }
         // Sense cap finestra sense demanar-la: la decisió és una sola línia que torna `false`.
@@ -2499,5 +2504,68 @@ private let prohibidesArrossegar = [
         let comentaris = text.components(separatedBy: "<!--").dropFirst().map { $0.components(separatedBy: "-->")[0] }
         #expect(!comentaris.isEmpty)
         #expect(comentaris.allSatisfy { !$0.contains("--") }, "\(comentaris.filter { $0.contains("--") })")
+    }
+
+    /// Abans del permís, cap connexió: l'actualitzador només s'engega des de `enContinuar`, i cada comprovació torna a mirar el permís
+    /// (el de debò, que es pot retirar amb l'app oberta).
+    @Test func lActualitzadorNomesSEngegaAmbElPermis() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        #expect(app.contains("aplicacio.consentiment.enContinuar {\n            aplicacio.servei?.engega()\n"))
+        #expect(app.components(separatedBy: ".engega()").count == 2)
+        #expect(app.contains("permis: { consentiment.potContinuar }, models:"))
+        let servei = try #require(try fitxers("Sources/WarpLaunchApp").first { $0.ruta == serveiActualitzacions }).text
+        #expect(servei.contains("SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: self)"))
+        #expect(!servei.contains("startingUpdater: true"))
+        #expect(servei.components(separatedBy: "SPUStandardUpdaterController(").count == 2)
+        #expect(servei.contains("func engega() {\n        do {\n            try updater.start()\n"))
+        #expect(servei.components(separatedBy: "updater.start()").count == 2)
+        #expect(servei.contains("mayPerform updateCheck: SPUUpdateCheck) throws {\n        guard permis() else {"))
+    }
+
+    /// El que decideix si una versió s'accepta i qui la instal·la. L'appcast no va signat: aquests camps podrien obrir finestres i enllaços.
+    @Test func elsDelegatsQueDecideixen() throws {
+        let servei = try #require(try fitxers("Sources/WarpLaunchApp").first { $0.ruta == serveiActualitzacions }).text
+        #expect(servei.contains("guard !item.isInformationOnlyUpdate, !item.isCriticalUpdate, !item.isMajorUpgrade, let fitxer,\n"
+            + "              PoliticaActualitzacions.enclosureValid(feed: feed, enclosure: fitxer) else {\n            throw "))
+        // Amb `false`, l'actualitzador continua sol i el model no rep el bloc.
+        #expect(servei.contains("immediateInstallationBlock bloc: @escaping () -> Void) -> Bool {\n"
+            + "        model?.rep(.aPunt(item.displayVersionString, aplica: { bloc() }), ara: ara)\n        return true\n    }"))
+        #expect(servei.contains("guard !handleShowingUpdate else { return }"))
+    }
+
+    /// El reinici surt per `applicationShouldTerminate`: desa, atura el refresc i no surt amb l'ajust de Warp a mig desactivar.
+    @Test func elReiniciSurtPelTancamentDeSempre() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        let inici = try #require(app.range(of: "func applicationShouldTerminate("))
+        var darrer = inici.upperBound
+        for pas in ["aplicacio.editor.acabaNom(desant: true)", "aplicacio.refresc?.atura()", "if aplicacio.editor.desaSiCal() {",
+                    "aplicacio.obertura?.enSortir()", "return surtAmbLAjustDesactivat()"] {
+            let trobat = try #require(app.range(of: pas, range: darrer..<app.endIndex), "\(pas)")
+            darrer = trobat.upperBound
+        }
+        #expect(app.contains("guard let refresc = aplicacio.refresc, refresc.pendent == .acabaDeCanviar else { return .terminateNow }"))
+        #expect(app.contains("await refresc.acabaDeDesactivar()\n            NSApp.reply(toApplicationShouldTerminate: true)"))
+        #expect(app.contains("aplicacio.refresc?.repren()\n            return .terminateCancel"))
+    }
+
+    /// Cada motiu per no reiniciar ha de sortir del model que el sap: una dada mal connectada compila, i l'app es reiniciaria igual.
+    @Test func elsMotiusDeEsperaSurtenDelsModelsDeDebo() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        for connexio in ["errorEnDesar: editor.errorDesat != nil", "nomAMigEscriure: editor.nomEnEdicio != nil", "obrint: obertura?.estaObrint == true",
+                         "fullObert: obertura?.mostraFull == true || lligam?.mostraFull == true || desinstallacio.confirmant",
+                         "|| editor.demanaImportacio || editor.demanaNovaPestanya || activacio.hiHaFullObert",
+                         "conversesEnCurs: obertura?.teConversesEnCurs == true", "refrescant: consentiment.refresc?.refrescant == true",
+                         "ajustPerDesactivar: consentiment.refresc?.pendent == .acabaDeCanviar", "finestraVisible: activacio.hiHaFinestraVisible",
+                         "canvisSenseDesar: editor.canvisSenseDesar", "potDesfer: editor.undoManager.canUndo || editor.desferPlantilla.canUndo",
+                         "segonsDesDelDarrerCanvi: editor.darrerCanvi.map { Date().timeIntervalSince($0) }",
+                         "actualitzacions.vigila(ara: ProcessInfo.processInfo.systemUptime)",
+                         "obertura?.aplicantActualitzacio = { actualitzacions.aplicant }"] {
+            #expect(app.contains(connexio), "\(connexio)")
+        }
+        // El diagnòstic demana el text al fil principal: només des del fil on corre `CopiaDiagnostic`, o es bloquejaria.
+        let codi = try fitxers("Sources")
+        #expect(try aparicions(de: [#"DispatchQueue\.main\.sync"#], a: codi).count == 1)
+        let copia = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/CopiaDiagnostic.swift" }).text
+        #expect(copia.contains("await Task.detached { diagnostic(anonimitzat) }.value"))
     }
 }
