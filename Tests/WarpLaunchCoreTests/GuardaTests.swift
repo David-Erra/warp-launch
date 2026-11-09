@@ -2483,6 +2483,53 @@ private let prohibidesArrossegar = [
         for fitxer in scripts where !["build-app.sh", "publica.sh"].contains(fitxer.lastPathComponent) && fitxer.pathExtension == "sh" {
             #expect(!(try String(contentsOf: fitxer, encoding: .utf8)).contains("--amb-feed"), "\(fitxer.lastPathComponent)")
         }
+        let publica = try String(contentsOf: arrel.appending(path: "scripts/publica.sh"), encoding: .utf8)
+        #expect(publica.contains("env -u GH_TOKEN -u GITHUB_TOKEN scripts/build-app.sh release --amb-feed\n"))
+    }
+
+    /// Cap script no pot crear ni mostrar la clau de signar les versions, i només `publica.sh` signa: sempre amb la clau del clauer, mai amb un fitxer
+    /// o un valor passat per arguments. Com que la crida porta la variable (`$SIGN_UPDATE`), les línies es miren sense distingir majúscules.
+    private func usDeLaClauForaDeLloc(_ fitxers: [(ruta: String, text: String)]) throws -> [String] {
+        let opcioDeClau = try Regex(#"(?:^|[\s"'])-[sfx]|--ed-key-file"#)
+        var trobades: [String] = []
+        for fitxer in fitxers {
+            for (numero, linia) in fitxer.text.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
+                let minuscules = linia.lowercased()
+                if minuscules.contains("generate_keys") { trobades.append("\(fitxer.ruta):\(numero + 1): generate_keys") }
+                guard minuscules.contains("sign_update") else { continue }
+                if fitxer.ruta != "scripts/publica.sh" { trobades.append("\(fitxer.ruta):\(numero + 1): sign_update") }
+                if linia.contains(opcioDeClau) { trobades.append("\(fitxer.ruta):\(numero + 1): opció de clau") }
+            }
+        }
+        return trobades
+    }
+
+    @Test func laClauDeSignarNoEsToca() throws {
+        let carpeta = arrel.appending(path: "scripts")
+        let noms = try FileManager.default.contentsOfDirectory(atPath: carpeta.path).sorted()
+        #expect(noms.contains("publica.sh") && noms.contains("verifica-signatura.swift"), "\(noms)")
+        let scripts = try noms.map { (ruta: "scripts/\($0)", text: try String(contentsOf: carpeta.appending(path: $0), encoding: .utf8)) }
+        let trobades = try usDeLaClauForaDeLloc(scripts)
+        #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        // Una sola crida, d'una sola línia, amb el zip i res més: una opció a la línia següent no la veuria la comprovació de sobre.
+        let publica = try #require(scripts.first { $0.ruta == "scripts/publica.sh" }).text
+        #expect(publica.components(separatedBy: #""$SIGN_UPDATE""#).count == 2)
+        #expect(publica.contains(#"env -u GH_TOKEN -u GITHUB_TOKEN "$SIGN_UPDATE" "$ZIP")"; then"#))
+        // Línies de mostra, perquè una expressió que no veiés res no ho doni per bo.
+        for ruta in noms.map({ "scripts/\($0)" }) {
+            #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: ".build/artifacts/sparkle/Sparkle/bin/generate_keys")]).count == 1, "\(ruta)")
+            #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: "generate_keys -x clau")]).count == 1, "\(ruta)")
+        }
+        for ruta in noms.map({ "scripts/\($0)" }) where ruta != "scripts/publica.sh" {
+            #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: #"sign_update "$ZIP""#)]) == ["\(ruta):1: sign_update"], "\(ruta)")
+        }
+        for dolenta in [#"sign_update -f clau "$ZIP""#, #"sign_update -s "$CLAU" "$ZIP""#, #""$SIGN_UPDATE" --ed-key-file clau "$ZIP""#,
+                        #""$SIGN_UPDATE" "-f" clau "$ZIP""#, #"SIGN_UPDATE="$X" -fclau"#] {
+            #expect(try usDeLaClauForaDeLloc([(ruta: "scripts/publica.sh", text: dolenta)]) == ["scripts/publica.sh:1: opció de clau"], "\(dolenta)")
+        }
+        for bona in [#"env "$SIGN_UPDATE" "$ZIP""#, #"SIGN_UPDATE="${WARP_LAUNCH_SIGN_UPDATE:-.build/artifacts/sparkle/Sparkle/bin/sign_update}""#] {
+            #expect(try usDeLaClauForaDeLloc([(ruta: "scripts/publica.sh", text: bona)]).isEmpty, "\(bona)")
+        }
     }
 
     /// Sense `--amb-feed` no hi ha res a demanar; amb, el que falta s'atura abans de compilar. Els arguments, sense compilar res.
