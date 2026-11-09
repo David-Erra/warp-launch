@@ -169,6 +169,34 @@ struct LectorTests {
         #expect(panes.map(\.carpetaClaudeExisteix) == [true, false, true], "sense Claude, `true`")
     }
 
+    /// Warp a `~`, escrit amb barra final o a través d'un enllaç, i Claude en una carpeta que no existeix: tot el camí, de la
+    /// lectura a la importació, amb la `inici` canònica que hi posen l'app i el CLI.
+    @Test(arguments: [(false, false), (false, true), (true, false), (true, true)])
+    func iniciAmbBarraOEnllacIClaudeSenseCarpetaQuedaSenseClaude(perEnllac: Bool, ambBarra: Bool) throws {
+        let tmp = try CarpetaTemporal()
+        let real = try tmp.carpeta("inici")
+        let enllac = tmp.url("enllac").path
+        try FileManager.default.createSymbolicLink(atPath: enllac, withDestinationPath: real)
+        let inici = perEnllac ? enllac : real
+        let base = try BaseWarpDeProva(a: tmp.url("warp.sqlite"))
+        try base.finestra(1)
+        try base.pestanya(1, finestra: 1, titol: "A")
+        try base.paneTerminal(10, pestanya: 1, uuid: uuidDeProva("a"), cwd: inici + (ambBarra ? "/" : ""))
+        let sessions = tmp.url("sessions")
+        var processos = ProcessosFalsos.ambWarp()
+        try escriuSessio(a: sessions, pid: 101, sessionId: "s-a", cwd: real + "/esborrada/")
+        processos.claude(101, argv: ["claude", "--model", "opus"], uuid: uuidDeProva("a"))
+        let lector = Lector(rutaWarp: base.url, rutaAjustos: tmp.url("settings.toml"), carpetaSessions: sessions,
+                            processos: processos, warp: { .perOmissio }, inici: inici)
+        let importacio = Importador.importa(try lector.llegeix(), inici: Rutes.canonica(inici), plantilla: .perOmissio,
+                                            nouId: { UUID() })
+        let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
+        #expect(pestanya.carpeta == real)
+        #expect(!pestanya.claude.activat)
+        #expect(pestanya.claude.model == "opus")
+        #expect(importacio.origens[pestanya.id] == .carpetaInici)
+    }
+
     @Test func lesCarpetesQueExisteixenNoEsMarquen() throws {
         let lectura = try Escenari().lector.llegeix()
         let panes = lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes)

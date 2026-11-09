@@ -366,6 +366,21 @@ private func lecturaGran() -> LecturaWarp {
         #expect(vincle.carpetaWarp == nil, "`~` no és cap carpeta de Warp a comparar")
     }
 
+    /// Les opcions es conserven de debò: passen pel fitxer, no s'obre Claude mentre és desactivat, i tornen en activar-lo.
+    @Test func lesOpcionsDeLaSevaOrdreSobreviuenAlFitxerIATornarAActivar() throws {
+        var f = Fabrica()
+        let lectura = unaPestanya(&f, carpeta: inici, sessio: "\(inici)/GitHub/esborrada", claudeExisteix: false,
+                                  argv: ["claude", "--dangerously-skip-permissions", "--model", "opus", "-n", "feina", "-c"])
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
+        let dades = try importacio.configuracio.normalitzada(inici: inici).json()
+        var claude = try Configuracio.llegeix(dades, inici: inici).configuracio.finestres[0].pestanyes[0].claude
+        #expect(!claude.activat)
+        #expect(try OrdreClaude.argv(claude, repren: nil) == nil, "desactivat, no s'engega")
+        claude.activat = true
+        #expect(try OrdreClaude.argv(claude, repren: nil) == ["claude", "--dangerously-skip-permissions", "--model", "opus", "--name", "feina"])
+        #expect(claude.continua)
+    }
+
     /// Una sessió sense pestanya a `~` no es proposa com a la d'una pestanya que ja tenia el seu Claude viu, encara que quedi sense.
     @Test func unaPestanyaSenseCarpetaBonaNoEsProposaPerAUnaAltraSessio() {
         var f = Fabrica()
@@ -384,11 +399,11 @@ private func lecturaGran() -> LecturaWarp {
     }
 
     /// Només aquest cas: amb Warp a `~`, si la carpeta de Claude existeix, Claude s'hi obre; i si Claude és viu a `~`, també.
-    @Test(arguments: [true, false])
-    func aIniciAmbClaudeEnUnaCarpetaBonaQuedaActivat(aInici: Bool) {
+    @Test(arguments: [(true, true), (true, false), (false, true)])
+    func aIniciAmbClaudeEnUnaCarpetaBonaQuedaActivat(aInici: Bool, existeix: Bool) {
         var f = Fabrica()
         let claude = aInici ? inici : "\(inici)/GitHub/botiga"
-        let lectura = unaPestanya(&f, carpeta: inici, sessio: claude, claudeExisteix: true)
+        let lectura = unaPestanya(&f, carpeta: inici, sessio: claude, claudeExisteix: existeix)
         let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
         let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
         #expect(pestanya.carpeta == claude)

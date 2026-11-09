@@ -1497,6 +1497,41 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(editor.pestanyesSeleccionades == [id(21)])
     }
 
+    /// Warp a `~` i Claude viu en una carpeta que no existeix: al full i en tornar a importar compta com a sense Claude, a
+    /// «a la carpeta d'inici», i les opcions de la seva ordre hi són en activar-la (i desades).
+    @Test func aIniciAmbClaudeSenseCarpetaComptaSenseClaudeIRecuperaLesOpcions() async throws {
+        let tmp = try Temporal()
+        try tmp.magatzem.desa(Configuracio(plantilla: .habituals, finestres: [
+            Finestra(id: id(1), nom: "a", pestanyes: [pestanya(11)]),
+        ]), sobre: nil)
+        let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil, carpetaExisteix: { _ in true }, nouId: Ids().nou)
+        editor.carrega()
+        let argv = ["claude", "--model", "opus"]
+        let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
+            PestanyaLlegida(posicio: 0, titol: "Botiga", panes: [
+                PaneLlegit(uuid: "a", carpeta: inici, origenCarpeta: .pane, carpetaExisteix: true,
+                           claude: SessioClaude(pid: 1, sessionId: "s", carpeta: "\(inici)/esborrada", ordre: argv,
+                                                opcions: OpcionsClaude.analitza(argv), dinsDeWarp: true),
+                           carpetaClaudeExisteix: false),
+            ]),
+        ])], sessionsSensePestanya: [], avisos: [])
+        let full = try #require(FullImportacio(editor: editor, warp: EstatWarp(lector: { lectura })))
+        await full.llegeix()
+        #expect(full.xifres == ["1 finestra · 1 pestanya", "0 amb Claude", "1 només terminal: 1 a la carpeta d'inici"])
+        #expect(full.explicacio.contains("Ara hi ha 1 pestanya amb Claude i en quedaran 0: les altres seran només terminal."))
+        #expect(full.notaSenseClaudeObert == nil && full.ordrePlantilla == nil, "tenia Claude obert: no són les opcions de la plantilla")
+        #expect(full.textPerRevisar == "1 pestanya sortirà a «Per revisar»")
+        #expect(full.confirma())
+        let importada = try #require(editor.configuracio.finestres.first?.pestanyes.first)
+        #expect(!importada.claude.activat && importada.claude.model == "opus")
+        #expect(editor.avisos.pestanyes[importada.id]?.map(\.tipus) == [.carpetaInici])
+        editor.activaClaude([importada.id], true)
+        #expect(editor.desaSiCal())
+        let desada = try #require(try tmp.magatzem.carrega()).configuracio.finestres[0].pestanyes[0]
+        #expect(desada.claude.activat && desada.claude.model == "opus" && desada.claude.continua)
+        #expect(try OrdreClaude.argv(desada.claude, repren: nil) == argv)
+    }
+
     @Test func elsTextosDelFullEnSingular() async throws {
         let tmp = try Temporal()
         try tmp.magatzem.desa(Configuracio(plantilla: .habituals, finestres: [
