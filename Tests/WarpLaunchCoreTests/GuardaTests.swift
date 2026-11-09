@@ -2537,21 +2537,29 @@ private let prohibidesArrossegar = [
         }
     }
 
-    /// Decisions 6 i 13 de Sparkle: cap agent no crea ni fa servir la clau, ni publica. Les regles `deny` es compleixen fins i tot saltant els permisos.
-    @Test func capAgentNoPotSignarNiPublicar() throws {
+    private func reglesDeny() throws -> [String] {
         let dades = try Data(contentsOf: arrel.appending(path: ".claude/settings.json"))
         let arbre = try #require(try JSONSerialization.jsonObject(with: dades) as? [String: Any])
         let permisos = try #require(arbre["permissions"] as? [String: Any])
-        let deny = try #require(permisos["deny"] as? [String])
+        return try #require(permisos["deny"] as? [String])
+    }
+
+    /// Com les aplica Claude Code, segons la documentació: l'asterisc val per a qualsevol text, i la regla ha de cobrir tota l'ordre. És una simulació: no s'ha vist Claude Code aplicant-les.
+    private func comparadorDeny(_ deny: [String]) throws -> (String) -> Bool {
+        let patrons = try deny.filter { $0.hasPrefix("Bash(") }.map { regla in
+            try Regex("^" + regla.dropFirst(5).dropLast().split(separator: "*", omittingEmptySubsequences: false).map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: ".*") + "$")
+        }
+        return { ordre in patrons.contains { ordre.wholeMatch(of: $0) != nil } }
+    }
+
+    /// Decisions 6 i 13 de Sparkle: cap agent no crea ni fa servir la clau, ni publica. Les regles `deny` es compleixen fins i tot saltant els permisos.
+    @Test func capAgentNoPotSignarNiPublicar() throws {
+        let deny = try reglesDeny()
         for regla in ["Bash(generate_keys*)", "Bash(*/generate_keys*)", "Bash(sign_update*)", "Bash(*/sign_update*)", "Bash(*publica.sh*--aplica*)",
                       "Bash(*generate_appcast*)", "Bash(*Sparkle/bin/*)"] {
             #expect(deny.contains(regla), "\(regla)")
         }
-        // Com les aplica Claude Code: l'asterisc val per a qualsevol text, i la regla ha de cobrir tota l'ordre.
-        let patrons = try deny.filter { $0.hasPrefix("Bash(") }.map { regla in
-            try Regex("^" + regla.dropFirst(5).dropLast().split(separator: "*", omittingEmptySubsequences: false).map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: ".*") + "$")
-        }
-        let bloqueja = { (ordre: String) in patrons.contains { ordre.wholeMatch(of: $0) != nil } }
+        let bloqueja = try comparadorDeny(deny)
         let bin = ".build/artifacts/sparkle/Sparkle/bin"
         for ordre in [
             "scripts/publica.sh --aplica", "./scripts/publica.sh --aplica", "bash scripts/publica.sh --aplica", #"GH_TOKEN="x" scripts/publica.sh --aplica"#,
@@ -2567,6 +2575,34 @@ private let prohibidesArrossegar = [
         for ordre in ["scripts/publica.sh", "GH_TOKEN=x scripts/publica.sh", "scripts/test.sh", "swift build", "scripts/build-app.sh release", "grep -n sign_update scripts/publica.sh"] {
             #expect(!bloqueja(ordre), "\(ordre)")
         }
+    }
+
+    /// Cap agent no llegeix el clauer, on hi ha la clau de Sparkle (regla 12). `find-identity` no hi entra: només diu quins certificats hi ha, i `build-app.sh` el fa servir.
+    @Test func capAgentNoPotLlegirElClauer() throws {
+        let bloqueja = try comparadorDeny(try reglesDeny())
+        for sub in ["find-generic-password", "dump-keychain"] {
+            for ordre in [
+                "security \(sub)", "security \(sub) -s x -w", "security  \(sub)", "security\t\(sub)", #"security "\#(sub)""#, "security '\(sub)'", "security -q \(sub)",
+                #""security" \#(sub)"#, "'security' \(sub)", "/usr/bin/security \(sub)", #""/usr/bin/security" \#(sub)"#, "'/usr/bin/security' \(sub)", "./security \(sub)",
+                "env security \(sub)", "env -i /usr/bin/security \(sub)", "command security \(sub)", "command -p /usr/bin/security \(sub)", "exec security \(sub)",
+                "exec /usr/bin/security \(sub)", "PATH=/usr/bin:$PATH security \(sub)", "PATH=/usr/bin /usr/bin/security \(sub)",
+            ] {
+                #expect(bloqueja(ordre), "\(ordre)")
+            }
+            // Parlar-ne no és executar-ho: la regla comença per l'ordre, a diferència de la de l'eina d'appcasts.
+            for ordre in ["grep -n \(sub) CLAUDE.md", #"grep -n "security \#(sub)" CLAUDE.md"#, #"git commit -m "docs: security \#(sub)""#] {
+                #expect(!bloqueja(ordre), "\(ordre)")
+            }
+        }
+        for ordre in [
+            "security find-identity -p codesigning", "/usr/bin/security find-identity -p codesigning", "env security find-identity -p codesigning",
+            "command security find-identity -v", "PATH=/usr/bin security find-identity -v", "scripts/build-app.sh", "scripts/build-app.sh release --amb-feed", "codesign -dv build/x.app",
+        ] {
+            #expect(!bloqueja(ordre), "\(ordre)")
+        }
+        // L'ordre que porta de debò l'script ha de continuar sent la que no es bloqueja.
+        let paquet = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
+        #expect(paquet.contains("$(security find-identity -p codesigning)"))
     }
 
     /// Sense `--amb-feed` no hi ha res a demanar; amb, el que falta s'atura abans de compilar. Els arguments, sense compilar res.

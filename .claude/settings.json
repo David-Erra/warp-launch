@@ -41,7 +41,23 @@
       "Bash(exec *sign_update*)",
       "Bash(PATH=*generate_keys*)",
       "Bash(PATH=*sign_update*)",
-      "Bash(*publica.sh*--aplica*)"
+      "Bash(*publica.sh*--aplica*)",
+      "Bash(security*find-generic-password*)",
+      "Bash(security*dump-keychain*)",
+      "Bash(\"security\"*find-generic-password*)",
+      "Bash(\"security\"*dump-keychain*)",
+      "Bash('security'*find-generic-password*)",
+      "Bash('security'*dump-keychain*)",
+      "Bash(*/security*find-generic-password*)",
+      "Bash(*/security*dump-keychain*)",
+      "Bash(env *security*find-generic-password*)",
+      "Bash(env *security*dump-keychain*)",
+      "Bash(command *security*find-generic-password*)",
+      "Bash(command *security*dump-keychain*)",
+      "Bash(exec *security*find-generic-password*)",
+      "Bash(exec *security*dump-keychain*)",
+      "Bash(PATH=*security*find-generic-password*)",
+      "Bash(PATH=*security*dump-keychain*)"
     ]
   }
 }
