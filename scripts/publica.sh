@@ -118,6 +118,7 @@ MIDA="$(du -h "$ZIP" | cut -f1 | tr -d ' ')"
 SHA256_ZIP="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
 # Amb LC_ALL=C, sed no refusa cap byte i deixa la resta com és (també si l'última línia no acaba amb un salt de línia).
 LC_ALL=C sed -E -e "s/^  version \"[^\"]*\"\$/  version \"$VERSIO\"/" -e "s/^  sha256 \"[^\"]*\"\$/  sha256 \"$SHA256_ZIP\"/" "$RECEPTA" > "$RECEPTA_NOVA"
+CONTINGUT_NOU="$(base64 < "$RECEPTA_NOVA" | tr -d '\n')"
 
 NOTES="build/notes-$VERSIO.md"
 {
@@ -148,4 +149,21 @@ if [[ "$APLICA" -eq 0 ]]; then
 fi
 
 gh release create "$ETIQUETA" "$ZIP" --repo "$REPO" --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"
-echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}). Es desfà amb: gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag"
+
+# La versió ja és a GitHub: d'aquí endavant, un error no l'esborra. El sha és el del blob llegit abans de compilar: si algú ha canviat
+# la recepta mentrestant, GitHub refusa l'escriptura en lloc de trepitjar-la.
+if ! COMMIT_TAP="$(gh api --method PUT "repos/$TAP/contents/$CAMI_RECEPTA" \
+    -f "message=chore: warp-launch passa a la $VERSIO" -f "branch=main" -f "sha=$SHA_BLOB" -f "content=$CONTINGUT_NOU" \
+    -f "author[name]=$AUTOR_NOM" -f "author[email]=$AUTOR_CORREU" \
+    -f "committer[name]=$AUTOR_NOM" -f "committer[email]=$AUTOR_CORREU" --jq '.commit.sha')"; then
+    {
+        echo "publica: la ${ETIQUETA} ja és publicada a ${REPO} (no s'ha esborrat), però no s'ha pogut escriure la recepta de Homebrew a ${TAP}."
+        echo "Canvia a mà aquestes dues línies de ${CAMI_RECEPTA}, a la branca main de ${TAP}:"
+        echo "  version \"${VERSIO}\""
+        echo "  sha256 \"${SHA256_ZIP}\""
+        echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
+    } >&2
+    exit 2
+fi
+echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}), i la recepta de ${TAP} ja la instal·la (sha256 ${SHA256_ZIP})."
+echo "Es desfà amb: gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag, i revertint el commit ${COMMIT_TAP} de ${TAP} (git revert ${COMMIT_TAP} en un clon del tap, i push)."

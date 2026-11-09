@@ -10,6 +10,7 @@ private let script = URL(filePath: #filePath).deletingLastPathComponent().deleti
 private let tapDeProva = "exemple/homebrew-proves"
 private let blobDeProva = "0123456789abcdef0123456789abcdef01234567"
 private let sha256Antic = String(repeating: "a1", count: 32)
+private let commitDelTap = "fedcba9876543210fedcba9876543210fedcba98"
 
 /// Una recepta com la de debò: la versió i el sha256 en una línia cadascun, i la URL amb `#{version}`.
 private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) -> String {
@@ -35,6 +36,17 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         var fitxerRecepta: URL { carpeta.appending(path: "recepta.rb") }
         var zip: URL { repo.appending(path: "build/WarpLaunch-0.28.0.zip") }
         var compilat: Bool { FileManager.default.fileExists(atPath: repo.appending(path: "build").path) }
+        var fitxerPut: URL { carpeta.appending(path: "put.txt") }
+        var fitxerZipPujat: URL { carpeta.appending(path: "zip-pujat.txt") }
+        var zipPujat: String { ((try? String(contentsOf: fitxerZipPujat, encoding: .utf8)) ?? "").trimmingCharacters(in: .newlines) }
+        /// Què ha rebut el PUT de la recepta: una línia `camp=valor` per cada `-f` (un valor amb salts de línia ocuparia més d'una línia).
+        var liniesPut: [String] { ((try? String(contentsOf: fitxerPut, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init) }
+        var campsPut: [String: String] {
+            Dictionary(liniesPut.map { linia in
+                let parts = linia.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+                return (parts[0], parts.count > 1 ? parts[1] : "")
+            }, uniquingKeysWith: { _, nou in nou })
+        }
 
         init(versio: String = "0.28.0") throws {
             carpeta = FileManager.default.temporaryDirectory.appending(path: "warp-launch-publica-\(UUID().uuidString)")
@@ -74,20 +86,31 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             case "$1 $2" in
                 "release view") [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1 ;;
                 "release list") echo "${GH_FALS_ANTERIOR:-}"; exit 0 ;;
-                "release create") exit 0 ;;
+                "release create")
+                    [[ -z "${GH_FALS_RELEASE_FALLA:-}" ]] || exit 1
+                    shasum -a 256 "$4" | cut -c1-64 > "$GH_FALS_ZIP_PUJAT"
+                    exit 0 ;;
             esac
             [[ "$1" == api ]] || exit 1
             shift
-            RUTA=""; FILTRE="."
+            METODE=GET; RUTA=""; FILTRE="."; CAMPS=()
             while [[ $# -gt 0 ]]; do
                 case "$1" in
+                    --method) METODE="$2"; shift 2 ;;
                     --jq) FILTRE="$2"; shift 2 ;;
+                    -f) CAMPS+=("$2"); shift 2 ;;
                     *) RUTA="$1"; shift ;;
                 esac
             done
             [[ "${RUTA%%\?*}" == "repos/$GH_FALS_TAP/contents/Casks/warp-launch.rb" && -f "$GH_FALS_RECEPTA" ]] || {
                 echo '{"message":"Not Found"}'; echo 'gh: Not Found (HTTP 404)' >&2; exit 1
             }
+            if [[ "$METODE" == PUT ]]; then
+                printf '%s\n' "${CAMPS[@]}" > "$GH_FALS_PUT"
+                [[ -z "${GH_FALS_PUT_FALLA:-}" ]] || { echo '{"message":"conflict"}'; echo 'gh: conflict (HTTP 409)' >&2; exit 1; }
+                /usr/bin/jq -n --arg commit "$GH_FALS_COMMIT" '{commit: {sha: $commit}}' | /usr/bin/jq -r "$FILTRE"
+                exit 0
+            fi
             /usr/bin/jq -n --arg contingut "$(base64 < "$GH_FALS_RECEPTA" | fold -w 60)" --arg blob "$GH_FALS_BLOB" \
                 --arg codificacio "${GH_FALS_CODIFICACIO:-base64}" \
                 '{type: "file", encoding: $codificacio, sha: $blob, content: ($contingut + "\n")}' | /usr/bin/jq -r "$FILTRE"
@@ -130,6 +153,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
                 "HOME": carpeta.path, "GH_FALS_REGISTRE": registreGh.path, "WARP_LAUNCH_REPO": "exemple/prova",
                 "WARP_LAUNCH_TAP": tapDeProva, "GH_FALS_TAP": tapDeProva, "GH_FALS_RECEPTA": fitxerRecepta.path,
                 "GH_FALS_BLOB": blobDeProva, "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
+                "GH_FALS_PUT": fitxerPut.path, "GH_FALS_ZIP_PUJAT": fitxerZipPujat.path, "GH_FALS_COMMIT": commitDelTap,
                 "LANG": "ca_ES.UTF-8", "LC_ALL": "ca_ES.UTF-8",
                 "PATH": carpeta.appending(path: "bin").path + ":/usr/bin:/bin",
             ]
@@ -342,5 +366,82 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         let b = try Banc()
         try b.git("config", "--unset", clau)
         try b.comprovaRefus(conte: "falta git config user.name o user.email")
+    }
+
+    // --- Amb --aplica, la recepta s'escriu després de publicar.
+
+    /// El PUT porta el sha del blob llegit, la branca, l'autor de git config, un missatge en català i el contingut d'una sola línia.
+    @Test func escriuLaReceptaDespresDePublicar() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let ordres = b.ordresGh
+        let publicacio = try #require(ordres.range(of: "release create"))
+        let escriptura = try #require(ordres.range(of: "--method PUT"))
+        #expect(publicacio.lowerBound < escriptura.lowerBound)
+        #expect(ordres.contains("repos/\(tapDeProva)/contents/Casks/warp-launch.rb"))
+        #expect(b.liniesPut.count == 8, "\(b.liniesPut)")
+        #expect(b.campsPut["message"] == "chore: warp-launch passa a la 0.28.0")
+        #expect(b.campsPut["branch"] == "main")
+        #expect(b.campsPut["sha"] == blobDeProva)
+        #expect(b.campsPut["author[name]"] == "Prova")
+        #expect(b.campsPut["author[email]"] == "prova@example.com")
+        #expect(b.campsPut["committer[name]"] == "Prova")
+        #expect(b.campsPut["committer[email]"] == "prova@example.com")
+    }
+
+    /// La recepta nova porta la versió i el sha256 del zip que s'ha pujat, i prou.
+    @Test func laReceptaNovaEsLaDelZipPujat() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.zipPujat.count == 64)
+        #expect(b.zipPujat != sha256Antic)
+        let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
+        #expect(String(decoding: contingut, as: UTF8.self) == recepta(versio: "0.28.0", sha256: b.zipPujat))
+    }
+
+    /// Només canvien les dues línies: la resta queda byte a byte igual, encara que no sigui UTF-8 o no acabi amb un salt de línia.
+    @Test func laRestaDeLaReceptaNoCanvia() throws {
+        let abans = Data("# Recepta amb accents: línia\n  # version \"9.9.9\"\n\tdesc \"x\"   \r\n".utf8) + Data([0xFF, 0x00, 0x0A])
+        let despres = Data("\n  url \"https://exemple.test/v#{version}.zip\"\n  sha256sum = 1\nend".utf8)
+        let b = try Banc()
+        try (abans + Data("  version \"0.27.0\"\n  sha256 \"\(sha256Antic)\"\n".utf8) + despres).write(to: b.fitxerRecepta)
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
+        #expect(contingut == abans + Data("  version \"0.28.0\"\n  sha256 \"\(b.zipPujat)\"\n".utf8) + despres)
+    }
+
+    /// El missatge final diu com es desfà tot: la versió i el commit del tap.
+    @Test func elMissatgeFinalDiuComEsDesfa() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"))
+        #expect(sortida.contains("git revert \(commitDelTap)"))
+        #expect(sortida.contains(tapDeProva))
+    }
+
+    /// Si la publicació falla, la recepta no es toca.
+    @Test func siLaPublicacioFallaNoEscriuLaRecepta() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_RELEASE_FALLA": "1"]) { $1 })
+        #expect(codi != 0, "\(sortida)")
+        #expect(!b.ordresGh.contains("--method PUT"))
+    }
+
+    /// Si l'escriptura de la recepta falla, la versió es queda publicada i el missatge diu què cal canviar a mà.
+    @Test func siLEscripturaFallaDiuQueCalFerAMa() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_PUT_FALLA": "1"]) { $1 })
+        #expect(codi == 2, "\(sortida)")
+        #expect(b.ordresGh.contains("release create"))
+        #expect(!b.ordresGh.contains("release delete"))
+        #expect(sortida.contains("la v0.28.0 ja és publicada a exemple/prova"))
+        #expect(sortida.contains("Casks/warp-launch.rb"))
+        #expect(sortida.contains("version \"0.28.0\""))
+        #expect(sortida.contains("sha256 \"\(b.zipPujat)\""))
+        #expect(!sortida.contains("Fet:"))
     }
 }
