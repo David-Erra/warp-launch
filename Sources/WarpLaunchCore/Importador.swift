@@ -106,10 +106,10 @@ public enum Importador {
         }
 
         // Una sessió que no s'ha pogut lligar (dins de tmux, o una pestanya que Warp encara no ha desat) pot ser d'una
-        // pestanya que s'ha importat només terminal (D-P5a): es diu quina és a la mateixa carpeta.
+        // pestanya que s'ha importat només terminal (D-P5a): es diu quina és a la mateixa carpeta. Si en tenia un de viu, no és la seva.
         for sessio in lectura.sessionsSensePestanya {
             let mateixaCarpeta = finestres.flatMap { f in
-                f.pestanyes.filter { $0.carpeta == sessio.carpeta && origens[$0.id] != .sessio }.map { "\(f.nom) › \($0.titol)" }
+                f.pestanyes.filter { $0.carpeta == sessio.carpeta && vincles[$0.id]?.sessio == nil }.map { "\(f.nom) › \($0.titol)" }
             }
             notes.append(.sessioSensePestanya(carpeta: sessio.carpeta, nom: sessio.nom, dinsDeWarp: sessio.dinsDeWarp,
                                               terminals: mateixaCarpeta))

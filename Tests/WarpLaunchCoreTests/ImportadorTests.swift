@@ -366,6 +366,23 @@ private func lecturaGran() -> LecturaWarp {
         #expect(vincle.carpetaWarp == nil, "`~` no és cap carpeta de Warp a comparar")
     }
 
+    /// Una sessió sense pestanya a `~` no es proposa com a la d'una pestanya que ja tenia el seu Claude viu, encara que quedi sense.
+    @Test func unaPestanyaSenseCarpetaBonaNoEsProposaPerAUnaAltraSessio() {
+        var f = Fabrica()
+        var lectura = unaPestanya(&f, carpeta: inici, sessio: "\(inici)/GitHub/esborrada", claudeExisteix: false)
+        lectura.sessionsSensePestanya = [f.sessio(inici, ["claude"])]
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
+        #expect(importacio.notes.last?.description == "sessió de Claude a «\(inici)»: no s'importa (la seva pestanya no és a la base de Warp)")
+    }
+
+    /// Una pestanya a `~` que no tenia Claude sí que es proposa: pot ser la seva.
+    @Test func unaPestanyaAIniciSenseClaudeEsProposa() {
+        var f = Fabrica()
+        let lectura = f.lectura([["~"]], sensePestanya: [f.sessio(inici, ["claude"])])
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
+        #expect(importacio.notes.last?.description.hasSuffix(", que queda només terminal") == true)
+    }
+
     /// Només aquest cas: amb Warp a `~`, si la carpeta de Claude existeix, Claude s'hi obre; i si Claude és viu a `~`, també.
     @Test(arguments: [true, false])
     func aIniciAmbClaudeEnUnaCarpetaBonaQuedaActivat(aInici: Bool) {
