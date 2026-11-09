@@ -142,6 +142,11 @@ SHA256_ZIP="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
 # Amb LC_ALL=C, sed no refusa cap byte i deixa la resta com és (també si l'última línia no acaba amb un salt de línia).
 LC_ALL=C sed -E -e "s/^  version \"[^\"]*\"\$/  version \"$VERSIO\"/" -e "s/^  sha256 \"[^\"]*\"\$/  sha256 \"$SHA256_ZIP\"/" "$RECEPTA" > "$RECEPTA_NOVA"
 CONTINGUT_NOU="$(base64 < "$RECEPTA_NOVA" | tr -d '\n')"
+# Si ja diu això mateix (una versió esborrada i tornada a publicar amb el mateix zip), no hi ha res per escriure.
+RECEPTA_CANVIA=1
+if cmp -s "$RECEPTA" "$RECEPTA_NOVA"; then
+    RECEPTA_CANVIA=0
+fi
 
 NOTES="build/notes-$VERSIO.md"
 {
@@ -175,15 +180,25 @@ NOTES="build/notes-$VERSIO.md"
 if [[ "$APLICA" -eq 0 ]]; then
     echo "Mode de prova: no s'ha publicat res."
     echo "Amb --aplica, publicaria Warp Launch $VERSIO a $REPO com a ${ETIQUETA} (commit ${COMMIT:0:7}), amb $ZIP ($MIDA)."
-    echo "I canviaria la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}, amb l'autor ${AUTOR_NOM} <${AUTOR_CORREU}>):"
-    echo "  version: ${VERSIO_ABANS} -> ${VERSIO}"
-    echo "  sha256: ${SHA256_ABANS} -> ${SHA256_ZIP} (el d'aquest zip; amb --aplica, el del zip que es pugi)"
+    if [[ "$RECEPTA_CANVIA" -eq 1 ]]; then
+        echo "I canviaria la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}, amb l'autor ${AUTOR_NOM} <${AUTOR_CORREU}>):"
+        echo "  version: ${VERSIO_ABANS} -> ${VERSIO}"
+        echo "  sha256: ${SHA256_ABANS} -> ${SHA256_ZIP} (el d'aquest zip; amb --aplica, el del zip que es pugi)"
+    else
+        echo "La recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) ja diu la ${VERSIO} i el sha256 d'aquest zip: no caldria escriure-la."
+    fi
     echo "Notes ($NOTES):"
     sed 's/^/  /' "$NOTES"
     exit 0
 fi
 
 gh release create "$ETIQUETA" "$ZIP" --repo "$REPO" --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"
+
+if [[ "$RECEPTA_CANVIA" -eq 0 ]]; then
+    echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}). La recepta de ${TAP} ja deia aquesta versió i aquest sha256, i no s'ha escrit."
+    echo "Es desfà amb: gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag"
+    exit 0
+fi
 
 # La versió ja és a GitHub: d'aquí endavant, un error no l'esborra. El sha és el del blob llegit abans de compilar: si algú ha canviat
 # la recepta mentrestant, GitHub refusa l'escriptura en lloc de trepitjar-la.
@@ -196,7 +211,11 @@ if ! COMMIT_TAP="$(gh api --method PUT "repos/$TAP/contents/$CAMI_RECEPTA" \
         echo "Canvia a mà aquestes dues línies de ${CAMI_RECEPTA}, a la branca main de ${TAP}:"
         echo "  version \"${VERSIO}\""
         echo "  sha256 \"${SHA256_ZIP}\""
-        echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
+        if [[ "$VERSIO_ABANS" == "$VERSIO" ]]; then
+            echo "Mentre no ho facis, Homebrew refusarà la ${VERSIO}: el sha256 de la recepta és el d'un altre zip."
+        else
+            echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
+        fi
     } >&2
     exit 2
 fi

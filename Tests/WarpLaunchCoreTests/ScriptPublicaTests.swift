@@ -576,6 +576,48 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(sortida.contains("sha256 \"\(b.zipPujat)\""))
     }
 
+    /// Si la recepta ja diu aquesta versió i aquest sha256, no hi ha res per escriure: cap PUT, i els missatges ho diuen.
+    @Test func siLaReceptaJaDiuElMateixNoLaEscriu() throws {
+        let b = try Banc()
+        // Un `ditto` fals: el zip, i per tant el sha256, sempre són els mateixos.
+        try Banc.executable(b.carpeta.appending(path: "bin/ditto"), #"""
+        #!/bin/bash
+        printf 'zip fix\n' > "${@: -1}"
+
+        """#)
+        let fix = b.carpeta.appending(path: "fix")
+        try Data("zip fix\n".utf8).write(to: fix)
+        try Data(recepta(versio: "0.28.0", sha256: try b.sha256(de: fix)).utf8).write(to: b.fitxerRecepta)
+
+        let prova = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(prova.codi == 0, "\(prova.sortida)")
+        #expect(prova.sortida.contains("no caldria escriure-la"), "\(prova.sortida)")
+        #expect(!prova.sortida.contains("I canviaria"), "\(prova.sortida)")
+
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresGh.contains("release create"))
+        #expect(!b.ordresGh.contains("--method PUT"))
+        #expect(sortida.contains("no s'ha escrit"), "\(sortida)")
+        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"), "\(sortida)")
+        #expect(!sortida.contains("git revert"), "no hi ha cap commit per revertir: \(sortida)")
+    }
+
+    /// La mateixa versió amb un altre zip (una versió esborrada i tornada a publicar): el PUT hi va, i si falla, el missatge no diu que Homebrew va bé.
+    @Test func laMateixaVersioAmbUnAltreZip() throws {
+        let b = try Banc()
+        try Data(recepta(versio: "0.28.0").utf8).write(to: b.fitxerRecepta)
+        let bona = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(bona.codi == 0, "\(bona.sortida)")
+        let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
+        #expect(String(decoding: contingut, as: UTF8.self) == recepta(versio: "0.28.0", sha256: b.zipPujat))
+
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_PUT_FALLA": "1"]) { $1 })
+        #expect(codi == 2, "\(sortida)")
+        #expect(sortida.contains("Homebrew refusarà la 0.28.0"), "\(sortida)")
+        #expect(!sortida.contains("continua instal·lant"), "\(sortida)")
+    }
+
     /// El missatge final diu com es desfà tot: la versió i el commit del tap.
     @Test func elMissatgeFinalDiuComEsDesfa() throws {
         let b = try Banc()
