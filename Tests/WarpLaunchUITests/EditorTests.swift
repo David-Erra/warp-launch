@@ -505,14 +505,12 @@ private func motius(_ m: MagatzemConfiguracio) -> [String] {
         let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil, carpetaExisteix: { _ in true })
         editor.carrega()
         #expect(editor.plantillaPerImportar == .perOmissio)
-        #expect(editor.senseSessioPerImportar == .nomesTerminal)
         let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
             PestanyaLlegida(posicio: 0, titol: "Botiga", panes: [PaneLlegit(uuid: "a", carpeta: "\(inici)/GitHub/botiga",
                                                                          origenCarpeta: .pane, carpetaExisteix: true)]),
         ])], sessionsSensePestanya: [], avisos: [])
         let importacio = editor.previsualitza(lectura)
-        // Configuració nova: la pestanya no tenia Claude obert i queda només terminal (D-P5a).
-        #expect(importacio.resum.ambPlantilla == 0)
+        // La pestanya no tenia Claude obert i queda només terminal (D-P5a).
         #expect(importacio.resum.senseClaudeObert == 1)
         #expect(!FileManager.default.fileExists(atPath: tmp.magatzem.carpeta.path), "previsualitzar no escriu res")
 
@@ -524,9 +522,8 @@ private func motius(_ m: MagatzemConfiguracio) -> [String] {
         #expect(desada.plantilla == .perOmissio)
         #expect(desada.finestres.flatMap(\.pestanyes).map(\.titol) == ["Botiga"])
         #expect(desada.finestres.flatMap(\.pestanyes).map(\.claude) == [.nomesTerminal])
-        // Ja hi ha configuració: tornar a importar hi posa la plantilla (D11).
-        #expect(editor.senseSessioPerImportar == .plantilla)
-        #expect(editor.previsualitza(lectura).resum.ambPlantilla == 1)
+        // Amb configuració, tornar a importar també la deixa només terminal (decisió d'en David del 09/11/2026).
+        #expect(editor.previsualitza(lectura).resum.senseClaudeObert == 1)
         // «Crea» només quan no n'hi ha cap.
         editor.crea(amb: importacio)
         #expect(!editor.undoManager.canUndo)
@@ -562,7 +559,6 @@ private func motius(_ m: MagatzemConfiguracio) -> [String] {
         editor.carrega()
         let importacio = editor.previsualitza(lecturaVariada())
         // Les dues que no tenien Claude obert queden només terminal (D-P5a); la de la sessió conserva «claude».
-        #expect(importacio.resum.ambPlantilla == 0)
         #expect(importacio.resum.senseClaudeObert == 2)
         #expect(importacio.resum.ambSessio == 1)
         #expect(importacio.resum.saltenPermisos == 0)
@@ -576,20 +572,22 @@ private func motius(_ m: MagatzemConfiguracio) -> [String] {
         #expect(!desada.finestres.flatMap(\.pestanyes).contains { $0.claude.saltaPermisos || $0.claude.ultracode })
     }
 
-    /// Amb configuració, s'importa amb la seva plantilla, encara que salti els permisos: la d'en David no canvia.
-    @Test func ambConfiguracioImportaAmbLaSevaPlantilla() throws {
+    /// Amb configuració, tornar a importar deixa només terminal les pestanyes sense Claude obert (decisió d'en David del
+    /// 09/11/2026, que revisa D11), amb la plantilla de la configuració si s'hi activa Claude: encara que salti els permisos, no
+    /// s'obre enlloc on no corria.
+    @Test func ambConfiguracioLesPestanyesSenseClaudeQuedenNomesTerminal() throws {
         let tmp = try Temporal()
         let editor = try editorAmbMostra(tmp)
         #expect(editor.configuracio.plantilla == .habituals)
         #expect(editor.plantillaPerImportar == .habituals)
-        #expect(editor.senseSessioPerImportar == .plantilla)
         let importacio = editor.previsualitza(lecturaVariada())
-        let dePlantilla = importacio.configuracio.finestres.flatMap(\.pestanyes)
-            .filter { importacio.origens[$0.id] == .plantilla }
-        #expect(dePlantilla.count == 2)
-        #expect(importacio.resum.senseClaudeObert == 0, "tornar a importar no deixa cap pestanya només terminal de més")
-        #expect(dePlantilla.allSatisfy { $0.claude == ClaudePestanya.habituals.perAPestanyaNova() })
-        #expect(importacio.resum.saltenPermisos == 2)
+        let nomesTerminal = importacio.configuracio.finestres.flatMap(\.pestanyes)
+            .filter { importacio.origens[$0.id] == .nomesTerminal }
+        #expect(nomesTerminal.count == 2)
+        #expect(importacio.resum.senseClaudeObert == 2)
+        var apagada = ClaudePestanya.habituals.perAPestanyaNova()
+        apagada.activat = false
+        #expect(nomesTerminal.allSatisfy { $0.claude == apagada })
     }
 }
 
@@ -1242,9 +1240,8 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(!full.confirma())
     }
 
-    /// «Comença en blanc» i després «Torna a importar-ho tot de Warp»: sense cap pestanya, és com una importació nova
-    /// (decisió d'en David del 08/11/2026). Les que no tenien Claude obert queden només terminal, amb la plantilla de la
-    /// configuració si s'hi activa Claude; el full substitueix, amb Desfés. Amb una pestanya, ja és tornar a importar.
+    /// «Comença en blanc» i després «Torna a importar-ho tot de Warp»: les que no tenien Claude obert queden només terminal,
+    /// amb la plantilla de la configuració si s'hi activa Claude; el full substitueix, amb Desfés.
     @Test func tornarAImportarSobreUnaConfiguracioSensePestanyesEsComUnaDeNova() async throws {
         let tmp = try Temporal()
         let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil, carpetaExisteix: { !$0.contains("/vell") })
@@ -1252,7 +1249,7 @@ private func lecturaVariada() -> LecturaWarp {
         editor.comencaEnBlanc()
         editor.canviaPlantilla(nom: "Salta els permisos") { $0.saltaPermisos = true }
         editor.afegeixFinestra()
-        #expect(editor.configuracio.finestres.count == 1 && editor.senseSessioPerImportar == .nomesTerminal)
+        #expect(editor.configuracio.finestres.count == 1)
         let full = try #require(FullImportacio(editor: editor, warp: EstatWarp(lector: { lecturaVariada() })))
         #expect(full.mode == .substitueix)
         await full.llegeix()
@@ -1268,12 +1265,8 @@ private func lecturaVariada() -> LecturaWarp {
         let pestanyes = editor.configuracio.finestres.flatMap(\.pestanyes)
         #expect(pestanyes.map(\.claude.activat) == [false, true, false, false, false])
         #expect(!editor.configuracio.plantilla.ultracode && editor.configuracio.plantilla.saltaPermisos)
-        // Ara ja hi ha pestanyes: tornar a importar hi posa la plantilla (D11).
-        #expect(editor.senseSessioPerImportar == .plantilla)
-        #expect(editor.previsualitza(lecturaVariada()).resum.ambPlantilla == 2)
-        // Desfet, torna a no tenir cap pestanya.
-        editor.undoManager.undo()
-        #expect(editor.senseSessioPerImportar == .nomesTerminal)
+        // Ara ja hi ha pestanyes: tornar a importar dona el mateix (decisió d'en David del 09/11/2026).
+        #expect(editor.previsualitza(lecturaVariada()).resum.senseClaudeObert == 2)
     }
 
     @Test func tornarAImportarSubstitueix() async throws {
@@ -1285,11 +1278,12 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(full.explicacio == "Substitueix el que hi ha ara (2 finestres i 4 pestanyes). Abans de desar se'n fa "
             + "una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.")
         await full.llegeix()
-        // Tornar a importar no canvia (D11): les que no tenien Claude obert prenen la plantilla.
-        #expect(full.xifres[1] == "3 amb Claude: 1 amb l'ordre de la seva sessió i 2 amb la plantilla")
-        #expect(full.xifres[2] == "2 només terminal: 1 a la carpeta d'inici i 1 amb una carpeta que ja no existeix")
+        // Tornar a importar: les que no tenien Claude obert queden només terminal (decisió d'en David del 09/11/2026), i
+        // la plantilla només és l'ordre que tindran si s'hi activa Claude.
+        #expect(full.xifres[1] == "1 amb Claude, amb l'ordre de la seva sessió")
+        #expect(full.xifres[2] == "4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que ja no existeix")
         #expect(full.ordrePlantilla == "claude --dangerously-skip-permissions --effort ultracode")
-        #expect(full.notaSenseClaudeObert == nil)
+        #expect(full.notaSenseClaudeObert != nil)
         #expect(full.confirma())
         #expect(editor.undoManager.undoActionName == "Torna a importar")
         #expect(editor.configuracio.finestres.map(\.nom) == ["GitHub", "GitHub 2"])
@@ -1315,21 +1309,23 @@ private func lecturaVariada() -> LecturaWarp {
         await full.llegeix()
         #expect(full.potConfirmar)
         #expect(full.confirma())
-        let ambPlantilla = editor.configuracio.finestres.flatMap(\.pestanyes).filter { $0.claude.activat }
-        #expect(!ambPlantilla.isEmpty)
+        let apagades = editor.configuracio.finestres.flatMap(\.pestanyes).filter { !$0.claude.activat }
+        #expect(!apagades.isEmpty)
+        #expect(apagades.allSatisfy { !$0.claude.saltaPermisos }, "porten la plantilla nova")
         #expect(!editor.configuracio.plantilla.saltaPermisos)
     }
 
-    /// Amb Claude apagat a la plantilla, tornar a importar no obre Claude enlloc: el full no ensenya cap ordre.
-    @Test func ambLaPlantillaApagadaNoEnsenyaCapOrdre() async throws {
+    /// Amb Claude apagat a la plantilla, l'ordre que surt és la que tindran si s'hi activa Claude a mà.
+    @Test func ambLaPlantillaApagadaEnsenyaLOrdreSiSActiva() async throws {
         let tmp = try Temporal()
         let editor = try editorAmbMostra(tmp)
         editor.canviaPlantilla(nom: "No obris Claude") { $0.activat = false }
         let full = try #require(FullImportacio(editor: editor, warp: EstatWarp(lector: { lecturaVariada() })))
         await full.llegeix()
-        #expect(full.importacio?.resum.ambPlantilla == 0)
-        #expect(full.ordrePlantilla == nil)
-        #expect(full.notaSenseClaudeObert == nil)
+        #expect(full.importacio?.resum.senseClaudeObert == 2)
+        #expect(full.importacio?.resum.ambSessio == 1, "la de la sessió conserva la seva ordre")
+        #expect(full.ordrePlantilla != nil)
+        #expect(full.notaSenseClaudeObert != nil)
     }
 
     /// Una configuració nova on cap pestanya tenia Claude obert: cap pestanya amb Claude, i les xifres ho diuen.
@@ -1469,7 +1465,7 @@ private func lecturaVariada() -> LecturaWarp {
         let full = try #require(FullImportacio(editor: editor, warp: EstatWarp(lector: { lectura })))
         #expect(full.explicacio.hasPrefix("Substitueix el que hi ha ara (1 finestra i 1 pestanya)."))
         await full.llegeix()
-        #expect(full.xifres.last == "1 salta els permisos (--dangerously-skip-permissions)")
+        #expect(full.xifres.last == "2 només terminal: 1 sense Claude obert i 1 a la carpeta d'inici")
         #expect(full.textPerRevisar == "1 pestanya sortirà a «Per revisar»")
         #expect(full.avisosLectura == ["no s'han pogut llegir les sessions de Claude"])
     }

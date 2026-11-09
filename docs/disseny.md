@@ -350,10 +350,9 @@ i no toca el disc.
   principal: el primer amb Claude, o el primer. Una pestanya dividida en diversos panes dona una nota (D9).
 - **Claude** (decisió d'en David, D11; la plantilla d'importar és la segura des de la 0.28.0, vegeu «Plantilla i Configuració»):
   - **amb sessió viva:** les opcions del seu argv, més `continua: true` (R4). El nom fix només si venia de `-n`;
-  - **sense sessió:** en una configuració nova (sense fitxer), **només terminal** (0.29.1, D-P5a, en David, 07/11/2026): la
-    plantilla amb `activat: false`, origen `.nomesTerminal`; des de la 0.30.3, també en una que encara no té cap pestanya
-    (`Importador.SenseSessio.per`). Tornant a importar sobre una que en té alguna, la plantilla (D11).
-    Ho tria qui importa (`Importador.importa(…, senseSessio:)`, sense valor per defecte; `Editor.senseSessioPerImportar` i el CLI);
+  - **sense sessió:** **només terminal** (0.29.1, D-P5a, en David, 07/11/2026): la plantilla amb `activat: false`, origen
+    `.nomesTerminal`. Des de la 0.31.5, també en tornar a importar (en David, 09/11/2026, revisa D11): abans, sobre una
+    configuració amb alguna pestanya, s'hi obria Claude amb la plantilla. També al CLI;
   - **a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
     les opcions);
   - **sessió viva en una pestanya a `~`:** la carpeta de la sessió, amb una nota. Si la pestanya és en una altra
@@ -367,10 +366,9 @@ i no toca el disc.
   pestanya importada és a la mateixa carpeta: potser és la seva (dins de tmux, per exemple) i no en porta les
   opcions.
 - **Exemple** (xifres inventades): una lectura de 4 finestres i 30 pestanyes, 6 amb una sessió viva, 18 sense sessió en una
-  carpeta que existeix i 6 a `~` o amb una carpeta que ja no hi és. Tornant a importar: 24 amb Claude (6 amb la seva ordre i
-  18 amb la plantilla) i 6 sense. Abans de la 0.28.0, una configuració nova feia servir `.habituals`, i les 18 de la plantilla
-  saltaven els permisos; des de la 0.28.0, la segura. **Des de la 0.29.1, en una configuració nova:** «6 amb Claude, amb la seva
-  ordre · 24 només terminal (18 sense Claude obert)». El full de previsualització ho diu amb aquestes xifres.
+  carpeta que existeix i 6 a `~` o amb una carpeta que ja no hi és: «6 amb Claude, amb la seva ordre · 24 només terminal (18
+  sense Claude obert)» (en una configuració nova des de la 0.29.1, i en tornar a importar des de la 0.31.5). El full de
+  previsualització ho diu amb aquestes xifres.
 - **Quan:** mai sola. «Importa de Warp…» mostra un full de previsualització, i el fitxer s'escriu en prémer
   «Crea». «Torna a importar-ho tot…» substitueix la configuració, amb còpia i Desfés.
 - **CLI:** `warp-launch importa` mostra el resultat sense escriure res. `--desa` exigeix `--config <carpeta>`:
@@ -1559,7 +1557,7 @@ no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'
 ### Importar una configuració nova (0.29.1, D-P5a, i 0.30.3)
 
 - Les pestanyes on no corria Claude queden només terminal, a l'app («Crea») i a `warp-launch importa` sense configuració real
-  (secció 2, «Importació (R2)»). Tornar a importar no canvia.
+  (secció 2, «Importació (R2)»). Des de la 0.31.5, també en tornar a importar.
 - El full i el CLI ho diuen amb xifres (per exemple, «4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que
   ja no existeix»), i el full explica com s'hi activa Claude a l'inspector i amb quina ordre. La revisió va corregir tres textos
   que encara deien que hi entraria Claude (l'avís de la foto amb Warp tancat, la nota d'una sessió sense pestanya i la

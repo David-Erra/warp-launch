@@ -118,21 +118,16 @@ public final class FullImportacio {
         mode == .crea ? "Crea" : "Substitueix"
     }
 
-    /// Les xifres, una per línia: finestres i pestanyes, amb Claude, sense, i quantes salten els permisos. En una
-    /// configuració nova, les pestanyes que no tenien Claude obert queden només terminal (D-P5a): la plantilla no hi surt.
+    /// Les xifres, una per línia: finestres i pestanyes, amb Claude, sense, i quantes salten els permisos. Les pestanyes
+    /// que no tenien Claude obert queden només terminal (D-P5a; també en tornar a importar, 09/11/2026).
     public var xifres: [String] {
         guard let importacio else { return [] }
         let resum = importacio.resum
-        let ambClaude = resum.ambSessio + resum.ambPlantilla
+        let ambClaude = resum.ambSessio
         var linies = [
             "\(Plural.compta(resum.finestres, "finestra", "finestres")) · \(Plural.compta(resum.pestanyes, "pestanya", "pestanyes"))",
         ]
-        if resum.senseClaudeObert > 0, resum.ambPlantilla == 0 {
-            linies.append(ambClaude == 0 ? "0 amb Claude" : "\(ambClaude) amb Claude, amb l'ordre de la seva sessió")
-        } else {
-            linies.append("\(ambClaude) amb Claude: \(resum.ambSessio) amb l'ordre de la seva sessió i "
-                + "\(resum.ambPlantilla) amb la plantilla")
-        }
+        linies.append(ambClaude == 0 ? "0 amb Claude" : "\(ambClaude) amb Claude, amb l'ordre de la seva sessió")
         if resum.senseClaude > 0 {
             let aInici = importacio.compta(.carpetaInici)
             let perdudes = importacio.compta(.carpetaNoExisteix)
@@ -150,27 +145,18 @@ public final class FullImportacio {
         return linies
     }
 
-    /// L'ordre de les pestanyes que no tenien Claude obert (la plantilla), o `nil` si no n'hi ha cap. En tornar a
-    /// importar sobre alguna pestanya, s'hi obrirà; en una configuració nova o sense cap pestanya, queden només terminal
-    /// i és la que hi tindran si s'hi activa Claude (`notaSenseClaudeObert`).
+    /// L'ordre que tindran les pestanyes que no tenien Claude obert si s'hi activa Claude (`notaSenseClaudeObert`), o `nil`
+    /// si no n'hi ha cap: la de la plantilla.
     public var ordrePlantilla: String? {
-        guard let importacio else { return nil }
-        let pestanyes = importacio.configuracio.finestres.flatMap(\.pestanyes)
-        var claude: ClaudePestanya
-        if importacio.resum.ambPlantilla > 0,
-           let dePlantilla = pestanyes.first(where: { importacio.origens[$0.id] == .plantilla }) {
-            claude = dePlantilla.claude
-        } else if let terminal = pestanyes.first(where: { importacio.origens[$0.id] == .nomesTerminal }) {
-            claude = terminal.claude
-            claude.activat = true
-        } else {
-            return nil
-        }
+        guard let importacio,
+              var claude = importacio.configuracio.finestres.flatMap(\.pestanyes)
+                  .first(where: { importacio.origens[$0.id] == .nomesTerminal })?.claude
+        else { return nil }
+        claude.activat = true
         return (try? OrdreClaude.argv(claude, repren: nil)).map(OrdreClaude.text)
     }
 
-    /// En una configuració nova, què passa amb les pestanyes que no tenien Claude obert (D-P5a), o `nil` si no n'hi ha
-    /// cap.
+    /// Què passa amb les pestanyes que no tenien Claude obert (D-P5a), o `nil` si no n'hi ha cap.
     public var notaSenseClaudeObert: String? {
         guard let importacio, importacio.resum.senseClaudeObert > 0 else { return nil }
         let n = importacio.resum.senseClaudeObert

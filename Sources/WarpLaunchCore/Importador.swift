@@ -3,28 +3,10 @@ import Foundation
 /// De la lectura de Warp a una configuració nova (R2, docs/disseny.md, «Importació»). És una funció pura: no toca el
 /// disc, i els id surten de `nouId`. La `inici` ha de ser canònica, com les carpetes de la lectura.
 public enum Importador {
-    /// Què reben les pestanyes on no hi corria Claude. Les de `~` i les d'una carpeta que no existeix queden sempre
-    /// sense Claude (D11).
-    public enum SenseSessio: Sendable, Equatable {
-        /// Una configuració nova, o una que encara no té cap pestanya: només terminal (D-P5a, en David, 07/11/2026). Si
-        /// s'hi activa Claude, ja té les opcions de la plantilla.
-        case nomesTerminal
-        /// Tornar a importar sobre una configuració que ja té alguna pestanya: Claude, amb la plantilla (D11).
-        case plantilla
-
-        /// La de cada importació (l'app i `warp-launch importa`). Sense configuració, o amb una que encara no té cap
-        /// pestanya (per exemple, després de «Comença en blanc»; decisió d'en David del 08/11/2026), és com una de nova:
-        /// només terminal. Amb alguna pestanya, la plantilla.
-        public static func per(_ configuracio: Configuracio?) -> SenseSessio {
-            guard let configuracio, configuracio.finestres.contains(where: { !$0.pestanyes.isEmpty }) else {
-                return .nomesTerminal
-            }
-            return .plantilla
-        }
-    }
-
+    /// Les pestanyes on no hi corria Claude queden només terminal, sempre (D-P5a; en tornar a importar, decisió d'en David
+    /// del 09/11/2026, que revisa D11): si s'hi activa Claude, ja té les opcions de la plantilla.
     public static func importa(_ lectura: LecturaWarp, inici: String, plantilla: ClaudePestanya,
-                               senseSessio: SenseSessio, nouId: () -> UUID) -> Importacio {
+                               nouId: () -> UUID) -> Importacio {
         let plantilla = plantilla.normalitzada()
         // La de cada pestanya, sense nom fix de sessió (decisió d'en David, 04/11/2026): si no, totes les pestanyes
         // importades sense sessió s'obririen amb el mateix nom. La de la configuració es queda tal com és.
@@ -78,12 +60,9 @@ public enum Importador {
                 } else if !principal.carpetaExisteix {
                     claude = desactivada(perPestanya)
                     origen = .carpetaNoExisteix
-                } else if senseSessio == .nomesTerminal {
+                } else {
                     claude = desactivada(perPestanya)
                     origen = .nomesTerminal
-                } else {
-                    claude = perPestanya
-                    origen = .plantilla
                 }
 
                 if pestanyaWarp.panes.count > 1 {
@@ -114,16 +93,13 @@ public enum Importador {
         }
 
         // Una sessió que no s'ha pogut lligar (dins de tmux, o una pestanya que Warp encara no ha desat) pot ser d'una
-        // pestanya que s'ha importat sense les seves opcions, o només terminal (en una configuració nova, D-P5a): es diu
-        // quina és a la mateixa carpeta.
+        // pestanya que s'ha importat només terminal (D-P5a): es diu quina és a la mateixa carpeta.
         for sessio in lectura.sessionsSensePestanya {
             let mateixaCarpeta = finestres.flatMap { f in
-                f.pestanyes.filter { $0.carpeta == sessio.carpeta && origens[$0.id] != .sessio }
-                    .map { (ambClaude: $0.claude.activat, text: "\(f.nom) › \($0.titol)") }
+                f.pestanyes.filter { $0.carpeta == sessio.carpeta && origens[$0.id] != .sessio }.map { "\(f.nom) › \($0.titol)" }
             }
             notes.append(.sessioSensePestanya(carpeta: sessio.carpeta, nom: sessio.nom, dinsDeWarp: sessio.dinsDeWarp,
-                                              pestanyes: mateixaCarpeta.filter(\.ambClaude).map(\.text),
-                                              terminals: mateixaCarpeta.filter { !$0.ambClaude }.map(\.text)))
+                                              terminals: mateixaCarpeta))
         }
         // Les pestanyes de les finestres descartades no hi són.
         let ids = Set(finestres.flatMap(\.pestanyes).map(\.id))
@@ -132,8 +108,7 @@ public enum Importador {
     }
 
     /// La plantilla, però sense Claude: a `~` o a una carpeta que no existeix, Claude no s'obre fins que se n'arregli la
-    /// carpeta (D11); i, en una configuració nova, on no hi corria (D-P5a). En activar-lo, ja té les opcions de la
-    /// plantilla.
+    /// carpeta (D11); i on no hi corria (D-P5a). En activar-lo, ja té les opcions de la plantilla.
     private static func desactivada(_ plantilla: ClaudePestanya) -> ClaudePestanya {
         var c = plantilla
         c.activat = false
@@ -189,7 +164,6 @@ public struct Importacio: Sendable, Equatable {
         return ResumImportacio(
             finestres: configuracio.finestres.count, pestanyes: pestanyes.count,
             ambSessio: ambClaude.filter { origens[$0.id] == .sessio }.count,
-            ambPlantilla: ambClaude.filter { origens[$0.id] == .plantilla }.count,
             senseClaude: pestanyes.count - ambClaude.count,
             senseClaudeObert: pestanyes.filter { origens[$0.id] == .nomesTerminal }.count,
             saltenPermisos: ambClaude.filter(\.claude.saltaPermisos).count)
@@ -200,9 +174,7 @@ public struct Importacio: Sendable, Equatable {
 public enum OrigenClaude: String, Sendable, Equatable {
     /// Hi corria una sessió: les opcions de la seva ordre.
     case sessio
-    /// No hi corria Claude, i es torna a importar sobre alguna pestanya: la plantilla (D11).
-    case plantilla
-    /// No hi corria Claude, i la configuració és nova o no té cap pestanya: només terminal (D-P5a).
+    /// No hi corria Claude: només terminal (D-P5a; també en tornar a importar, 09/11/2026).
     case nomesTerminal
     /// A `~`: sense Claude (probablement Warp ha perdut la carpeta).
     case carpetaInici
@@ -228,10 +200,9 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
     case carpetesDiferents(Lloc, pestanya: String, sessio: String)
     /// Pestanya dividida: només s'importa el pane principal (el primer amb Claude, o el primer).
     case panesDescartats(Lloc, panes: Int, sessions: Int)
-    /// Una sessió de Claude que no és a cap pestanya de Warp. No s'importa. De les importades sense les opcions d'una
-    /// sessió que són a la mateixa carpeta («finestra › pestanya»), `pestanyes` són les que obren Claude (amb la
-    /// plantilla) i `terminals`, les que queden només terminal (a `~`, o en una configuració nova, D-P5a).
-    case sessioSensePestanya(carpeta: String, nom: String?, dinsDeWarp: Bool, pestanyes: [String], terminals: [String])
+    /// Una sessió de Claude que no és a cap pestanya de Warp. No s'importa. `terminals`: les pestanyes de la mateixa carpeta
+    /// («finestra › pestanya») que queden només terminal (a `~`, o on no hi corria, D-P5a).
+    case sessioSensePestanya(carpeta: String, nom: String?, dinsDeWarp: Bool, terminals: [String])
     /// Una finestra de Warp sense pestanyes de terminal (la `numero`-èsima de la lectura). No s'importa.
     case finestraSensePestanyes(numero: Int)
 
@@ -258,15 +229,12 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
         case let .panesDescartats(lloc, panes, sessions):
             let perdudes = sessions == 0 ? "" : ", i es perd \(Plural.compta(sessions, "sessió", "sessions")) de Claude"
             return "\(lloc.text): pestanya dividida en \(panes) panes; només s'importa el principal\(perdudes)"
-        case let .sessioSensePestanya(carpeta, nom, dinsDeWarp, pestanyes, terminals):
+        case let .sessioSensePestanya(carpeta, nom, dinsDeWarp, terminals):
             let qui = nom.map { "«\($0)» " } ?? ""
             let on = dinsDeWarp ? "la seva pestanya no és a la base de Warp" : "corre fora de Warp, o dins de tmux"
-            func llista(_ p: [String], _ un: String, _ diverses: String) -> String? {
-                p.isEmpty ? nil : p.map { "«\($0)»" }.joined(separator: ", ") + ", " + (p.count == 1 ? un : diverses)
-            }
-            let parts = [llista(pestanyes, "que no porta les seves opcions", "que no porten les seves opcions"),
-                         llista(terminals, "que queda només terminal", "que queden només terminal")].compactMap { $0 }
-            let mateixa = parts.isEmpty ? "" : "; a la mateixa carpeta hi ha " + parts.joined(separator: "; i ")
+            let mateixa = terminals.isEmpty ? "" : "; a la mateixa carpeta hi ha "
+                + terminals.map { "«\($0)»" }.joined(separator: ", ")
+                + (terminals.count == 1 ? ", que queda només terminal" : ", que queden només terminal")
             return "sessió de Claude \(qui)a «\(carpeta)»: no s'importa (\(on))\(mateixa)"
         case let .finestraSensePestanyes(numero):
             return "la finestra \(numero) de Warp no té cap pestanya de terminal: no s'importa"
@@ -280,40 +248,28 @@ public struct ResumImportacio: Sendable, Equatable {
     public var pestanyes: Int
     /// Pestanyes amb Claude que surten de la seva ordre.
     public var ambSessio: Int
-    /// Pestanyes amb Claude que surten de la plantilla.
-    public var ambPlantilla: Int
-    /// Pestanyes només terminal: les de `~`, les d'una carpeta que no existeix, les de `senseClaudeObert` i, si la
-    /// plantilla no obre Claude, les que la prenen.
+    /// Pestanyes només terminal: les de `~`, les d'una carpeta que no existeix i les de `senseClaudeObert`.
     public var senseClaude: Int
-    /// D'aquestes, les que no tenien Claude obert, en una configuració nova o sense cap pestanya (D-P5a). En tornar a
-    /// importar sobre alguna pestanya, sempre 0: aquestes pestanyes prenen la plantilla (`ambPlantilla`).
+    /// D'aquestes, les que no tenien Claude obert (D-P5a).
     public var senseClaudeObert: Int
     /// Pestanyes amb Claude que salten els permisos (`--dangerously-skip-permissions`).
     public var saltenPermisos: Int
 
-    public init(finestres: Int, pestanyes: Int, ambSessio: Int, ambPlantilla: Int, senseClaude: Int,
+    public init(finestres: Int, pestanyes: Int, ambSessio: Int, senseClaude: Int,
                 senseClaudeObert: Int, saltenPermisos: Int) {
         self.finestres = finestres
         self.pestanyes = pestanyes
         self.ambSessio = ambSessio
-        self.ambPlantilla = ambPlantilla
         self.senseClaude = senseClaude
         self.senseClaudeObert = senseClaudeObert
         self.saltenPermisos = saltenPermisos
     }
 
-    /// En tornar a importar sobre alguna pestanya, «4 finestres · 30 pestanyes · 24 amb Claude (6 amb la seva ordre, 18
-    /// amb la plantilla) · 6 només terminal». En una configuració nova o sense cap pestanya, la plantilla no hi surt:
     /// «4 finestres · 30 pestanyes · 6 amb Claude, amb la seva ordre · 24 només terminal (18 sense Claude obert)» (D-P5a).
     public var descripcio: String {
         let finestresIPestanyes = "\(Plural.compta(finestres, "finestra", "finestres")) · "
             + Plural.compta(pestanyes, "pestanya", "pestanyes")
-        guard senseClaudeObert > 0, ambPlantilla == 0 else {
-            return finestresIPestanyes
-                + " · \(ambSessio + ambPlantilla) amb Claude (\(ambSessio) amb la seva ordre, \(ambPlantilla) amb la plantilla)"
-                + " · \(senseClaude) només terminal"
-        }
         return finestresIPestanyes + (ambSessio == 0 ? " · 0 amb Claude" : " · \(ambSessio) amb Claude, amb la seva ordre")
-            + " · \(senseClaude) només terminal (\(senseClaudeObert) sense Claude obert)"
+            + " · \(senseClaude) només terminal" + (senseClaudeObert > 0 ? " (\(senseClaudeObert) sense Claude obert)" : "")
     }
 }

@@ -100,8 +100,8 @@ public enum OrdreCLI {
               Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya.
           warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]
               La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.
-              Les pestanyes on no corre Claude prenen la plantilla de ~/.config/warp-launch. Si no hi ha
-              configuració, o encara no té cap pestanya, queden només terminal, com a l'app.
+              Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,
+              tenen les opcions de la plantilla de ~/.config/warp-launch.
               --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:
               la configuració real només es crea des de l'app.
           warp-launch configuracio valida [--config <carpeta>]
@@ -268,7 +268,7 @@ public enum OrdreCLI {
         let inici = Rutes.canonica(entorn.inici)
         let plantilla = plantillaPerImportar(entorn, inici: inici)
         let importacio = Importador.importa(lectura, inici: inici, plantilla: plantilla.valor,
-                                            senseSessio: plantilla.senseSessio, nouId: entorn.nouId)
+                                            nouId: entorn.nouId)
         var configuracio = importacio.configuracio
         configuracio.generador = "\(WarpLaunch.nom) \(WarpLaunch.versio)"
 
@@ -302,8 +302,8 @@ public enum OrdreCLI {
         sortida.escriu(importacio.resum.descripcio)
         sortida.escriu("\(Plural.compta(importacio.resum.saltenPermisos, "pestanya salta", "pestanyes salten")) els permisos (--dangerously-skip-permissions).")
         sortida.escriu(plantilla.origen)
-        if let motiu = plantilla.nomesTerminal {
-            sortida.escriu("Les pestanyes que no tenien Claude obert queden només terminal (\(motiu)).")
+        if importacio.resum.senseClaudeObert > 0 {
+            sortida.escriu("Les pestanyes que no tenien Claude obert queden només terminal.")
         }
         sortida.text += InformeConfiguracio.text(configuracio, avisos: avisos, origens: importacio.origens, inici: inici)
         if !importacio.notes.isEmpty {
@@ -324,26 +324,20 @@ public enum OrdreCLI {
         return codi
     }
 
-    /// La plantilla d'`importa`, com a l'app (`Editor.plantillaPerImportar` i `senseSessioPerImportar`): la de la
-    /// configuració real, si n'hi ha, i les pestanyes que no tenien Claude obert la prenen. Si no n'hi ha, la segura, que
-    /// no salta els permisos ni porta ultracode (D11, revisada per en David el 07/11/2026), i aquestes pestanyes queden
-    /// només terminal (D-P5a); també si la configuració encara no té cap pestanya, amb la seva plantilla (decisió d'en
-    /// David del 08/11/2026). Una configuració que no es pot llegir no atura la vista prèvia: es fa servir la segura,
-    /// com si es tornés a importar, i `origen` diu per què. `nomesTerminal` diu per què queden només terminal, si és el
-    /// cas. Només llegeix.
-    private static func plantillaPerImportar(_ entorn: EntornCLI, inici: String)
-        -> (valor: ClaudePestanya, senseSessio: Importador.SenseSessio, origen: String, nomesTerminal: String?) {
+    /// La plantilla d'`importa`, com a l'app (`Editor.plantillaPerImportar`): la de la configuració real, si n'hi ha; si no,
+    /// o si no es pot llegir (no atura la vista prèvia, i `origen` diu per què), la segura, que no salta els permisos ni
+    /// porta ultracode (D11, revisada per en David el 07/11/2026). Les pestanyes que no tenien Claude obert queden només
+    /// terminal (D-P5a), i la prenen si s'hi activa. Només llegeix.
+    private static func plantillaPerImportar(_ entorn: EntornCLI, inici: String) -> (valor: ClaudePestanya, origen: String) {
         let magatzem = MagatzemConfiguracio(carpeta: entorn.carpetaReal, inici: inici)
         let segura = "Plantilla: la segura, sense saltar els permisos"
         do {
             guard let carregada = try magatzem.carrega() else {
-                return (.perOmissio, .nomesTerminal, segura + " (encara no hi ha cap configuració).", "configuració nova")
+                return (.perOmissio, segura + " (encara no hi ha cap configuració).")
             }
-            let senseSessio = Importador.SenseSessio.per(carregada.configuracio)
-            return (carregada.configuracio.plantilla, senseSessio, "Plantilla: la de \(magatzem.fitxer.path).",
-                    senseSessio == .nomesTerminal ? "la configuració encara no té cap pestanya" : nil)
+            return (carregada.configuracio.plantilla, "Plantilla: la de \(magatzem.fitxer.path).")
         } catch {
-            return (.perOmissio, .plantilla, segura + " (no s'ha pogut llegir \(magatzem.fitxer.path): \(error)).", nil)
+            return (.perOmissio, segura + " (no s'ha pogut llegir \(magatzem.fitxer.path): \(error)).")
         }
     }
 
@@ -779,7 +773,6 @@ enum InformeConfiguracio {
         guard pestanya.claude.activat else { return "sense Claude" }
         switch origen {
         case .sessio?: return "Claude, de la seva ordre"
-        case .plantilla?: return "Claude, de la plantilla"
         default: return "Claude"
         }
     }

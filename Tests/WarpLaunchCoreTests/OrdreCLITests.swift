@@ -99,8 +99,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         let ajuda = OrdreCLI.ajuda.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .joined(separator: " ")
         // Sense escriure la carpeta real: les proves no l'esmenten mai (`lesProvesNoLlegeixenLEstatReal`).
-        #expect(ajuda.contains("Les pestanyes on no corre Claude prenen la plantilla de "))
-        #expect(ajuda.contains(". Si no hi ha configuració, o encara no té cap pestanya, queden només terminal, com a l'app."))
+        #expect(ajuda.contains("Les pestanyes on no corre Claude queden només terminal"))
     }
 
     @Test func usIncorrecte() throws {
@@ -170,7 +169,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
             "2 finestres · 3 pestanyes · 1 amb Claude, amb la seva ordre · 2 només terminal (1 sense Claude obert)",
             "1 pestanya salta els permisos (--dangerously-skip-permissions).",
             "Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració).",
-            "Les pestanyes que no tenien Claude obert queden només terminal (configuració nova).",
+            "Les pestanyes que no tenien Claude obert queden només terminal.",
         ])
         // «A» conserva l'ordre del seu Claude; «B», que no en tenia, queda només terminal (D-P5a, 07/11/2026).
         #expect(sortida.text.contains("""
@@ -239,24 +238,25 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
 
         let (codi, sortida) = e.executa("importa")
         #expect(codi == 0)
-        #expect(sortida.text.contains("1 pestanya salta els permisos"))
+        #expect(sortida.text.contains("0 pestanyes salten els permisos"))
         #expect(sortida.text.contains("Plantilla: la de \(real.fitxer.path)."))
-        // Tornar a importar no canvia (D11): «B», que no tenia Claude obert, pren la plantilla.
-        #expect(sortida.text.contains(" · 2 amb Claude (1 amb la seva ordre, 1 amb la plantilla) · 1 només terminal\n"))
-        #expect(!sortida.text.contains("queden només terminal"))
-        #expect(sortida.text.contains("   1  claude --dangerously-skip-permissions --model opus --effort ultracode\n"))
+        // Tornar a importar: «B», que no tenia Claude obert, queda només terminal (decisió d'en David del 09/11/2026).
+        #expect(sortida.text.contains(" · 1 amb Claude, amb la seva ordre · 2 només terminal (1 sense Claude obert)\n"))
+        #expect(sortida.text.contains("Les pestanyes que no tenien Claude obert queden només terminal.\n"))
 
         let carpeta = e.tmp.url("nova")
         #expect(e.executa("importa", "--desa", "--config", carpeta.path).codi == 0)
         let desada = try #require(try MagatzemConfiguracio(carpeta: carpeta, inici: e.inici).carrega()).configuracio
         #expect(desada.plantilla == plantilla)
-        #expect(desada.finestres[0].pestanyes[1].claude == plantilla.perAPestanyaNova())
+        var apagada = plantilla.perAPestanyaNova()
+        apagada.activat = false
+        #expect(desada.finestres[0].pestanyes[1].claude == apagada)
         #expect(try Data(contentsOf: real.fitxer) == abans)
     }
 
-    /// Una configuració real sense cap pestanya (després de «Comença en blanc», o amb una finestra buida) és com una de
-    /// nova, com a l'app (decisió d'en David del 08/11/2026): les pestanyes on no corre Claude queden només terminal, amb
-    /// la plantilla de la configuració si s'hi activa Claude. La configuració real no canvia.
+    /// Una configuració real sense cap pestanya (després de «Comença en blanc», o amb una finestra buida): les pestanyes on
+    /// no corre Claude queden només terminal, com a l'app, amb la plantilla de la configuració si s'hi activa Claude. La
+    /// configuració real no canvia.
     @Test func importaAmbUnaConfiguracioSensePestanyesEsComUnaDeNova() throws {
         let e = try Escenari(argv: ["claude"])
         var plantilla = ClaudePestanya.habituals
@@ -268,7 +268,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         let (codi, sortida) = e.executa("importa")
         #expect(codi == 0)
         #expect(sortida.text.contains("Plantilla: la de \(real.fitxer.path).\n"
-            + "Les pestanyes que no tenien Claude obert queden només terminal (la configuració encara no té cap pestanya).\n"))
+            + "Les pestanyes que no tenien Claude obert queden només terminal.\n"))
         #expect(sortida.text.contains("2 finestres · 3 pestanyes · 1 amb Claude, amb la seva ordre · 2 només terminal "
             + "(1 sense Claude obert)\n"))
         let llegida = try Configuracio.llegeix(Data(e.executa("importa", "--json").sortida.text.utf8), inici: e.inici)
@@ -292,8 +292,8 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(codi == 0)
         #expect(sortida.text.contains("Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir \(real.fitxer.path): "))
         #expect(sortida.text.contains("0 pestanyes salten els permisos"))
-        // Hi ha configuració, encara que no es pugui llegir: com si es tornés a importar, «B» pren la plantilla.
-        #expect(sortida.text.contains(" · 2 amb Claude (1 amb la seva ordre, 1 amb la plantilla) · 1 només terminal\n"))
+        // Hi ha configuració, encara que no es pugui llegir: «B» també queda només terminal (09/11/2026).
+        #expect(sortida.text.contains(" · 1 amb Claude, amb la seva ordre · 2 només terminal (1 sense Claude obert)\n"))
         #expect(try Data(contentsOf: real.fitxer) == Data("{".utf8))
     }
 
