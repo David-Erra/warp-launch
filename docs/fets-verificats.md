@@ -319,6 +319,9 @@ corregeix-lo i deixa'n constància.
     avançar, o «stopped» («ended while the background service was off»), si en fa més. Cal obrir-les o respondre-hi una
     per una perquè es tornin a engegar amb la conversa desada.
   - El supervisor no s'engega en iniciar sessió: ho fa «the first time you background a session or open agent view».
+- **Tancar Warp pot aturar una feina en segon pla** (anotat el 09/11/2026; observat una sola vegada, no reproduït i sense
+  causa comprovada; regla 2): una feina va quedar a mitges en tancar Warp, i reobrir les pestanyes no la va fer continuar. Els
+  fulls d'obrir i el README ho diuen amb «pot» (0.31.5).
 - **Opcions d'arrencada** (03/11/2026, `claude --help` i cadenes del binari 2.1.317):
   - `--effort <level>`: la llista oficial és `low`, `medium`, `high`, `xhigh` i `max`.
   - **`--effort ultracode` és un àlies:** equival a esforç `xhigh` més ultracode activat. Al binari hi ha
@@ -386,6 +389,9 @@ corregeix-lo i deixa'n constància.
   visitades tenen la transcripció).
 - **`/cd` i `EnterWorktree` sí** (llegit a la documentació i al binari minificat, sense cap cas observat): la transcripció passa al
   projecte de la carpeta nova, i `originalCwd`, que reescriu el fitxer de sessió, canvia.
+- **`--resume <id>` no depèn de la carpeta** (llegit a la documentació oficial, [sessions](https://code.claude.com/docs/en/sessions#resume-by-session-id-or-name);
+  no provat): cerca al projecte actual i als seus worktrees i després, des de la v2.1.223, a tots els altres. Només el troba
+  fora si exactament un altre projecte té aquella transcripció; si no, `No conversation found`.
 - **Amb `cd B && claude`, Warp es queda amb A** mentre Claude corre, si el shell no emet OSC 7 (llegit al codi de
   `warpdotdev/warp`, commit `abb3fe33e004`; no observat): Warp només actualitza la carpeta al `precmd`.
 - **En aquell Mac, Warp i Claude coincidien a 74 de 74 pestanyes:** el cas no s'ha vist en execució. És la base de la decisió del

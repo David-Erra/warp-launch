@@ -102,7 +102,7 @@ Els requisits són a `docs/especificacio.md`.
     pestanya, com a macOS (decisió 11).
   - **0.30.3 (decisions 2, 8, 9 i 12):** a la pantalla del permís, Retorn accepta i Escapada no fa res; tancar-hi la
     Configuració fa sortir de l'app, com tancar l'editor; «Comença en blanc» i després «Torna a importar-ho tot» és com una
-    configuració nova (les pestanyes sense Claude, només terminal; `Importador.SenseSessio.per`, també al CLI); a «Pestanyes
+    configuració nova (les pestanyes sense Claude, només terminal, també al CLI); a «Pestanyes
     noves», la primera secció no repeteix el títol. I tres textos: importar i el diagnòstic amb `--config`, i la versió de Claude
     Code un sol cop al diagnòstic.
   - **0.31.0 (decisió 3): deixar de fer servir l'app.** Configuració › General › «Restaura Warp i surt…» treu l'app dels ítems

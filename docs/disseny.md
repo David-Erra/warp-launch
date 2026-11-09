@@ -1506,7 +1506,7 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
     era desactivada segons en David, 07/11/2026: qui va obrir Warp no se sap). Es mira: si Warp s'obre sol i qui l'obre, que no restauri res, i el registre. No dirà si macOS envia `keyAELaunchedAsLogInItem`: l'app no ho
     registra, i amb el Mac encès fa menys de 10 minuts el full surt igualment.
 
-## 10. Per a altres usuaris (del 07 al 09/11/2026, de la 0.29.0 a la 0.31.4)
+## 10. Per a altres usuaris (del 07 al 09/11/2026, de la 0.29.0 a la 0.31.5)
 
 Les vuit decisions d'en David del 07/11/2026 són a `especificacio.md` («Per a altres usuaris»). El codi i els commits les
 anomenen D-P4 (la 4, el consentiment), D-P5a (la 5, importar) i D-P12 (trobar Warp, de la 8). El diagnòstic (pla A4) no surt
@@ -1574,9 +1574,8 @@ no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'
 - **Una configuració sense cap pestanya (0.30.3, decisió 9):** «Comença en blanc» i després «Torna a importar-ho tot de Warp»
   és com una importació nova: les pestanyes sense Claude obert queden només terminal, amb la plantilla de la configuració. El
   full continua sent el de substituir, amb còpia i Desfés. Una configuració amb només finestres buides també compta com a sense
-  pestanyes (B4, ronda 4: es queda així). La regla és en un sol lloc (`Importador.SenseSessio.per`), per a l'editor i per a `warp-launch importa` (que hi
-  afegeix «(la configuració encara no té cap pestanya)», i l'ajuda ho diu). Proves a `ImportadorTests`, `EditorTests` i
-  `OrdreCLITests`.
+  pestanyes (B4, ronda 4: es queda així). Proves a `ImportadorTests`, `EditorTests` i `OrdreCLITests`. Des de la 0.31.5, la
+  distinció ja no existeix: tota importació deixa només terminal les pestanyes sense Claude viu.
 - **Amb una carpeta de prova (0.30.3):** sense refresc no hi ha finestres per importar, i el full «Importa de Warp» ho explica:
   amb `--config` l'app no toca l'ajust ni pot demanar a Warp que desi les finestres, i amb la configuració de debò, sí. El CLI
   diu que ell no toca l'ajust i que l'app, amb la configuració de debò, sí. **Des de la 0.31.2,** «Lliga amb Warp…», que té la
@@ -2121,10 +2120,45 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
     `cask/cask.rb` i `env_config.rb` de Homebrew).
   - **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de tancar-la i tornar-la a obrir en actualitzar.
 
+### 0.31.5: les quatre decisions del 09/11/2026 (sense publicar)
+
+**Res d'això no s'ha vist funcionar a l'app ni amb Warp de debò.** El que hi ha és provat amb dades fictícies (`scripts/test.sh`) o
+llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especificacio.md`, fila del 09/11/2026. Fets:
+`fets-verificats.md`, «La carpeta de la pestanya i la de Claude». Sense canvi de format: `estat.json` i `configuracio.json` són com a la 0.31.4.
+
+- **Provat (dades fictícies):**
+  - La carpeta que guanya, en cada combinació de Claude a `~`, inexistent o existent.
+  - L'avís a «Per revisar», que no surt a les pestanyes només terminal i no se'n va amb una foto de Warp sense cap Claude.
+  - «Lliga amb Warp…» amb les dues carpetes, sense desfer empats i sense donar el mateix pane a dues pestanyes.
+  - El pla d'obertura amb la carpeta del Claude del terminal.
+  - Tornar a importar, a l'app i al CLI, i el text del full.
+  - Crear la carpeta: un sol nivell, res si el camí o `~/.warp` són un enllaç o un fitxer, i només amb el permís acceptat o migrat.
+  - L'avís de les feines als dos fulls, i `GuardaTests`.
+- **Només llegit:**
+  - `cd B && claude` deixa Warp a A, i `/cd` i `EnterWorktree` mouen la sessió.
+  - Warp hauria de veure la carpeta `launch_configurations` creada amb ell obert.
+  - Tancar Warp pot aturar les feines: observat una vegada, sense reproduir.
+- **Limitació de l'avís:** la carpeta de Warp només és a la memòria de l'app. Després de reiniciar-la, l'avís només surt si l'última
+  carpeta de Claude (`carpetaSessio`) no és la de la pestanya; una pestanya ja a la carpeta de Claude no avisa fins a la foto
+  següent. Fer-lo del tot permanent demanaria un camp nou a `estat.json` (regla 11).
+- **Les configuracions ja importades no canvien soles:** cal corregir la carpeta a l'inspector o tornar a importar-ho tot.
+
+**Per provar a l'app** (cada prova, amb l'OK d'en David; regles 1 i 4). Amb carpetes temporals A i B:
+
+1. Lectura, 0 finestres i 0 sessions: al Mac on es va veure el problema, per a cada pestanya on Warp i Claude difereixen, si el
+   shell pare de Claude és a la carpeta de Claude (`warp-launch importa`, `lsof -a -d cwd -p <pid>`).
+2. La carpeta, 1 finestra, 1 pestanya i 1 sessió de Claude: en David obre una pestanya a A i hi escriu `cd B && claude`, amb un missatge.
+   Importar a una carpeta de configuració de prova ha de donar B i l'avís a «Per revisar». En David tanca la pestanya (regla 2), i
+   «Obre a Warp…» l'ha d'obrir a B amb la mateixa conversa.
+3. Tornar a importar, 0 finestres: les pestanyes sense Claude viu queden «Només terminal», i el full ho diu.
+4. La carpeta de Warp, 1 finestra i 1 pestanya sense Claude: sense `~/.warp/launch_configurations`, amb Warp obert i la
+   configuració de debò, «Obre a Warp…» la crea i Warp obre la finestra.
+5. Els dos fulls d'obrir mostren l'avís de les feines en segon pla.
+
 ### Resum
 
-- Proves: de 443 a 573 al core i de 232 a 323 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
-  i 313).
+- Proves: de 443 a 622 al core i de 232 a 330 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
+  i 313; a la 0.31.4, 573 i 323).
   `prototip/` surt del repo (és a l'historial, 114c97d).
 - De les versions del lot, només la 0.31.4 és publicada (09/11/2026), i s'instal·la també amb Homebrew.
 - De les vuit decisions del 07/11/2026, falten la signatura amb Developer ID (1), l'idioma (3; al llançament, anglès i català,
