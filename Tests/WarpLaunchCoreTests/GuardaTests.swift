@@ -2252,6 +2252,9 @@ private let prohibidesArrossegar = [
         #expect(deLApp["demanaObreTot"] == ["Obre-ho tot a Warp…"] && deLaIcona["demanaObreTot"] == ["Obre-ho tot a Warp…"])
 
         #expect(app.contains("OrdresEditor(actualitzaWarp: aplicacio.actualitzaWarp)"))
+        // Les proves del model no veuen la vista ni la connexió de l'app: que l'ítem es desactivi, i amb l'obertura de l'app.
+        #expect(ordres.contains(".disabled(!ordre.potExecutar)"))
+        #expect(app.contains("OrdreActualitzaWarp(warp: warp, consentiment: consentiment, obertura: obertura)"))
         #expect(ordres.components(separatedBy: "ItemActualitzaWarp(ordre: actualitzaWarp)").count == 2)
         #expect(menuIcona.components(separatedBy: "ItemActualitzaWarp(ordre: aplicacio.actualitzaWarp)").count == 2)
         #expect(app.components(separatedBy: "ItemActualitzacions(aplicacio: aplicacio)").count == 3, "al menú de l'app i al de la icona")

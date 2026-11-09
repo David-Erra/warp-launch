@@ -170,6 +170,11 @@ public final class Obertura {
         }
     }
 
+    /// No es pot començar «Actualitza l'estat de Warp» (`OrdreActualitzaWarp`), que activa uns segons la restauració de Warp (D19).
+    /// Mentre s'obre res a Warp: si Warp arrenqués amb l'ajust activat, restauraria les seves finestres, sense Claude. Mentre
+    /// s'aplica una actualització (`aplicantActualitzacio`): l'app està a punt de sortir, i ho faria a mig refresc.
+    public var impedeixRefresc: Bool { estaObrint || aplicantActualitzacio() }
+
     /// Si es pot començar a obrir aquesta finestra: s'ha acceptat el consentiment (D-P4), la configuració és oberta, la
     /// finestra té pestanyes, no hi ha cap altra obertura en curs i `estat.json` es pot fer servir.
     public func potObrir(_ finestra: Finestra.ID?) -> Bool {

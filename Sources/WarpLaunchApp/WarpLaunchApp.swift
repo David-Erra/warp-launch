@@ -267,7 +267,7 @@ final class Aplicacio {
     }
 
     /// «Actualitza l'estat de Warp», la mateixa ordre al menú Arxiu i al de la icona.
-    var actualitzaWarp: OrdreActualitzaWarp { OrdreActualitzaWarp(warp: warp, consentiment: consentiment) }
+    var actualitzaWarp: OrdreActualitzaWarp { OrdreActualitzaWarp(warp: warp, consentiment: consentiment, obertura: obertura) }
 
     /// Per a l'editor: la carpeta, si és de prova.
     var carpetaDeProva: String? {

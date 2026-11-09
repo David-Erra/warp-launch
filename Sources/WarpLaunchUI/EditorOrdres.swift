@@ -18,20 +18,24 @@ extension Editor {
 
 /// «Actualitza l'estat de Warp» (`WarpLaunch.ordreActualitzaEstat`): la mateixa ordre al menú Arxiu i al de la icona, amb una
 /// sola vista (`ItemActualitzaWarp`). No obre ni canvia res de la configuració, però amb Warp obert activa uns segons la
-/// restauració perquè Warp desi les finestres (D19): per això, només amb el permís (D-P4). Sense el refresc (una carpeta de
-/// prova), només llegeix.
+/// restauració perquè Warp desi les finestres (D19): per això, només amb el permís (D-P4), i mai mentre s'obre res a Warp ni
+/// mentre s'aplica una actualització (`Obertura.impedeixRefresc`). Sense el refresc (una carpeta de prova), només llegeix.
 @MainActor
 public struct OrdreActualitzaWarp {
     private let warp: EstatWarp
     private let consentiment: ConsentimentRestauracio
+    private let obertura: Obertura?
 
-    public init(warp: EstatWarp, consentiment: ConsentimentRestauracio) {
+    /// - Parameter obertura: la de l'app; `nil` sense carpeta de configuració, on no n'hi ha cap.
+    public init(warp: EstatWarp, consentiment: ConsentimentRestauracio, obertura: Obertura?) {
         self.warp = warp
         self.consentiment = consentiment
+        self.obertura = obertura
     }
 
-    /// Desactivada sense el permís i mentre ja es llegeix Warp. Després d'una lectura que falla, sí: és quan cal tornar-hi.
-    public var potExecutar: Bool { consentiment.potContinuar && !warp.llegint }
+    /// Desactivada sense el permís, mentre ja es llegeix Warp i mentre s'obre res a Warp o s'aplica una actualització. Després
+    /// d'una lectura que falla, sí: és quan cal tornar-hi.
+    public var potExecutar: Bool { consentiment.potContinuar && !warp.llegint && obertura?.impedeixRefresc != true }
 
     public func executa() async {
         guard potExecutar else { return }

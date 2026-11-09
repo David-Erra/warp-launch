@@ -919,6 +919,36 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(!b.obertura.estaObrint && b.obertura.mostraFull)
     }
 
+    /// «Actualitza l'estat de Warp» activa la restauració de Warp (D19): mentre s'obre res a Warp, Warp podria arrencar amb l'ajust
+    /// activat, i mentre s'aplica una actualització, l'app sortiria a mig refresc. Amb un full que només espera el clic, sí.
+    @Test func actualitzaLEstatNoEsPotMentreSObreNiSActualitza() async throws {
+        let b = try Banc()
+        let warp = EstatWarp(lector: { abans })
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: b.consentiment, obertura: b.obertura)
+        var aplicant = false
+        b.obertura.aplicantActualitzacio = { aplicant }
+        #expect(ordre.potExecutar)
+
+        for obrint: Obertura.Estat in [.preparant("Prova", UUID()), .preparantTot(UUID())] {
+            b.obertura.estat = obrint
+            #expect(!ordre.potExecutar, "\(obrint)")
+            await ordre.executa()
+            #expect(warp.estat == .senseLlegir, "si el clic arriba igualment, no fa res")
+        }
+
+        b.obertura.estat = .cap
+        aplicant = true
+        #expect(!ordre.potExecutar, "aplicant")
+        await ordre.executa()
+        #expect(warp.estat == .senseLlegir, "si el clic arriba igualment, no fa res")
+
+        aplicant = false
+        b.obertura.estat = .noEsPot("no")
+        #expect(ordre.potExecutar)
+        await ordre.executa()
+        #expect(warp.estat != .senseLlegir)
+    }
+
     /// Una pestanya tancada fa menys d'1 minut (el seu Claude encara és viu): el full ho diu, i no s'obre res.
     @Test func ambUnaPestanyaTancadaFaPocNoSObre() async throws {
         let b = try Banc()

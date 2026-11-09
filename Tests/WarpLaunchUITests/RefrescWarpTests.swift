@@ -872,7 +872,7 @@ private actor Porta {
         let lectures = Comptador()
         let warp = EstatWarp(lector: { lectures.suma(); return Self.buida })
         let consentiment = ConsentimentRestauracio(magatzem: MagatzemPreferencies(carpeta: carpeta), creaEntornRefresc: nil)
-        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: consentiment)
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: consentiment, obertura: nil)
         #expect(consentiment.estat == .pendent && !ordre.potExecutar)
         await ordre.executa()
         #expect(lectures.valor == 0 && warp.estat == .senseLlegir)
@@ -891,7 +891,7 @@ private actor Porta {
             porta.wait()
             throw Falla()
         })
-        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: Self.senseCalPermis())
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: Self.senseCalPermis(), obertura: nil)
         #expect(ordre.potExecutar)
         let lectura = Task { await warp.llegeix() }
         for _ in 0..<1000 where warp.estat != .llegint { await Task.yield() }
@@ -916,7 +916,7 @@ private actor Porta {
         let refresc = RefrescWarp(entorn: entorn)
         let warp = EstatWarp(lector: { Self.buida })
         warp.refresc = refresc
-        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: Self.senseCalPermis())
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: Self.senseCalPermis(), obertura: nil)
 
         let canvis = Comptador()
         withObservationTracking { _ = refresc.refrescant } onChange: { canvis.suma() }
