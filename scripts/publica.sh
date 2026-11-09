@@ -13,7 +13,10 @@
 #   git config user.name o user.email (l'autor del commit del tap).
 # - Si, ja publicada la versió, no pot escriure la recepta, no esborra res: diu què cal canviar a mà i surt amb el codi 2.
 # - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre (la compilació no el veu).
-# - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP i WARP_LAUNCH_REQUISIT canvien el repo de GitHub, el tap i el requisit de la signatura.
+# - Compila amb --amb-feed: només aquesta còpia porta l'adreça de les actualitzacions. Refusa si la recepta no té `auto_updates true`, si l'última
+#   versió de GitHub ja és aquesta o una de més nova, si falta el framework o si alguna de les seves peces no és del nostre certificat.
+# - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP, WARP_LAUNCH_REQUISIT i WARP_LAUNCH_REQUISIT_SPARKLE canvien el repo de GitHub, el tap i el
+#   requisit de la signatura de l'app i de les peces de Sparkle.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -23,7 +26,18 @@ TAP="${WARP_LAUNCH_TAP:-David-Erra/homebrew-tap}"
 CAMI_RECEPTA="Casks/warp-launch.rb"
 # El mateix requisit que comprova `instal·la.sh --github`.
 REQUISIT="${WARP_LAUNCH_REQUISIT:-identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\"}"
+# Cada peça de Sparkle té el seu identificador: el que han de compartir amb l'app és el certificat.
+REQUISIT_SPARKLE="${WARP_LAUNCH_REQUISIT_SPARKLE:-${REQUISIT#* and }}"
 APP="build/Warp Launch.app"
+INFO="$APP/Contents/Info.plist"
+FRAMEWORK="$APP/Contents/Frameworks/Sparkle.framework"
+# D'aquí surten l'adreça i la clau que porta la còpia publicada. L'adreça ha de ser la d'aquest repo: si no, cap còpia no trobaria les versions noves.
+FITXER_FEED="Recursos/Actualitzacions.plist"
+FEED_ESPERAT="https://github.com/$REPO/releases/latest/download/appcast.xml"
+
+llegeix_plist() { /usr/libexec/PlistBuddy -c "Print $1" "$2" 2>/dev/null || true; }
+# La versió més gran de les dues, com a nombres: la 0.100 és posterior a la 0.28.
+mes_gran() { printf '%s\n%s\n' "$1" "$2" | LC_ALL=C sort -t. -k1,1n -k2,2n -k3,3n | tail -n 1; }
 
 APLICA=0
 case "${1:-}" in
@@ -41,6 +55,7 @@ if [[ ! "$VERSIO" =~ $FORMA_VERSIO ]]; then
 fi
 ETIQUETA="v$VERSIO"
 ZIP="build/WarpLaunch-$VERSIO.zip"
+URL_ZIP="https://github.com/$REPO/releases/download/$ETIQUETA/WarpLaunch-$VERSIO.zip"
 
 command -v gh > /dev/null || { echo "publica: cal l'eina de GitHub, \`gh\`" >&2; exit 1; }
 if [[ -n "$(git status --porcelain)" ]]; then
@@ -113,32 +128,84 @@ if [[ "$(LC_ALL=C grep -aFxc -- "$URL_RECEPTA" "$RECEPTA" || true)" != 1 ]]; the
     echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) no té exactament una línia «${URL_RECEPTA}». No s'ha publicat res." >&2
     exit 1
 fi
+# Sense això, Homebrew tornaria a instal·lar per sobre del que l'app s'ha actualitzat sola.
+if [[ "$(compta_linies '^[[:space:]]*auto_updates([^[:alnum:]_]|$)')" != 1 || "$(compta_linies '^  auto_updates true$')" != 1 ]]; then
+    echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) no té exactament una línia «  auto_updates true». No s'ha publicat res." >&2
+    exit 1
+fi
 VERSIO_ABANS="$(LC_ALL=C sed -nE 's/^  version "(.*)"$/\1/p' "$RECEPTA")"
 SHA256_ABANS="$(LC_ALL=C sed -nE 's/^  sha256 "(.*)"$/\1/p' "$RECEPTA")"
 # Si la recepta ja va per davant, VERSION és enrere: qui fes `brew upgrade` baixaria de versió.
-if [[ "$(printf '%s\n%s\n' "$VERSIO_ABANS" "$VERSIO" | LC_ALL=C sort -t. -k1,1n -k2,2n -k3,3n | tail -n 1)" != "$VERSIO" ]]; then
+if [[ "$(mes_gran "$VERSIO_ABANS" "$VERSIO")" != "$VERSIO" ]]; then
     echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) ja és a la ${VERSIO_ABANS}, més nova que la ${VERSIO} de VERSION: qui l'actualitzés baixaria de versió. No s'ha publicat res." >&2
     exit 1
 fi
 
+# `latest` és el que llegeixen totes les còpies: una versió que no hi passés al davant no arribaria a ningú.
+ULTIMA=""
+if ULTIMA="$(gh release view --repo "$REPO" --json tagName --jq '.tagName' 2> /dev/null)"; then
+    FORMA_ETIQUETA='^v[0-9]+\.[0-9]+\.[0-9]+$'
+    if [[ ! "$ULTIMA" =~ $FORMA_ETIQUETA ]]; then
+        echo "publica: l'última versió de ${REPO} («${ULTIMA}») no té la forma vX.Y.Z. No s'ha publicat res." >&2
+        exit 1
+    fi
+    if [[ "${ULTIMA#v}" == "$VERSIO" || "$(mes_gran "${ULTIMA#v}" "$VERSIO")" != "$VERSIO" ]]; then
+        echo "publica: l'última versió de ${REPO} és la ${ULTIMA}, que no és anterior a la ${VERSIO} de VERSION: l'app no s'hi actualitzaria. No s'ha publicat res." >&2
+        exit 1
+    fi
+elif [[ -n "$ANTERIOR" ]]; then
+    echo "publica: no s'ha pogut saber quina és l'última versió de ${REPO}. No s'ha publicat res." >&2
+    exit 1
+else
+    ULTIMA=""
+fi
+
+FEED_DEL_FITXER="$(llegeix_plist SUFeedURL "$FITXER_FEED")"
+CLAU_DEL_FITXER="$(llegeix_plist SUPublicEDKey "$FITXER_FEED")"
+if [[ "$FEED_DEL_FITXER" != "$FEED_ESPERAT" || -z "$CLAU_DEL_FITXER" ]]; then
+    echo "publica: «${FITXER_FEED}» ha de portar SUFeedURL = ${FEED_ESPERAT} i SUPublicEDKey. No s'ha publicat res." >&2
+    exit 1
+fi
+
 # La compilació no necessita el token, i SwiftPM executa codi: que no el vegi.
-env -u GH_TOKEN -u GITHUB_TOKEN scripts/build-app.sh
-if [[ "$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist" 2>/dev/null || true)" != "$VERSIO" ]]; then
+env -u GH_TOKEN -u GITHUB_TOKEN scripts/build-app.sh release --amb-feed
+if [[ "$(llegeix_plist CFBundleShortVersionString "$INFO")" != "$VERSIO" ]]; then
     echo "publica: «${APP}» no és la ${VERSIO}. No s'ha publicat res." >&2
     exit 1
 fi
-CODI=0
-ERROR="$(codesign --verify --deep --strict -R="$REQUISIT" "$APP" 2>&1)" || CODI=$?
-if [[ "$CODI" -eq 3 ]]; then
-    echo "publica: «${APP}» no està signada amb «Warp Launch Dev» (al clauer d'aquest Mac?). No s'ha publicat res." >&2
-    exit 1
-elif [[ "$CODI" -ne 0 ]]; then
-    echo "publica: no s'ha pogut comprovar la signatura de «${APP}» (codesign, codi ${CODI}): ${ERROR}" >&2
+# Sparkle compara aquest número amb el de l'appcast: si no coincidissin, tothom es tornaria a actualitzar cada dia.
+if [[ "$(llegeix_plist CFBundleVersion "$INFO")" != "$VERSIO" ]]; then
+    echo "publica: el CFBundleVersion de «${APP}» no és ${VERSIO}. No s'ha publicat res." >&2
     exit 1
 fi
+if [[ "$(llegeix_plist SUFeedURL "$INFO")" != "$FEED_DEL_FITXER" || "$(llegeix_plist SUPublicEDKey "$INFO")" != "$CLAU_DEL_FITXER" ]]; then
+    echo "publica: «${APP}» no porta l'adreça i la clau de «${FITXER_FEED}». No s'ha publicat res." >&2
+    exit 1
+fi
+if [[ ! -d "$FRAMEWORK" ]]; then
+    echo "publica: «${APP}» no porta Sparkle.framework. No s'ha publicat res." >&2
+    exit 1
+fi
+comprova_signatura() {
+    local CODI=0 ERROR
+    ERROR="$(codesign --verify --deep --strict -R="$2" "$1" 2>&1)" || CODI=$?
+    if [[ "$CODI" -eq 3 ]]; then
+        echo "publica: «${1}» no està signada amb «Warp Launch Dev» (al clauer d'aquest Mac?). No s'ha publicat res." >&2
+        exit 1
+    elif [[ "$CODI" -ne 0 ]]; then
+        echo "publica: no s'ha pogut comprovar la signatura de «${1}» (codesign, codi ${CODI}): ${ERROR}" >&2
+        exit 1
+    fi
+}
+comprova_signatura "$APP" "$REQUISIT"
+# `--deep` comprova que les peces de dins siguin vàlides, però no qui les signa.
+for PECA in "$FRAMEWORK/Versions/B/Autoupdate" "$FRAMEWORK/Versions/B/Updater.app" "$FRAMEWORK"; do
+    comprova_signatura "$PECA" "$REQUISIT_SPARKLE"
+done
 rm -f "$ZIP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 MIDA="$(du -h "$ZIP" | cut -f1 | tr -d ' ')"
+MIDA_BYTES="$(stat -f %z "$ZIP")"
 SHA256_ZIP="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
 # Amb LC_ALL=C, sed no refusa cap byte i deixa la resta com és (també si l'última línia no acaba amb un salt de línia).
 LC_ALL=C sed -E -e "s/^  version \"[^\"]*\"\$/  version \"$VERSIO\"/" -e "s/^  sha256 \"[^\"]*\"\$/  sha256 \"$SHA256_ZIP\"/" "$RECEPTA" > "$RECEPTA_NOVA"
@@ -178,9 +245,45 @@ NOTES="build/notes-$VERSIO.md"
     echo '```'
 } > "$NOTES"
 
+# El fitxer que llegeix cada còpia. Sense `generate_appcast`, que escriu a ~/Library/Caches i toca el clauer. Tots els valors són segurs per a l'XML:
+# VERSION i la clau tenen forma coneguda, i el repo és un nom de GitHub.
+MINIM_SISTEMA="$(llegeix_plist LSMinimumSystemVersion "$INFO")"
+escriu_appcast() {
+    cat > "$1" <<APPCAST
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Warp Launch</title>
+        <item>
+            <title>$VERSIO</title>
+            <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
+            <sparkle:version>$VERSIO</sparkle:version>
+            <sparkle:shortVersionString>$VERSIO</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>$MINIM_SISTEMA</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="$URL_ZIP" length="$MIDA_BYTES" type="application/octet-stream" sparkle:edSignature="$2"/>
+        </item>
+    </channel>
+</rss>
+APPCAST
+    if ! xmllint --noout "$1"; then
+        echo "publica: «${1}» no és un XML vàlid. No s'ha publicat res." >&2
+        exit 1
+    fi
+}
+
+# Sense res per comparar, tot és nou.
+CANVIS="$(if [[ -n "$BASE" ]]; then git diff --name-only "$BASE..$COMMIT"; fi)"
+if [[ -z "$BASE" ]] || grep -qFx -e Package.resolved -e Sources/WarpLaunchApp/ServeiActualitzacions.swift -e scripts/build-app.sh <<< "$CANVIS"; then
+    echo "Avís: aquesta versió canvia l'actualitzador: passa les rondes A i C (docs/disseny.md) abans de publicar."
+fi
+
 if [[ "$APLICA" -eq 0 ]]; then
+    APPCAST_PROVA="build/appcast-prova-$VERSIO.xml"
+    escriu_appcast "$APPCAST_PROVA" SENSE-SIGNAR
     echo "Mode de prova: no s'ha publicat res."
     echo "Amb --aplica, publicaria Warp Launch $VERSIO a $REPO com a ${ETIQUETA} (commit ${COMMIT:0:7}), amb $ZIP ($MIDA)."
+    echo "I el seu appcast.xml, signat amb la clau del clauer (aquí, sense signar: $APPCAST_PROVA)."
     if [[ "$RECEPTA_CANVIA" -eq 1 ]]; then
         echo "I canviaria la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}, amb l'autor ${AUTOR_NOM} <${AUTOR_CORREU}>):"
         echo "  version: ${VERSIO_ABANS} -> ${VERSIO}"

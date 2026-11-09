@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import Testing
+@testable import WarpLaunchCore
 
 // `scripts/publica.sh`: sempre en un repo de git temporal amb un origin local (un repo nu), un `build-app.sh` fals que fa una
 // app signada ad hoc, i un `gh` fals que apunta què li demanen i fa de recepta de Homebrew. Mai contra GitHub.
@@ -21,8 +22,25 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
 
       url "https://github.com/exemple/prova/releases/download/v#{version}/WarpLaunch-#{version}.zip"
       name "Warp Launch"
+      auto_updates true
       app "Warp Launch.app"
     end
+
+    """
+}
+
+private let clauPublicaDeProva = String(repeating: "A", count: 43) + "="
+private let feedDeProva = "https://github.com/exemple/prova/releases/latest/download/appcast.xml"
+
+/// El fitxer amb l'adreça i la clau pública, com el de debò: només al repo temporal de la prova.
+private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = clauPublicaDeProva) -> String {
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0"><dict>
+    <key>SUFeedURL</key><string>\(feed)</string>
+    <key>SUPublicEDKey</key><string>\(clau)</string>
+    </dict></plist>
 
     """
 }
@@ -67,6 +85,9 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         var fitxerPut: URL { carpeta.appending(path: "put.txt") }
         var fitxerTokenCompilacio: URL { carpeta.appending(path: "token-compilacio.txt") }
         var fitxerZipPujat: URL { carpeta.appending(path: "zip-pujat.txt") }
+        var fitxerArgumentsCompilacio: URL { carpeta.appending(path: "arguments-compilacio.txt") }
+        var fitxerActualitzacions: URL { repo.appending(path: "Recursos/Actualitzacions.plist") }
+        var appcastDeProva: String { (try? String(contentsOf: repo.appending(path: "build/appcast-prova-0.28.0.xml"), encoding: .utf8)) ?? "" }
         var zipPujat: String { ((try? String(contentsOf: fitxerZipPujat, encoding: .utf8)) ?? "").trimmingCharacters(in: .newlines) }
         /// Què ha rebut el PUT de la recepta: una línia `camp=valor` per cada `-f` (un valor amb salts de línia ocuparia més d'una línia).
         var liniesPut: [String] { ((try? String(contentsOf: fitxerPut, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init) }
@@ -86,9 +107,11 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             #!/bin/bash
             set -euo pipefail
             cd "$(dirname "$0")/.."
+            printf '%s' "$*" > "$BUILD_FALS_ARGUMENTS"
             APP="build/Warp Launch.app"
             rm -rf "$APP"
             mkdir -p "$APP/Contents/MacOS"
+            VERSIO_INFO="${BUILD_FALS_BUNDLE_VERSION:-$(cat VERSION)}"
             cat > "$APP/Contents/Info.plist" <<EOF
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -97,17 +120,45 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             <key>CFBundleExecutable</key><string>WarpLaunch</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>CFBundleShortVersionString</key><string>$(cat VERSION)</string>
+            <key>CFBundleVersion</key><string>$VERSIO_INFO</string>
+            <key>LSMinimumSystemVersion</key><string>26.0</string>
             </dict></plist>
             EOF
+            if [[ -z "${BUILD_FALS_SENSE_FEED:-}" ]]; then /usr/libexec/PlistBuddy -c "Merge Recursos/Actualitzacions.plist" "$APP/Contents/Info.plist" > /dev/null; fi
+            if [[ -n "${BUILD_FALS_ALTRA_CLAU:-}" ]]; then /usr/libexec/PlistBuddy -c "Set SUPublicEDKey $BUILD_FALS_ALTRA_CLAU" "$APP/Contents/Info.plist"; fi
             printf '%s' "${GH_TOKEN:-}${GITHUB_TOKEN:-}" > "$BUILD_FALS_TOKEN"
             printf '#!/bin/sh\nexit 0\n' > "$APP/Contents/MacOS/WarpLaunch"
             chmod 755 "$APP/Contents/MacOS/WarpLaunch"
+            # Les peces de Sparkle: l'identificador és el seu, i `BUILD_FALS_ALIE` en signa una com si fos d'un altre.
+            signa_peca() {
+                local id=prova.interior
+                [[ "${BUILD_FALS_ALIE:-}" == "$1" ]] && id=prova.alie
+                codesign --force --sign - --timestamp=none --identifier "$id" "$2" 2>/dev/null
+            }
+            if [[ -z "${BUILD_FALS_SENSE_FRAMEWORK:-}" ]]; then
+                FW="$APP/Contents/Frameworks/Sparkle.framework"
+                mkdir -p "$FW/Versions/B/Resources" "$FW/Versions/B/Updater.app/Contents/MacOS"
+                cp /usr/bin/true "$FW/Versions/B/Sparkle"
+                cp /usr/bin/true "$FW/Versions/B/Autoupdate"
+                cp /usr/bin/true "$FW/Versions/B/Updater.app/Contents/MacOS/Updater"
+                peca() { printf '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>prova.interior</string><key>CFBundleExecutable</key><string>%s</string><key>CFBundlePackageType</key><string>%s</string></dict></plist>' "$1" "$2"; }
+                peca Sparkle FMWK > "$FW/Versions/B/Resources/Info.plist"
+                peca Updater APPL > "$FW/Versions/B/Updater.app/Contents/Info.plist"
+                ln -s B "$FW/Versions/Current"
+                ln -s Versions/Current/Sparkle "$FW/Sparkle"
+                ln -s Versions/Current/Resources "$FW/Resources"
+                signa_peca Autoupdate "$FW/Versions/B/Autoupdate"
+                signa_peca Updater.app "$FW/Versions/B/Updater.app"
+                signa_peca Sparkle.framework "$FW"
+            fi
             codesign --force --sign - --timestamp=none "$APP" 2>/dev/null
 
             """#)
             try Data("\(versio)\n".utf8).write(to: repo.appending(path: "VERSION"))
             try Data("/build/\n".utf8).write(to: repo.appending(path: ".gitignore"))
             try Data(recepta().utf8).write(to: fitxerRecepta)
+            try FileManager.default.createDirectory(at: fitxerActualitzacions.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(actualitzacionsPlist().utf8).write(to: fitxerActualitzacions)
             // `gh` fals: `release view` diu si ja hi és (GH_FALS_JA_HI_ES), `release list` diu l'última (GH_FALS_ANTERIOR). I `api`
             // fa de GitHub per a la recepta: el GET torna el JSON de debò (el base64 amb salts de línia, i el sha de git del fitxer)
             // i hi aplica el --jq, i el PUT només passa si el sha és el del fitxer d'ara. Les eines, amb la ruta sencera: unes
@@ -116,7 +167,14 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             #!/bin/bash
             echo "${GH_TOKEN:+[token:$GH_TOKEN] }$*" >> "$GH_FALS_REGISTRE"
             case "$1 $2" in
-                "release view") [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1 ;;
+                "release view")
+                    if [[ "$3" != --repo ]]; then [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1; fi
+                    # Sense etiqueta, `gh` torna la marcada com a última.
+                    [[ -z "${GH_FALS_ULTIMA_FALLA:-}" ]] || exit 1
+                    ULTIMA="${GH_FALS_ULTIMA:-${GH_FALS_ANTERIOR:-}}"
+                    [[ -n "$ULTIMA" ]] || exit 1
+                    /usr/bin/jq -n --arg tag "$ULTIMA" '{tagName: $tag}' | /usr/bin/jq -r "$8"
+                    exit 0 ;;
                 "release list") echo "${GH_FALS_ANTERIOR:-}"; exit 0 ;;
                 "release create")
                     [[ -z "${GH_FALS_RELEASE_FALLA:-}" ]] || exit 1
@@ -191,7 +249,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
                 "WARP_LAUNCH_TAP": tapDeProva, "GH_FALS_TAP": tapDeProva, "GH_FALS_RECEPTA": fitxerRecepta.path,
                 "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
                 "GH_FALS_PUT": fitxerPut.path, "GH_FALS_ZIP_PUJAT": fitxerZipPujat.path, "GH_FALS_COMMIT": commitDelTap,
-                "BUILD_FALS_TOKEN": fitxerTokenCompilacio.path,
+                "BUILD_FALS_TOKEN": fitxerTokenCompilacio.path, "BUILD_FALS_ARGUMENTS": fitxerArgumentsCompilacio.path,
                 "LANG": "ca_ES.UTF-8", "LC_ALL": "ca_ES.UTF-8",
                 "PATH": carpeta.appending(path: "bin").path + ":/usr/bin:/bin",
             ]
@@ -208,9 +266,9 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         }
 
         /// Refusa abans de compilar, amb --aplica i sense: no compila res, ni publica res, ni escriu la recepta.
-        func comprovaRefus(conte text: String, sourceLocation: SourceLocation = #_sourceLocation) throws {
+        func comprovaRefus(conte text: String, entorn extra: [String: String] = [:], sourceLocation: SourceLocation = #_sourceLocation) throws {
             for arguments: [String] in [[], ["--aplica"]] {
-                let (codi, sortida) = try executaScript(repo.appending(path: "scripts/publica.sh"), arguments, entorn: entornDeProva)
+                let (codi, sortida) = try executaScript(repo.appending(path: "scripts/publica.sh"), arguments, entorn: entornDeProva.merging(extra) { _, nou in nou })
                 #expect(codi == 1, "\(sortida)", sourceLocation: sourceLocation)
                 #expect(sortida.contains(text), "\(sortida)", sourceLocation: sourceLocation)
                 #expect(sortida.contains("No s'ha publicat res."), "\(sortida)", sourceLocation: sourceLocation)
@@ -221,7 +279,172 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         }
 
         /// Signatura ad hoc: el requisit només hi demana l'identificador (sense el certificat de debò).
-        static let requisitDeProva = ["WARP_LAUNCH_REQUISIT": #"identifier "cat.davide.warp-launch""#]
+        static let requisitDeProva = ["WARP_LAUNCH_REQUISIT": #"identifier "cat.davide.warp-launch""#,
+                                      "WARP_LAUNCH_REQUISIT_SPARKLE": #"identifier "prova.interior""#]
+
+        /// Refusa després de compilar: amb --aplica i sense, sense res a GitHub.
+        func comprovaRefusDespresDeCompilar(conte text: String, entorn extra: [String: String]) throws {
+            for arguments: [String] in [[], ["--aplica"]] {
+                let (codi, sortida) = try executaScript(repo.appending(path: "scripts/publica.sh"), arguments,
+                                                        entorn: entornDeProva.merging(Self.requisitDeProva) { $1 }.merging(extra) { $1 })
+                #expect(codi == 1, "\(sortida)")
+                #expect(sortida.contains(text), "\(sortida)")
+                #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+                #expect(!ordresGh.contains("release create"))
+                #expect(!ordresGh.contains("--method PUT"))
+            }
+        }
+
+        /// Canvia el fitxer de l'adreça, i ho deixa tot a origin/main.
+        func posaActualitzacions(_ text: String?) throws {
+            if let text { try Data(text.utf8).write(to: fitxerActualitzacions) } else { try FileManager.default.removeItem(at: fitxerActualitzacions) }
+            try commit("chore: l'adreça", afegeix: true)
+            try git("push", "-q", "origin", "main")
+        }
+    }
+
+    /// Només la còpia que es publica porta l'adreça (decisió 3).
+    @Test func compilaAmbLAdreca() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(try String(contentsOf: b.fitxerArgumentsCompilacio, encoding: .utf8) == "release --amb-feed")
+    }
+
+    /// El requisit de les peces de Sparkle és el certificat de l'app, sense el seu identificador: les peces tenen el seu.
+    @Test func elRequisitDeSparkleEsNomesElCertificat() throws {
+        let text = try String(contentsOf: script, encoding: .utf8)
+        let linies = text.split(separator: "\n").filter { $0.hasPrefix("REQUISIT=") || $0.hasPrefix("REQUISIT_SPARKLE=") }.map(String.init)
+        #expect(linies.count == 2, "\(linies)")
+        let valor = try sortidaDe("/bin/bash", "IDENTIFICADOR=cat.davide.warp-launch; unset WARP_LAUNCH_REQUISIT WARP_LAUNCH_REQUISIT_SPARKLE; "
+                                  + linies.joined(separator: "; ") + "; printf '%s\\0' \"$REQUISIT_SPARKLE\"")
+        #expect(valor.first?.hasPrefix(#"certificate leaf = H""#) == true, "\(valor)")
+        #expect(valor.first?.contains("identifier") == false, "\(valor)")
+        let binari = FileManager.default.temporaryDirectory.appending(path: "warp-launch-requisit-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: binari) }
+        let csreq = try executaPrograma("/usr/bin/csreq", ["-r=" + (valor.first ?? ""), "-b", binari.path], entorn: [:])
+        #expect(csreq.codi == 0, "\(csreq.sortida)")
+    }
+
+    /// Una còpia que no porta bé l'adreça o la clau no es publica.
+    @Test(arguments: [
+        (nil, "ha de portar SUFeedURL"),
+        (actualitzacionsPlist(feed: "http://127.0.0.1:48917/appcast.xml"), "ha de portar SUFeedURL"),
+        (actualitzacionsPlist(feed: "https://github.com/exemple/una-altra/releases/latest/download/appcast.xml"), "ha de portar SUFeedURL"),
+        (actualitzacionsPlist(clau: ""), "ha de portar SUFeedURL"),
+    ] as [(String?, String)])
+    func senseLAdrecaNoEsPublica(text: String?, missatge: String) throws {
+        let b = try Banc()
+        try b.posaActualitzacions(text)
+        try b.comprovaRefus(conte: missatge)
+    }
+
+    /// Mirat al paquet ja compilat: el que va als Macs és això.
+    @Test(arguments: [
+        (["BUILD_FALS_SENSE_FRAMEWORK": "1"], "no porta Sparkle.framework"),
+        (["BUILD_FALS_BUNDLE_VERSION": "0.27.0"], "CFBundleVersion"),
+        (["BUILD_FALS_SENSE_FEED": "1"], "no porta l'adreça i la clau"),
+        (["BUILD_FALS_ALTRA_CLAU": String(repeating: "B", count: 43) + "="], "no porta l'adreça i la clau"),
+        (["BUILD_FALS_ALIE": "Autoupdate"], "Versions/B/Autoupdate» no està signada"),
+        (["BUILD_FALS_ALIE": "Updater.app"], "Versions/B/Updater.app» no està signada"),
+        (["BUILD_FALS_ALIE": "Sparkle.framework"], "Sparkle.framework» no està signada"),
+    ] as [([String: String], String)])
+    func unPaquetIncorrecteNoEsPublica(entorn: [String: String], missatge: String) throws {
+        let b = try Banc()
+        try b.comprovaRefusDespresDeCompilar(conte: missatge, entorn: entorn)
+    }
+
+    /// El mode de prova escriu l'appcast sense signar, amb tot el que porta el de debò.
+    @Test func elModeDeProvaEscriuLAppcastSenseSignar() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let xml = b.appcastDeProva
+        let mida = try #require(try FileManager.default.attributesOfItem(atPath: b.zip.path)[.size] as? Int)
+        let url = "https://github.com/exemple/prova/releases/download/v0.28.0/WarpLaunch-0.28.0.zip"
+        #expect(xml.contains("<sparkle:version>0.28.0</sparkle:version>"), "\(xml)")
+        #expect(xml.contains("<sparkle:shortVersionString>0.28.0</sparkle:shortVersionString>"), "\(xml)")
+        #expect(xml.contains("<sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>"), "\(xml)")
+        #expect(xml.contains("<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>"), "\(xml)")
+        #expect(xml.contains(#"<enclosure url="\#(url)" length="\#(mida)" type="application/octet-stream" sparkle:edSignature="SENSE-SIGNAR"/>"#), "\(xml)")
+        #expect(xml.components(separatedBy: "<item>").count == 2, "\(xml)")
+        // La mateixa regla que aplica l'app: si no la passés, totes les còpies refusarien l'actualització.
+        #expect(PoliticaActualitzacions.enclosureValid(feed: feedDeProva, enclosure: url))
+    }
+
+    /// Els canvis de l'actualitzador avisen; no aturen res.
+    @Test(arguments: ["Package.resolved", "Sources/WarpLaunchApp/ServeiActualitzacions.swift", "scripts/build-app.sh"])
+    func avisaSiCanviaLActualitzador(fitxer: String) throws {
+        let b = try Banc()
+        try b.git("tag", "v0.27.0")
+        try b.git("push", "-q", "origin", "v0.27.0")
+        try b.git("tag", "-d", "v0.27.0")
+        let ruta = b.repo.appending(path: fitxer)
+        try FileManager.default.createDirectory(at: ruta.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let abans = (try? Data(contentsOf: ruta)) ?? Data()
+        try (abans + Data("\n".utf8)).write(to: ruta)
+        try b.commit("chore: toca \(fitxer)", afegeix: true)
+        try b.git("push", "-q", "origin", "main")
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva.merging(["GH_FALS_ANTERIOR": "v0.27.0"]) { $1 })
+        #expect(codi == 0, "\(sortida)")
+        #expect(sortida.contains("Avís: aquesta versió canvia l'actualitzador: passa les rondes A i C"), "\(sortida)")
+    }
+
+    /// Sense canvis de l'actualitzador, cap avís.
+    @Test func senseCanvisDeLActualitzadorNoAvisa() throws {
+        let b = try Banc()
+        try b.git("tag", "v0.27.0")
+        try b.git("push", "-q", "origin", "v0.27.0")
+        try b.git("tag", "-d", "v0.27.0")
+        try Data("x".utf8).write(to: b.repo.appending(path: "un-altre.txt"))
+        try b.commit("chore: una altra cosa", afegeix: true)
+        try b.git("push", "-q", "origin", "main")
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva.merging(["GH_FALS_ANTERIOR": "v0.27.0"]) { $1 })
+        #expect(codi == 0, "\(sortida)")
+        #expect(!sortida.contains("canvia l'actualitzador"), "\(sortida)")
+    }
+
+    // --- `latest`: el que llegeixen totes les còpies, abans de compilar.
+
+    @Test(arguments: ["v0.28.0", "v0.28.1", "v0.100.0", "v1.0.0"])
+    func unaUltimaIgualOMesNovaNoEsPublica(etiqueta: String) throws {
+        let b = try Banc()
+        try b.comprovaRefus(conte: "no és anterior a la 0.28.0", entorn: ["GH_FALS_ULTIMA": etiqueta])
+    }
+
+    @Test(arguments: ["v0.9.0", "v0.27.99"])
+    func unaUltimaAnteriorEsPublica(etiqueta: String) throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva.merging(["GH_FALS_ULTIMA": etiqueta]) { $1 })
+        #expect(codi == 0, "\(sortida)")
+    }
+
+    @Test func unaUltimaAmbUnaAltraFormaNoEsPublica() throws {
+        let b = try Banc()
+        try b.comprovaRefus(conte: "no té la forma vX.Y.Z", entorn: ["GH_FALS_ULTIMA": "latest"])
+    }
+
+    /// Si hi ha versions però no se sap quina és l'última, no es continua a cegues.
+    @Test func senseSaberLUltimaNoEsPublica() throws {
+        let b = try Banc()
+        try b.git("tag", "v0.27.0")
+        try b.git("push", "-q", "origin", "v0.27.0")
+        try b.git("tag", "-d", "v0.27.0")
+        try b.comprovaRefus(conte: "no s'ha pogut saber quina és l'última", entorn: ["GH_FALS_ANTERIOR": "v0.27.0", "GH_FALS_ULTIMA_FALLA": "1"])
+    }
+
+    /// Sense `auto_updates`, Homebrew trepitjaria el que l'app s'ha actualitzat sola. Cal exactament aquesta línia.
+    @Test(arguments: [
+        recepta().replacing("  auto_updates true\n", with: ""),
+        recepta().replacing("  auto_updates true\n", with: "  auto_updates false\n"),
+        recepta().replacing("  auto_updates true\n", with: "    auto_updates true\n"),
+        recepta().replacing("  auto_updates true\n", with: "  auto_updates true # comentari\n"),
+        recepta().replacing("  auto_updates true\n", with: "  auto_updates true\n  auto_updates true\n"),
+    ])
+    func unaReceptaSenseAutoUpdatesNoEsPublica(text: String) throws {
+        let b = try Banc()
+        try Data(text.utf8).write(to: b.fitxerRecepta)
+        try b.comprovaRefus(conte: "«  auto_updates true»")
     }
 
     /// Per defecte, mode de prova: compila, fa el zip i les notes, i no crea res a GitHub (regla 3).
@@ -515,7 +738,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
 
     /// Només canvien les dues línies: la resta queda byte a byte igual, encara que no sigui UTF-8 o no acabi amb un salt de línia.
     @Test func laRestaDeLaReceptaNoCanvia() throws {
-        let abans = Data("# Recepta amb accents: línia\n  # version \"9.9.9\"\n#  version \"9.9.9\"\n#  sha256 \"\(sha256Antic)\"\n\tdesc \"x\"   \r\n".utf8) + Data([0xFF, 0x00, 0x0A])
+        let abans = Data("# Recepta amb accents: línia\n  # version \"9.9.9\"\n#  version \"9.9.9\"\n#  sha256 \"\(sha256Antic)\"\n\tdesc \"x\"   \r\n  auto_updates true\n".utf8) + Data([0xFF, 0x00, 0x0A])
         let despres = Data("\n  url \"https://github.com/exemple/prova/releases/download/v#{version}/WarpLaunch-#{version}.zip\"\n  sha256sum = 1\nend".utf8)
         let b = try Banc()
         try (abans + Data("  version \"0.27.0\"\n  sha256 \"\(sha256Antic)\"\n".utf8) + despres).write(to: b.fitxerRecepta)
@@ -536,6 +759,8 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
               url "https://github.com/exemple/prova/releases/download/v#{version}/WarpLaunch-#{version}.zip"
               name "Warp Launch"
               desc "Reobre les finestres de Warp, cada pestanya amb la seva sessió de Claude Code"
+
+              auto_updates true
 
               livecheck do
                 url :url
