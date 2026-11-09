@@ -75,6 +75,30 @@ private func lectura(_ sessio: String) -> LecturaWarp {
         #expect(reiniciada.avisCarpeta(pestanya, inici: "/Users/prova", carpetaExisteix: { _ in true }) == nil, "la foto no es desa")
     }
 
+    /// Una foto on Claude ja no és viu (Warp tancat, o Claude ha sortit) i Warp diu el mateix no treu l'avís: la pestanya
+    /// continua a la carpeta triada. Si Warp ja diu una altra cosa, sí.
+    @Test func laFotoSenseClaudeNoTreuLAvis() throws {
+        let carpeta = try Carpeta()
+        let id = id(1)
+        let pestanya = Pestanya(id: id, titol: "T", carpeta: "/x/b", claude: .habituals)
+        let configuracio = Configuracio(plantilla: .habituals, finestres: [Finestra(id: UUID(), nom: "f", pestanyes: [pestanya])])
+        let sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta.url), rellotge: { Date(timeIntervalSince1970: 1_793_750_400) })
+        sessions.carrega()
+        sessions.vincula([id: VincleImportat(pane: pane, sessio: "s", carpetaSessio: "/x/b", carpetaWarp: "/x/a")])
+        func foto(_ carpetaPane: String) -> LecturaWarp {
+            LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
+                PestanyaLlegida(posicio: 0, titol: "T", color: nil, panes: [
+                    PaneLlegit(uuid: pane, carpeta: carpetaPane, origenCarpeta: .pane, carpetaExisteix: true),
+                ]),
+            ])], sessionsSensePestanya: [], avisos: [])
+        }
+        func avis() -> Avis? { sessions.avisCarpeta(pestanya, inici: "/Users/prova", carpetaExisteix: { _ in true }) }
+        sessions.actualitza(amb: foto("/x/a"), configuracio: configuracio)
+        #expect(avis()?.tipus == .carpetesDiferents(warp: "/x/a", claude: "/x/b", actual: "/x/b"))
+        sessions.actualitza(amb: foto("/x/b"), configuracio: configuracio)
+        #expect(avis() == nil, "ara Warp diu la mateixa")
+    }
+
     /// Només s'escriu si alguna cosa canvia.
     @Test func nomesEsDesaSiCanvia() throws {
         let carpeta = try Carpeta()

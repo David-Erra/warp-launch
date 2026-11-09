@@ -79,7 +79,7 @@ public final class EstatSessions {
         if vives != lectura.conversesVives { vives = lectura.conversesVives }
         recents = [:]
         // Les lectures de cada minut no porten les finestres: la foto es queda fins a la pròxima.
-        let foto = lectura.finestres.isEmpty ? carpetesWarp : Self.carpetesDeWarp(lectura)
+        let foto = Self.carpetesDeWarp(lectura, abans: carpetesWarp)
         let fotoNova = foto != carpetesWarp
         carpetesWarp = foto
         let abans = estat
@@ -129,12 +129,16 @@ public final class EstatSessions {
         desa(ActualitzaEstat.ambPanes(panes, estat: estat, ara: rellotge()))
     }
 
-    /// La carpeta de Warp dels panes on no coincideix amb la del seu Claude.
-    private static func carpetesDeWarp(_ lectura: LecturaWarp) -> [String: String] {
-        var carpetes: [String: String] = [:]
-        for pane in lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes)
-        where pane.claude != nil && pane.claude?.carpeta != pane.carpeta {
-            carpetes[pane.uuid] = pane.carpeta
+    /// La carpeta de Warp dels panes on no coincideix amb la del seu Claude, posada al dia amb la foto. Si Claude ja no hi és
+    /// (Warp tancat, o ha sortit), no se sap res de nou: el pane conserva la que tenia, llevat que Warp ja en digui una altra.
+    private static func carpetesDeWarp(_ lectura: LecturaWarp, abans: [String: String]) -> [String: String] {
+        var carpetes = abans
+        for pane in lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes) {
+            if let claude = pane.claude {
+                carpetes[pane.uuid] = claude.carpeta == pane.carpeta ? nil : pane.carpeta
+            } else if carpetes[pane.uuid] != pane.carpeta {
+                carpetes[pane.uuid] = nil
+            }
         }
         return carpetes
     }
