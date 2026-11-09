@@ -32,7 +32,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
 
     @Test func senseCapPendentEsDeixaComEra() throws {
         let c = try Carpeta()
-        let intent = IntentActualitzacio(fallades: 1, versioFallada: "0.32.0")
+        let intent = IntentActualitzacio(fallades: 1, versioFallada: "0.32.2")
         try c.magatzem.desa(intent)
         let abans = try Data(contentsOf: c.magatzem.fitxer)
         let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.1", ara: t0)
@@ -46,8 +46,29 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.1", tipus), fallades: 1, versioFallada: "0.32.0"))
         let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: actual, ara: t0)
         #expect(r.efecte == .exit && r.reobertura == tipus)
-        #expect(r.intent == IntentActualitzacio(fallades: 0, versioFallada: "0.32.0"))
+        #expect(r.intent == IntentActualitzacio(), "ni el pendent ni la fallada, que ja s'ha superat")
         #expect(c.alDisc == .llegit(r.intent), "el pendent ja no és al fitxer")
+    }
+
+    /// Instal·lada en sortir, amb Homebrew o a mà, no hi ha pendent. Si no s'oblida la fallada, amb dues, cap versió futura no
+    /// es tornaria a aplicar sola.
+    @Test(arguments: ["0.32.1", "0.32.2"])
+    func unaFalladaSuperadaSensePendentSOblida(actual: String) throws {
+        let c = try Carpeta()
+        try c.magatzem.desa(IntentActualitzacio(fallades: 2, versioFallada: "0.32.1"))
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: actual, ara: t0)
+        #expect(r.efecte == .res && r.reobertura == nil)
+        #expect(r.intent == IntentActualitzacio())
+        #expect(!r.intent.bloquejaAutomatic(candidat: "0.32.3"))
+        #expect(c.alDisc == .llegit(IntentActualitzacio()))
+    }
+
+    @Test func unaFalladaNoSuperadaEsConserva() throws {
+        let c = try Carpeta()
+        try c.magatzem.desa(IntentActualitzacio(fallades: 2, versioFallada: "0.32.1"))
+        let r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.0", ara: t0)
+        #expect(r.intent == IntentActualitzacio(fallades: 2, versioFallada: "0.32.1"))
+        #expect(r.intent.bloquejaAutomatic(candidat: "0.32.3"))
     }
 
     @Test func falladaAmbUnaVersioAnterior() throws {
@@ -66,7 +87,7 @@ private func pendent(_ objectiu: String = "0.32.1", _ tipus: IntentActualitzacio
         #expect(r.intent.fallades == 2 && r.intent.versioFallada == "0.32.1")
         try c.magatzem.desa(IntentActualitzacio(pendent: pendent("0.32.2"), fallades: 2, versioFallada: "0.32.1"))
         r = IntentActualitzacio.enArrencar(magatzem: c.magatzem, versioActual: "0.32.2", ara: t0)
-        #expect(r.intent.fallades == 0)
+        #expect(r.intent.fallades == 0 && r.intent.versioFallada == nil)
     }
 
     /// L'hora de l'intent compta de 5 s enrere fins a 300 s; fora d'aquí no se sap si és aquesta reobertura.

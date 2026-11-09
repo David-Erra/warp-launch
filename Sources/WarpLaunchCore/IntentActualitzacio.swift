@@ -77,26 +77,38 @@ public struct IntentActualitzacio: Equatable, Sendable {
         case let .ignorat(motiu): return Arrencada(reobertura: nil, intent: IntentActualitzacio(), efecte: .ignorat(motiu))
         case let .llegit(llegit): intent = llegit
         }
-        guard let pendent = intent.pendent else { return Arrencada(reobertura: nil, intent: intent, efecte: .res) }
-        guard let actual = PoliticaActualitzacions.Versio(versioActual), let objectiu = PoliticaActualitzacions.Versio(pendent.objectiu) else {
-            return Arrencada(reobertura: nil, intent: intent, efecte: .ignorat("versió no vàlida"))
+        guard let actual = PoliticaActualitzacions.Versio(versioActual) else {
+            return Arrencada(reobertura: nil, intent: intent, efecte: intent.pendent == nil ? .res : .ignorat("versió no vàlida"))
         }
 
         var nou = intent
         nou.pendent = nil
         var reobertura: Tipus?
-        let efecte: Efecte
-        if actual >= objectiu {
-            let passat = ara.timeIntervalSince(pendent.hora)
-            let recent = passat >= -PoliticaActualitzacions.margeReoberturaEnrere && passat <= PoliticaActualitzacions.margeReobertura
-            reobertura = recent ? pendent.tipus : nil
-            nou.fallades = 0
-            efecte = .exit
-        } else {
-            nou.fallades += 1
-            nou.versioFallada = pendent.objectiu
-            efecte = .fallada
+        var efecte = Efecte.res
+        if let pendent = intent.pendent {
+            guard let objectiu = PoliticaActualitzacions.Versio(pendent.objectiu) else {
+                return Arrencada(reobertura: nil, intent: intent, efecte: .ignorat("versió no vàlida"))
+            }
+            if actual >= objectiu {
+                let passat = ara.timeIntervalSince(pendent.hora)
+                let recent = passat >= -PoliticaActualitzacions.margeReoberturaEnrere && passat <= PoliticaActualitzacions.margeReobertura
+                reobertura = recent ? pendent.tipus : nil
+                nou.fallades = 0
+                efecte = .exit
+            } else {
+                nou.fallades += 1
+                nou.versioFallada = pendent.objectiu
+                efecte = .fallada
+            }
         }
+        // L'app ja és a la versió que va fallar, o a una de més nova, també si s'hi ha arribat sense intent (en sortir, amb Homebrew
+        // o a mà): si no, amb dues fallades no tornaria a reiniciar-se sola mai més.
+        if let fallada = nou.versioFallada.flatMap({ PoliticaActualitzacions.Versio($0) }), actual >= fallada {
+            nou.fallades = 0
+            nou.versioFallada = nil
+        }
+        guard nou != intent else { return Arrencada(reobertura: nil, intent: intent, efecte: .res) }
+
         var errorDesant: String?
         do {
             try magatzem.desa(nou)

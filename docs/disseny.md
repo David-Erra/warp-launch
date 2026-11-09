@@ -2361,6 +2361,7 @@ En arrencar, només amb `.real` (`IntentActualitzacio.enArrencar`), i llegint-lo
 | Versió actual ≥ `objectiu` | Èxit: `reobertura` = `tipus` si l'hora és de 5 s enrere a 300 s (si no, `nil`). `pendent` fora, `fallades = 0` |
 | Versió actual < `objectiu` | Fallada: `reobertura = nil`, `fallades + 1`, `versioFallada = objectiu`, `pendent` fora |
 | Fitxer mal format, o `versio` més nova | Com si no hi fos, i ho apunta al registre. No bloqueja res |
+| Versió actual ≥ `versioFallada`, amb pendent o sense (s'hi ha arribat en sortir, amb Homebrew o a mà) | `fallades = 0` i `versioFallada` fora. Si no, amb dues fallades no es tornaria a reiniciar sola mai més |
 
 Automàtic bloquejat (`installacioFallida`) si el candidat és `versioFallada` o si `fallades >= 2`. **Així, la icona desapareix com a molt una vegada per versió, i dues en total** si cada versió falla. «Reinicia i actualitza» sempre es pot. Si desar l'intent falla, no es crida el bloc.
 
