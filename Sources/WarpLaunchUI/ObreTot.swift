@@ -75,7 +75,7 @@ extension Obertura {
     /// Si es pot demanar el full de «Obre-ho tot»: s'ha acceptat el consentiment (D-P4), la configuració és oberta, té alguna
     /// finestra amb pestanyes, no hi ha cap altra obertura en curs i `estat.json` es pot fer servir.
     public var potObrirTot: Bool {
-        estat == .cap && consentiment.potContinuar && editor.estat == .oberta && sessions.motiuNoEsPotObrir == nil
+        estat == .cap && !aplicantActualitzacio() && consentiment.potContinuar && editor.estat == .oberta && sessions.motiuNoEsPotObrir == nil
             && editor.configuracio.finestres.contains { !$0.pestanyes.isEmpty }
     }
 

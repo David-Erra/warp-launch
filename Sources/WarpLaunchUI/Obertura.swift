@@ -148,6 +148,9 @@ public final class Obertura {
     }
     /// Per conversa (`EntradaObertura.conversesEnCurs`). Se n'esborra quan es veu el Claude, o als 10 min.
     @ObservationIgnored private var conversesEnCurs: [String: ConversaEnCurs] = [:]
+    /// Una actualització s'ha començat a aplicar: l'app sortirà, i ja no se li torna a preguntar (`Actualitzacions`). Mentrestant,
+    /// no es pot començar a obrir res. L'assigna l'app.
+    @ObservationIgnored public var aplicantActualitzacio: @MainActor () -> Bool = { false }
 
     public init(editor: Editor, sessions: EstatSessions, consentiment: ConsentimentRestauracio, entorn: Entorn) {
         self.editor = editor
@@ -162,8 +165,8 @@ public final class Obertura {
     /// Si es pot començar a obrir aquesta finestra: s'ha acceptat el consentiment (D-P4), la configuració és oberta, la
     /// finestra té pestanyes, no hi ha cap altra obertura en curs i `estat.json` es pot fer servir.
     public func potObrir(_ finestra: Finestra.ID?) -> Bool {
-        guard estat == .cap, consentiment.potContinuar, editor.estat == .oberta, sessions.motiuNoEsPotObrir == nil,
-              let finestra else { return false }
+        guard estat == .cap, !aplicantActualitzacio(), consentiment.potContinuar, editor.estat == .oberta,
+              sessions.motiuNoEsPotObrir == nil, let finestra else { return false }
         return editor.configuracio.finestres.first { $0.id == finestra }?.pestanyes.isEmpty == false
     }
 
@@ -527,6 +530,13 @@ public final class Obertura {
     /// restauració (ronda 5, `RefrescWarp.warpRestauraEnArrencar`). Llavors no obre cap finestra buida.
     func warpRestauraEnArrencar(_ lectura: LecturaWarp) -> Bool {
         lectura.warpDesaFinestres != false || consentiment.refresc?.warpRestauraEnArrencar == true
+    }
+
+    /// Hi ha alguna conversa en curs dels darrers 10 min. Va per la data, com `conversesRecents`: una pestanya on Claude no
+    /// arriba mai no pot deixar aquest valor cert per sempre (`enLlegir` només en treu les que veu).
+    public var teConversesEnCurs: Bool {
+        let ara = entorn.rellotge()
+        return conversesEnCurs.contains { ara.timeIntervalSince($0.value.desDe) < PlaObertura.tempsDarrerLlancament }
     }
 
     /// Les converses en curs dels darrers 10 min; les més velles s'obliden.

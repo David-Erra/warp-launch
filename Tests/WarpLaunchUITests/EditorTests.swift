@@ -41,6 +41,36 @@ private func contingut(_ carpeta: URL) -> [String] {
         #expect(!FileManager.default.fileExists(atPath: tmp.magatzem.carpeta.path))
     }
 
+    /// Actualització automàtica (docs/disseny.md, secció 11, 3.2): l'hora de l'últim canvi, per no perdre un Desfés recent.
+    @Test func darrerCanviNomesQuanCanviaAlguna() throws {
+        let tmp = try Temporal()
+        let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil)
+        editor.carrega()
+        editor.comencaEnBlanc()
+        var ara = Date(timeIntervalSince1970: 1_793_750_400)
+        editor.rellotgeCanvis = { ara }
+        #expect(editor.darrerCanvi == nil)
+
+        editor.afegeixFinestra()
+        #expect(editor.darrerCanvi == ara)
+        let primer = ara
+
+        // Un canvi que no canvia res no compta.
+        ara += 60
+        let finestra = try #require(editor.configuracio.finestres.first)
+        editor.reanomenaFinestra(finestra.id, a: finestra.nom)
+        #expect(editor.darrerCanvi == primer)
+        editor.canviaPlantilla(nom: "Res") { _ in }
+        #expect(editor.darrerCanvi == primer)
+
+        // Les finestres i la plantilla, totes dues.
+        editor.reanomenaFinestra(finestra.id, a: "Altre nom")
+        #expect(editor.darrerCanvi == ara)
+        ara += 60
+        editor.canviaPlantilla(nom: "Salta els permisos") { $0.saltaPermisos.toggle() }
+        #expect(editor.darrerCanvi == ara)
+    }
+
     @Test func comencaEnBlancCreaElFitxerAmbLaPlantillaSegura() throws {
         let tmp = try Temporal()
         let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil)

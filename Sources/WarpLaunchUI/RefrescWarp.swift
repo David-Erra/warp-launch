@@ -152,6 +152,9 @@ public final class RefrescWarp {
     /// toquen l'ajust. Només `desfesRetirada` el torna a fals.
     @ObservationIgnored private var retirat = false
 
+    /// Hi ha un refresc en curs (l'ajust de Warp pot ser activat).
+    public var refrescant: Bool { enCurs != nil }
+
     public init(entorn: Entorn) {
         self.entorn = entorn
     }

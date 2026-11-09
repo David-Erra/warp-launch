@@ -851,6 +851,56 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(c.proposta?.pla.aObrir.first?.conversa == .repren(conversa))
     }
 
+    /// Actualització automàtica (docs/disseny.md, secció 11, 3.2): les converses en curs bloquegen el reinici, però per data.
+    @Test func teConversesEnCursEsPerData() async throws {
+        let conversa = "1b2c3d4e-5f60-4a7b-8c9d-0e1f2a3b4c5d"
+        func banc() async throws -> Banc {
+            let estat = EstatApp(pestanyes: [id(1): VincleEstat(sessio: conversa, origen: .importacio, vista: t0)])
+            let b = try Banc(estat: try estat.json())
+            let projecte = b.carpeta.appending(path: "projects/-x-t1")
+            try FileManager.default.createDirectory(at: projecte, withIntermediateDirectories: true)
+            try Data().write(to: projecte.appending(path: conversa + ".jsonl"))
+            await b.obertura.demana(id(100))
+            b.lectures = [abans, abans, despresSenseClaude]
+            return b
+        }
+
+        let b = try await banc()
+        #expect(!b.obertura.teConversesEnCurs, "abans d'obrir no n'hi ha cap")
+        await b.obertura.confirmaIObre()
+        #expect(b.obertura.teConversesEnCurs, "la finestra s'ha vist, però encara no el seu Claude")
+
+        // Sense veure mai el Claude i sense cridar `conversesRecents()`: als 10 min deixa de ser cert. L'hora és la del llançament.
+        let desDe = try #require(b.estatAlDisc.llancaments.last?.creat)
+        b.ara = desDe + PlaObertura.tempsDarrerLlancament - 1
+        #expect(b.obertura.teConversesEnCurs)
+        b.ara = desDe + 601
+        #expect(!b.obertura.teConversesEnCurs)
+
+        // Si es veu el Claude abans, deixa de ser cert de seguida.
+        let c = try await banc()
+        await c.obertura.confirmaIObre()
+        #expect(c.obertura.teConversesEnCurs)
+        var ambClaude = despresSenseClaude
+        ambClaude.finestres[1].pestanyes[0].panes[0].claude = claudeT1()
+        c.obertura.enLlegir(ambClaude)
+        #expect(!c.obertura.teConversesEnCurs)
+    }
+
+    /// Mentre s'aplica una actualització, no es comença a obrir res.
+    @Test func ambUnaActualitzacioAplicantNoEsPotObrir() throws {
+        let b = try Banc()
+        #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
+        var aplicant = false
+        b.obertura.aplicantActualitzacio = { aplicant }
+        #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
+        aplicant = true
+        #expect(!b.obertura.potObrir(id(100)))
+        #expect(!b.obertura.potObrirTot)
+        aplicant = false
+        #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
+    }
+
     /// Una pestanya tancada fa menys d'1 minut (el seu Claude encara és viu): el full ho diu, i no s'obre res.
     @Test func ambUnaPestanyaTancadaFaPocNoSObre() async throws {
         let b = try Banc()

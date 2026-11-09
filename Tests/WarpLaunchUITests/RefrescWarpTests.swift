@@ -121,8 +121,40 @@ private func amb(_ lectura: LecturaWarp, terminals: [String]) -> LecturaWarp {
     return l
 }
 
+/// Atura el refresc fins que la prova ho digui.
+private actor Porta {
+    private var oberta = false
+    private var esperant: [CheckedContinuation<Void, Never>] = []
+    func espera() async {
+        if oberta { return }
+        await withCheckedContinuation { esperant.append($0) }
+    }
+    func obre() {
+        oberta = true
+        esperant.forEach { $0.resume() }
+        esperant = []
+    }
+}
+
 @MainActor
 @Suite struct RefrescWarpTests {
+    /// Actualització automàtica (docs/disseny.md, secció 11, 3.2): `refrescant` és cert mentre dura el refresc.
+    @Test func refrescantNomesMentreDuraElRefresc() async throws {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let porta = Porta()
+        var entorn = mon.entorn
+        entorn.espera = { _ in await porta.espera() }
+        let r = RefrescWarp(entorn: entorn)
+        #expect(!r.refrescant)
+        let tasca = Task { await r.refresca() }
+        for _ in 0..<1000 where !r.refrescant { await Task.yield() }
+        #expect(r.refrescant)
+        await porta.obre()
+        _ = await tasca.value
+        #expect(!r.refrescant)
+    }
+
     /// La foto és antiga fins que l'ajust porta 2 s activat: s'acaba tot just Warp desa, i deixa l'ajust desactivat.
     @Test func quanWarpDesaEsDesactivaDeSeguida() async throws {
         let mon = Mon()

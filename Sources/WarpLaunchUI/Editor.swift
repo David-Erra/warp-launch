@@ -55,6 +55,11 @@ public final class Editor {
     /// L'últim desat ha fallat. L'editor ho diu amb un bàner, i el menú de la icona també.
     public private(set) var errorDesat: ErrorMagatzem?
     public private(set) var canvisSenseDesar = false
+    /// Quan s'ha fet l'últim canvi a les finestres o a la plantilla: un Desfés recent no es pot perdre reiniciant l'app
+    /// (`PoliticaActualitzacions`, `desfesRecent`).
+    @ObservationIgnored public private(set) var darrerCanvi: Date?
+    /// D'on surt `darrerCanvi`. Les proves el mouen.
+    @ObservationIgnored var rellotgeCanvis: () -> Date = { Date() }
     /// La fila on s'està escrivint el nom (Retorn, «Canvia el nom», o una finestra nova), i el que s'hi ha escrit.
     /// El text és aquí i no a la vista perquè no es perdi si l'editor s'amaga, se surt de l'app o es comença a
     /// escriure el nom d'una altra fila: en tots aquests casos es desa (`acabaNom`).
@@ -954,6 +959,7 @@ public final class Editor {
         canvi(&nova)
         nova = nova.normalitzada()
         guard nova != abans.normalitzada() else { return }
+        darrerCanvi = rellotgeCanvis()
         configuracio.plantilla = nova
         desferPlantilla.beginUndoGrouping()
         registraDesferPlantilla(tornaA: abans, nom: nom, a: desferPlantilla)
@@ -1009,6 +1015,7 @@ public final class Editor {
         // Els canvis de l'editor no toquen la plantilla: el seu Desfés no la tornaria.
         assert(configuracio.plantilla == plantilla, "un canvi de l'editor ha tocat la plantilla")
         guard configuracio.finestres != abans.finestres else { return }
+        darrerCanvi = rellotgeCanvis()
         // Qualsevol canvi acaba el que quedés d'obrir una finestra arrossegant (un arrossegament cancel·lat).
         if abansDObrir != nil { abansDObrir = nil }
         // S'agrupa només si el pas de dalt de la pila és el de l'últim canvi d'aquest camp: un camp de text de la
