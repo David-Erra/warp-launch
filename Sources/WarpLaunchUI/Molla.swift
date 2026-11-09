@@ -14,7 +14,7 @@ import WarpLaunchCore
 @MainActor
 final class Molla {
     /// El retard per defecte de macOS (Accessibilitat › Control del punter, «Retard de l'obertura per molla»): 0,5 s. No es
-    /// llegeix la preferència: l'app no fa servir les preferències del sistema (prova de guarda).
+    /// llegeix la preferència: el codi de l'app no fa servir les preferències del sistema (prova de guarda; només Sparkle hi desa les seves).
     static let retard: TimeInterval = 0.5
     /// Cada quant es mira on és el cursor mentre hi ha una fila en compte.
     static let interval: TimeInterval = 0.05

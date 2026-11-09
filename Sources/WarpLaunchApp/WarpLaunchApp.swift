@@ -7,7 +7,8 @@ import WarpLaunchUI
 /// App de barra de menú (docs/disseny.md): l'editor, el menú de la icona i la Configuració. Llegeix Warp (en segon pla)
 /// i la configuració, i només escriu de Warp l'ajust de la restauració (D19), i només amb el consentiment de l'usuari
 /// (D-P4): fins llavors, totes les finestres mostren la pantalla de consentiment. **Només obre res de Warp des del full de
-/// confirmació** (fase 3.1, `Obertura`): una finestra cada vegada, amb Warp ja obert.
+/// confirmació** (fase 3.1, `Obertura`): una finestra cada vegada, amb Warp ja obert. L'única connexió a internet és la de Sparkle,
+/// que l'app només engega amb el consentiment (`ServeiActualitzacions`).
 @main
 struct WarpLaunchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegat

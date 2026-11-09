@@ -3,7 +3,8 @@ import WarpLaunchCore
 
 /// Les pestanyes de la Configuració, en aquest ordre (settings.md de mac-design: una per tema, «General» primer). macOS en
 /// posa les icones a la barra d'eines, i el títol de la finestra és el de la pestanya que es veu. L'app no desa quina és
-/// l'última: no fa servir les preferències del sistema (prova de guarda), i la configuració JSON és d'en David.
+/// l'última: el codi de l'app no fa servir les preferències del sistema (prova de guarda; només Sparkle hi desa les seves), i la
+/// configuració JSON és d'en David.
 public enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
     /// «En iniciar sessió», «Fitxer», «Diagnòstic» i, al final, «Deixar de fer servir Warp Launch».
     case general
