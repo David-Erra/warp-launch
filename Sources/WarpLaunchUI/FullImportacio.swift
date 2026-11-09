@@ -44,7 +44,7 @@ public final class FullImportacio {
         self.warp = warp
     }
 
-    /// Torna a llegir Warp (en obrir el full i amb «Torna a llegir»).
+    /// Torna a llegir Warp (en obrir el full i amb «Actualitza l'estat de Warp»).
     public func llegeix() async {
         estat = .llegint
         avisosLectura = []

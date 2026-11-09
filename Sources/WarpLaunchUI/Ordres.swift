@@ -24,13 +24,31 @@ extension FocusedValues {
     }
 }
 
+/// «Actualitza l'estat de Warp», al menú Arxiu i al de la icona: una sola vista, perquè es digui igual i es desactivi igual
+/// a tots dos. Una vista, i no un `Button` dins d'`OrdresEditor`, perquè observi l'estat de Warp i el permís.
+public struct ItemActualitzaWarp: View {
+    private let ordre: OrdreActualitzaWarp
+
+    public init(ordre: OrdreActualitzaWarp) {
+        self.ordre = ordre
+    }
+
+    public var body: some View {
+        Button(WarpLaunch.ordreActualitzaEstat) { Task { await ordre.executa() } }
+            .disabled(!ordre.potExecutar)
+    }
+}
+
 /// Ordres de la barra de menús (docs/disseny.md, «Ordres»). Una ordre que no s'aplica surt desactivada; Edició
 /// (Desfés, Retalla, Copia, Enganxa, Elimina) és la del sistema, i hi arriba des de la llista i la barra lateral.
 public struct OrdresEditor: Commands {
     @FocusedValue(\.editor) private var editor
     @FocusedValue(\.columnaEditor) private var columna
+    private let actualitzaWarp: OrdreActualitzaWarp
 
-    public init() {}
+    public init(actualitzaWarp: OrdreActualitzaWarp) {
+        self.actualitzaWarp = actualitzaWarp
+    }
 
     public var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -49,6 +67,8 @@ public struct OrdresEditor: Commands {
             Button("Canvia el nom") { editor?.canviaElNom(columna) }
                 .disabled(editor?.potCanviarElNom(columna) != true)
             Divider()
+            // Amb importar i lligar, que també llegeixen Warp amb les finestres. No depèn de l'editor (com al menú de la icona).
+            ItemActualitzaWarp(ordre: actualitzaWarp)
             Button(editor?.estat == .oberta ? "Torna a importar-ho tot de Warp…" : "Importa de Warp…") {
                 editor?.demanaImportacio = true
             }
@@ -62,7 +82,7 @@ public struct OrdresEditor: Commands {
             .disabled(editor?.fitxerPerMostrar == nil)
             Divider()
             // Fase 3.1: sempre amb confirmació (el full) i sense drecera (docs/disseny.md, «Ordres»).
-            Button("Obre la finestra a Warp…") { if let id = editor?.finestra?.id { editor?.demanaObertura(id) } }
+            Button("Obre a Warp…") { if let id = editor?.finestra?.id { editor?.demanaObertura(id) } }
                 .disabled(editor?.potObrir(editor?.finestra?.id) != true)
             Button("Obre-ho tot a Warp…") { editor?.demanaObreTot() }
                 .disabled(editor?.potObrirTot != true)

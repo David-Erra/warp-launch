@@ -75,8 +75,12 @@ public final class EstatWarp {
         return resultat
     }
 
-    /// «Torna a llegir», importar i lligar (D19): també les finestres i els títols. Amb Warp obert, llegeix de Warp; amb
-    /// Warp tancat, l'última foto. Pot trigar fins a 30 s. La lectura de cada minut torna als terminals.
+    /// Ja s'està llegint Warp. Un refresc pot durar fins a 30 s, i la lectura de cada minut, que hi pot acabar enmig, torna
+    /// `estat` a `.llegit` abans d'hora: per això es mira també el refresc.
+    public var llegint: Bool { estat == .llegint || refresc?.refrescant == true }
+
+    /// «Actualitza l'estat de Warp», importar i lligar (D19): també les finestres i els títols. Amb Warp obert, llegeix de
+    /// Warp; amb Warp tancat, l'última foto. Pot trigar fins a 30 s. La lectura de cada minut torna als terminals.
     @discardableResult
     public func llegeixAmbFinestres() async -> Result<LecturaWarp, ErrorLectura> {
         guard let refresc else { return await llegeix() }

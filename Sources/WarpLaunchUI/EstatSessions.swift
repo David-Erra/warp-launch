@@ -3,7 +3,7 @@ import Observation
 import WarpLaunchCore
 
 /// Els lligams de cada pestanya amb el seu pane i la seva conversa (`estat.json`, fase 3.1). Es posen al dia a cada
-/// lectura de Warp: en arrencar, amb «Torna a llegir», abans d'obrir i, mentre l'app és en marxa, cada 60 s (D18).
+/// lectura de Warp: en arrencar, amb «Actualitza l'estat de Warp», abans d'obrir i, mentre l'app és en marxa, cada 60 s (D18).
 ///
 /// Només s'escriu si alguna cosa canvia. Qui el crida ha de vigilar que hi hagi configuració: sense, no s'escriu res.
 @MainActor

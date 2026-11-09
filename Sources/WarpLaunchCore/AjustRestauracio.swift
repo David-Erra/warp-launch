@@ -470,6 +470,6 @@ extension LecturaWarp {
     public var avisFinestresAntigues: String {
         let pestanyes = finestres.flatMap(\.pestanyes).flatMap(\.panes).count
         return "Warp no ha desat les finestres: n'hi ha \(Plural.compta(pestanyes, "pestanya", "pestanyes")) desades i "
-            + "\(Plural.compta(terminals.count, "terminal viu", "terminals vius")). Pot ser antic: canvia de finestra a Warp i torna a llegir."
+            + "\(Plural.compta(terminals.count, "terminal viu", "terminals vius")). Pot ser antic: canvia de finestra a Warp i fes «\(WarpLaunch.ordreActualitzaEstat)»."
     }
 }

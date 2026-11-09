@@ -26,8 +26,8 @@ struct VistaImportacio: View {
 
             HStack {
                 if full.importacio != nil {
-                    Button("Torna a llegir") { Task { await full.llegeix() } }
-                        .help("Torna a llegir Warp, per si hi has obert o tancat res")
+                    Button(WarpLaunch.ordreActualitzaEstat) { Task { await full.llegeix() } }
+                        .help("Actualitza l'estat de Warp, per si hi has obert o tancat res")
                 }
                 Spacer()
                 Button("Cancel·la", role: .cancel) { tanca() }
@@ -75,7 +75,7 @@ struct VistaImportacio: View {
                     Label(text, systemImage: "exclamationmark.triangle")
                 }
                 if full.plantillaHaCanviat {
-                    Label("La plantilla ha canviat a la Configuració: torna a llegir Warp per importar amb la nova",
+                    Label("La plantilla ha canviat a la Configuració: prem «\(WarpLaunch.ordreActualitzaEstat)» per importar amb la nova",
                           systemImage: "arrow.clockwise")
                 }
             }

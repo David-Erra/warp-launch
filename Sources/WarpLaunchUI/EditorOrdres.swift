@@ -16,6 +16,29 @@ extension Editor {
     }
 }
 
+/// «Actualitza l'estat de Warp» (`WarpLaunch.ordreActualitzaEstat`): la mateixa ordre al menú Arxiu i al de la icona, amb una
+/// sola vista (`ItemActualitzaWarp`). No obre ni canvia res de la configuració, però amb Warp obert activa uns segons la
+/// restauració perquè Warp desi les finestres (D19): per això, només amb el permís (D-P4). Sense el refresc (una carpeta de
+/// prova), només llegeix.
+@MainActor
+public struct OrdreActualitzaWarp {
+    private let warp: EstatWarp
+    private let consentiment: ConsentimentRestauracio
+
+    public init(warp: EstatWarp, consentiment: ConsentimentRestauracio) {
+        self.warp = warp
+        self.consentiment = consentiment
+    }
+
+    /// Desactivada sense el permís i mentre ja es llegeix Warp. Després d'una lectura que falla, sí: és quan cal tornar-hi.
+    public var potExecutar: Bool { consentiment.potContinuar && !warp.llegint }
+
+    public func executa() async {
+        guard potExecutar else { return }
+        await warp.llegeixAmbFinestres()
+    }
+}
+
 /// La columna de l'editor que té el focus (`FocusedValues.columnaEditor`): Duplica i «Canvia el nom» hi actuen.
 public enum ColumnaEditor: Hashable, Sendable {
     case barraLateral, llista

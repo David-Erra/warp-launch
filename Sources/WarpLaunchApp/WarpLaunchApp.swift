@@ -30,7 +30,7 @@ struct WarpLaunchApp: App {
         // Reoberta sola després d'actualitzar-se: l'editor no surt. Un clic al Finder l'obre igual (`obreEditor`).
         .defaultLaunchBehavior(aplicacio.reobertura == .automatica ? .suppressed : .automatic)
         .commands {
-            OrdresEditor()
+            OrdresEditor(actualitzaWarp: aplicacio.actualitzaWarp)
             SidebarCommands()
             CommandGroup(after: .appInfo) {
                 ItemActualitzacions(aplicacio: aplicacio)
@@ -266,6 +266,9 @@ final class Aplicacio {
         }
     }
 
+    /// «Actualitza l'estat de Warp», la mateixa ordre al menú Arxiu i al de la icona.
+    var actualitzaWarp: OrdreActualitzaWarp { OrdreActualitzaWarp(warp: warp, consentiment: consentiment) }
+
     /// Per a l'editor: la carpeta, si és de prova.
     var carpetaDeProva: String? {
         if case let .prova(carpeta) = arguments.carpeta { Rutes.abreujada(carpeta.path, inici: inici) } else { nil }
@@ -463,7 +466,7 @@ private struct MenuIcona: View {
 
         Section {
             Text(aplicacio.warp.descripcio)
-            Button("Torna a llegir Warp") { Task { await aplicacio.warp.llegeixAmbFinestres() } }
+            ItemActualitzaWarp(ordre: aplicacio.actualitzaWarp)
             if let avis = aplicacio.warp.avisFoto {
                 Label(avis, systemImage: "exclamationmark.triangle")
             }

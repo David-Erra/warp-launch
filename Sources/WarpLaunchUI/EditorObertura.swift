@@ -1,7 +1,7 @@
 import Foundation
 import WarpLaunchCore
 
-/// Les ordres «Obre la finestra a Warp…» (menú Fitxer, barra d'eines, menú contextual i inspector de la finestra, i menú
+/// Les ordres «Obre a Warp…» (menú Arxiu, barra d'eines, menú contextual i inspector de la finestra, i menú
 /// de la icona): només demanen el full de confirmació. Obrir de debò només ho fa el botó del full
 /// (`Obertura.confirmaIObre`).
 extension Editor {

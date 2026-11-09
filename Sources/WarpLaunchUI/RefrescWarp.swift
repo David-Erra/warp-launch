@@ -3,7 +3,7 @@ import Observation
 import WarpLaunchCore
 
 /// D19: la restauració de sessió de Warp sempre queda desactivada, perquè Warp no restauri finestres sense Claude en
-/// arrencar. Només quan en David ho demana («Torna a llegir Warp», importar i lligar), i amb Warp obert, l'app l'activa uns
+/// arrencar. Només quan en David ho demana («Actualitza l'estat de Warp», importar i lligar), i amb Warp obert, l'app l'activa uns
 /// segons perquè Warp desi les finestres a la seva base («la foto»), i la torna a desactivar. Amb Warp tancat, la llegeixen
 /// tal com és.
 ///
@@ -142,7 +142,8 @@ public final class RefrescWarp {
     public static let avisNoParaDeCanviar = "El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot "
         + "desactivar la restauració de sessió. Ho continua provant cada minut."
     @ObservationIgnored private let entorn: Entorn
-    @ObservationIgnored private var enCurs: Task<Resultat, Never>?
+    /// S'observa: «Actualitza l'estat de Warp» es desactiva mentre dura (`refrescant`, `EstatWarp.llegint`).
+    private var enCurs: Task<Resultat, Never>?
     /// Des de quan l'ajust no es pot desactivar perquè `settings.toml` no para de canviar: des que `pendent` ha passat a
     /// `.acabaDeCanviar`, sense haver estat res més entremig. Només val mentre `pendent` és `.acabaDeCanviar`.
     @ObservationIgnored private var mesTardDes: TimeInterval?

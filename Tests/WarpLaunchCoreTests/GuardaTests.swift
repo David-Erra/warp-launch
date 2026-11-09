@@ -643,7 +643,7 @@ private let prohibidesArrossegar = [
     }
 
     /// La foto de Warp (D19) només es refresca quan en David ho demana, mai sola (0.27.3, 06/11/2026): l'únic que crida
-    /// `refresca()` és la lectura amb finestres, que fan «Torna a llegir Warp», importar i lligar.
+    /// `refresca()` és la lectura amb finestres, que fan «Actualitza l'estat de Warp», importar i lligar.
     @Test func laFotoNomesEsFaQuanEsDemana() throws {
         let codi = try fitxers("Sources").filter { $0.ruta != "Sources/WarpLaunchUI/RefrescWarp.swift" }
         let crides = try aparicions(de: [#"\.refresca\("#], a: codi)

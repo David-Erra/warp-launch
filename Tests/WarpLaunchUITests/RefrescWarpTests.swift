@@ -850,3 +850,89 @@ private actor Porta {
     }
 }
 
+
+/// «Actualitza l'estat de Warp» (0.32.6): quan es pot demanar i què fa. La vista (`ItemActualitzaWarp`) només hi posa el botó.
+@MainActor
+@Suite struct OrdreActualitzaWarpTests {
+    private nonisolated static let buida = LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: [])
+    /// Sense carpeta de configuració, el permís no cal (`ConsentimentRestauracio.Estat.noCal`).
+    private static func senseCalPermis() -> ConsentimentRestauracio {
+        ConsentimentRestauracio(magatzem: nil, creaEntornRefresc: nil)
+    }
+
+    @Test func esDiuComVaDemanarEnDavid() {
+        #expect(WarpLaunch.ordreActualitzaEstat == "Actualitza l'estat de Warp")
+    }
+
+    /// D-P4: sense el permís, l'app no llegeix Warp. Desactivada al menú Arxiu, i si el clic arribés igualment, no fa res.
+    @Test func senseElPermisNoLlegeixWarp() async throws {
+        let carpeta = FileManager.default.temporaryDirectory.appending(path: "warp-launch-ordre-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: carpeta, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: carpeta) }
+        let lectures = Comptador()
+        let warp = EstatWarp(lector: { lectures.suma(); return Self.buida })
+        let consentiment = ConsentimentRestauracio(magatzem: MagatzemPreferencies(carpeta: carpeta), creaEntornRefresc: nil)
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: consentiment)
+        #expect(consentiment.estat == .pendent && !ordre.potExecutar)
+        await ordre.executa()
+        #expect(lectures.valor == 0 && warp.estat == .senseLlegir)
+
+        consentiment.accepta()
+        #expect(ordre.potExecutar)
+        await ordre.executa()
+        #expect(lectures.valor == 1)
+    }
+
+    /// Mentre es llegeix, no es pot tornar a demanar; en acabar, sí. I després d'una lectura que falla, també: és quan cal.
+    @Test func mentreEsLlegeixNoEsPot() async {
+        struct Falla: Error {}
+        let porta = DispatchSemaphore(value: 0)
+        let warp = EstatWarp(lector: {
+            porta.wait()
+            throw Falla()
+        })
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: Self.senseCalPermis())
+        #expect(ordre.potExecutar)
+        let lectura = Task { await warp.llegeix() }
+        for _ in 0..<1000 where warp.estat != .llegint { await Task.yield() }
+        #expect(warp.estat == .llegint && !ordre.potExecutar)
+        porta.signal()
+        _ = await lectura.value
+        guard case .error = warp.estat else {
+            Issue.record("havia de fallar: \(warp.estat)")
+            return
+        }
+        #expect(ordre.potExecutar)
+    }
+
+    /// Un refresc pot durar 30 s, i la lectura de cada minut pot acabar a mig refresc: l'estat torna a `.llegit`, i l'ordre ha de
+    /// continuar desactivada. L'ordre fa el refresc (D19), i el menú se n'assabenta: `refrescant` s'observa.
+    @Test func duraTotElRefresc() async {
+        let mon = Mon()
+        mon.base { _, _ in amb(foto(["aa"]), terminals: ["aa"]) }
+        let porta = Porta()
+        var entorn = mon.entorn
+        entorn.espera = { _ in await porta.espera() }
+        let refresc = RefrescWarp(entorn: entorn)
+        let warp = EstatWarp(lector: { Self.buida })
+        warp.refresc = refresc
+        let ordre = OrdreActualitzaWarp(warp: warp, consentiment: Self.senseCalPermis())
+
+        let canvis = Comptador()
+        withObservationTracking { _ = refresc.refrescant } onChange: { canvis.suma() }
+        let feina = Task { await ordre.executa() }
+        for _ in 0..<1000 where !refresc.refrescant { await Task.yield() }
+        #expect(refresc.refrescant && !ordre.potExecutar)
+        #expect(canvis.valor == 1, "el menú s'ha d'assabentar que el refresc ha començat")
+
+        await warp.llegeix()
+        #expect(warp.estat == .llegit(ResumWarp(Self.buida)) && !ordre.potExecutar)
+
+        withObservationTracking { _ = refresc.refrescant } onChange: { canvis.suma() }
+        await porta.obre()
+        await feina.value
+        #expect(!refresc.refrescant && ordre.potExecutar)
+        #expect(canvis.valor == 2, "i que ha acabat")
+        #expect(mon.canvis == [true, false], "l'ordre és la lectura amb finestres: activa l'ajust i el torna a desactivar")
+    }
+}
