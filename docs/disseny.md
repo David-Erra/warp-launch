@@ -2223,7 +2223,7 @@ El codi s'aparta del que hi ha a sota en això:
 - Una finestra minimitzada de l'app compta com a oberta (0.32.5), i `posaAlDavant` mostra l'app si era amagada (una precaució: no s'ha vist que sense això falli).
 - El diagnòstic anonimitzat diu la carpeta d'una còpia fora d'Aplicacions entre «», perquè l'anonimitzador en redueixi el nom (0.32.4).
 - `publica.sh`, a més del que diu l'apartat 4: amb el repo de debò, refusa les variables de prova de signar i de comprovar; després de publicar, també mira que GitHub tingui el zip; si `gh` falla però la versió ja és pública, ho diu i surt amb el codi 2.
-- Les regles `deny` i la guarda 11 també cobreixen `generate_appcast`, que signa amb el clauer (ampliació de la decisió 13, que es pot treure), i la guarda 11, les ordres que llegeixen el clauer.
+- Les regles `deny` i la guarda 11 també cobreixen `generate_appcast`, que signa amb el clauer (ampliació de la decisió 13, que es pot treure). Les ordres que llegeixen el clauer (`security find-generic-password` i `dump-keychain`) les cobreixen la guarda 11 als scripts i, des del 09/11/2026 (decisió de l'autor), les regles `deny` als agents; `security find-identity` no, perquè el fa servir `build-app.sh`.
 
 **Decisions anteriors** (`docs/especificacio.md`, fila del 07/11/2026, 6 i 8): Sparkle 2 com a dependència acordada (regla 10), clau EdDSA, appcast a GitHub, framework signat
 i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa i una prova que les limiti.

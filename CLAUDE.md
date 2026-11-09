@@ -374,8 +374,12 @@ desenes de sessions o les tanca totes de cop.
 - l'edició amb Edit/Write dels fitxers protegits (`~/.claude`, que no inclou la memòria; Warp; LaunchAgents;
   `espai-warp`; la configuració de Warp Launch, `~/.config/warp-launch/`);
 - algunes ordres de Bash: `killall`, `pkill`, `osascript`, `launchctl bootstrap|load|enable|kickstart`,
-  `claude agents`, les subcomandes d'`espai.py`, i les eines de la clau de Sparkle i `publica.sh --aplica` (regla 12). La regla
-  de `publica.sh` val per a tota l'ordre: un missatge o un text que porti tots dos trossos també queda bloquejat.
+  `claude agents`, les subcomandes d'`espai.py`, les eines de la clau de Sparkle, `publica.sh --aplica` i les ordres que llegeixen
+  el clauer, `security find-generic-password` i `dump-keychain` (regla 12). La regla de `publica.sh` val per a tota l'ordre: un
+  missatge o un text que porti tots dos trossos també queda bloquejat. Les de `security` comencen per l'ordre (amb `env`, `command`,
+  `exec`, `PATH=` o una ruta al davant): parlar-ne en un `grep` passa, i `security find-identity`, que fa servir `build-app.sh`, també.
+  Només afecten els agents, no l'autor al seu terminal. Tampoc no són un mur: una ordre indirecta (`bash -c`, una variable, un
+  script) no hi coincideix, i la regla 12 s'ha de complir igualment.
 
 **No cobreixen** l'escriptura amb altres ordres de Bash (`sed -i`, `cp`, redireccions) ni `open warp://`.
 Aquestes regles s'han de complir igualment. `Edit(~/.warp/**)` es manté també amb l'excepció de la regla 7: l'únic camí
