@@ -176,6 +176,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             echo "${GH_TOKEN:+[token:$GH_TOKEN] }$*" >> "$GH_FALS_REGISTRE"
             case "$1 $2" in
                 "release view")
+                    if [[ "${7:-}" == isDraft ]]; then [[ -n "${GH_FALS_ES_ESBORRANY:-}" ]] || exit 1; echo "$GH_FALS_ES_ESBORRANY"; exit 0; fi
                     if [[ "$3" != --repo ]]; then [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1; fi
                     # Sense etiqueta, `gh` torna la marcada com a última.
                     if [[ "$6" == tagName,assets ]]; then
@@ -1046,6 +1047,28 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         // Una pujada a mitges pot deixar un esborrany: dir que no s'ha publicat res podria no ser veritat.
         #expect(!sortida.contains("No s'ha publicat res."), "\(sortida)")
         #expect(!sortida.contains("Fet:"), "\(sortida)")
+    }
+
+    /// `gh` pot fallar quan GitHub ja l'ha publicada: no pot dir que no s'ha creat, ni que només hi ha un esborrany.
+    @Test func siGhFallaPeroJaEsPublicadaHoDiu() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_RELEASE_FALLA": "1", "GH_FALS_ES_ESBORRANY": "false", "GH_FALS_ULTIMA": "v0.27.0"]) { $1 })
+        #expect(codi == 2, "\(sortida)")
+        #expect(sortida.contains("la v0.28.0 ja és publicada a exemple/prova"), "\(sortida)")
+        #expect(!sortida.contains("no s'ha pogut crear"), "\(sortida)")
+        #expect(sortida.contains("gh release edit v0.27.0 --latest --repo exemple/prova"), "\(sortida)")
+        #expect(sortida.contains("sha256 \"\(try b.sha256(de: b.zip))\""), "\(sortida)")
+        #expect(!b.ordresGh.contains("--method PUT"))
+        #expect(!sortida.contains("Fet:"), "\(sortida)")
+    }
+
+    /// Si només n'ha quedat un esborrany, el missatge és el de sempre: no és públic.
+    @Test func siGhFallaIQuedaUnEsborranyNoDiuQueEsPublicada() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_RELEASE_FALLA": "1", "GH_FALS_ES_ESBORRANY": "true"]) { $1 })
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains("no s'ha pogut crear la v0.28.0"), "\(sortida)")
+        #expect(!sortida.contains("ja és publicada"), "\(sortida)")
     }
 
     /// Les variables de les proves canvien qui signa i què es comprova: contra el repo de debò, no valen, si n'hi ha alguna.

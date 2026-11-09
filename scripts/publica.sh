@@ -342,12 +342,6 @@ if ! env -u GH_TOKEN -u GITHUB_TOKEN "${VERIFICA[@]}" "$(llegeix_plist SUPublicE
 fi
 escriu_appcast "$APPCAST" "$SIGNATURA"
 
-# Tots dos fitxers en una sola ordre: `latest` no canvia fins que hi són. Sense appcast, totes les còpies veurien un 404.
-if ! gh release create "$ETIQUETA" "$ZIP" "$APPCAST" --repo "$REPO" --latest --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"; then
-    echo "publica: no s'ha pogut crear la ${ETIQUETA} a ${REPO}, i la recepta de Homebrew no s'ha tocat. Abans de tornar-ho a provar, mira si n'ha quedat un esborrany o l'etiqueta: gh release view ${ETIQUETA} --repo ${REPO}" >&2
-    exit 1
-fi
-
 # Publicar ja no es desfà: qui l'hagi baixada la instal·larà. $1, el commit de la recepta, si n'hi ha.
 com_es_para() {
     echo "Publicar ja no es desfà. Per aturar aquesta versió (docs/disseny.md, «Aturar una versió dolenta»), en aquest ordre:"
@@ -371,6 +365,21 @@ canvia_la_recepta_a_ma() {
         echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
     fi
 }
+
+# Tots dos fitxers en una sola ordre: `latest` no canvia fins que hi són. Sense appcast, totes les còpies veurien un 404.
+if ! gh release create "$ETIQUETA" "$ZIP" "$APPCAST" --repo "$REPO" --latest --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"; then
+    # `gh` pot fallar quan GitHub ja l'ha publicada (una resposta perduda): llavors, no es pot dir que no s'ha creat.
+    if [[ "$(gh release view "$ETIQUETA" --repo "$REPO" --json isDraft --jq '.isDraft' 2> /dev/null || true)" == false ]]; then
+        {
+            echo "publica: \`gh release create\` ha fallat, però la ${ETIQUETA} ja és publicada a ${REPO} (no s'ha esborrat res): mira a la web de GitHub si hi ha el zip i l'appcast.xml, i si és l'última."
+            if [[ "$RECEPTA_CANVIA" -eq 1 ]]; then canvia_la_recepta_a_ma; fi
+            com_es_para
+        } >&2
+        exit 2
+    fi
+    echo "publica: no s'ha pogut crear la ${ETIQUETA} a ${REPO}, i la recepta de Homebrew no s'ha tocat. Abans de tornar-ho a provar, mira si n'ha quedat un esborrany o l'etiqueta: gh release view ${ETIQUETA} --repo ${REPO}" >&2
+    exit 1
+fi
 
 # GitHub ho ha de dir: si no, les còpies no la veuran, o veurien un 404 (de l'appcast, o del zip quan el vagin a baixar).
 ESTAT_PUBLICADA="$(gh release view --repo "$REPO" --json tagName,assets --jq ".tagName, (any(.assets[]; .name == \"appcast.xml\") and any(.assets[]; .name == \"$(basename "$ZIP")\"))" 2> /dev/null || true)"
