@@ -779,6 +779,18 @@ Mesurat amb un programa a part, sense mostrar cap finestra, per a la 0.30.2 (`Vi
   fitxer i torna 0; amb un fitxer al destí, torna -1 amb `errno` `EEXIST` (17), i no toca ni el destí ni l'origen. És com
   `AjustRestauracio` crea `settings.toml` sense trepitjar el que Warp hagi creat mentrestant (0.31.2).
 
+## Els menús del sistema en català (09/11/2026, macOS 27.2)
+
+**LLEGIT, no vist a l'app:** taula `ca` de `/System/Library/Frameworks/SwiftUI.framework/Versions/A/Resources/MainMenu.loctable`
+(convertida amb `plutil`). L'app declara només el català (`CFBundleLocalizations`).
+
+- `File` → «Arxiu»; `About %@` → «Sobre l’app %@»; `Quit %@` → «Surt de l’app %@»; `Settings…` → «Configuració…». Amb l'apòstrof
+  tipogràfic (’). `%@` és el nom de l'app, «Warp Launch» (`CFBundleName`).
+- Per això, el menú de la icona i la pantalla del permís fan servir els mateixos textos des de la 0.32.6 (`WarpLaunch.ordreSobre` i
+  `ordreSurt`; abans, «Quant a Warp Launch» i «Surt de Warp Launch»). Són fixos: si una altra versió de macOS canvia els seus, no
+  coincidiran.
+- Als fets d'abans de la 0.32.6, «Torna a llegir Warp» és l'actual «Actualitza l'estat de Warp».
+
 ## Homebrew (09/11/2026, Homebrew 7.0.12)
 
 Llegit al codi de Homebrew (`git describe`: `7.0.12-217-g25ccd49b8c`; les rutes són de `Library/Homebrew`) i provat amb

@@ -135,8 +135,9 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 | Duplica la pestanya / les pestanyes / la finestra (sense nom fix) | Fitxer | ⌘D | menú contextual |
 | Canvia el nom | Fitxer | cap al menú; Retorn a la llista i a la barra lateral | menú contextual |
 | Importa de Warp… / Torna a importar-ho tot de Warp… | Fitxer | — | estat buit |
+| Actualitza l'estat de Warp (0.32.6; abans, «Torna a llegir Warp») | Fitxer | — | menú de la icona i peu del full d'importació; desactivada sense el permís i mentre ja es llegeix |
 | Mostra el fitxer al Finder (el fitxer, o la carpeta si encara no n'hi ha) | Fitxer | — | Configuració |
-| Obre la finestra a Warp… | Fitxer | **cap** | desactivat fins a la fase 3, sempre amb confirmació |
+| Obre a Warp… | Fitxer | **cap** | desactivat fins a la fase 3, sempre amb confirmació |
 | Tanca / Tanca-ho tot | Fitxer | ⌘W / ⌥⌘W | les del sistema |
 | Desfés / Refés, amb el nom de l'acció | Edició | ⌘Z / ⇧⌘Z | — |
 | Retalla / Copia / Enganxa (pestanyes) | Edició | ⌘X / ⌘C / ⌘V a la llista; ⌘V també a la barra lateral | menú contextual; «Enganxa les pestanyes» a la fila de la finestra i a la finestra buida |
@@ -146,9 +147,13 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 | Activa / Desactiva Claude | Pestanya | — | menú contextual |
 | Copia l'ordre / Copia les ordres (text) | Pestanya | — | menú contextual i inspector |
 | Mou amunt / Mou avall (finestra) | — | cap | menú contextual de la fila; o arrossegar-la |
-| Configuració… / Surt de Warp Launch | Warp Launch | ⌘, / ⌘Q | — |
-| Comprova si hi ha actualitzacions… o, amb una versió a punt, Reinicia i actualitza a la X (0.32.2) | Warp Launch, després de «Quant a» | cap | menú de la icona |
+| Configuració… / Surt de l’app Warp Launch (el text el posa macOS) | Warp Launch | ⌘, / ⌘Q | — |
+| Comprova si hi ha actualitzacions… o, amb una versió a punt, Reinicia i actualitza a la X (0.32.2) | Warp Launch, després de «Sobre l’app Warp Launch» | cap | menú de la icona |
 
+- **Una ordre que és a tots dos menús es diu igual** (en David, 09/11/2026, 0.32.6): «Actualitza l'estat de Warp», «Obre a Warp…», «Obre-ho tot a Warp…» i
+  «Comprova si hi ha actualitzacions…»; i «Configuració…», «Sobre l’app Warp Launch» i «Surt de l’app Warp Launch», que al menú de l'app
+  les posa macOS (`docs/fets-verificats.md`, «Els menús del sistema en català»). Ho comprova `laMateixaOrdreEsDiuIgualAlsDosMenus`. Aquí,
+  «Fitxer» és el menú que macOS mostra en català com a «Arxiu».
 - Una ordre que no s'aplica surt desactivada al menú i amagada al menú contextual. L'editor arriba als menús amb
   `FocusedValue`, i la columna que té el focus (`columnaEditor`: la barra lateral o la llista) decideix què fan
   Duplica i «Canvia el nom».
@@ -164,12 +169,12 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 1. «Mostra l'editor».
 2. «Finestres»: una línia per finestra («empresa — 12 pestanyes, 8 amb Claude»). Obre l'editor amb aquella
    finestra seleccionada. **Lloc de R12:** a la fase 3, cada finestra serà un submenú amb «Obre a Warp…».
-3. Què hi ha obert a Warp, i «Torna a llegir Warp».
+3. Què hi ha obert a Warp, i «Actualitza l'estat de Warp» (0.32.6; desactivada mentre ja es llegeix).
 4. Si cal, els avisos: «La configuració té errors», «El fitxer ha canviat fora de l'app» o «No s'ha pogut desar».
    Cada un és un botó que obre l'editor, que diu què passa i com arreglar-ho. Les pestanyes amb avisos no hi surten
    (decisió d'en David, 04/11/2026). També «Configuració de prova: …» o «Sense configuració: …».
 5. «Configuració…», «Comprova si hi ha actualitzacions…» (0.32.2; secció 11, 2.1; amb una versió a punt, «Reinicia i actualitza a la
-   X»), «Quant a Warp Launch» i «Surt de Warp Launch» (**només** tanca Warp Launch).
+   X»), «Sobre l’app Warp Launch» i «Surt de l’app Warp Launch» (**només** tanca Warp Launch; 0.32.6, amb els textos del menú de l'app).
 
 Cada bloc és una `Section` sense títol (excepte «Finestres»), sense `Divider` solts: una `Section` amb títol seguida
 d'un `Divider` feia dos separadors seguits.
@@ -412,7 +417,7 @@ Una prova llegeix el codi del repo (`#filePath`) i falla si:
   `NSRunningApplication`, `forceTerminate`, `launchApplication`, `openApplication`, `kill` o `killpg` (regla 2: no tancar
   Warp ni Claude). `Process`, `kill` i `killpg` compten com a paraula sencera, també sense cridar (`Process.init()`, `let k =
   kill`; 08/11/2026);
-- «Obre la finestra a Warp…» no és `.disabled(true)` o té drecera, o `Ordres.swift` substitueix `.saveItem` (es
+- «Obre a Warp…» no és `.disabled(true)` o té drecera, o `Ordres.swift` substitueix `.saveItem` (es
   perdrien ⌘W i ⌥⌘W);
 - a `Sources/` hi ha `ShareLink`, `ProxyRepresentation`, `FileRepresentation`, `CodableRepresentation`, `.onDrag`,
   `NSFilePromiseProvider`, `suggestedFileName`, `registerObject` o `.register(` (el que s'arrossega no surt de
@@ -505,7 +510,7 @@ Cada `feat:` porta proves i el bump de `VERSION` i de `WarpLaunch.versio`. Es ve
    - Fet (0.5.0). «Comença en blanc» crea la configuració amb la plantilla segura (sense saltar permisos), fins
      que en David la canviï a la Configuració (pas 11). «Importa de Warp…» surt desactivat fins al pas 6. El menú
      de la icona diu «Configuració de prova: …» quan l'app s'obre amb `--config`, i l'editor també (a l'estat buit
-     i a sota de la barra lateral). Warp es llegeix en obrir l'app i amb «Torna a llegir Warp», no cada vegada que
+     i a sota de la barra lateral). Warp es llegeix en obrir l'app i amb «Actualitza l'estat de Warp», no cada vegada que
      es mostra l'editor.
    - Revisió (abans de la prova 1): un `--config` mal escrit (`--confg`, ruta relativa, sense carpeta, repetit)
      ja no torna a la configuració real: l'app s'obre sense cap configuració i diu per què. S'accepta
@@ -916,7 +921,7 @@ explícita, també obre) i D18 (lectura cada 60 s).
 
 ### Flux
 
-1. «Obre la finestra a Warp…» (menú Fitxer, barra d'eines de la llista, menú contextual de la finestra a la barra
+1. «Obre a Warp…» (menú Fitxer, barra d'eines de la llista, menú contextual de la finestra a la barra
    lateral, inspector sense pestanyes triades, submenú de la finestra al menú de la icona) només crida
    `editor.demanaObertura(finestra)`. Desactivat si la configuració no és oberta, si la finestra no
    té pestanyes, si ja hi ha una obertura en curs o si `estat.json` és d'una versió més nova.
@@ -1029,7 +1034,7 @@ es va escriure. Mentre existeix, Warp el pot mostrar a ⌃⌘L (watcher amb 500 
   conversa.
 - **Quan s'escriu:** en crear la configuració o tornar a importar (es lliguen per pane **totes** les pestanyes; en
   tornar a importar, s'hereta la `sessio` del mateix pane); abans d'escriure el YAML i després de confirmar; a cada
-  lectura si ha canviat alguna sessió (en arrencar, «Torna a llegir», cada 60 s amb D18, i abans d'obrir).
+  lectura si ha canviat alguna sessió (en arrencar, «Actualitza l'estat de Warp», cada 60 s amb D18, i abans d'obrir).
 - **Regles (`ActualitzaEstat.amb`):** una sessió viva amb la marca M dona a la pestanya M el pane i la sessió; una
   sessió interactiva al pane P dona la sessió a la pestanya del pane P (així es recullen `/clear` i `/resume` fets a
   mà); si la marca és d'una entrada que ja no és a la configuració (s'ha tornat a importar), es posen al dia l'entrada
@@ -1330,9 +1335,9 @@ finestra**, totes marcades.
 `RefrescWarp` (UI, sense res de debò: la connexió és a l'app) i `AjustRestauracio` (core, les comprovacions de `warp-restauracio.sh`; des de la 0.31.2, també afegeix la línia si no hi és, cosa que l'script no fa mai, secció 10). Només amb la carpeta `.real` i, des de la 0.29.0, amb el consentiment de `preferencies.json` (secció 10).
 
 - **L'ajust sempre és `false`:** `vigila()` en arrencar i cada 60 s; `tanca()` en sortir i abans d'engegar Warp.
-- **Quan en David ho demana** («Torna a llegir Warp», importar i lligar; fins a la 0.27.3, també cada 5 min), **amb Warp obert:** posa `true`, cada segon llegeix la base i acaba quan **quadra amb els terminals vius** (tants panes com terminals, i tots els coneguts hi
+- **Quan en David ho demana** («Actualitza l'estat de Warp», importar i lligar; fins a la 0.27.3, també cada 5 min), **amb Warp obert:** posa `true`, cada segon llegeix la base i acaba quan **quadra amb els terminals vius** (tants panes com terminals, i tots els coneguts hi
   són) i ha canviat, o quadra i han passat 5 s. Màxim 30 s, o si Warp es tanca. Warp no té temporitzador: si no passa res, no desa, i per això no n'hi ha prou amb esperar un canvi.
-- **Lectures:** les de cada minut i les d'obrir, sempre `.mai` (processos), també durant un refresc o si l'ajust ha quedat activat: així la base antiga no canvia res a mitja obertura. `EstatWarp.llegeixAmbFinestres`, per a «Torna a llegir Warp», importar i lligar: Warp obert, refresca; Warp
+- **Lectures:** les de cada minut i les d'obrir, sempre `.mai` (processos), també durant un refresc o si l'ajust ha quedat activat: així la base antiga no canvia res a mitja obertura. `EstatWarp.llegeixAmbFinestres`, per a «Actualitza l'estat de Warp», importar i lligar: Warp obert, refresca; Warp
   tancat, `.sempre` sense escriure res. Sense poder llegir la base, no s'activa res. Si no quadra o Warp és tancat, l'avís (`avisFoto`) surt als fulls d'importar i de lligar i al menú, que a la lectura següent torna als terminals.
 - **Sortir:** `atura()`: desactiva i, mentre una alerta pot aturar la sortida, cap cicle torna a activar. Si es cancel·la, `repren()`.
 - **Riscos que queden:** si l'app mor a mig refresc o Warp es reinicia molt de pressa dins d'un refresc (de 5 a 30 s), Warp arrencaria amb l'ajust activat i restauraria les finestres. No s'ha mesurat quan llegeix l'ajust en arrencar: cal revisar-ho a la fase 3.3.
@@ -1425,7 +1430,7 @@ l'app no pot tancar: ho diuen el full i el bàner.
 - **L3 original, reprendre la conversa** (configuració de L2). (a) Amb la finestra oberta: «Totes ja obertes». (b) En David
   tanca la finestra i espera 1 min; «1 reprèn la seva conversa, 1 terminal». **S'obren 1 finestra, 2 pestanyes i 1
   sessió de Claude (la mateixa conversa).** Es mira: el mateix `sessionId`, «prova L2» a la conversa, cap diàleg ni
-  «different directory», i el porta-retalls intacte. (c, opcional) `/clear` i «Torna a llegir Warp»: id nou a
+  «different directory», i el porta-retalls intacte. (c, opcional) `/clear` i «Actualitza l'estat de Warp»: id nou a
   `estat.json`. Es desfà: en David tanca la finestra; `rm -r /tmp/warp-launch-provaL2`.
 - **L4. Una finestra oberta en part (D13).** 3 pestanyes (una amb Claude, dues de terminal). **Primer: 1 finestra, 3
   pestanyes i 1 sessió.** En David tanca una pestanya de terminal i espera 1 min; «2 ja obertes, 1 falta». **Segon: 1
@@ -1569,7 +1574,7 @@ no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'
   és l'única drecera del fitxer i no s'hi pot enganxar Escapada (`elPermisSAcceptaAmbRetornINoAmbEscapada`).
 - **Proves:** `PreferenciesTests` (13), `ConsentimentRestauracioTests` (8, amb un ajust fals que sense consentiment no rep cap
   `posa`) i 2 a `OberturaTests`.
-- **A l'app, amb `--config` i una carpeta nova:** surt la pantalla; «Surt de Warp Launch» i tancar l'editor tanquen l'app sense
+- **A l'app, amb `--config` i una carpeta nova:** surt la pantalla; «Surt de l’app Warp Launch» i tancar l'editor tanquen l'app sense
   crear `preferencies.json`; «Accepta» el crea i passa a l'editor (barra d'eines i mida); amb `{"versio": 9}`, l'error amb la
   ruta. Amb la configuració real, no pregunta res.
 - **Decidit (08/11/2026):** la migració també val per a qui ja feia servir la 0.28.0 (decisió 1); Retorn accepta (decisió 2) i
@@ -2010,7 +2015,7 @@ punt què s'hi ha vist: la llista queda com a guia. Si no es diu el contrari, am
    `scripts/warp-restauracio.sh estat` i a `preferencies.json` («retirat»), i es desfà tornant a obrir l'app i acceptant (i, si
    hi era, tornant a activar l'interruptor de l'inici de sessió).
 7. **Dues còpies de Warp (0.31.1):** en David tanca Warp (es tancarien els Claude que hi corren, regla 2), en fa una còpia a
-   Descàrregues i obre aquella. «Torna a llegir Warp» diu que Warp és obert, amb els seus terminals; «Obre a Warp…» d'una finestra
+   Descàrregues i obre aquella. «Actualitza l'estat de Warp» diu que Warp és obert, amb els seus terminals; «Obre a Warp…» d'una finestra
    d'1 pestanya sense Claude l'obre en aquella còpia, amb un sol Warp al Monitor d'Activitat i la seva versió al full. El mateix
    amb un Warp baixat (amb la quarantena) obert des de Descàrregues sense moure'l (App Translocation). En acabar, esborrar la
    còpia: si no, macOS la podria triar més endavant.
@@ -2032,9 +2037,9 @@ punt què s'hi ha vist: la llista queda com a guia. Si no es diu el contrari, am
 13. **Guardes de després de la 0.31.2:** res a veure a l'app; només canvien les proves.
 14. **Al Mac d'en David, res no canvia (0.31.3):** `estat` continua dient `restore_session = false (línia N)`, el menú no té cap
     avís ni cap nota nova, i la comprovació g del diagnòstic diu el mateix que al punt 12.
-15. **«Torna a llegir Warp» i, abans d'1 o 2 s, ⌘Q:** l'app surt de seguida, o com a molt en 3 s, i `estat` diu `false` (el
+15. **«Actualitza l'estat de Warp» i, abans d'1 o 2 s, ⌘Q:** l'app surt de seguida, o com a molt en 3 s, i `estat` diu `false` (el
     que acaba d'escriure l'app no la bloqueja).
-16. **Canviar un ajust a Warp (per exemple, el tema) i, en menys de 2 s, «Torna a llegir Warp»:** cap avís al menú (com a molt,
+16. **Canviar un ajust a Warp (per exemple, el tema) i, en menys de 2 s, «Actualitza l'estat de Warp»:** cap avís al menú (com a molt,
     el de la foto antiga); el registre (`/usr/bin/log show --last 5m --predicate 'subsystem == "cat.davide.warp-launch"'`) diu
     «aquest refresc no activa l'ajust»; `estat` diu `false` i el tema nou s'ha conservat. Passats uns segons, torna a anar bé.
 17. **Canviar un ajust a Warp i, en menys de 2 s, ⌘Q a Warp Launch:** l'app pot trigar fins a 3 s a sortir; després, `estat`
@@ -2045,7 +2050,7 @@ punt què s'hi ha vist: la llista queda com a guia. Si no es diu el contrari, am
 19. **Els lectors de Claude (guardes de després de la 0.31.3):** «Copia el diagnòstic» dona el mateix per a Claude Code,
     l'inspector mostra la mateixa conversa a reprendre, i el full d'«Obre a Warp…» la mateixa conversa i el mateix avís de
     confiança que abans. Cancel·lar sense obrir res.
-20. **Els lectors de Warp (0.31.4, ronda 6, decisió 7; sense efecte visible):** el menú de la icona i «Torna a llegir Warp»
+20. **Els lectors de Warp (0.31.4, ronda 6, decisió 7; sense efecte visible):** el menú de la icona i «Actualitza l'estat de Warp»
     mostren les mateixes finestres i pestanyes que abans, i Configuració › General › «Copia el diagnòstic» surt igual, amb les
     rutes de Warp i de Claude correctes. `warp-launch llegeix` (només lectura) dona el mateix que abans.
 21. **Al Mac d'en David, res no canvia (0.31.4):** `estat` continua dient `restore_session = false (línia N)`, i el menú no té
@@ -2096,7 +2101,7 @@ migració es fa abans del primer terminal. L'ordre compta.
 9. **Si `settings.toml` no para de canviar (0.31.4, ronda 6, decisió 3),** només en aquest usuari de prova (regla 7: mai a
    l'usuari d'en David), amb Warp obert i el permís acceptat (després del pas 6, tornar a obrir Warp Launch i acceptar): en un
    terminal, `while true; do touch ~/.warp/settings.toml; sleep 1; done`. Entre els 5 i els 6 minuts, el menú de la icona diu «El
-   fitxer d'ajustos de Warp no para de canviar…», amb el triangle. No cal clicar «Torna a llegir Warp». Atura el bucle: en menys
+   fitxer d'ajustos de Warp no para de canviar…», amb el triangle. No cal clicar «Actualitza l'estat de Warp». Atura el bucle: en menys
    d'un minut l'avís marxa, i `scripts/warp-restauracio.sh estat` diu `restore_session = false (línia N)`.
 
 ### Homebrew (09/11/2026)
@@ -2318,7 +2323,7 @@ Mecanismes:
 - **«Reinicia i actualitza»:** crida el bloc de `willInstallUpdateOnQuit` (2.2).
 - **L'interruptor** canvia només `automaticallyChecksForUpdates`: Sparkle ho desa a les seves preferències, i la baixada automàtica en depèn [L: `SPUUpdaterSettings.m:229-234,316,327`]. Apagat amb una versió a punt: no es reinicia sola, però s'instal·la en sortir [L: `SPUUpdaterDelegate.h:421-440`]. El peu ho diu.
 
-**Menú de la icona** (`Sources/WarpLaunchApp/WarpLaunchApp.swift:413-425`, entre «Configuració…» i «Quant a»): «Comprova si hi ha actualitzacions…» porta l'app al davant, obre la Configuració a «General» i comprova; amb una versió a punt, «Reinicia i actualitza a la v»; passats 7 dies a punt, «… (fa N dies)» (decisió 5). Fins que s'accepta el permís, només els dos ítems de sempre (`:329-340`).
+**Menú de la icona** (`Sources/WarpLaunchApp/WarpLaunchApp.swift:413-425`, entre «Configuració…» i «Sobre l’app»): «Comprova si hi ha actualitzacions…» porta l'app al davant, obre la Configuració a «General» i comprova; amb una versió a punt, «Reinicia i actualitza a la v»; passats 7 dies a punt, «… (fa N dies)» (decisió 5). Fins que s'accepta el permís, només els dos ítems de sempre (`:329-340`).
 
 **Menú de l'app:** el mateix, amb `CommandGroup(after: .appInfo)`, al target de l'app.
 
@@ -2343,7 +2348,7 @@ Mecanismes:
 | `conversesEnCurs` | `Obertura.teConversesEnCurs` **(nou, per data: 3.2)** | espera | espera |
 | `refrescant` | `RefrescWarp.refrescant` **(nou:** `enCurs != nil`, `RefrescWarp.swift:145`**)** | espera | espera |
 | `ajustPerDesactivar` | `RefrescWarp.pendent == .acabaDeCanviar` (`:111`) | espera | espera |
-| `finestraVisible` | Editor, Configuració, «Quant a» o Sparkle (`Activacio`) | espera | no |
+| `finestraVisible` | Editor, Configuració, «Sobre l’app» o Sparkle (`Activacio`) | espera | no |
 | `canvisSenseDesar` | `Editor.canvisSenseDesar` (es desen en sortir) | espera | no |
 | `desfesRecent` | `undoManager.canUndo` o `desferPlantilla.canUndo`, i l'últim canvi fa menys d'1 h: es perdria ⌘Z | espera | no |
 | `acabaDArrencar` | Menys de 5 min en marxa: no barrejar-se amb l'inici de sessió | espera | no |

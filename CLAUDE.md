@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (09/11/2026, 0.32.5 al codi; publicada, 0.31.5)
+## Estat (09/11/2026, 0.32.6 al codi; publicada, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -64,7 +64,7 @@ Els requisits són a `docs/especificacio.md`.
   desactivada; no en veu les finestres ni els títols. Per importar i lligar, des de la 0.23.0 en fa una foto (D19). Si Warp és tancat, «Obre» l'obre.
 - **0.23.0 (D19): l'app gestiona `restore_session`.** Sempre desactivat, també en sortir. **Des de la 0.27.3, només quan l'usuari ho demana** (abans, cada 5 min):
   amb Warp obert, l'activa fins que Warp desa (de 5 a 30 s) perquè la base tingui una foto de les finestres. En un reinici de prova,
-  Warp va restaurar la foto sol (les pestanyes, sense Claude). «Torna a llegir Warp», importar i lligar: amb Warp obert, refresquen i llegeixen; amb Warp tancat, l'última foto. Obrir
+  Warp va restaurar la foto sol (les pestanyes, sense Claude). «Actualitza l'estat de Warp», importar i lligar: amb Warp obert, refresquen i llegeixen; amb Warp tancat, l'última foto. Obrir
   finestres continua pels processos. Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, i la foto quadra amb tots els terminals oberts.
 - **0.24.0 (D17): `warp-launch obre <finestra> --obre`** obre la finestra pel mateix camí que el botó de l'app (`ExecucioObertura`, compartit).
   No fa res si l'app és oberta (tots dos escriurien `estat.json`), i si Warp és tancat, primer l'obre (en David, 05/11/2026). Sense prova real encara:
@@ -87,7 +87,7 @@ Els requisits són a `docs/especificacio.md`.
   l'ha provada a l'app i en un usuari de macOS nou (09/11/2026, ho ha dit ell).
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
-    obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
+    obrir res; la pantalla («Accepta» o «Surt de l’app Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
     `configuracio.json` o `estat.json` compta com a acceptada (a qui ja feia servir l'app no li pregunta; decisió 1, es queda així). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
   - **0.29.1 (D-P5a):** en una configuració nova, les pestanyes on no corria Claude queden només terminal (amb la lectura d'un
     Mac de prova del 04/11/2026, una cinquena part amb Claude i la resta només terminal, en lloc de tres quartes parts amb Claude). Des de la 0.31.5, també en tornar a importar.
@@ -168,6 +168,11 @@ Els requisits són a `docs/especificacio.md`.
     fitxers per cap altra crida (també `remove` de C); `copyfile`, `linkItem`, `createSymbolicLink` i `renamex_np` només a
     `AjustRestauracio.swift`, que no pot obrir `settings.toml` per escriure-hi directament; i els lectors de Claude de debò, només
     a l'app i al CLI (`lectorsDeClaudeDeDebo`).
+- **0.32.6 (en David, 09/11/2026): la mateixa funció es diu igual als dos menús.** «Actualitza l'estat de Warp» (abans, «Torna a llegir Warp», només
+  al menú de la icona) és també al menú Arxiu, i al peu del full d'importació: una sola vista (`ItemActualitzaWarp`), desactivada
+  sense el permís i mentre ja es llegeix (`OrdreActualitzaWarp`). «Obre la finestra a Warp…» és «Obre a Warp…». El menú de la icona
+  i la pantalla del permís diuen «Sobre l’app Warp Launch» i «Surt de l’app Warp Launch», com el menú que posa macOS. Guarda:
+  `laMateixaOrdreEsDiuIgualAlsDosMenus`. Només proves i codi llegit: no s'ha vist a l'app.
 - **Actualització automàtica amb Sparkle 2.10.1 (de la 0.32.0 a la 0.32.5, 09/11/2026): al codi, sense publicar.** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».

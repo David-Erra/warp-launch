@@ -4,8 +4,8 @@ App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestr
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
 **Estat (09/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
-obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.4, i
-s'instal·la amb Homebrew. El codi del repo és a la 0.32.5, amb actualització automàtica, però **no s'ha publicat ni s'ha vist
+obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.5, i
+s'instal·la amb Homebrew. El codi del repo és a la 0.32.6, amb actualització automàtica, però **no s'ha publicat ni s'ha vist
 funcionar** (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
@@ -28,7 +28,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
 2. **Obre Warp Launch** des d'Aplicacions. Surt com una icona a la barra de menú (no al Dock).
    - **El primer cop, el teu permís** (des de la 0.29.0): l'app explica que ha de desactivar l'ajust de Warp «Restore windows,
      tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
-     llegeixi les finestres de Warp. Si no acceptes («Surt de Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
+     llegeixi les finestres de Warp. Si no acceptes («Surt de l’app Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
      propera vegada. Fins que acceptes, no llegeix ni obre res. Si ja la feies servir (hi ha `configuracio.json` o `estat.json` a
      `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»). Des de la primera 0.32.x
      publicada, aquesta pantalla també dirà que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README
@@ -156,7 +156,7 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
 - **L'app gestiona la restauració de sessió de Warp** (`restore_session` a `~/.warp/settings.toml`), amb el teu permís del
   primer ús (pas 2): la deixa sempre
   desactivada, perquè és ella qui torna a obrir les finestres, amb Claude. Només l'activa uns segons quan demanes
-  «Torna a llegir Warp», «Importa de Warp» o «Lliga amb Warp», per llegir-ne les finestres. Si tens Settings Sync, l'ajust arriba
+  «Actualitza l'estat de Warp», «Importa de Warp» o «Lliga amb Warp», per llegir-ne les finestres. Si tens Settings Sync, l'ajust arriba
   a les altres instal·lacions de Warp. Per deixar-la de fer servir, «Restaura Warp i surt…» torna l'ajust (vegeu «Desinstal·lar»).
   Si encara no tens `~/.warp/settings.toml` (per exemple, si no has canviat mai cap ajust de Warp), des de la 0.31.3 l'app només
   el crea quan Warp és obert amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos; fins llavors, Warp fa
