@@ -355,9 +355,12 @@ i no toca el disc.
     configuració amb alguna pestanya, s'hi obria Claude amb la plantilla. També al CLI;
   - **a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
     les opcions);
-  - **sessió viva en una pestanya a `~`:** la carpeta de la sessió, amb una nota. Si la pestanya és en una altra
-    carpeta que la de la sessió, mana la de la pestanya (el `cwd` de la sessió potser segueix els `cd` de Claude),
-    també amb una nota. En una lectura real (03/11/2026), cap: totes les sessions vives coincidien;
+  - **sessió viva en una altra carpeta que la pestanya (0.31.5, en David, 09/11/2026):** mana la de Claude, amb una nota
+    (`.carpetaDeLaSessio` si Warp era a `~`, `.carpetesDiferents` si no), excepte si la de Claude és `~` o no existeix: es queda la
+    de Warp, amb `.carpetaDeClaudeNoServeix`. Avís a «Per revisar» (`Validacio.avisCarpetaDeClaude`): amb la carpeta de Warp de
+    l'última foto o de la importació (`EstatSessions`, només a la memòria: el format d'`estat.json` no canvia) i, sense, amb
+    `carpetaSessio` (l'últim Claude). Si Warp és a `~`, sense avís: només la nota. «Lliga amb Warp…» i `potserJaOberta` comparen
+    totes dues carpetes;
   - **sessió viva a `~` o en una carpeta que no existeix:** Claude activat, amb la seva ordre (D11: «les que ja
     tenen Claude conserven la comanda llegida»), i l'avís de la carpeta. En aquella lectura, cap.
 - **Notes** (el full i el CLI les mostren): primer missatge descartat, sessió que reprenia una conversa concreta

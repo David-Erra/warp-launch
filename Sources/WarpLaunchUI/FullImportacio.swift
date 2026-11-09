@@ -174,7 +174,9 @@ public final class FullImportacio {
     public var perRevisar: Int {
         guard let importacio else { return 0 }
         let avisos = editor.avisos(de: importacio.configuracio)
-        return avisos.pestanyes.values.filter { llista in llista.contains { $0.gravetat >= .avis } }.count
+        let ambAvis = avisos.pestanyes.filter { $0.value.contains { $0.gravetat >= .avis } }.keys
+        // Les carpetes de Warp i Claude que no coincideixen: l'avís surt en importar (`Validacio.avisCarpetaDeClaude`).
+        return Set(ambAvis).union(importacio.vincles.filter { $0.value.carpetaWarp != nil }.keys).count
     }
 
     /// Què passarà en confirmar.

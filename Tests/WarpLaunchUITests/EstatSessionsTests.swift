@@ -33,6 +33,48 @@ private func lectura(_ sessio: String) -> LecturaWarp {
 
 @MainActor
 @Suite struct EstatSessionsTests {
+    /// La carpeta de Warp es queda a la memòria (no a `estat.json`): sobreviu a les lectures de cada minut, sense finestres, i
+    /// una foto nova la canvia. Després d'un reinici, només queda el que diu `carpetaSessio`.
+    @Test func recordaLaCarpetaDeWarpNomesAMemoria() throws {
+        let carpeta = try Carpeta()
+        let id = id(1)
+        let pestanya = Pestanya(id: id, titol: "T", carpeta: "/x/b", claude: .habituals)
+        let configuracio = Configuracio(plantilla: .habituals, finestres: [Finestra(id: UUID(), nom: "f", pestanyes: [pestanya])])
+        let rellotge = { Date(timeIntervalSince1970: 1_793_750_400) }
+        let sessions = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta.url), rellotge: rellotge)
+        sessions.carrega()
+        var canvis = 0
+        sessions.enCanviar = { canvis += 1 }
+        sessions.vincula([id: VincleImportat(pane: pane, sessio: "s", carpetaSessio: "/x/b", carpetaWarp: "/x/a")])
+        #expect(canvis >= 1)
+        func avis() -> Avis? { sessions.avisCarpeta(pestanya, inici: "/Users/prova", carpetaExisteix: { _ in true }) }
+        #expect(avis()?.tipus == .carpetesDiferents(warp: "/x/a", claude: "/x/b", actual: "/x/b"))
+
+        // La de cada minut no porta les finestres: no l'oblida.
+        sessions.actualitza(amb: LecturaWarp(finestres: [], sessionsSensePestanya: [], avisos: []), configuracio: configuracio)
+        #expect(avis() != nil)
+        #expect(!(try String(contentsOf: carpeta.url.appending(path: EstatApp.nomFitxer), encoding: .utf8)).contains("carpetaWarp"))
+
+        // Una foto nova on ja coincideixen.
+        let claude = SessioClaude(pid: 1, sessionId: "s", carpeta: "/x/b", iniciada: nil, ordre: ["claude"], opcions: OpcionsClaude(),
+                                  paneUUID: pane, dinsDeWarp: true)
+        sessions.actualitza(amb: LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
+            PestanyaLlegida(posicio: 0, titol: "T", color: nil, panes: [
+                PaneLlegit(uuid: pane, carpeta: "/x/b", origenCarpeta: .pane, carpetaExisteix: true, claude: claude),
+            ]),
+        ])], sessionsSensePestanya: [], avisos: []), configuracio: configuracio)
+        #expect(avis() == nil)
+
+        // Importada amb l'última carpeta de Claude diferent, després de reiniciar l'app.
+        let reiniciada = EstatSessions(magatzem: MagatzemEstat(carpeta: carpeta.url), rellotge: rellotge)
+        reiniciada.carrega()
+        var aA = pestanya
+        aA.carpeta = "/x/a"
+        #expect(reiniciada.avisCarpeta(aA, inici: "/Users/prova", carpetaExisteix: { _ in true })?.tipus
+            == .carpetesDiferents(warp: nil, claude: "/x/b", actual: "/x/a"))
+        #expect(reiniciada.avisCarpeta(pestanya, inici: "/Users/prova", carpetaExisteix: { _ in true }) == nil, "la foto no es desa")
+    }
+
     /// Només s'escriu si alguna cosa canvia.
     @Test func nomesEsDesaSiCanvia() throws {
         let carpeta = try Carpeta()

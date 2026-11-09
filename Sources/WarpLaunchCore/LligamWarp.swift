@@ -107,6 +107,8 @@ public enum LligamWarp {
         /// El títol per comparar (`clauTitol`).
         var clau: String?
         var lloc: String
+        /// El que veuria la importació si manés la carpeta de Claude, si és una altra.
+        var alternativa: (carpeta: String, clau: String?)? = nil
     }
 
     /// El que es lligaria: la pestanya de Warp, el pane (el principal o, per la conversa, el seu) i per què.
@@ -136,10 +138,15 @@ public enum LligamWarp {
                 let carpeta = principal.carpeta == inici ? principal.claude?.carpeta ?? inici : principal.carpeta
                 let darrer = (carpeta as NSString).lastPathComponent
                 let perDefecte = carpeta == inici || darrer.isEmpty || darrer == "/" ? nil : darrer
+                let alternativa: (carpeta: String, clau: String?)? = {
+                    guard let c = principal.claude?.carpeta, c != inici, c != carpeta else { return nil }
+                    let d = (c as NSString).lastPathComponent
+                    return (c, (titol ?? (d.isEmpty || d == "/" ? nil : d)).map { $0.trimmingCharacters(in: .whitespaces).lowercased() })
+                }()
                 for pane in p.panes { perPane[pane.uuid] = warp.count }
                 warp.append(DeWarp(numero: f.numero, titol: titol, principal: principal, carpeta: carpeta,
                                    clau: (titol ?? perDefecte).map { $0.trimmingCharacters(in: .whitespaces).lowercased() },
-                                   lloc: "finestra \(f.numero) › \(titol ?? (principal.carpeta as NSString).lastPathComponent)"))
+                                   lloc: "finestra \(f.numero) › \(titol ?? (principal.carpeta as NSString).lastPathComponent)", alternativa: alternativa))
             }
         }
         let interactives = lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).compactMap(\.claude)
@@ -202,9 +209,9 @@ public enum LligamWarp {
                 let aquesta = lliuresAra.filter { warp[$0].numero == numero }
                 let lligades = jaLligades.filter { ids.contains($0.key) && $0.value.map { warp[$0].numero } == numero }.count
                     + triades.filter { ids.contains($0.key) && warp[$0.value.warp].numero == numero }.count
-                let perTitol = seves.filter { p in p.titol != nil && aquesta.contains { warp[$0].clau == p.titol } }.count
+                let perTitol = seves.filter { p in p.titol != nil && aquesta.contains { warp[$0].clau == p.titol || warp[$0].alternativa?.clau == p.titol } }.count
                 let perCarpeta = seves.filter { p in
-                    p.carpeta != inici && aquesta.contains { warp[$0].carpeta == p.carpeta }
+                    p.carpeta != inici && aquesta.contains { warp[$0].carpeta == p.carpeta || warp[$0].alternativa?.carpeta == p.carpeta }
                 }.count
                 puntuacions.append((numero, lligades + perTitol, perCarpeta))
             }
@@ -218,7 +225,7 @@ public enum LligamWarp {
         /// Aparella les pendents i les de Warp que comparteixen la clau del criteri, si en són tantes com tantes. Amb
         /// `arreu`, a més, cap altra pendent de fora d'aquestes pot tenir la mateixa clau (un criteri feble a la finestra
         /// no ha de prendre la pestanya d'una altra finestra de la configuració).
-        func emparella(_ pendents: [Pendent], _ deWarp: [Int], _ criteri: Criteri, arreu: [Pendent]? = nil) {
+        func emparella(_ pendents: [Pendent], _ deWarp: [Int], _ criteri: Criteri, arreu: [Pendent]? = nil, alt: Bool = false) {
             func clauPendent(_ p: Pendent) -> String? {
                 switch criteri {
                 case .titolICarpeta: p.titol.map { $0 + "\u{0}" + p.carpeta }
@@ -229,10 +236,13 @@ public enum LligamWarp {
             }
             func clauWarp(_ i: Int) -> String? {
                 let w = warp[i]
+                if alt && w.alternativa == nil { return nil }
+                let carpeta = alt ? w.alternativa!.carpeta : w.carpeta
+                let clau = alt ? w.alternativa!.clau : w.clau
                 return switch criteri {
-                case .titolICarpeta: w.clau.map { $0 + "\u{0}" + w.carpeta }
-                case .titol: w.clau
-                case .carpeta: w.carpeta == inici ? nil : w.carpeta
+                case .titolICarpeta: clau.map { $0 + "\u{0}" + carpeta }
+                case .titol: clau
+                case .carpeta: carpeta == inici ? nil : carpeta
                 case .conversa: nil
                 }
             }
@@ -253,12 +263,14 @@ public enum LligamWarp {
         // 3. De més segur a menys; per a cada criteri, primer a la finestra de Warp de cada finestra de la configuració
         //    i després a totes. La carpeta sola, només a la seva finestra.
         for criteri in [Criteri.titolICarpeta, .titol, .carpeta] {
-            for numero in Set(parellaDe.values).sorted() {
-                let seves = sense().filter { parellaDe[$0.finestra] == numero }
-                emparella(seves, lliures.filter { warp[$0].numero == numero }.sorted(), criteri,
-                          arreu: criteri.segur ? nil : sense())
+            for alt in [false, true] {
+                for numero in Set(parellaDe.values).sorted() {
+                    let seves = sense().filter { parellaDe[$0.finestra] == numero }
+                    emparella(seves, lliures.filter { warp[$0].numero == numero }.sorted(), criteri,
+                              arreu: criteri.segur ? nil : sense(), alt: alt)
+                }
+                if criteri != .carpeta { emparella(sense(), lliures.sorted(), criteri, alt: alt) }
             }
-            if criteri != .carpeta { emparella(sense(), lliures.sorted(), criteri) }
         }
 
         // El resultat, en l'ordre de la configuració.

@@ -18,6 +18,12 @@ public final class EstatSessions {
     /// Les converses amb un Claude viu, de l'última lectura de Warp.
     private var vives: Set<String> = []
 
+    /// La carpeta de Warp de cada pane, de l'última lectura amb la foto o de la importació (l'avís de «Per revisar»). Només a la
+    /// memòria: el format d'`estat.json` no canvia, i després d'un reinici només queda el que diu `carpetaSessio`.
+    @ObservationIgnored private var carpetesWarp: [String: String] = [:]
+    /// Quan pot haver canviat l'avís de «Per revisar» d'alguna pestanya (`Editor.refrescaAvisos`).
+    @ObservationIgnored public var enCanviar: @MainActor () -> Void = {}
+
     /// Les converses recents de cada carpeta, fins a la pròxima lectura de Warp: l'inspector les demana a cada redibuix, i
     /// llegir-les pot trigar 60 ms (05/11/2026). En obrir, el pla les torna a llegir.
     @ObservationIgnored private var recents: [String: [LectorTranscripcions.Recent]] = [:]
@@ -45,6 +51,14 @@ public final class EstatSessions {
             bloqueig = error.description
             carregat = false
         }
+        enCanviar()
+    }
+
+    /// L'avís de la carpeta de Claude d'una pestanya, si n'hi ha (`Validacio.avisCarpetaDeClaude`).
+    public func avisCarpeta(_ pestanya: Pestanya, inici: String, carpetaExisteix: (String) -> Bool) -> Avis? {
+        let vincle = estat.pestanyes[pestanya.id]
+        return Validacio.avisCarpetaDeClaude(pestanya, vincle: vincle, carpetaWarp: vincle?.pane.flatMap { carpetesWarp[$0] },
+                                             inici: inici, carpetaExisteix: carpetaExisteix)
     }
 
     /// La conversa que reprendria la pestanya, si se sap.
@@ -64,13 +78,22 @@ public final class EstatSessions {
     public func actualitza(amb lectura: LecturaWarp, configuracio: Configuracio) {
         if vives != lectura.conversesVives { vives = lectura.conversesVives }
         recents = [:]
+        // Les lectures de cada minut no porten les finestres: la foto es queda fins a la pròxima.
+        let foto = lectura.finestres.isEmpty ? carpetesWarp : Self.carpetesDeWarp(lectura)
+        let fotoNova = foto != carpetesWarp
+        carpetesWarp = foto
+        let abans = estat
         desa(ActualitzaEstat.amb(lectura, configuracio: configuracio, estat: estat, ara: rellotge()))
+        if fotoNova, estat == abans { enCanviar() }
     }
 
     /// Els lligams d'una importació (en crear la configuració o tornar a importar).
     public func vincula(_ vincles: [UUID: VincleImportat]) {
         guard !vincles.isEmpty else { return }
+        let abans = estat
+        for vincle in vincles.values { carpetesWarp[vincle.pane] = vincle.carpetaWarp }
         desa(ActualitzaEstat.vincula(vincles, estat: estat, ara: rellotge()))
+        if estat == abans { enCanviar() }
     }
 
     /// «Lliga amb Warp…» (`ActualitzaEstat.lliga`). Torna l'error si no s'ha pogut desar.
@@ -106,12 +129,24 @@ public final class EstatSessions {
         desa(ActualitzaEstat.ambPanes(panes, estat: estat, ara: rellotge()))
     }
 
+    /// La carpeta de Warp dels panes on no coincideix amb la del seu Claude.
+    private static func carpetesDeWarp(_ lectura: LecturaWarp) -> [String: String] {
+        var carpetes: [String: String] = [:]
+        for pane in lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes)
+        where pane.claude != nil && pane.claude?.carpeta != pane.carpeta {
+            carpetes[pane.uuid] = pane.carpeta
+        }
+        return carpetes
+    }
+
     /// Torna l'error, si n'hi ha.
     @discardableResult
     private func desa(_ nou: EstatApp) -> String? {
         if let motiu = motiuNoEsPotObrir { return motiu }
         guard let magatzem, nou != estat || errorDesar != nil else { return nil }
+        let canvia = nou != estat
         estat = nou
+        defer { if canvia { enCanviar() } }
         do {
             try magatzem.desa(nou)
             errorDesar = nil

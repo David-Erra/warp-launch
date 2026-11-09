@@ -209,7 +209,7 @@ extension Editor {
         var claude: [Avis] = []
         for avis in avisos.pestanyes[id] ?? [] {
             switch avis.tipus {
-            case .carpetaNoAbsoluta, .carpetaInici, .carpetaNoExisteix: carpeta.append(avis)
+            case .carpetaNoAbsoluta, .carpetaInici, .carpetaNoExisteix, .carpetesDiferents: carpeta.append(avis)
             case .claudeApagat, .ordreImpossible: break
             default: claude.append(avis)
             }

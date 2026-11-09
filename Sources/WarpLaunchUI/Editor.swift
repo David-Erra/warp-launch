@@ -144,6 +144,8 @@ public final class Editor {
     @ObservationIgnored public var conversaDe: @MainActor (Pestanya) -> String? = { _ in nil }
     /// Després de crear la configuració o tornar a importar: l'app hi desa els lligams de les pestanyes (`estat.json`).
     @ObservationIgnored public var enImportar: @MainActor (Importacio) -> Void = { _ in }
+    /// L'avís de la carpeta de Claude d'una pestanya (`EstatSessions.avisCarpeta`). Sense, cap.
+    @ObservationIgnored public var avisCarpetaDeClaude: @MainActor (Pestanya, String, (String) -> Bool) -> Avis? = { _, _, _ in nil }
     /// Obrir una finestra a Warp (fase 3.1). L'app l'hi posa; sense (a les proves de l'editor, o sense carpeta), les
     /// ordres «Obre…» queden desactivades.
     @ObservationIgnored public var obertura: Obertura?
@@ -443,7 +445,10 @@ public final class Editor {
         ajustaSeleccio()
         canvisSenseDesar = true
         // Sense la configuració al disc, `estat.json` no s'escriu.
-        if desaSiCal() { enImportar(importacio) }
+        if desaSiCal() {
+            enImportar(importacio)
+            actualitzaAvisos()
+        }
     }
 
     /// «Torna a importar-ho tot…»: substitueix les finestres, amb còpia abans de desar i Desfés. La plantilla no
@@ -457,6 +462,7 @@ public final class Editor {
         if configuracio != abans {
             finestresImportades = Set(importacio.configuracio.finestres.map(\.id))
             enImportar(importacio)
+            actualitzaAvisos()
         }
         ajustaSeleccio()
     }
@@ -1057,9 +1063,20 @@ public final class Editor {
     }
 
     private func actualitzaAvisos() {
-        avisos = estat == .oberta
-            ? Validacio.avisos(configuracio, inici: inici, carpetaExisteix: carpetaExisteix)
-            : AvisosConfiguracio()
+        guard estat == .oberta else {
+            avisos = AvisosConfiguracio()
+            return
+        }
+        var nous = Validacio.avisos(configuracio, inici: inici, carpetaExisteix: carpetaExisteix)
+        for pestanya in configuracio.finestres.flatMap(\.pestanyes) {
+            if let avis = avisCarpetaDeClaude(pestanya, inici, carpetaExisteix) { nous.pestanyes[pestanya.id, default: []].append(avis) }
+        }
+        avisos = nous
+    }
+
+    /// Torna a calcular els avisos si ha canviat el que l'app recorda de les sessions (`EstatSessions.enCanviar`).
+    public func refrescaAvisos() {
+        actualitzaAvisos()
     }
 
     // MARK: - Desar

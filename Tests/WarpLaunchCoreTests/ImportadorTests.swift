@@ -282,20 +282,85 @@ private func lecturaGran() -> LecturaWarp {
         #expect(importacio.notes.map(\.description) == ["la finestra 2 de Warp no té cap pestanya de terminal: no s'importa"])
     }
 
-    @Test func siLaPestanyaNoEsALIniciManaLaSevaCarpeta() throws {
-        var f = Fabrica()
-        // El `cwd` de la sessió potser segueix els `cd` de Claude: es queda la de la pestanya, i es diu.
-        let sessio = f.sessio("\(inici)/GitHub/botiga/src", ["claude", "-c"])
-        let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
-            PestanyaLlegida(posicio: 0, titol: "Botiga", color: nil, panes: [f.pane("\(inici)/GitHub/botiga", claude: sessio)]),
+    /// Una lectura d'una sola pestanya: Warp a `carpeta`, Claude a `sessio`.
+    private func unaPestanya(_ f: inout Fabrica, carpeta: String, sessio carpetaSessio: String, titol: String? = "Botiga",
+                             origen: OrigenCarpeta = .pane, claudeExisteix: Bool = true) -> LecturaWarp {
+        let sessio = f.sessio(carpetaSessio, ["claude", "-c"])
+        var pane = f.pane(carpeta, claude: sessio)
+        pane.origenCarpeta = origen
+        pane.carpetaClaudeExisteix = claudeExisteix
+        return LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
+            PestanyaLlegida(posicio: 0, titol: titol, color: nil, panes: [pane]),
         ])], sessionsSensePestanya: [], avisos: [])
+    }
+
+    /// Decisió d'en David del 09/11/2026: si Warp i Claude no coincideixen i Claude és viu, mana la de Claude, i es diu.
+    @Test func siNoCoincideixenManaLaCarpetaDeClaude() throws {
+        var f = Fabrica()
+        let lectura = unaPestanya(&f, carpeta: "\(inici)/GitHub/botiga", sessio: "\(inici)/GitHub/botiga/src")
         let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
         let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
-        #expect(pestanya.carpeta == "\(inici)/GitHub/botiga")
+        #expect(pestanya.carpeta == "\(inici)/GitHub/botiga/src")
         #expect(importacio.notes.map(\.description) == [
-            "GitHub › Botiga: Warp diu «/Users/prova/GitHub/botiga» i Claude «/Users/prova/GitHub/botiga/src»; es fa servir la de Warp (comprova-ho)",
+            "botiga › Botiga: Warp diu «/Users/prova/GitHub/botiga» i Claude «/Users/prova/GitHub/botiga/src»; es fa servir la de Claude (comprova-ho)",
         ])
         #expect(importacio.notes.first?.lloc?.pestanya == pestanya.id)
+        #expect(importacio.origens[pestanya.id] == .sessio)
+        // El vincle recorda totes dues: de la de Warp en surt l'avís de «Per revisar».
+        let vincle = try #require(importacio.vincles[pestanya.id])
+        #expect(vincle.carpetaSessio == "\(inici)/GitHub/botiga/src" && vincle.carpetaWarp == "\(inici)/GitHub/botiga")
+    }
+
+    /// El títol per defecte i el nom de la finestra surten de la carpeta de Claude.
+    @Test func elTitolPerDefecteIElNomDeFinestraSonDeClaude() throws {
+        var f = Fabrica()
+        let lectura = unaPestanya(&f, carpeta: "\(inici)/GitHub/vell/botiga", sessio: "\(inici)/GitHub/nou/botiga-b", titol: nil)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        #expect(importacio.configuracio.finestres[0].pestanyes[0].titol == "botiga-b")
+        #expect(importacio.configuracio.finestres[0].nom == "nou")
+    }
+
+    /// Si la carpeta de Claude és `~` o no existeix, es queda la de Warp, i es diu per què.
+    @Test(arguments: [true, false])
+    func siLaCarpetaDeClaudeNoServeixEsQuedaLaDeWarp(aInici: Bool) throws {
+        var f = Fabrica()
+        let warp = "\(inici)/GitHub/botiga"
+        let claude = aInici ? inici : "\(inici)/GitHub/esborrada"
+        let lectura = unaPestanya(&f, carpeta: warp, sessio: claude, claudeExisteix: aInici)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
+        #expect(pestanya.carpeta == warp)
+        #expect(importacio.notes.map(\.description) == [
+            "GitHub › Botiga: Warp diu «\(warp)» i Claude «\(claude)», que " + (aInici ? "és la carpeta d'inici" : "no existeix")
+                + "; es queda la de Warp (comprova-ho)",
+        ])
+        #expect(importacio.vincles[pestanya.id]?.carpetaWarp == warp, "també avisa")
+    }
+
+    /// Warp a `~` i Claude en una carpeta que no existeix: tampoc es fa servir la de Claude, i no hi ha cap de bona.
+    @Test func aIniciIAmbClaudeInexistentEsQuedaAInici() {
+        var f = Fabrica()
+        let lectura = unaPestanya(&f, carpeta: inici, sessio: "\(inici)/GitHub/esborrada", claudeExisteix: false)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        #expect(importacio.configuracio.finestres[0].pestanyes[0].carpeta == inici)
+        #expect(importacio.vincles.values.first?.carpetaWarp == nil, "`~` no és cap carpeta de Warp a comparar")
+    }
+
+    /// Una carpeta de l'historial de Warp no es tracta diferent: mana la de Claude.
+    @Test func ambLaCarpetaDeLHistorialManaLaDeClaude() {
+        var f = Fabrica()
+        let lectura = unaPestanya(&f, carpeta: "\(inici)/GitHub/vella", sessio: "\(inici)/GitHub/nova", origen: .historial)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        #expect(importacio.configuracio.finestres[0].pestanyes[0].carpeta == "\(inici)/GitHub/nova")
+    }
+
+    /// Quan coincideixen, cap nota ni carpeta de Warp a recordar.
+    @Test func siCoincideixenNoHiHaNota() {
+        var f = Fabrica()
+        let lectura = unaPestanya(&f, carpeta: "\(inici)/a", sessio: "\(inici)/a")
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
+        #expect(importacio.notes.isEmpty)
+        #expect(importacio.vincles.values.first?.carpetaWarp == nil)
     }
 
     @Test func elPrimerMissatgeNoEsDesaPeroEsDiu() throws {

@@ -155,6 +155,8 @@ public struct PaneLlegit: Codable, Sendable, Equatable {
     public var carpetaExisteix: Bool
     /// Sessió de Claude interactiva que corre en aquest pane, si n'hi ha.
     public var claude: SessioClaude?
+    /// La carpeta de la sessió de Claude encara existeix. Sense sessió, `true`.
+    public var carpetaClaudeExisteix: Bool = true
 }
 
 public struct SessioClaude: Codable, Sendable, Equatable {

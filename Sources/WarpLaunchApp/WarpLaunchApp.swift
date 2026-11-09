@@ -170,6 +170,8 @@ final class Aplicacio {
         self.desinstallacio = desinstallacio
         editor.conversaDe = { sessions.conversaAReprendre($0, transcripcions: transcripcions) }
         editor.enImportar = { sessions.vincula($0.vincles) }
+        editor.avisCarpetaDeClaude = { sessions.avisCarpeta($0, inici: $1, carpetaExisteix: $2) }
+        sessions.enCanviar = { editor.refrescaAvisos() }
         // Sense configuració, `estat.json` no s'escriu.
         warp.enLlegir = { [obertura] lectura in
             if editor.estat == .oberta { sessions.actualitza(amb: lectura, configuracio: editor.configuracio) }

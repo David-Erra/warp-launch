@@ -29,6 +29,23 @@ public enum Validacio {
         return avisos + Self.avisos(claude: pestanya.claude)
     }
 
+    /// L'avís de la carpeta de Claude (decisió d'en David del 09/11/2026): a «Per revisar», mentre l'app ho sàpiga.
+    /// - `carpetaWarp`: la que té la foto de Warp per al pane de la pestanya, si se sap i no coincideix amb la de Claude. Si és
+    ///   `~`, Warp l'ha perduda i no avisa. Només hi és a la memòria de l'app, perquè el format d'`estat.json` no canvia
+    ///   (`EstatSessions`).
+    /// - `vincle.carpetaSessio`: la de l'últim Claude de la pestanya. Sobreviu als reinicis: si no és la de la pestanya (una
+    ///   configuració d'abans de la 0.31.5, per exemple), també avisa.
+    public static func avisCarpetaDeClaude(_ pestanya: Pestanya, vincle: VincleEstat?, carpetaWarp: String?, inici: String,
+                                           carpetaExisteix: (String) -> Bool) -> Avis? {
+        guard let claude = vincle?.carpetaSessio else { return nil }
+        let actual = Rutes.canonica(pestanya.carpeta)
+        if let carpetaWarp, carpetaWarp != claude, carpetaWarp != inici, actual == claude || actual == carpetaWarp {
+            return Avis(.carpetesDiferents(warp: carpetaWarp, claude: claude, actual: actual))
+        }
+        guard claude != inici, claude != actual, carpetaExisteix(claude) else { return nil }
+        return Avis(.carpetesDiferents(warp: nil, claude: claude, actual: actual))
+    }
+
     /// Els avisos de la plantilla (la Configuració). Amb Claude apagat, cap: les pestanyes noves només serien un
     /// terminal. No compten a «Per revisar» ni al subtítol de l'editor.
     public static func avisos(plantilla: ClaudePestanya) -> [Avis] {
@@ -124,6 +141,8 @@ public struct Avis: Sendable, Equatable, CustomStringConvertible {
         case carpetaNoExisteix
         /// Claude apagat i la carpeta ja és bona: l'inspector ofereix «Activa Claude».
         case claudeApagat
+        /// Warp i Claude no coincideixen (`Validacio.avisCarpetaDeClaude`). `warp`, si la foto de Warp ho diu.
+        case carpetesDiferents(warp: String?, claude: String, actual: String)
         case ultracode
         case esforcDesconegut(String)
         case modePermisosDesconegut(String)
@@ -143,7 +162,7 @@ public struct Avis: Sendable, Equatable, CustomStringConvertible {
     public var gravetat: Gravetat {
         switch tipus {
         case .claudeApagat, .ultracode: .info
-        case .carpetaNoAbsoluta, .carpetaInici, .carpetaNoExisteix, .esforcDesconegut, .saltaPermisosAmbMode,
+        case .carpetaNoAbsoluta, .carpetaInici, .carpetaNoExisteix, .carpetesDiferents, .esforcDesconegut, .saltaPermisosAmbMode,
              .opcionsDesconegudes, .opcionsDUnSolUs, .nomRepetit:
             .avis
         case .modePermisosDesconegut, .settingsNoJSON, .ordreImpossible: .error
@@ -156,6 +175,11 @@ public struct Avis: Sendable, Equatable, CustomStringConvertible {
         case .carpetaInici: "Carpeta d'inici: probablement Warp l'ha perduda"
         case .carpetaNoExisteix: "La carpeta no existeix"
         case .claudeApagat: "Claude és apagat en aquesta pestanya"
+        case let .carpetesDiferents(warp?, claude, actual):
+            "Warp diu «\(warp)» i Claude corre a «\(claude)»: es fa servir la de "
+                + (actual == claude ? "Claude" : "Warp") + " (comprova-ho)"
+        case let .carpetesDiferents(nil, claude, _):
+            "L'últim Claude d'aquesta pestanya corria a «\(claude)», no a aquesta carpeta (comprova-ho)"
         case .ultracode: "Comprova que el model admet ultracode i que tens els dynamic workflows activats"
         case let .esforcDesconegut(esforc):
             "Esforç «\(esforc)» desconegut: Claude el deixa córrer i fa servir el de per defecte"

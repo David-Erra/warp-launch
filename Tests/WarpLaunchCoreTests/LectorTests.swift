@@ -144,6 +144,31 @@ struct LectorTests {
         #expect(text.contains("Carpetes: 1 recuperades de l'historial, 1 que ja no existeixen, 0 a la carpeta d'inici"))
     }
 
+    /// La lectura diu si la carpeta de Claude existeix (decisió d'en David del 09/11/2026): l'Importador no toca el disc.
+    @Test func diuSiLaCarpetaDeClaudeExisteix() throws {
+        let tmp = try CarpetaTemporal()
+        let inici = try tmp.carpeta("inici")
+        let projecte = try tmp.carpeta("inici/projecte")
+        let base = try BaseWarpDeProva(a: tmp.url("warp.sqlite"))
+        try base.finestra(1)
+        try base.pestanya(1, finestra: 1, titol: "A")
+        try base.pestanya(2, finestra: 1, titol: "B")
+        try base.pestanya(3, finestra: 1, titol: "C")
+        try base.paneTerminal(10, pestanya: 1, uuid: uuidDeProva("a"), cwd: projecte)
+        try base.paneTerminal(20, pestanya: 2, uuid: uuidDeProva("b"), cwd: projecte)
+        try base.paneTerminal(30, pestanya: 3, uuid: uuidDeProva("c"), cwd: projecte)
+        let sessions = tmp.url("sessions")
+        var processos = ProcessosFalsos.ambWarp()
+        try escriuSessio(a: sessions, pid: 101, sessionId: "s-a", cwd: projecte)
+        processos.claude(101, argv: ["claude"], uuid: uuidDeProva("a"))
+        try escriuSessio(a: sessions, pid: 102, sessionId: "s-b", cwd: inici + "/esborrada")
+        processos.claude(102, argv: ["claude"], uuid: uuidDeProva("b"))
+        let lector = Lector(rutaWarp: base.url, rutaAjustos: tmp.url("settings.toml"), carpetaSessions: sessions,
+                            processos: processos, warp: { .perOmissio }, inici: inici)
+        let panes = try lector.llegeix().finestres[0].pestanyes.flatMap(\.panes)
+        #expect(panes.map(\.carpetaClaudeExisteix) == [true, false, true], "sense Claude, `true`")
+    }
+
     @Test func lesCarpetesQueExisteixenNoEsMarquen() throws {
         let lectura = try Escenari().lector.llegeix()
         let panes = lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes)

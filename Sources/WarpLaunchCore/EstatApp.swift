@@ -135,11 +135,15 @@ public struct VincleImportat: Sendable, Equatable {
     public var pane: String
     public var sessio: String?
     public var carpetaSessio: String?
+    /// La carpeta de Warp, si no coincideix amb la de Claude (l'avís de «Per revisar»). No es desa a `estat.json`: el seu
+    /// format no canvia.
+    public var carpetaWarp: String?
 
-    public init(pane: String, sessio: String? = nil, carpetaSessio: String? = nil) {
+    public init(pane: String, sessio: String? = nil, carpetaSessio: String? = nil, carpetaWarp: String? = nil) {
         self.pane = pane
         self.sessio = sessio
         self.carpetaSessio = carpetaSessio
+        self.carpetaWarp = carpetaWarp
     }
 }
 

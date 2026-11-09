@@ -591,6 +591,50 @@ private func motius(_ m: MagatzemConfiguracio) -> [String] {
     }
 }
 
+// MARK: - La carpeta de Claude (decisió d'en David del 09/11/2026)
+
+@MainActor
+@Suite struct AvisCarpetaDeClaudeTests {
+    /// Surt a «Per revisar» i a l'inspector, sota la carpeta, i desapareix en corregir la pestanya.
+    @Test func surtAPerRevisarIEsTreuEnCorregir() throws {
+        let tmp = try Temporal()
+        let editor = try editorAmbMostra(tmp)
+        let perRevisar = editor.nombrePerRevisar
+        let dita = editor.configuracio.finestres[0].pestanyes[0]
+        var claude = "/Users/prova/GitHub/altra"
+        editor.avisCarpetaDeClaude = { p, _, _ in
+            p.id == dita.id && p.carpeta != claude ? Avis(.carpetesDiferents(warp: nil, claude: claude, actual: p.carpeta)) : nil
+        }
+        editor.refrescaAvisos()
+        #expect(editor.nombrePerRevisar == perRevisar + 1)
+        #expect(editor.perRevisarPerFinestra.first?.pestanyes.contains { $0.id == dita.id } == true)
+        #expect(editor.avisosInspector(dita.id).carpeta.count == 1)
+        #expect(editor.avisPrincipal(dita.id) != nil)
+        #expect(!editor.canvisSenseDesar, "recalcular no canvia res")
+        // Si la pestanya ja és a la carpeta de Claude, se'n va.
+        claude = dita.carpeta
+        editor.refrescaAvisos()
+        #expect(editor.nombrePerRevisar == perRevisar)
+    }
+
+    /// El full d'importar compta les pestanyes que sortiran amb l'avís.
+    @Test func elFullDImportarLesCompta() async throws {
+        let tmp = try Temporal()
+        let editor = Editor(magatzem: tmp.magatzem, retardDesat: nil, carpetaExisteix: { _ in true })
+        editor.carrega()
+        let sessio = SessioClaude(pid: 1, sessionId: "s", carpeta: "\(inici)/b", iniciada: nil, ordre: ["claude"],
+                                  opcions: OpcionsClaude(), paneUUID: "p", dinsDeWarp: true)
+        let lectura = LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: [
+            PestanyaLlegida(posicio: 0, titol: "B", color: nil, panes: [
+                PaneLlegit(uuid: "p", carpeta: "\(inici)/a", origenCarpeta: .pane, carpetaExisteix: true, claude: sessio),
+            ]),
+        ])], sessionsSensePestanya: [], avisos: [])
+        let full = try #require(FullImportacio(editor: editor, warp: EstatWarp(lector: { lectura })))
+        await full.llegeix()
+        #expect(full.perRevisar == 1)
+    }
+}
+
 // MARK: - Casos de la revisió del pas 7
 
 @MainActor

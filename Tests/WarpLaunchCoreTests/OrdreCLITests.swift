@@ -92,9 +92,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(sortida.text == "Warp Launch \(WarpLaunch.versio)\n")
     }
 
-    /// L'ajuda d'`importa` diu quan queden només terminal les pestanyes on no corre Claude: sense configuració, i també amb
-    /// una que encara no té cap pestanya (decisió d'en David del 08/11/2026). Abans deia que, amb configuració, sempre
-    /// prenien la plantilla.
+    /// L'ajuda d'`importa` diu que les pestanyes on no corre Claude queden només terminal (decisió d'en David del 09/11/2026).
     @Test func lAjudaDImportaDiuQuanQuedenNomesTerminal() throws {
         let ajuda = OrdreCLI.ajuda.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .joined(separator: " ")

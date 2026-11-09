@@ -492,7 +492,9 @@ public enum PlaObertura {
             }
             let carpeta = Rutes.canonica(pestanya.carpeta)
             if entrada.estat.pestanyes[pestanya.id] == nil, carpeta != entrada.inici {
-                if let (_, lloc) = panes.values.filter({ $0.pane.carpeta == carpeta }).min(by: { $0.lloc < $1.lloc }) {
+                // També amb la carpeta del Claude del pane: si no coincideixen, la pestanya hi pot ser per Claude (09/11/2026).
+                if let (_, lloc) = panes.values.filter({ $0.pane.carpeta == carpeta || $0.pane.claude?.carpeta == carpeta })
+                    .min(by: { $0.lloc < $1.lloc }) {
                     avisosPestanya.append(.potserJaOberta(lloc: lloc))
                 }
             }

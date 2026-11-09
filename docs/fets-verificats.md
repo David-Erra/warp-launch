@@ -276,7 +276,8 @@ corregeix-lo i deixa'n constància.
     - `nameSource`: `derived` vol dir que el nom l'ha posat Claude.
     - `status`: `idle` o `busy`.
     - També hi ha `version`, `messagingSocketPath` i, en alguns, `bridgeSessionId`.
-- **`cwd`:** segueix els `cd` de la sessió; no és necessàriament la carpeta on es va obrir (prototip).
+- **`cwd`:** no segueix els `cd` que Claude fa amb l'eina Bash; sí els canvis de carpeta de la sessió (vegeu «La carpeta de la
+  pestanya i la de Claude»). Corregit el 09/11/2026: abans deia que seguia tots els `cd` (prototip).
 - **`/clear` i `/resume`:** dins la sessió reescriuen el `sessionId` del mateix fitxer, amb el mateix pid (prototip).
 - **On són les converses:** `~/.claude/projects/<cwd amb tot caràcter no alfanumèric → ->/<sessionId>.jsonl` (prototip).
   - **Confirmat el 04/11/2026** (`warp-launch llegeix --json` 0.16.0 i `os.path.exists`, només lectura): totes les
@@ -373,6 +374,18 @@ corregeix-lo i deixa'n constància.
   inclou `WARP_TERMINAL_SESSION_UUID`. La revisió del 03/11/2026 en va llegir l'entorn de 6 processos.
 - **Memòria** (03/11/2026, revisió): cada sessió viva ocupava uns 500 MB de mitjana (de 350 a 800 MB). Desenes de
   sessions són desenes de GB (60 són uns 30 GB).
+
+### La carpeta de la pestanya i la de Claude (09/11/2026, Claude Code 2.1.319)
+
+- **Els `cd` de l'eina Bash no mouen la sessió** (provat, un Mac, 18 sessions amb el `cwd` de les entrades canviant dins del
+  procés): `sessions/<pid>.json`, el procés i el fitxer de la transcripció es queden a la carpeta d'arrencada (0 de 54 carpetes
+  visitades tenen la transcripció).
+- **`/cd` i `EnterWorktree` sí** (llegit a la documentació i al binari minificat, sense cap cas observat): la transcripció passa al
+  projecte de la carpeta nova, i `originalCwd`, que reescriu el fitxer de sessió, canvia.
+- **Amb `cd B && claude`, Warp es queda amb A** mentre Claude corre, si el shell no emet OSC 7 (llegit al codi de
+  `warpdotdev/warp`, commit `abb3fe33e004`; no observat): Warp només actualitza la carpeta al `precmd`.
+- **En aquell Mac, Warp i Claude coincidien a 74 de 74 pestanyes:** el cas no s'ha vist en execució. És la base de la decisió del
+  09/11/2026 (mana la de Claude, excepte si és `~` o no existeix).
 
 ## Primera lectura real (03/11/2026, `warp-launch llegeix` 0.2.0)
 

@@ -121,8 +121,14 @@ public struct Lector: Sendable {
                             var esCarpeta: ObjCBool = false
                             let existeix = FileManager.default.fileExists(atPath: carpeta, isDirectory: &esCarpeta)
                                 && esCarpeta.boolValue
+                            var esCarpetaClaude: ObjCBool = false
+                            let existeixClaude = claude.map {
+                                FileManager.default.fileExists(atPath: $0.carpeta, isDirectory: &esCarpetaClaude)
+                                    && esCarpetaClaude.boolValue
+                            } ?? true
                             return PaneLlegit(uuid: pane.uuid, carpeta: carpeta, origenCarpeta: origen,
-                                              carpetaExisteix: existeix, claude: claude)
+                                              carpetaExisteix: existeix, claude: claude,
+                                              carpetaClaudeExisteix: existeixClaude)
                         })
                 })
         }
