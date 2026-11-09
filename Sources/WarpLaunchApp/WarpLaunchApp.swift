@@ -250,7 +250,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aplicacio.enIniciarSessio = InicDeSessio.es(
             comElementDInici: ServeiArrencada.obertaComElementDInici,
             segonsEncesa: TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000,
-            registrada: aplicacio.arrencada.obreSola)
+            registrada: aplicacio.arrencada.obreSola,
+            reobertaPerActualitzacio: false)
         let aplicacio = aplicacio
         // D-P4: sense el consentiment, primer la pantalla de consentiment (també en iniciar sessió). L'app no llegeix ni toca
         // Warp, ni proposa res, fins que s'accepta.

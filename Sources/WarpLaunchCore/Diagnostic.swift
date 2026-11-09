@@ -805,7 +805,7 @@ struct Anonimitzador: Sendable {
     static let coneguts: Set<String> = [
         ".claude", "sessions", "projects", ".claude.json", ".warp", "settings.toml", "Library", "Group Containers",
         "2BBY89MBSN.dev.warp", "Application Support", AppWarp.identificador, "warp.sqlite", ".config", "warp-launch",
-        Preferencies.nomFitxer, "configuracio.json", "estat.json",
+        Preferencies.nomFitxer, IntentActualitzacio.nomFitxer, "configuracio.json", "estat.json",
         "Applications", "Warp.app", "WarpPreview.app", "Contents", "MacOS", "stable", "preview",
         "Users", "Volumes", "System", "private", "var", "tmp", "usr", "local", "bin", "opt", "homebrew", "share", ".local",
         "claude", "versions",

@@ -12,7 +12,9 @@ public enum InicDeSessio {
     ///   - segonsEncesa: des que el Mac s'ha encès, també les estones en repòs (`CLOCK_MONOTONIC`).
     ///   - registrada: l'app és als ítems d'inici, i macOS l'obrirà sola (aprovada). Si no, mai: obrir-la a mà just després
     ///     d'encendre el Mac no ha de mostrar cap full.
-    public static func es(comElementDInici: Bool, segonsEncesa: TimeInterval, registrada: Bool) -> Bool {
-        registrada && (comElementDInici || segonsEncesa < marge)
+    ///   - reobertaPerActualitzacio: l'app s'acaba de reobrir sola després d'actualitzar-se. Encara que el Mac s'acabi d'encendre, no
+    ///     és l'inici de sessió, i no pot tornar a sortir el full.
+    public static func es(comElementDInici: Bool, segonsEncesa: TimeInterval, registrada: Bool, reobertaPerActualitzacio: Bool) -> Bool {
+        registrada && !reobertaPerActualitzacio && (comElementDInici || segonsEncesa < marge)
     }
 }

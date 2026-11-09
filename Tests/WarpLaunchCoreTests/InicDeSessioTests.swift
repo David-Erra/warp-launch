@@ -11,6 +11,13 @@ import WarpLaunchCore
         (true, 60.0, false, false),       // no és als ítems d'inici: mai
     ])
     func decideix(comElement: Bool, segons: Double, registrada: Bool, esperat: Bool) {
-        #expect(InicDeSessio.es(comElementDInici: comElement, segonsEncesa: segons, registrada: registrada) == esperat)
+        #expect(InicDeSessio.es(comElementDInici: comElement, segonsEncesa: segons, registrada: registrada,
+                                reobertaPerActualitzacio: false) == esperat)
+    }
+
+    /// Reoberta per una actualització, mai: tampoc dins dels 600 s ni com a element d'inici.
+    @Test(arguments: [(true, 10_000.0), (false, 120.0), (true, 60.0), (false, InicDeSessio.marge - 1)])
+    func reobertaPerActualitzacioMai(comElement: Bool, segons: Double) {
+        #expect(!InicDeSessio.es(comElementDInici: comElement, segonsEncesa: segons, registrada: true, reobertaPerActualitzacio: true))
     }
 }
