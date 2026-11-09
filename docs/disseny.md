@@ -85,7 +85,8 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
     la molla si fa més de 0,2 s que no arriba cap `dropConfiguration` (el registre en diu l'últim). No s'aplica ara:
     si SwiftUI no el crida amb el cursor quiet, la molla no obriria mai.
   - El retard és fix, el valor per defecte de macOS: la preferència del sistema (`com.apple.springing.delay`) no es
-    llegeix, perquè la prova de guarda no deixa fer servir `UserDefaults`.
+    llegeix, perquè la prova de guarda no deixa fer servir `UserDefaults` al codi de l'app. Des de la 0.32.0, Sparkle sí que hi desa
+    les seves (l'interruptor i l'última comprovació).
   - **Les posicions de l'altra finestra no poden moure res.** La `List` recorda les files arrossegades per la posició
     que tenien (binari de SwiftUI): si la mateixa llista passés a mostrar una altra finestra, en deixar-les anar
     `onMove` rebria posicions de la primera i mouria pestanyes que en David no ha tocat (o l'app petaria). Per això:
@@ -146,6 +147,7 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 | Copia l'ordre / Copia les ordres (text) | Pestanya | — | menú contextual i inspector |
 | Mou amunt / Mou avall (finestra) | — | cap | menú contextual de la fila; o arrossegar-la |
 | Configuració… / Surt de Warp Launch | Warp Launch | ⌘, / ⌘Q | — |
+| Comprova si hi ha actualitzacions… o, amb una versió a punt, Reinicia i actualitza a la X (0.32.2) | Warp Launch, després de «Quant a» | cap | menú de la icona |
 
 - Una ordre que no s'aplica surt desactivada al menú i amagada al menú contextual. L'editor arriba als menús amb
   `FocusedValue`, i la columna que té el focus (`columnaEditor`: la barra lateral o la llista) decideix què fan
@@ -166,7 +168,8 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 4. Si cal, els avisos: «La configuració té errors», «El fitxer ha canviat fora de l'app» o «No s'ha pogut desar».
    Cada un és un botó que obre l'editor, que diu què passa i com arreglar-ho. Les pestanyes amb avisos no hi surten
    (decisió d'en David, 04/11/2026). També «Configuració de prova: …» o «Sense configuració: …».
-5. «Configuració…», «Quant a Warp Launch» i «Surt de Warp Launch» (**només** tanca Warp Launch).
+5. «Configuració…», «Comprova si hi ha actualitzacions…» (0.32.2; secció 11, 2.1; amb una versió a punt, «Reinicia i actualitza a la
+   X»), «Quant a Warp Launch» i «Surt de Warp Launch» (**només** tanca Warp Launch).
 
 Cada bloc és una `Section` sense títol (excepte «Finestres»), sense `Divider` solts: una `Section` amb títol seguida
 d'un `Divider` feia dos separadors seguits.
@@ -188,6 +191,8 @@ d'un `Divider` feia dos separadors seguits.
 - `applicationShouldTerminateAfterLastWindowClosed` retorna `false`.
 - `ca.lproj` al bundle, perquè els menús del sistema surtin en català.
 - Sense menú del Dock, dreceres globals, notificacions ni `@AppStorage`. La selecció la guarda l'`Editor`.
+- **Reobrir-se després d'una actualització automàtica (0.32.3, secció 11, 3.4):** sense editor, sense Dock i amagada, i el clic al Finder
+  mostra l'editor encara que SwiftUI no l'hagi creat. Només amb l'intent de `actualitzacio.json`, i **sense veure-ho funcionar** (rondes C4 i C5).
 
 ### Avisos
 
@@ -468,6 +473,11 @@ Una prova llegeix el codi del repo (`#filePath`) i falla si:
   servir cap. Les que només llegeixen (`getxattr`, `getattrlist`, `attributesOfItem`, `resourceValues`) no hi compten.
 - l'app no llegeix Warp amb `Lector.llegeixDeLApp` a les dues lectures de `WarpLaunchApp.swift`
   (`lAppLlegeixWarpAmbLaLecturaDeLApp`, 0.31.2).
+
+- **Actualitzacions (de la 0.32.0 a la 0.32.3 i publicació):** secció 11, apartat 10. Cap excepció de xarxa: a `Sources/` no hi pot
+  haver cap crida de xarxa, tampoc al servei; Sparkle les fa des del framework, i només `ServeiActualitzacions.swift` l'importa. Dues
+  excepcions, només per als noms que imposa Sparkle: el delegat `updaterWillRelaunchApplication`, que porta `launchApplication` a dins, i la firma
+  del delegat que avisa de la baixada.
 
 Una altra prova comprova que cada expressió troba el que ha de trobar. Així les proves no poden llegir l'estat real,
 ni tocar el porta-retalls, ni fer sortir el procés de proves al Dock. **Cap expressió no fa servir `\b`** (08/11/2026): a les
@@ -862,6 +872,7 @@ pestanya a pestanya, `configuracio mostra|ruta`, captures de pantalla automàtiq
 | El desat automàtic trepitja una edició a mà | Proves del canvi extern | Comparar bytes, bàner i còpies |
 | Una prova o el codi obre alguna cosa o llegeix l'estat real | Prova de guarda | Magatzem sense ruta per defecte; lector injectat |
 | Dues còpies de l'app (`build/` i `/Applications`) | `lsregister -dump` | Després d'instal·lar, obrir només la d'Aplicacions |
+| Una versió dolenta arriba sola a tots els Macs en un dia (des de la primera 0.32.x) | Rondes A a F abans de publicar; la Porta 3 | Secció 11, apartat 7: `latest` a l'anterior, revertir la recepta i publicar una correcció superior |
 | Claude Code canvia les seves opcions (canvia gairebé cada dia) i la taula de la 2.1.318 queda antiga | Avís d'opció desconeguda a la importació | Tornar a llegir les definicions del binari i comparar-ho amb el `parseOptions` del binari (docs/fets-verificats.md) |
 
 ## 6. Respostes d'en David (03/11/2026)
@@ -1134,6 +1145,7 @@ recordades eren d'una obertura anterior i no tenien missatges.
 ### Seguretat
 
 **Prova de guarda:**
+- Sparkle (0.32.0) reobre l'app des del framework, no des de `Sources/`: aquí no hi ha cap excepció (secció 11, apartat 10).
 - `warp://` només en una línia, `URL(string: "warp://launch/" + nom)` a `WarpLaunchCore/LaunchConfigWarp.swift`
   (0.15.0, fet). `URLLlancament` té l'`init` intern: fora del core no se'n pot fer cap.
 - `NSWorkspace`: `activateFileViewerSelecting(` a `Finder.swift`, i un sol `NSWorkspace.shared.open(`, a l'obridor
@@ -1484,7 +1496,8 @@ les finestres que falten marcades; **no obre res fins que hi fa clic.**
   element d'inici (`keyAELaunchedAsLogInItem`), o el Mac s'ha encès fa menys de 10 minuts (comptant les estones en repòs). Pendent d'aprovar a Configuració del
   Sistema no compta. No està comprovat que macOS ho
   digui amb `SMAppService.mainApp`: per això també compta el temps. Obrir l'app a mà just després d'encendre el Mac també
-  mostra el full, que no obre res sense el clic.
+  mostra el full, que no obre res sense el clic. **Des de la 0.32.3,** la reobertura després d'una actualització no compta com a inici de
+  sessió (`reobertaPerActualitzacio`, secció 11, 3.4), encara que sigui dins dels 10 minuts.
 - **Què fa** (`Obertura.enIniciarSessio`): prepara de seguida el full de «Obre-ho tot». Si Warp és tancat, el full ho diu i
   l'obrirà amb el clic; si Warp s'obre sol abans del clic, el clic ho torna a mirar i no l'engega dues vegades.
   - Fins a la 0.27.1 esperava Warp fins a 2 minuts, per si Warp també era als ítems d'inici. L'app no pot saber si Warp
@@ -1547,7 +1560,8 @@ no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'
   el permís acceptat, o sense carpeta, la finestra es tanca i l'app continua. Amb una carpeta de prova (`--config`) també surt, i
   diu que l'app no tocarà l'ajust. En iniciar sessió, primer la pantalla i després el full de «Obre-ho tot». **Des de la
   0.31.2** (decisió A), «Què canvia» diu també que Warp Launch desa l'ajust al fitxer d'ajustos de Warp encara que no l'hagis
-  canviat mai.
+  canviat mai. **Des de la 0.32.2** (decisió 7 de Sparkle), també diu que l'app mira a GitHub un cop al dia i que es pot apagar. Abans
+  d'acceptar, Sparkle no s'engega.
 - **Guarda:** el refresc només el crea `ConsentimentRestauracio`, un cop i amb el consentiment acceptat; l'entorn de l'ajust,
   només l'app i amb `.real`. La revisió hi va afegir cada línia amb `creaEntornRefresc`, les assignacions de l'estat (5 des de la
   0.31.0), `accepta(` només des del botó i del model, i `.acceptat(`, `.migrat`, `.retirat(` (0.31.0) i `.restauracio =` només a
@@ -2119,7 +2133,7 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
     que escrigui l'script serà la de la versió següent. Contra el tap de debò només s'ha provat la lectura.
   - **Quan hi hagi notarització** (decisió 1 de la fila del 07/11/2026): treure de la recepta el pas de la quarantena, i les
     frases que l'expliquen al README d'aquí i al del tap.
-  - **Amb Sparkle** (decisió 6 de la mateixa fila): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
+  - **Amb Sparkle** (decisió 6 de la mateixa fila; encara no és a la recepta: pas 12 de la secció 11, i `publica.sh` refusa sense): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
     versió del paquet és més vella que la de la recepta, i no hi passa pel damunt quan Sparkle ja l'ha posada al dia (llegit a
     `cask/cask.rb` i `env_config.rb` de Homebrew).
   - **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de tancar-la i tornar-la a obrir en actualitzar.
@@ -2175,14 +2189,15 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
   `prototip/` surt del repo (és a l'historial, 114c97d).
 - De les versions del lot, només la 0.31.4 és publicada (09/11/2026), i s'instal·la també amb Homebrew.
 - De les vuit decisions del 07/11/2026, falten la signatura amb Developer ID (1), l'idioma (3; al llançament, anglès i català,
-  decisió 7 del 08/11/2026), Sparkle (6) i les excepcions de la guarda per a la pàgina del permís i per a Sparkle (8). De les
+  decisió 7 del 08/11/2026), publicar Sparkle (6: al codi des de la 0.32.0, secció 11, sense publicar) i l'excepció de la guarda per a la pàgina
+  del permís (8). De les
   dotze de la fila del 08/11/2026, totes les que tocaven el codi són fetes (0.30.3, 0.31.0 i 0.31.1), menys l'idioma. De la
   ronda 4, la A és feta (0.31.2) i les quatre de B es queden com eren. La de la ronda 5, a la 0.31.3. De les set de la ronda 6, la
   2, la 3, la 4, la 5 i la 7, a la 0.31.4; la 1 i la 6 ja eren així.
 
 ## 11. Actualització automàtica amb Sparkle 2.10.1 (disseny del 09/11/2026)
 
-Sobre la 0.31.4 (commit 7180f73). **Encara no és a l'app:** els passos van a la secció 9 d'aquí sota, i fins al pas 5 no entra la dependència.
+Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** cap còpia no porta encara l'adreça ni la clau, i les còpies d'abans (0.31.4 o anteriors) necessiten una última actualització a mà.
 **Res d'això s'ha vist funcionar.** Cap app s'ha obert per a aquest disseny: la descàrrega, la instal·lació, la reobertura i l'efecte sobre els permisos de
 macOS es comproven a les rondes de la secció 8, abans de publicar.
 
@@ -2191,8 +2206,12 @@ com «decisió N de Sparkle». Etiquetes: **[P]** provat, amb l'ordre i el resul
 `SP/` és el codi de Sparkle a l'etiqueta 2.10.1 (commit ab7d712); `HB/`, `Library/Homebrew` de Homebrew 7.0.12. Rutes sense prefix: el repo, amb les línies de la 0.31.4.
 Els fets, a `docs/fets-verificats.md`, «Sparkle».
 
-**Fet (09/11/2026, sense versió nova, sense canvis visibles): els passos 0 a 4** (secció 9), només amb proves amb falsos. Sparkle encara no és al paquet, i l'app encara no crea
-ni fa servir el model. El codi dels passos 1 a 4 s'aparta del que hi ha a sota en això:
+**Fet (09/11/2026): els passos 0 a 10** (secció 9): els 1 a 4 i el 9, sense versió, i els 5 a 8, de la 0.32.0 a la 0.32.3, amb dues revisions (0.32.4 i 0.32.5).
+- **Provat:** només amb falsos i carpetes temporals (`scripts/test.sh`), la compilació i el paquet (`otool`, `codesign --verify --deep --strict`).
+- **Llegit o suposat, res vist funcionar:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Cap app no s'ha obert.
+- **Falta:** les rondes A a F (Porta 1); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
+
+El codi s'aparta del que hi ha a sota en això:
 - `Actualitzacions.Entorn` té tres camps més: `darreraComprovacio` (l'estat inicial), `models` (la `SituacioApp.Models`, que omplirà el servei) i `rellotge` (les hores). `comprova`, `rep`,
   `reinicia` i `vigila` reben `ara`, els segons amb el Mac despert.
 - `SituacioApp` separa `Models` (el que diuen els models de l'app) del temps en marxa, la inactivitat i la instal·lació fallida.
@@ -2200,6 +2219,11 @@ ni fa servir el model. El codi dels passos 1 a 4 s'aparta del que hi ha a sota e
 - `cicleAcabat` també treu de `.baixant`, i un error de baixada també: si no, «Baixant…» es podria quedar per sempre. Un error d'una comprovació sola no amaga una versió ja `.trobada`.
 - `.aplicant` que caduca sense bloc (camí de la finestra, `postposada`) torna a `.trobada`.
 - Si no es pot escriure l'intent en un reinici automàtic, compta com un intent (pausa d'1 h). El botó diu l'error (`errorPreparant`).
+- **Pestanya pròpia «Actualitzacions»** (pas 7), no una secció de «General»: amb la secció, «General» faria 738 pt, més dels 640 de la norma (mesurat amb un programa a part, sense finestres).
+- Una finestra minimitzada de l'app compta com a oberta (0.32.5), i `posaAlDavant` mostra l'app si era amagada (una precaució: no s'ha vist que sense això falli).
+- El diagnòstic anonimitzat diu la carpeta d'una còpia fora d'Aplicacions entre «», perquè l'anonimitzador en redueixi el nom (0.32.4).
+- `publica.sh`, a més del que diu l'apartat 4: amb el repo de debò, refusa les variables de prova de signar i de comprovar; després de publicar, també mira que GitHub tingui el zip; si `gh` falla però la versió ja és pública, ho diu i surt amb el codi 2.
+- Les regles `deny` i la guarda 11 també cobreixen `generate_appcast`, que signa amb el clauer (ampliació de la decisió 13, que es pot treure), i la guarda 11, les ordres que llegeixen el clauer.
 
 **Decisions anteriors** (`docs/especificacio.md`, fila del 07/11/2026, 6 i 8): Sparkle 2 com a dependència acordada (regla 10), clau EdDSA, appcast a GitHub, framework signat
 i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa i una prova que les limiti.
@@ -2210,7 +2234,7 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
   la icona de la barra de menú desapareix un moment i torna. Warp i les sessions de Claude no es tanquen ni es toquen.
 - **Si estàs treballant, espera.** No es reinicia mentre escrius o mous el ratolí, amb l'editor o la Configuració oberts, amb canvis recents o mentre obre finestres de Warp. Si surts de
   l'app o apagues el Mac, la versió nova ja hi és la propera vegada.
-- **A Configuració › General › «Actualitzacions»:** la versió que tens, si és l'última, «Comprova ara», «Reinicia i actualitza» quan n'hi ha una a punt, i un interruptor
+- **A Configuració › «Actualitzacions»:** la versió que tens, si és l'última, «Comprova ara», «Reinicia i actualitza» quan n'hi ha una a punt, i un interruptor
   «Actualitza automàticament» per apagar-ho. Apagat, l'app no es connecta sola.
 - **Al menú de la icona:** «Comprova si hi ha actualitzacions…» o, si n'hi ha una a punt, «Reinicia i actualitza a la X».
 - **Si no s'ha pogut instal·lar,** la icona pot desaparèixer una vegada. Quan tornis a obrir l'app, la secció diu què ha passat, i no ho torna a intentar sola amb aquella versió.
@@ -2264,7 +2288,7 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
 
 #### 2.1 La secció «Actualitzacions»
 
-A Configuració › General, entre `seccioArrencada` i `seccioFitxer` (`Sources/WarpLaunchUI/VistaConfiguracio.swift:88`). La fila «Versió» es mou aquí (`:240`).
+**Fet: una pestanya pròpia de la Configuració** (vegeu l'alçada, a sota), no una secció de «General». El disseny era: a Configuració › General, entre `seccioArrencada` i `seccioFitxer` (`Sources/WarpLaunchUI/VistaConfiguracio.swift:88`). La fila «Versió» es mou aquí (`:240`).
 
 Files: «Versió» (sempre), Estat, «Actualitza automàticament» (`.mini`), «Comprova ara», i el peu: «Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi
 actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen.»
@@ -2300,7 +2324,7 @@ Mecanismes:
 
 **`TabView`** passa a `selection` lligada a una propietat del model (`@State` no compila amb les Command Line Tools [P: fets anteriors, `plugin for module 'SwiftUIMacros' not found`]).
 
-**Alçada:** el màxim és 640 pt (`VistaConfiguracio.swift:57`). Es mesura amb el programa de la 0.30.2. Si passa, tercera pestanya «Actualitzacions»; `PestanyaConfiguracioTests` n'admet de 2 a 6.
+**Alçada:** el màxim és 640 pt (`VistaConfiguracio.swift:57`). Es mesura amb el programa de la 0.30.2. Si passa, tercera pestanya «Actualitzacions»; `PestanyaConfiguracioTests` n'admet de 2 a 6. **Mesurat: 738 pt. Tercera pestanya.**
 
 **Les finestres de Sparkle** només surten amb «Actualitza ara» (interruptor apagat, o el cas rar de `.trobada`), en català parcial (26 claus de 82 [P]) i amb «Install on Quit» traduït com «Reinicia el programa més tard». S'accepta.
 
@@ -2678,7 +2702,7 @@ Regles 1, 3 i 4: cada ronda, només amb l'OK de l'autor, que sabrà quantes cose
 
 | Pas | Ha de passar |
 |---|---|
-| C1 | La versió, la secció i els textos; alçada de «General» ≤ 640 pt, o tercera pestanya |
+| C1 | La versió, la pestanya «Actualitzacions» i els textos; l'alçada de cada pestanya, com a molt 640 pt |
 | C2 | Comprova, baixa i s'aplica sola amb l'editor tancat i sense tocar el Mac (amb els valors de debò, un cop) |
 | C3 | La 0.31.91 a `/Applications`, `codesign --verify --deep --strict` amb el requisit de `publica.sh` |
 | C4 | **Cap** finestra, ni Dock, ni full d'«Obre-ho tot», també dins dels primers 10 min. Amb TextEdit al davant i `lsappinfo front` cada 0,2 s a un fitxer: acaba amb TextEdit al davant |
