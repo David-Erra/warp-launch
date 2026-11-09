@@ -53,6 +53,10 @@ corregeix-lo i deixa'n constància.
 - **Fitxers:** Warp vigila `~/.warp/launch_configurations/` i detecta els fitxers nous sense reiniciar
   (prototip). Només carrega `.yaml` i `.yml` (03/11/2026, `CONFIG_FILE_SUFFIXES` a
   `app/src/user_config/util.rs` de `warpdotdev/warp`).
+  - **La carpeta nova també hauria de veure-la** (09/11/2026, codi llegit, commit `abb3fe33e004`, no vist en execució): Warp en
+    arrencar només assegura `~/.warp` (`ensure_warp_watch_roots_exist`), no `launch_configurations`; vigila `~/.warp` de manera
+    recursiva (`app/src/warp_managed_paths_watcher.rs`) i recarrega les launch configurations quan el canvi toca aquesta ruta
+    (`app/src/user_config/native.rs`). Per això, una carpeta creada amb Warp obert hauria de funcionar.
 - **Les launch configurations són *legacy*:** «new features are not being added». Es recomanen els
   **Tab Configs** (`~/.warp/tab_configs/*.toml`), però cada Tab Config és **una sola pestanya**. Per agrupar
   pestanyes en finestres, avui només serveixen les launch configurations (03/11/2026, documentació).
