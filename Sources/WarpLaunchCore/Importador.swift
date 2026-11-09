@@ -30,15 +30,22 @@ public enum Importador {
                 let n = pestanyes.count
 
                 if let sessio = principal.claude {
+                    // Warp a `~` i Claude en una carpeta que no existeix (decisió del 09/11/2026): no hi ha cap
+                    // carpeta bona, i Claude s'engegaria a `~`. Es queda a `~` sense Claude, com les altres de `~`, però amb
+                    // les opcions de la seva ordre.
+                    let senseCarpetaBona = principal.carpeta == inici && sessio.carpeta != inici && !principal.carpetaClaudeExisteix
                     var c = ClaudePestanya(sessio.opcions)
                     c.continua = true  // R4: les sessions vives es tornen a obrir continuant
+                    c.activat = !senseCarpetaBona
                     claude = c
-                    origen = .sessio
+                    origen = senseCarpetaBona ? .carpetaInici : .sessio
                     // Si Warp i Claude no coincideixen, mana la de Claude, excepte si és `~` o no existeix (decisió d'en
                     // David del 09/11/2026): els `cd` que Claude fa amb l'eina Bash no mouen el `cwd` de la sessió
                     // (docs/fets-verificats.md), i és la carpeta de la conversa viva. Es diu, i queda un avís
                     // (`Validacio.avisCarpetaDeClaude`).
-                    if sessio.carpeta != principal.carpeta {
+                    if senseCarpetaBona {
+                        notesFinestra.append((n, { .claudeSenseCarpeta($0, pestanya: principal.carpeta, sessio: sessio.carpeta) }))
+                    } else if sessio.carpeta != principal.carpeta {
                         let sessioAInici = sessio.carpeta == inici
                         if sessioAInici || !principal.carpetaClaudeExisteix {
                             notesFinestra.append((n, { .carpetaDeClaudeNoServeix($0, pestanya: principal.carpeta, sessio: sessio.carpeta,
@@ -120,7 +127,7 @@ public enum Importador {
         return pane.carpeta
     }
 
-    /// La plantilla, però sense Claude: a `~` o a una carpeta que no existeix, Claude no s'obre fins que se n'arregli la
+    /// La plantilla, però sense Claude: a `~` o a una carpeta que no existeix (sense sessió viva), Claude no s'obre fins que se n'arregli la
     /// carpeta (D11); i on no hi corria (D-P5a). En activar-lo, ja té les opcions de la plantilla.
     private static func desactivada(_ plantilla: ClaudePestanya) -> ClaudePestanya {
         var c = plantilla
@@ -189,7 +196,7 @@ public enum OrigenClaude: String, Sendable, Equatable {
     case sessio
     /// No hi corria Claude: només terminal (D-P5a; també en tornar a importar, 09/11/2026).
     case nomesTerminal
-    /// A `~`: sense Claude (probablement Warp ha perdut la carpeta).
+    /// A `~`: sense Claude (probablement Warp ha perdut la carpeta). També si hi corria Claude en una carpeta que no existeix.
     case carpetaInici
     /// La carpeta ja no existeix: sense Claude.
     case carpetaNoExisteix
@@ -213,6 +220,8 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
     case carpetesDiferents(Lloc, pestanya: String, sessio: String)
     /// La sessió diu una carpeta diferent de la de la pestanya, però és `~` o no existeix: es queda la de Warp.
     case carpetaDeClaudeNoServeix(Lloc, pestanya: String, sessio: String, sessioAInici: Bool)
+    /// La pestanya és a `~` i la sessió en una carpeta que no existeix: es queda a `~`, sense Claude i amb les seves opcions.
+    case claudeSenseCarpeta(Lloc, pestanya: String, sessio: String)
     /// Pestanya dividida: només s'importa el pane principal (el primer amb Claude, o el primer).
     case panesDescartats(Lloc, panes: Int, sessions: Int)
     /// Una sessió de Claude que no és a cap pestanya de Warp. No s'importa. `terminals`: les pestanyes de la mateixa carpeta
@@ -224,7 +233,8 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
     public var lloc: Lloc? {
         switch self {
         case let .primerMissatgeDescartat(lloc, _), let .sessioConcreta(lloc, _), let .carpetaDeLaSessio(lloc, _, _),
-             let .carpetesDiferents(lloc, _, _), let .carpetaDeClaudeNoServeix(lloc, _, _, _), let .panesDescartats(lloc, _, _):
+             let .carpetesDiferents(lloc, _, _), let .carpetaDeClaudeNoServeix(lloc, _, _, _), let .claudeSenseCarpeta(lloc, _, _),
+             let .panesDescartats(lloc, _, _):
             lloc
         case .sessioSensePestanya, .finestraSensePestanyes: nil
         }
@@ -244,6 +254,8 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
         case let .carpetaDeClaudeNoServeix(lloc, pestanya, sessio, sessioAInici):
             let per = sessioAInici ? "és la carpeta d'inici" : "no existeix"
             return "\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que \(per); es queda la de Warp (comprova-ho)"
+        case let .claudeSenseCarpeta(lloc, pestanya, sessio):
+            return "\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)"
         case let .panesDescartats(lloc, panes, sessions):
             let perdudes = sessions == 0 ? "" : ", i es perd \(Plural.compta(sessions, "sessió", "sessions")) de Claude"
             return "\(lloc.text): pestanya dividida en \(panes) panes; només s'importa el principal\(perdudes)"

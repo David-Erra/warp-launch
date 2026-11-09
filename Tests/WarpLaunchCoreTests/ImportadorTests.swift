@@ -284,8 +284,9 @@ private func lecturaGran() -> LecturaWarp {
 
     /// Una lectura d'una sola pestanya: Warp a `carpeta`, Claude a `sessio`.
     private func unaPestanya(_ f: inout Fabrica, carpeta: String, sessio carpetaSessio: String, titol: String? = "Botiga",
-                             origen: OrigenCarpeta = .pane, claudeExisteix: Bool = true) -> LecturaWarp {
-        let sessio = f.sessio(carpetaSessio, ["claude", "-c"])
+                             origen: OrigenCarpeta = .pane, claudeExisteix: Bool = true,
+                             argv: [String] = ["claude", "-c"]) -> LecturaWarp {
+        let sessio = f.sessio(carpetaSessio, argv)
         var pane = f.pane(carpeta, claude: sessio)
         pane.origenCarpeta = origen
         pane.carpetaClaudeExisteix = claudeExisteix
@@ -335,15 +336,47 @@ private func lecturaGran() -> LecturaWarp {
                 + "; es queda la de Warp (comprova-ho)",
         ])
         #expect(importacio.vincles[pestanya.id]?.carpetaWarp == warp, "també avisa")
+        #expect(pestanya.claude.activat, "la carpeta de Warp serveix: Claude s'hi torna a obrir")
+        #expect(importacio.origens[pestanya.id] == .sessio)
     }
 
-    /// Warp a `~` i Claude en una carpeta que no existeix: tampoc es fa servir la de Claude, i no hi ha cap de bona.
-    @Test func aIniciIAmbClaudeInexistentEsQuedaAInici() {
+    /// Warp a `~` i Claude en una carpeta que no existeix (decisió del 09/11/2026): no hi ha cap carpeta bona. Es
+    /// queda a `~` sense Claude, com les altres de `~`, però amb les opcions de la seva ordre, i no pas les de la plantilla.
+    @Test func aIniciIAmbClaudeInexistentEsQuedaSenseClaude() throws {
         var f = Fabrica()
-        let lectura = unaPestanya(&f, carpeta: inici, sessio: "\(inici)/GitHub/esborrada", claudeExisteix: false)
-        let importacio = Importador.importa(lectura, inici: inici, plantilla: .habituals, nouId: IdsDeProva().nou)
-        #expect(importacio.configuracio.finestres[0].pestanyes[0].carpeta == inici)
-        #expect(importacio.vincles.values.first?.carpetaWarp == nil, "`~` no és cap carpeta de Warp a comparar")
+        let esborrada = "\(inici)/GitHub/esborrada"
+        let lectura = unaPestanya(&f, carpeta: inici, sessio: esborrada, claudeExisteix: false,
+                                  argv: ["claude", "--dangerously-skip-permissions", "--model", "opus", "-c"])
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
+        let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
+        #expect(pestanya.carpeta == inici)
+        #expect(!pestanya.claude.activat, "s'engegaria a `~`")
+        #expect(pestanya.claude.saltaPermisos && pestanya.claude.model == "opus" && pestanya.claude.continua, "les de la seva ordre")
+        #expect(importacio.origens[pestanya.id] == .carpetaInici)
+        #expect(importacio.compta(.carpetaInici) == 1)
+        #expect(importacio.resum.ambSessio == 0 && importacio.resum.senseClaude == 1 && importacio.resum.senseClaudeObert == 0)
+        #expect(importacio.resum.saltenPermisos == 0, "sense Claude, no salta res")
+        #expect(importacio.notes.map(\.description) == [
+            "Finestra 1 › Botiga: Warp diu «\(inici)» i Claude «\(esborrada)», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)",
+        ])
+        #expect(importacio.notes.first?.lloc?.pestanya == pestanya.id)
+        #expect(Validacio.avisos(pestanya, inici: inici, carpetaExisteix: { _ in true }).map(\.tipus) == [.carpetaInici])
+        let vincle = try #require(importacio.vincles[pestanya.id])
+        #expect(vincle.sessio != nil && vincle.carpetaSessio == esborrada, "el pane i la conversa continuen sent els seus")
+        #expect(vincle.carpetaWarp == nil, "`~` no és cap carpeta de Warp a comparar")
+    }
+
+    /// Només aquest cas: amb Warp a `~`, si la carpeta de Claude existeix, Claude s'hi obre; i si Claude és viu a `~`, també.
+    @Test(arguments: [true, false])
+    func aIniciAmbClaudeEnUnaCarpetaBonaQuedaActivat(aInici: Bool) {
+        var f = Fabrica()
+        let claude = aInici ? inici : "\(inici)/GitHub/botiga"
+        let lectura = unaPestanya(&f, carpeta: inici, sessio: claude, claudeExisteix: true)
+        let importacio = Importador.importa(lectura, inici: inici, plantilla: .perOmissio, nouId: IdsDeProva().nou)
+        let pestanya = importacio.configuracio.finestres[0].pestanyes[0]
+        #expect(pestanya.carpeta == claude)
+        #expect(pestanya.claude.activat)
+        #expect(importacio.origens[pestanya.id] == .sessio)
     }
 
     /// Una carpeta de l'historial de Warp no es tracta diferent: mana la de Claude.
