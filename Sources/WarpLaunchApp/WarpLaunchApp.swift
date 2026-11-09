@@ -26,6 +26,8 @@ struct WarpLaunchApp: App {
         }
         .defaultSize(width: 900, height: 560)
         .restorationBehavior(.disabled)
+        // Reoberta sola després d'actualitzar-se: l'editor no surt. Un clic al Finder l'obre igual (`obreEditor`).
+        .defaultLaunchBehavior(aplicacio.reobertura == .automatica ? .suppressed : .automatic)
         .commands {
             OrdresEditor()
             SidebarCommands()
@@ -51,7 +53,7 @@ struct WarpLaunchApp: App {
         MenuBarExtra {
             MenuIcona(aplicacio: aplicacio)
         } label: {
-            Label(WarpLaunch.nom, systemImage: "macwindow.on.rectangle")
+            EtiquetaIcona(aplicacio: aplicacio)
         }
     }
 }
@@ -85,6 +87,10 @@ final class Aplicacio {
     /// L'actualització automàtica: el model (sempre) i el servei (només si aquesta còpia es pot actualitzar).
     let actualitzacions: Actualitzacions
     let servei: ServeiActualitzacions?
+    /// L'app s'acaba de reobrir per una actualització, i de quin tipus. Només amb la configuració de debò.
+    let reobertura: IntentActualitzacio.Tipus?
+    /// Obre l'editor quan SwiftUI encara no l'ha creat: `applicationShouldHandleReopen` no té `openWindow`.
+    var obreEditor: @MainActor () -> Void = {}
     /// Aquesta arrencada és la de l'inici de sessió (es decideix a `applicationDidFinishLaunching`).
     var enIniciarSessio = false
     /// Cada quant es torna a llegir Warp mentre l'app és en marxa (D18).
@@ -93,6 +99,15 @@ final class Aplicacio {
     init() {
         inici = FileManager.default.homeDirectoryForCurrentUser.path
         arguments = ArgumentsApp(CommandLine.arguments, inici: inici)
+        // Una sola vegada, abans de tot: amb una carpeta de prova, no es llegeix mai.
+        var arrencadaIntent: IntentActualitzacio.Arrencada?
+        if case let .real(carpeta) = arguments.carpeta {
+            let arrencada = IntentActualitzacio.enArrencar(magatzem: MagatzemIntent(carpeta: carpeta), versioActual: WarpLaunch.versio, ara: Date(),
+                                                           segonsEncesa: TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000)
+            Actualitzacions.registra(arrencada)
+            arrencadaIntent = arrencada
+        }
+        reobertura = arrencadaIntent?.reobertura
         let editor: Editor, sessions: EstatSessions, preferencies: MagatzemPreferencies?, carpeta: URL?
         switch arguments.carpeta {
         case let .real(c), let .prova(c):
@@ -218,7 +233,7 @@ final class Aplicacio {
                 ajustPerDesactivar: consentiment.refresc?.pendent == .acabaDeCanviar, finestraVisible: activacio.hiHaFinestraVisible,
                 canvisSenseDesar: editor.canvisSenseDesar, potDesfer: editor.undoManager.canUndo || editor.desferPlantilla.canUndo,
                 segonsDesDelDarrerCanvi: editor.darrerCanvi.map { Date().timeIntervalSince($0) })
-        }, intent: { _ in IntentActualitzacio() })
+        }, intent: arrencadaIntent?.intent ?? IntentActualitzacio())
         let actualitzacions = creats.model
         servei = creats.servei
         self.actualitzacions = actualitzacions
@@ -269,7 +284,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let aplicacio = Aplicacio()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        aplicacio.activacio.enArrencar()
+        aplicacio.activacio.enArrencar(silenciosa: aplicacio.reobertura == .automatica)
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -279,7 +294,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             comElementDInici: ServeiArrencada.obertaComElementDInici,
             segonsEncesa: TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000,
             registrada: aplicacio.arrencada.obreSola,
-            reobertaPerActualitzacio: false)
+            reobertaPerActualitzacio: aplicacio.reobertura != nil)
+        // Que el focus torni a l'app d'abans: en reobrir-se, l'actualitzador la posa al davant.
+        if aplicacio.reobertura == .automatica { NSApp.hide(nil) }
         let aplicacio = aplicacio
         // D-P4: sense el consentiment, primer la pantalla de consentiment (també en iniciar sessió). L'app no llegeix ni toca
         // Warp, ni proposa res, fins que s'accepta.
@@ -306,7 +323,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Obrir l'app des d'Aplicacions o del Finder quan ja és oberta mostra l'editor.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        aplicacio.activacio.mostraEditor(obre: {})
+        // Sense l'editor creat (reoberta sola), cal `openWindow`, que només tenen les vistes: el guarda l'etiqueta de la icona.
+        aplicacio.activacio.mostraEditor(obre: aplicacio.obreEditor)
         return false
     }
 
@@ -346,6 +364,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.reply(toApplicationShouldTerminate: true)
         }
         return .terminateLater
+    }
+}
+
+/// La icona de la barra de menú. Es mostra sempre, des de l'arrencada: per això guarda com obrir l'editor.
+private struct EtiquetaIcona: View {
+    let aplicacio: Aplicacio
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        let obre = openWindow
+        let _ = aplicacio.obreEditor = { obre(id: Aplicacio.idEditor) }
+        Label(WarpLaunch.nom, systemImage: "macwindow.on.rectangle")
     }
 }
 

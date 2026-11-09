@@ -32,7 +32,7 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
     /// Crea el model i, si aquesta còpia es pot actualitzar, el servei. Si no, no es crea res més, ni hi ha cap connexió.
     static func crea(arguments: ArgumentsApp, permis: @escaping @MainActor () -> Bool,
                      models: @escaping @MainActor () -> SituacioApp.Models,
-                     intent: @MainActor (MagatzemIntent) -> IntentActualitzacio) -> (servei: ServeiActualitzacions?, model: Actualitzacions) {
+                     intent: IntentActualitzacio) -> (servei: ServeiActualitzacions?, model: Actualitzacions) {
         let bundle = Bundle.main
         let paquet = paquet(arguments: arguments, bundle: bundle)
         if let motiu = PoliticaActualitzacions.motiuNoDisponible(paquet) {
@@ -42,8 +42,7 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
             return (nil, Actualitzacions(noDisponible: .senseConfiguracio))
         }
         let servei = ServeiActualitzacions(feed: feed, permis: permis)
-        let magatzem = MagatzemIntent(carpeta: carpeta)
-        let model = Actualitzacions(entorn: servei.entorn(models: models), magatzem: magatzem, intent: intent(magatzem),
+        let model = Actualitzacions(entorn: servei.entorn(models: models), magatzem: MagatzemIntent(carpeta: carpeta), intent: intent,
                                     ara: ProcessInfo.processInfo.systemUptime, versioActual: WarpLaunch.versio)
         servei.model = model
         return (servei, model)

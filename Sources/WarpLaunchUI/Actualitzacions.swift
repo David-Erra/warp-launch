@@ -146,6 +146,19 @@ public final class Actualitzacions {
         if case .aplicant = estat { true } else { false }
     }
 
+    /// El que ha passat amb l'intent en arrencar, només al registre: no bloqueja res.
+    public static func registra(_ arrencada: IntentActualitzacio.Arrencada) {
+        switch arrencada.efecte {
+        case .res: break
+        case .exit: Registre.actualitzacions.notice("actualització aplicada")
+        case .fallada: Registre.actualitzacions.error("la instal·lació de la versió pendent no s'ha fet")
+        case let .ignorat(motiu): Registre.actualitzacions.error("actualitzacio.json ignorat: \(motiu, privacy: .public)")
+        }
+        if let error = arrencada.errorDesant {
+            Registre.actualitzacions.error("no s'ha pogut desar actualitzacio.json: \(error, privacy: .public)")
+        }
+    }
+
     // MARK: - El que demana l'usuari
 
     /// «Comprova ara». Amb l'interruptor encès, la versió que trobi la baixa (decisió 4 de Sparkle); apagat, només mira.

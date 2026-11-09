@@ -64,8 +64,9 @@ final class Activacio {
     /// En arrencar, SwiftUI obre l'editor sol (és la primera escena), i `adopta` el rep abans que sigui visible:
     /// l'app ha de ser `.regular` des d'abans que Launch Services l'activi, o es queda sense Dock, sense ⌘⇥ i
     /// sense menú principal (revisió del pas 4). Es crida a `applicationWillFinishLaunching`.
-    func enArrencar() {
-        NSApp.setActivationPolicy(.regular)
+    /// - Parameter silenciosa: l'app es reobre sola després d'actualitzar-se: cap finestra ni Dock.
+    func enArrencar(silenciosa: Bool) {
+        NSApp.setActivationPolicy(silenciosa ? .accessory : .regular)
     }
 
     /// La finestra de l'editor (la crea SwiftUI): s'hi posa el delegat que l'amaga en lloc de tancar-la.

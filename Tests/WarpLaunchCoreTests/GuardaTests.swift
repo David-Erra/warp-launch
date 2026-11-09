@@ -2409,6 +2409,29 @@ private let prohibidesArrossegar = [
         #expect(permis.contains("Text(ConsentimentRestauracio.textActualitzacions)"))
     }
 
+    /// `actualitzacio.json` només amb la configuració de debò (`--config` no el toca mai). La reobertura silenciosa, només per a l'automàtica.
+    @Test func lIntentNomesAmbLaConfiguracioDeDebo() throws {
+        let codi = try fitxers("Sources")
+        let usos = codi.flatMap { f in
+            f.text.split(separator: "\n").filter { $0.contains("enArrencar(magatzem") && !$0.trimmingCharacters(in: .whitespaces).hasPrefix("///") }
+                .map { _ in f.ruta }
+        }
+        // `public static func` a Core, i la crida de l'app.
+        #expect(usos.sorted() == ["Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchCore/IntentActualitzacio.swift"], "\(usos)")
+        let app = try #require(codi.first { $0.ruta == "Sources/WarpLaunchApp/WarpLaunchApp.swift" }).text
+        #expect(app.contains("if case let .real(carpeta) = arguments.carpeta {\n            let arrencada = IntentActualitzacio.enArrencar(magatzem:"))
+        let creen = try aparicions(de: [#"MagatzemIntent\("#], a: codi.filter { $0.ruta.hasPrefix("Sources/WarpLaunchApp/") })
+        #expect(creen.count == 2, "\(creen)")
+        let servei = try #require(codi.first { $0.ruta == serveiActualitzacions }).text
+        #expect(servei.contains("guard case let .real(carpeta) = arguments.carpeta, let feed"))
+        // La reobertura: no surt el full de l'inici de sessió, i només l'automàtica no mostra res.
+        #expect(app.contains("reobertaPerActualitzacio: aplicacio.reobertura != nil)"))
+        #expect(app.contains(".defaultLaunchBehavior(aplicacio.reobertura == .automatica ? .suppressed : .automatic)"))
+        #expect(app.contains("if aplicacio.reobertura == .automatica { NSApp.hide(nil) }"))
+        #expect(app.contains("enArrencar(silenciosa: aplicacio.reobertura == .automatica)"))
+        #expect(app.components(separatedBy: "NSApp.hide(").count == 2)
+    }
+
     /// Una sola dependència, amb la versió exacta, i només per a l'app (regla 10).
     @Test func sparkleEsLUnicaDependenciaINomesDeLApp() throws {
         let paquet = try String(contentsOf: arrel.appending(path: "Package.swift"), encoding: .utf8)
