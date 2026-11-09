@@ -165,6 +165,23 @@ private final class Mon {
 @Suite struct DesinstallacioTests {
     /// Valor original activat: la confirmació ho diu, i en confirmar l'ajust torna a estar activat, el permís es retira, l'app
     /// surt dels ítems d'inici i surt. Després, ni sortir ni la vigilància de cada minut no el tornen a desactivar.
+    /// Regla 7 (decisió d'en David del 09/11/2026): «Obre» només pot crear la carpeta de Warp amb el permís i la configuració de
+    /// debò. Un cop retirat, ja no, encara que el refresc hi quedi i una obertura fos a mig fer.
+    @Test func laCarpetaDeWarpNomesEsPotCrearAmbElPermis() throws {
+        let mon = try Mon(ajust: true)
+        let c = mon.consentiment()
+        #expect(!c.potCrearCarpetaDeWarp, "pendent")
+        c.accepta()
+        #expect(c.potCrearCarpetaDeWarp)
+        try #require(c.refresc).vigila()
+        try c.retira(.original(true))
+        #expect(c.estat == .retirat && c.refresc != nil)
+        #expect(!c.potCrearCarpetaDeWarp)
+        let deProva = ConsentimentRestauracio(magatzem: try Carpeta().magatzem, creaEntornRefresc: nil, rellotge: { t0 })
+        deProva.accepta()
+        #expect(deProva.estat == .acceptat && !deProva.potCrearCarpetaDeWarp, "--config")
+    }
+
     @Test func ambElValorOriginalActivatElTornaAActivar() throws {
         let mon = try Mon(ajust: true)
         let c = mon.consentiment()

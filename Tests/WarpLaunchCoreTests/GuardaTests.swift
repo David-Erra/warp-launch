@@ -19,6 +19,12 @@ private func fitxers(_ carpeta: String) throws -> [(ruta: String, text: String)]
         .map { (String($0.path.dropFirst(arrel.path.count + 1)), try String(contentsOf: $0, encoding: .utf8)) }
 }
 
+/// La línia (començant per 1) del primer fitxer que conté `text`.
+private func numeroDeLinia(_ text: String, a fitxers: [(ruta: String, text: String)]) throws -> Int {
+    let fitxer = try #require(fitxers.first { $0.text.contains(text) })
+    return try #require(fitxer.text.split(separator: "\n", omittingEmptySubsequences: false).firstIndex { $0.contains(text) }) + 1
+}
+
 /// Línies (ruta:línia) on surt alguna expressió. Cada expressió és una expressió regular.
 private func aparicions(de expressions: [String], a fitxers: [(ruta: String, text: String)]) throws -> [String] {
     let regs = try expressions.map { try Regex($0) }
@@ -94,7 +100,8 @@ private let iniciDeDebo = [#"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#,
 /// Fase 3.1: el que `FitxersLaunchWarp` no pot fer amb la carpeta de Warp (`nomesFitxersLaunchWarpTocaLaCarpetaDeWarp`).
 private let cridaUnlink = #"(^|[^A-Za-z0-9_])unlink\("#
 private let cridaRename = #"(^|[^A-Za-z0-9_])rename\("#
-private let cridaMkdir = #"(^|[^A-Za-z0-9_])mkdir\("#
+/// Com a paraula, també sense cridar-la (`let f = mkdir`).
+private let cridaMkdir = #"(^|[^A-Za-z0-9_])mkdir(?![A-Za-z0-9_])"#
 /// L'única crida de `FitxersLaunchWarp` que crea una carpeta (regla 7, decisió d'en David del 09/11/2026): un sol nivell, i
 /// `prohibidesCarpetaWarp` continua prohibint qualsevol altra.
 private let creaCarpetaWarp = "guard mkdir(carpeta.path, mode_t(0o755)) != 0 else { return true }"
@@ -2066,7 +2073,14 @@ private let prohibidesArrossegar = [
     /// en segon pla.
     @Test func elsDosFullsAvisenDeLesFeinesEnSegonPla() throws {
         let full = try #require(try fitxers("Sources").first { $0.ruta == "Sources/WarpLaunchUI/FullObertura.swift" })
-        #expect(full.text.components(separatedBy: "Label(Obertura.textFeinesEnSegonPla").count == 3)
+        // Una línia de codi a cada full, no un comentari: «Obre-ho tot» és abans de `seccions`, i la finestra, a dins.
+        let parts = full.text.components(separatedBy: "private func seccions(")
+        try #require(parts.count == 2)
+        for part in parts {
+            #expect(part.split(separator: "\n").filter {
+                $0.trimmingCharacters(in: .whitespaces).hasPrefix("Label(Obertura.textFeinesEnSegonPla")
+            }.count == 1)
+        }
         let readme = try String(contentsOf: arrel.appending(path: "README.md"), encoding: .utf8)
         #expect(readme.contains("tancar Warp pot deixar-les a mitges, i reobrir les pestanyes no les fa continuar"))
     }
@@ -2075,9 +2089,37 @@ private let prohibidesArrossegar = [
     @Test func nomesLAppCreaLaCarpetaDeWarpAmbElPermis() throws {
         let codi = try fitxers("Sources")
         func llocs(_ text: String) -> [String] { codi.filter { $0.text.contains(text) }.map(\.ruta).sorted() }
-        #expect(llocs("escriu(fitxer, creaCarpeta: entorn.potCrearCarpeta())") == ["Sources/WarpLaunchCore/ExecucioObertura.swift"])
-        #expect(llocs("potCrearCarpeta: {") == ["Sources/WarpLaunchUI/Obertura.swift"])
-        #expect(llocs("potCrearCarpeta: { [consentiment] in consentiment.refresc != nil }") == ["Sources/WarpLaunchUI/Obertura.swift"])
+        func linies(_ expressio: String) throws -> [String] {
+            let reg = try Regex(expressio)
+            return codi.flatMap { fitxer in
+                fitxer.text.split(separator: "\n").filter {
+                    !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") && $0.contains(reg)
+                }.map { "\(fitxer.ruta): \($0.trimmingCharacters(in: .whitespaces))" }
+            }.sorted()
+        }
+        // Qui demana crear-la: només l'execució, i només amb el que digui qui la crida.
+        #expect(try linies(#"creaCarpeta\s*:"#) == [
+            "Sources/WarpLaunchCore/ExecucioObertura.swift: _ = try entorn.fitxers.escriu(fitxer, creaCarpeta: entorn.potCrearCarpeta())",
+            "Sources/WarpLaunchCore/FitxersLaunchWarp.swift: public func escriu(_ fitxer: FitxerLaunch, creaCarpeta: Bool = false) "
+                + "throws(ErrorFitxers) -> Int {",
+        ])
+        // Qui ho permet: només `Obertura`, amb el permís. Per defecte (el CLI), no.
+        #expect(try linies(#"potCrearCarpeta\s*:"#) == [
+            "Sources/WarpLaunchCore/ExecucioObertura.swift: potCrearCarpeta: @escaping @MainActor () -> Bool = { false },",
+            "Sources/WarpLaunchCore/ExecucioObertura.swift: public var potCrearCarpeta: @MainActor () -> Bool",
+            "Sources/WarpLaunchUI/Obertura.swift: potCrearCarpeta: { [consentiment] in consentiment.potCrearCarpetaDeWarp },",
+        ])
+        #expect(llocs("potCrearCarpetaDeWarp: Bool { estat == .acceptat && refresc != nil }")
+            == ["Sources/WarpLaunchUI/ConsentimentRestauracio.swift"])
+        // Ningú més no crea carpetes a la de Warp: l'única crida a tot `Sources`, i la ruta no surt de `FitxersLaunchWarp`.
+        #expect(try aparicions(de: [cridaMkdir], a: codi) == ["Sources/WarpLaunchCore/FitxersLaunchWarp.swift:"
+            + "\(try numeroDeLinia(creaCarpetaWarp, a: codi)): «\(cridaMkdir)»"])
+        #expect(try linies(#"(itxers[A-Za-z]*|\.real)\.carpeta(?![A-Za-z0-9_])"#).isEmpty)
+        // I `createDirectory` només on ja era, cap a la carpeta de configuració de Warp Launch.
+        #expect(try aparicions(de: [#"createDirectory"#], a: codi).map { String($0.split(separator: ":")[0]) }.sorted() == [
+            "Sources/WarpLaunchCore/EscripturaAtomica.swift", "Sources/WarpLaunchCore/MagatzemConfiguracio.swift",
+            "Sources/WarpLaunchCore/MagatzemConfiguracio.swift",
+        ])
     }
 
     /// Decisió 7 (ronda 6): a tot `Sources`, només dues crides canvien els permisos o els atributs d'un fitxer, cadascuna al seu

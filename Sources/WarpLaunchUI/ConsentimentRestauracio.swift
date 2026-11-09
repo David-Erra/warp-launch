@@ -82,6 +82,10 @@ public final class ConsentimentRestauracio {
     /// L'app pot fer la seva feina: s'ha acceptat, o no cal.
     public var potContinuar: Bool { estat == .acceptat || estat == .noCal }
 
+    /// Si «Obre» pot crear la carpeta de launch configurations de Warp (regla 7): amb el permís acceptat o migrat i la
+    /// configuració de debò, que és quan hi ha refresc. Un cop retirat, ja no, encara que el refresc hi quedi.
+    public var potCrearCarpetaDeWarp: Bool { estat == .acceptat && refresc != nil }
+
     /// Es pot prémer «Accepta».
     public var potAcceptar: Bool { estat == .pendent }
 
