@@ -2062,6 +2062,15 @@ private let prohibidesArrossegar = [
                                                permisos: canvienAtributsAFitxersLaunchWarp[0]))
     }
 
+    /// Decisió d'en David del 09/11/2026: els dos fulls d'obrir (una finestra i «Obre-ho tot») i el README avisen de les feines
+    /// en segon pla.
+    @Test func elsDosFullsAvisenDeLesFeinesEnSegonPla() throws {
+        let full = try #require(try fitxers("Sources").first { $0.ruta == "Sources/WarpLaunchUI/FullObertura.swift" })
+        #expect(full.text.components(separatedBy: "Label(Obertura.textFeinesEnSegonPla").count == 3)
+        let readme = try String(contentsOf: arrel.appending(path: "README.md"), encoding: .utf8)
+        #expect(readme.contains("tancar Warp pot deixar-les a mitges, i reobrir les pestanyes no les fa continuar"))
+    }
+
     /// Regla 7 (09/11/2026): la carpeta de Warp només la crea l'app, i només amb el refresc (la carpeta de debò i el permís).
     @Test func nomesLAppCreaLaCarpetaDeWarpAmbElPermis() throws {
         let codi = try fitxers("Sources")

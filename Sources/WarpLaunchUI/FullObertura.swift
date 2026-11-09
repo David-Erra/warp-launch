@@ -87,6 +87,9 @@ struct FullObertura: View {
             if p.warpTancat, !finestres.isEmpty {
                 Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres), systemImage: "power")
             }
+            if !finestres.isEmpty {
+                Label(Obertura.textFeinesEnSegonPla, systemImage: "exclamationmark.triangle")
+            }
             if p.terminalsDesconeguts > 0, !finestres.isEmpty {
                 Label("Warp ja té " + Plural.compta(p.terminalsDesconeguts, "pestanya que l'app no reconeix",
                                                      "pestanyes que l'app no reconeix")
@@ -175,6 +178,9 @@ struct FullObertura: View {
             Text(pla.xifres.text)
             if p.warpTancat, !pla.aObrir.isEmpty {
                 Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres), systemImage: "power")
+            }
+            if !pla.aObrir.isEmpty {
+                Label(Obertura.textFeinesEnSegonPla, systemImage: "exclamationmark.triangle")
             }
             if pla.potserObertes > 0 {
                 Label(Plural.compta(pla.potserObertes, "pestanya sense lligam potser ja és oberta",

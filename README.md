@@ -116,6 +116,7 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
   servir la restauració de sèrie, activada, i el menú de la icona ho diu.
 - **Res no s'obre sense el teu clic.** Obrir una finestra o totes passa sempre per un full que diu quantes
   pestanyes i sessions de Claude s'obriran.
+- **Les feines en segon pla de Claude:** tancar Warp pot deixar-les a mitges, i reobrir les pestanyes no les fa continuar.
 - **Ordre de Claude per defecte:** a les configuracions noves, Claude s'obre sense saltar els permisos (`claude`, continuant
   la conversa). «Salta els permisos», l'esforç i «Ultracode» es trien a la Configuració (⌘,) › «Pestanyes noves», o per
   pestanya a l'inspector. Les pestanyes que ja tenien Claude obert en importar conserven l'ordre amb què es va obrir.

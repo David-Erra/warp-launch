@@ -297,6 +297,12 @@ private struct NoObre: Error, CustomStringConvertible {
 
     /// El camí bo: el full, el fitxer escrit abans d'obrir i amb el llançament ja desat, la finestra nova vista, el
     /// fitxer esborrat, i el pane i la conversa de cada pestanya a `estat.json`.
+    /// Decisió d'en David del 09/11/2026: fet observat una vegada, per això «pot».
+    @Test func lAvisDeLesFeinesEnSegonPlaDiuPot() {
+        #expect(Obertura.textFeinesEnSegonPla == "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i "
+            + "reobrir les pestanyes no les fa continuar.")
+    }
+
     /// Decisió d'en David del 09/11/2026 (regla 7): si la carpeta de launch configurations no hi és, «Obre» la crea, però només amb la
     /// carpeta de debò i el permís (hi ha refresc). Sense, com fins ara: no la crea i no obre res.
     @Test(arguments: [true, false])

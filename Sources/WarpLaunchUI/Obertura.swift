@@ -470,6 +470,11 @@ public final class Obertura {
                 : "En arrencar, Warp obre també una finestra buida, que pots tancar.")
     }
 
+    /// Què poden perdre les feines en segon pla de Claude, als dos fulls (decisió d'en David del 09/11/2026; fet observat una
+    /// vegada, per això «pot»). Reobrir una pestanya no reprèn la feina que hi corria.
+    static let textFeinesEnSegonPla = "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les "
+        + "pestanyes no les fa continuar."
+
     /// Desa la configuració i llegeix Warp (la lectura posa al dia els lligams, `EstatWarp.enLlegir`). Amb Warp Preview
     /// (`LecturaWarp.warpPreview`, D-P12), o sense cap Warp (0.31.1), no es pot obrir res: ho diu el full.
     func llegeixPerObrir() async -> Result<LecturaWarp, Motiu> {
