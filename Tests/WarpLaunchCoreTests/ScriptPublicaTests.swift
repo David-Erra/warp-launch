@@ -396,6 +396,21 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         try b.comprovaRefus(conte: "no té exactament una línia")
     }
 
+    /// La URL ha de dependre de `version` i ser la d'aquest repo: si no, la recepta nova demanaria un altre zip amb el sha256 d'aquest.
+    @Test(arguments: [
+        recepta().replacing("v#{version}/WarpLaunch-#{version}.zip", with: "v0.27.0/WarpLaunch-0.27.0.zip"),  // la versió, escrita a mà
+        recepta().replacing("v#{version}/WarpLaunch-#{version}.zip", with: "v#{version}/WarpLaunch-0.27.0.zip"),
+        recepta().replacing("github.com/exemple/prova/", with: "github.com/exemple/una-altra/"),
+        recepta().replacing("WarpLaunch-#{version}.zip\"", with: "WarpLaunch-#{version}.zip\" # comentari"),
+        recepta().replacing("  url \"https", with: "    url \"https"),  // dins d'un bloc
+        recepta().split(separator: "\n", omittingEmptySubsequences: false).filter { !$0.contains("  url ") }.joined(separator: "\n"),  // sense la línia
+    ])
+    func unaReceptaAmbUnaAltraUrlNoEsPublica(text: String) throws {
+        let b = try Banc()
+        try Data(text.utf8).write(to: b.fitxerRecepta)
+        try b.comprovaRefus(conte: "no té exactament una línia «  url")
+    }
+
     /// Sense l'autor del commit del tap a git config, no compila ni publica res.
     @Test(arguments: ["user.name", "user.email"])
     func senseLAutorNoEsPublica(clau: String) throws {

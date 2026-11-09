@@ -9,7 +9,7 @@
 # - Només publica el que hi ha a origin/main, sense canvis per fer commit, i una versió que encara no hi sigui.
 # - Només amb la signatura «Warp Launch Dev» (D12): una app signada ad hoc no es pot instal·lar amb --github.
 # - Abans de compilar llegeix la recepta (Casks/warp-launch.rb del tap) i refusa publicar si no s'hi pot arribar, si no té exactament
-#   una línia `  version "X.Y.Z"` i una `  sha256 "…"`, o si falten git config user.name o user.email (l'autor del commit del tap).
+#   una línia `  version "X.Y.Z"`, una `  sha256 "…"` i la `  url` amb `#{version}`, o si falten git config user.name o user.email (l'autor del commit del tap).
 # - Si, ja publicada la versió, no pot escriure la recepta, no esborra res: diu què cal canviar a mà i surt amb el codi 2.
 # - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre.
 # - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP i WARP_LAUNCH_REQUISIT canvien el repo de GitHub, el tap i el requisit de la signatura.
@@ -104,6 +104,12 @@ compta_linies() { LC_ALL=C grep -Eac "$1" "$RECEPTA" || true; }
 if [[ "$(compta_linies '^[[:space:]]*version([^[:alnum:]_]|$)')" != 1 || "$(compta_linies '^  version "[0-9]+\.[0-9]+\.[0-9]+"$')" != 1 ||
       "$(compta_linies '^[[:space:]]*sha256([^[:alnum:]_]|$)')" != 1 || "$(compta_linies '^  sha256 "[0-9a-f]{64}"$')" != 1 ]]; then
     echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) no té exactament una línia «  version \"X.Y.Z\"» i una línia «  sha256 \"…\"». No s'ha publicat res." >&2
+    exit 1
+fi
+# La URL ha de dependre de `version` i ser la d'aquest repo: si no, la recepta nova demanaria un altre zip amb el sha256 d'aquest.
+URL_RECEPTA="  url \"https://github.com/$REPO/releases/download/v#{version}/WarpLaunch-#{version}.zip\""
+if [[ "$(LC_ALL=C grep -aFxc -- "$URL_RECEPTA" "$RECEPTA" || true)" != 1 ]]; then
+    echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) no té exactament una línia «${URL_RECEPTA}». No s'ha publicat res." >&2
     exit 1
 fi
 VERSIO_ABANS="$(LC_ALL=C sed -nE 's/^  version "(.*)"$/\1/p' "$RECEPTA")"
