@@ -76,6 +76,14 @@ private func avis(_ p: Pestanya, vincle v: VincleEstat? = vincle(), warp: String
         #expect(avis(pestanya("/x/repo-c"), warp: A)?.tipus == .carpetesDiferents(warp: nil, claude: B, actual: "/x/repo-c"))
     }
 
+    /// Una pestanya només terminal no obre Claude: que hi hagi corregut a una altra carpeta no s'ha de revisar.
+    @Test func noAvisaSiLaPestanyaNoObreClaude() {
+        var p = pestanya(A)
+        p.claude.activat = false
+        #expect(avis(p) == nil)
+        #expect(avis(p, warp: A) == nil)
+    }
+
     // MARK: «Lliga amb Warp…»
 
     /// Una configuració importada amb la regla nova (a B), Warp diu A: amb el títol de la carpeta de Claude es lliga.

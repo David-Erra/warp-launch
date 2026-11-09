@@ -37,7 +37,8 @@ public enum Validacio {
     ///   configuració d'abans de la 0.31.5, per exemple), també avisa.
     public static func avisCarpetaDeClaude(_ pestanya: Pestanya, vincle: VincleEstat?, carpetaWarp: String?, inici: String,
                                            carpetaExisteix: (String) -> Bool) -> Avis? {
-        guard let claude = vincle?.carpetaSessio else { return nil }
+        // Una pestanya només terminal no obre Claude: on hi hagi corregut no s'ha de revisar.
+        guard pestanya.claude.activat, let claude = vincle?.carpetaSessio else { return nil }
         let actual = Rutes.canonica(pestanya.carpeta)
         if let carpetaWarp, carpetaWarp != claude, carpetaWarp != inici, actual == claude || actual == carpetaWarp {
             return Avis(.carpetesDiferents(warp: carpetaWarp, claude: claude, actual: actual))
