@@ -132,7 +132,7 @@ no surten netes, s'esperarà el Developer ID d'Apple, i l'app continuarà com av
 - **Diversos usuaris del Mac:** si dos usuaris tenen la sessió i l'app obertes, l'actualització d'un no tanca la de l'altre
   (llegit al codi de Sparkle, sense provar).
 - **Amb Homebrew:** si fas `brew upgrade` amb una versió ja a punt, surt de l'app abans, i no facis servir `--greedy`, que la
-  reinstal·laria. Sense provar.
+  reinstal·laria. `brew upgrade --cask warp-launch`, amb el nom, també reinstal·la una còpia que ja s'ha actualitzat sola. Sense provar.
 
 ## Desinstal·lar
 

@@ -809,6 +809,9 @@ Llegit al codi de Homebrew (`git describe`: `7.0.12-217-g25ccd49b8c`; les rutes 
   `tahoe: "26"`).
 - **`auto_updates true`** (llegit, per quan hi hagi Sparkle; `cask/cask.rb` i `env_config.rb`): per defecte, `brew upgrade` només
   actualitza la recepta si la versió del paquet de l'app és més vella que la de la recepta.
+- **`brew upgrade --cask warp-launch`, amb el nom, reinstal·la també una còpia que ja s'ha actualitzat sola** (llegit, 09/11/2026, Homebrew 7.0.12, sense provar; `cask/upgrade.rb:71`,
+  `cask/cask.rb:477-496`): amb el nom es mira `outdated?(greedy: true)`, i això compara la recepta amb la versió que Homebrew recorda haver instal·lat, no amb la de l'app. Sense el nom, amb
+  `auto_updates true` i sense `--greedy`, no ho fa.
 - **Provat de debò:** instal·lació des de zero sense el tap, actualització de la 0.28.0 a la 0.31.4 i desinstal·lació, amb la
   recepta sense `quit`. **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de `quit` i reobrir.
 - **`publica.sh` escriu la recepta al tap de debò (provat el 09/11/2026, amb la 0.31.5).** És la primera vegada: la recepta de la
