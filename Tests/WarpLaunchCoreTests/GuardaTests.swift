@@ -2495,7 +2495,9 @@ private let prohibidesArrossegar = [
         for fitxer in fitxers {
             for (numero, linia) in fitxer.text.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
                 let minuscules = linia.lowercased()
-                if minuscules.contains("generate_keys") { trobades.append("\(fitxer.ruta):\(numero + 1): generate_keys") }
+                for prohibida in ["generate_keys", "generate_appcast", "find-generic-password", "dump-keychain", "sparkle-project.org"] where minuscules.contains(prohibida) {
+                    trobades.append("\(fitxer.ruta):\(numero + 1): \(prohibida)")
+                }
                 guard minuscules.contains("sign_update") else { continue }
                 if fitxer.ruta != "scripts/publica.sh" { trobades.append("\(fitxer.ruta):\(numero + 1): sign_update") }
                 if linia.contains(opcioDeClau) { trobades.append("\(fitxer.ruta):\(numero + 1): opció de clau") }
@@ -2519,6 +2521,9 @@ private let prohibidesArrossegar = [
         for ruta in noms.map({ "scripts/\($0)" }) {
             #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: ".build/artifacts/sparkle/Sparkle/bin/generate_keys")]).count == 1, "\(ruta)")
             #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: "generate_keys -x clau")]).count == 1, "\(ruta)")
+            for dolenta in [".build/artifacts/sparkle/Sparkle/bin/generate_appcast build", "security find-generic-password -s x -w", "security dump-keychain -d", #"-s "https://sparkle-project.org""#] {
+                #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: dolenta)]).count == 1, "\(ruta): \(dolenta)")
+            }
         }
         for ruta in noms.map({ "scripts/\($0)" }) where ruta != "scripts/publica.sh" {
             #expect(try usDeLaClauForaDeLloc([(ruta: ruta, text: #"sign_update "$ZIP""#)]) == ["\(ruta):1: sign_update"], "\(ruta)")

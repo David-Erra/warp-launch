@@ -264,7 +264,7 @@ NOTES="build/notes-$VERSIO.md"
     echo "Si tens la 0.31.4 o una d'anterior, l'has d'actualitzar a mà una última vegada, amb les ordres d'aquí dalt. Des de llavors, és automàtic."
 } > "$NOTES"
 
-# El fitxer que llegeix cada còpia. Sense `generate_appcast`, que escriu a ~/Library/Caches i toca el clauer. Tots els valors són segurs per a l'XML:
+# El fitxer que llegeix cada còpia. Sense l'eina d'appcasts de Sparkle, que escriu a ~/Library/Caches i toca el clauer. Tots els valors són segurs per a l'XML:
 # VERSION i la signatura tenen forma coneguda, i el repo és un nom de GitHub.
 rm -f "$APPCAST"
 MINIM_SISTEMA="$(llegeix_plist LSMinimumSystemVersion "$INFO")"
