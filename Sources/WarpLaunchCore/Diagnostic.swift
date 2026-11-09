@@ -73,6 +73,8 @@ public struct EntornDiagnostic: Sendable {
     public var usuari: String
     /// La versió de macOS, per a l'informe.
     public var sistema: String
+    /// Com està l'actualització automàtica. `nil`: no aplica (el CLI).
+    public var actualitzacions: (@Sendable () -> String)?
 
     public init(lector: Lector, carpetaConfiguracio: URL?, configuracioDeProva: Bool = false,
                 transcripcions: LectorTranscripcions, confianca: LectorConfianca, usuari: String? = nil,
@@ -152,8 +154,11 @@ public struct InformeDiagnostic: Sendable, Equatable {
     public var sistema: String
     public var anonimitzat: Bool
     public var comprovacions: [Comprovacio]
+    /// Si l'app s'actualitza, i com està. `nil`: no aplica (el CLI).
+    public var actualitzacions: String?
 
-    public init(versio: String, sistema: String, anonimitzat: Bool, comprovacions: [Comprovacio]) {
+    public init(versio: String, sistema: String, anonimitzat: Bool, comprovacions: [Comprovacio], actualitzacions: String? = nil) {
+        self.actualitzacions = actualitzacions
         self.versio = versio
         self.sistema = sistema
         self.anonimitzat = anonimitzat
@@ -172,6 +177,7 @@ public struct InformeDiagnostic: Sendable, Equatable {
         linies.append(anonimitzat
             ? "Anonymized: no user name, home paths or folder names (only their shape)."
             : "Not anonymized: it includes the user name, paths and folder names.")
+        linies.append("Updates: \(actualitzacions ?? "not applicable (command line)")")
         linies.append("")
         for c in comprovacions {
             let marca = "[\(c.resultat.rawValue)]"
@@ -202,10 +208,11 @@ public struct InformeDiagnostic: Sendable, Equatable {
             var app: String
             var macOS: String
             var anonymized: Bool
+            var updates: String?
             var checks: [Check]
             var summary: Summary
         }
-        let informe = Informe(app: versio, macOS: sistema, anonymized: anonimitzat,
+        let informe = Informe(app: versio, macOS: sistema, anonymized: anonimitzat, updates: actualitzacions,
                               checks: comprovacions.map {
                                   .init(id: $0.id.rawValue, title: $0.id.titol, status: $0.resultat.rawValue, detail: $0.detall)
                               },
@@ -241,7 +248,8 @@ public enum Diagnostic {
         // L'última xarxa: cap text (tampoc el d'un error) no hi deixa la carpeta d'inici ni el nom d'usuari.
         for i in comprovacions.indices { comprovacions[i].detall = anon.text(comprovacions[i].detall) }
         return InformeDiagnostic(versio: "\(WarpLaunch.nom) \(WarpLaunch.versio)", sistema: entorn.sistema,
-                                 anonimitzat: anonimitza, comprovacions: comprovacions)
+                                 anonimitzat: anonimitza, comprovacions: comprovacions,
+                                 actualitzacions: entorn.actualitzacions.map { anon.text($0()) })
     }
 
     // MARK: - Lectures

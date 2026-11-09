@@ -117,6 +117,22 @@ private struct MacDeProva {
         #expect(informe.text.contains(mac.sessions.path))
     }
 
+    /// El CLI no té actualitzador; l'app diu com està, i les rutes, anonimitzades.
+    @Test func lInformeDiuComEstanLesActualitzacions() throws {
+        let mac = try MacDeProva()
+        #expect(mac.diagnostic().text.contains("\nUpdates: not applicable (command line)\n"))
+        var entorn = mac.entorn
+        let inici = mac.inici
+        entorn.actualitzacions = { "off: not in /Applications (\(inici)/app)" }
+        let complet = Diagnostic.executa(entorn, anonimitza: false)
+        #expect(complet.text.contains("\nUpdates: off: not in /Applications (\(inici)/app)\n"))
+        let anonim = Diagnostic.executa(entorn, anonimitza: true)
+        #expect(anonim.text.contains("\nUpdates: off: not in /Applications (~/"))
+        #expect(!anonim.text.contains(inici))
+        let json = try #require(try JSONSerialization.jsonObject(with: anonim.json()) as? [String: Any])
+        #expect((json["updates"] as? String)?.hasPrefix("off: not in /Applications (~/") == true)
+    }
+
     // MARK: - a) Terminals de Warp
 
     @Test func ambClaudeAWarpISenseCapTerminalReconegutEsUnError() throws {

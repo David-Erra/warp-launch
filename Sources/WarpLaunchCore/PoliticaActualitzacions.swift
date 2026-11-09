@@ -124,6 +124,19 @@ public enum PoliticaActualitzacions {
             case .incompatible: "Aquesta versió de l'actualitzador no és compatible."
             }
         }
+
+        /// Per a l'informe del diagnòstic, que és en anglès.
+        public var diagnostic: String {
+            switch self {
+            case .configuracioDeProva: "test configuration (--config)"
+            case .senseConfiguracio: "no configuration"
+            case .foraDeLPaquet: "not running from an app bundle"
+            case let .foraDAplicacions(ruta): "not in /Applications (\(ruta))"
+            case .senseFeed: "not a published build (no feed)"
+            case .dUnAltreUsuari: "the app belongs to another user or isn't writable"
+            case .incompatible: "incompatible updater"
+            }
+        }
     }
 
     public static func motiuNoDisponible(_ paquet: Paquet) -> NoDisponible? {

@@ -162,6 +162,14 @@ public final class Obertura {
     /// El full de confirmació és a la vista.
     public var mostraFull: Bool { estat != .cap }
 
+    /// Preparant o obrint finestres a Warp: l'app no es pot reiniciar a mig fer.
+    public var estaObrint: Bool {
+        switch estat {
+        case .preparant, .obrint, .preparantTot, .obrintTot: true
+        case .cap, .confirmant, .noEsPot, .confirmantTot: false
+        }
+    }
+
     /// Si es pot començar a obrir aquesta finestra: s'ha acceptat el consentiment (D-P4), la configuració és oberta, la
     /// finestra té pestanyes, no hi ha cap altra obertura en curs i `estat.json` es pot fer servir.
     public func potObrir(_ finestra: Finestra.ID?) -> Bool {

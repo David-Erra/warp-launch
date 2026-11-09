@@ -92,7 +92,10 @@ public final class Actualitzacions {
     public private(set) var automatiques: Bool
     /// No s'ha pogut escriure l'intent, i per això no s'ha aplicat.
     public private(set) var errorPreparant: String?
+    /// Puja quan canvia alguna cosa de l'actualitzador que no arriba com a esdeveniment (`canviEntorn`): si es pot comprovar, per al botó.
+    private var revisio = 0
 
+    @ObservationIgnored private let motiuNoDisponible: PoliticaActualitzacions.NoDisponible?
     @ObservationIgnored private let entorn: Entorn?
     @ObservationIgnored private let magatzem: MagatzemIntent?
     /// `ara` en crear el model: des de quan corre l'app.
@@ -115,12 +118,14 @@ public final class Actualitzacions {
         self.intent = intent
         arrencada = ara
         self.versioActual = versioActual
+        motiuNoDisponible = nil
         estat = .inicial(entorn.darreraComprovacio())
         automatiques = entorn.automatiques()
     }
 
     /// Aquesta còpia no s'actualitza mai: no hi ha servei, ni es llegeix ni s'escriu res.
     public init(noDisponible motiu: PoliticaActualitzacions.NoDisponible) {
+        motiuNoDisponible = motiu
         entorn = nil
         magatzem = nil
         intent = IntentActualitzacio()
@@ -173,6 +178,32 @@ public final class Actualitzacions {
         entorn.posaAutomatiques(valor)
         automatiques = entorn.automatiques()
         if !automatiques { quietDes = nil }
+    }
+
+    /// El que pregunta el servei: per què no es pot reiniciar ara, ni que ho demani l'usuari.
+    public func motiuReiniciDemanat(ara: TimeInterval) -> PoliticaActualitzacions.Motiu? {
+        guard let entorn else { return nil }
+        return motiu(entorn, ara: ara, candidat: nil, demanat: true)
+    }
+
+    /// La finestra de l'actualitzador reinicia l'app: l'intent, per saber en arrencar si ha anat bé. Amb el bloc, ja l'ha escrit `aplica`.
+    public func reiniciaDesDeLaFinestra(versio: String) {
+        guard let entorn, let magatzem, !aplicant, PoliticaActualitzacions.Versio(versio) != nil else { return }
+        var nou = intent
+        nou.pendent = IntentActualitzacio.Pendent(objectiu: versio, tipus: .demanada, hora: entorn.rellotge())
+        do {
+            try magatzem.desa(nou)
+            intent = nou
+        } catch {
+            Registre.actualitzacions.error("no s'ha pogut escriure l'intent: \(error, privacy: .public)")
+        }
+    }
+
+    /// L'actualitzador ha canviat sense cap esdeveniment: si es pot comprovar, o quan es va comprovar per última vegada.
+    public func canviEntorn() {
+        guard let entorn else { return }
+        revisio &+= 1
+        if case .inicial = estat { estat = .inicial(entorn.darreraComprovacio()) }
     }
 
     // MARK: - El que passa
@@ -336,6 +367,13 @@ public final class Actualitzacions {
 
     // MARK: - Textos
 
+    /// Per a l'informe del diagnòstic, que és en anglès.
+    public var textDiagnostic: String {
+        if let motiuNoDisponible { return "off: \(motiuNoDisponible.diagnostic)" }
+        return "on, state \(Self.nom(estat)), automatic \(automatiques ? "on" : "off"), failures \(intent.fallades)"
+            + (intent.versioFallada.map { ", failed version \($0)" } ?? "")
+    }
+
     /// El text de la fila «Estat». `avui`: l'hora de mirar-ho, per als textos.
     public func text(avui: Date) -> String {
         switch estat {
@@ -376,7 +414,7 @@ public final class Actualitzacions {
 
     public var boto: Boto {
         switch estat {
-        case .inicial, .alDia, .error: .comprovaAra(actiu: entorn?.potComprovar() == true)
+        case .inicial, .alDia, .error: .comprovaAra(actiu: revisio >= 0 && entorn?.potComprovar() == true)
         case .comprovant, .noDisponible: .comprovaAra(actiu: false)
         case .trobada: .actualitzaAra
         case .aPunt: .reinicia(actiu: motiuDemanatAra == nil)

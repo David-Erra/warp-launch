@@ -77,6 +77,9 @@ final class Aplicacio {
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch», a la Configuració. Només es pot amb la configuració de debò i el
     /// permís (sense el refresc, el botó és desactivat).
     let desinstallacio: Desinstallacio
+    /// L'actualització automàtica: el model (sempre) i el servei (només si aquesta còpia es pot actualitzar).
+    let actualitzacions: Actualitzacions
+    let servei: ServeiActualitzacions?
     /// Aquesta arrencada és la de l'inici de sessió (es decideix a `applicationDidFinishLaunching`).
     var enIniciarSessio = false
     /// Cada quant es torna a llegir Warp mentre l'app és en marxa (D18).
@@ -108,10 +111,6 @@ final class Aplicacio {
         // Les transcripcions i la confiança de Claude de debò (només lectura): els lectors no tenen cap ruta per defecte.
         let transcripcions = LectorTranscripcions(carpeta: LectorTranscripcions.carpetaPerDefecte)
         let confianca = LectorConfianca(ruta: LectorConfianca.rutaPerDefecte)
-        let entornDiagnostic = EntornDiagnostic(lector: lector, carpetaConfiguracio: carpeta,
-                                                configuracioDeProva: arguments.deProva,
-                                                transcripcions: transcripcions, confianca: confianca)
-        copiaDiagnostic = CopiaDiagnostic(diagnostic: { Diagnostic.executa(entornDiagnostic, anonimitza: $0) })
         // D19: només amb la configuració de debò. Una carpeta de prova no toca res de Warp. L'única connexió amb l'ajust de debò.
         // D-P4: `ConsentimentRestauracio` només crida `creaEntornRefresc` (i només llavors es crea l'ajust) amb el
         // consentiment acceptat.
@@ -177,7 +176,7 @@ final class Aplicacio {
             if editor.estat == .oberta { sessions.actualitza(amb: lectura, configuracio: editor.configuracio) }
             obertura?.enLlegir(lectura)
         }
-        activacio = Activacio(enAdoptarDesfer: { editor.usaUndoManager($0) },
+        let activacio = Activacio(enAdoptarDesfer: { editor.usaUndoManager($0) },
                               enAdoptarDesferConfiguracio: { editor.usaDesferPlantilla($0) },
                               // El fitxer pot haver canviat fora mentre la Configuració era amagada.
                               enMostrarConfiguracio: {
@@ -202,6 +201,29 @@ final class Aplicacio {
                                   editor.desaSiCal()
                               },
                               enMostrar: { editor.enMostrar() })
+        self.activacio = activacio
+        // L'última connexió: el model mira els altres, i per això es crea al final.
+        let creats = ServeiActualitzacions.crea(arguments: arguments, permis: { consentiment.potContinuar }, models: { [obertura] in
+            let lligam = editor.lligam
+            return SituacioApp.Models(
+                errorEnDesar: editor.errorDesat != nil, nomAMigEscriure: editor.nomEnEdicio != nil, obrint: obertura?.estaObrint == true,
+                fullObert: obertura?.mostraFull == true || lligam?.mostraFull == true || desinstallacio.confirmant
+                    || editor.demanaImportacio || editor.demanaNovaPestanya || activacio.hiHaFullObert,
+                conversesEnCurs: obertura?.teConversesEnCurs == true, refrescant: consentiment.refresc?.refrescant == true,
+                ajustPerDesactivar: consentiment.refresc?.pendent == .acabaDeCanviar, finestraVisible: activacio.hiHaFinestraVisible,
+                canvisSenseDesar: editor.canvisSenseDesar, potDesfer: editor.undoManager.canUndo || editor.desferPlantilla.canUndo,
+                segonsDesDelDarrerCanvi: editor.darrerCanvi.map { Date().timeIntervalSince($0) })
+        }, intent: { _ in IntentActualitzacio() })
+        let actualitzacions = creats.model
+        servei = creats.servei
+        self.actualitzacions = actualitzacions
+        obertura?.aplicantActualitzacio = { actualitzacions.aplicant }
+        var entornDiagnostic = EntornDiagnostic(lector: lector, carpetaConfiguracio: carpeta,
+                                                configuracioDeProva: arguments.deProva,
+                                                transcripcions: transcripcions, confianca: confianca)
+        // El diagnòstic corre fora del fil principal, que espera lliure (`CopiaDiagnostic.copia`).
+        entornDiagnostic.actualitzacions = { DispatchQueue.main.sync { MainActor.assumeIsolated { actualitzacions.textDiagnostic } } }
+        copiaDiagnostic = CopiaDiagnostic(diagnostic: { [entornDiagnostic] in Diagnostic.executa(entornDiagnostic, anonimitza: $0) })
         editor.carrega()
         sessions.carrega()
         // Ara mateix si ja s'havia acceptat (o no cal); si no, en acceptar.
@@ -218,6 +240,7 @@ final class Aplicacio {
         while !Task.isCancelled {
             refresc?.vigila()
             await warp.llegeix()
+            actualitzacions.vigila(ara: ProcessInfo.processInfo.systemUptime)
             try? await Task.sleep(for: Self.lecturaPeriodica)
         }
     }
@@ -258,6 +281,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let ambConsentiment = aplicacio.consentiment.potContinuar
         if aplicacio.enIniciarSessio, !ambConsentiment { aplicacio.activacio.mostraEditor(obre: {}) }
         aplicacio.consentiment.enContinuar {
+            aplicacio.servei?.engega()
             Task { await aplicacio.llegeixPeriodicament() }
             // D3: el full de «Obre-ho tot», quan Warp és a punt. Si no falta cap finestra, l'editor s'amaga; però no just
             // després d'haver acceptat el consentiment.

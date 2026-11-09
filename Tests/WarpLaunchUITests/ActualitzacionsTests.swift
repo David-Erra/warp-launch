@@ -76,6 +76,76 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
 
 @MainActor
 @Suite struct ActualitzacionsTests {
+    // MARK: - El que necessita el servei
+
+    @Test func elMotiuDeReiniciarDemanatEsElDelsModels() throws {
+        let b = try Banc()
+        let m = b.model()
+        #expect(m.motiuReiniciDemanat(ara: t) == nil)
+        b.models.obrint = true
+        #expect(m.motiuReiniciDemanat(ara: t) == .obrint)
+        b.models.obrint = false
+        b.models.finestraVisible = true
+        #expect(m.motiuReiniciDemanat(ara: t) == nil, "una finestra no atura un reinici demanat")
+    }
+
+    /// La finestra de l'actualitzador reinicia sense passar per `aplica`: l'intent l'escriu el servei, com a demanat.
+    @Test func elReiniciDeLaFinestraEscriuLIntent() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.reiniciaDesDeLaFinestra(versio: "0.32.1")
+        guard case let .llegit(intent) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
+        #expect(intent.pendent == IntentActualitzacio.Pendent(objectiu: "0.32.1", tipus: .demanada, hora: t0))
+    }
+
+    /// Amb el bloc, l'actualitzador també avisa del reinici: no pot canviar una automàtica per una demanada.
+    @Test func elReiniciDelBlocNoTrepitjaLIntent() throws {
+        let b = try Banc()
+        let m = aPunt(b)
+        m.reinicia(ara: t)
+        #expect(m.aplicant)
+        b.ara = t0.addingTimeInterval(5)
+        m.reiniciaDesDeLaFinestra(versio: "0.32.1")
+        guard case let .llegit(intent) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
+        #expect(intent.pendent?.hora == t0)
+    }
+
+    @Test func unaVersioQueNoEsPotLlegirNoEsEscriu() throws {
+        let b = try Banc()
+        b.model().reiniciaDesDeLaFinestra(versio: "1.0")
+        #expect(b.magatzem.carrega() == .absent)
+    }
+
+    /// Si canvia si es pot comprovar, o la data de l'última comprovació, sense cap esdeveniment.
+    @Test func unCanviDeLActualitzadorEsVeu() throws {
+        let b = try Banc()
+        let m = b.model()
+        #expect(m.estat == .inicial(nil))
+        b.darrera = t0
+        m.canviEntorn()
+        #expect(m.estat == .inicial(t0))
+        b.potComprovar = false
+        m.canviEntorn()
+        #expect(m.boto == .comprovaAra(actiu: false))
+        m.rep(.alDia, ara: t)
+        let estat = m.estat
+        b.darrera = t0.addingTimeInterval(9)
+        m.canviEntorn()
+        #expect(m.estat == estat, "«al dia» no es torna a «inicial»")
+    }
+
+    @Test func elDiagnosticDiuComEsta() throws {
+        let b = try Banc()
+        let m = b.model(intent: IntentActualitzacio(fallades: 1, versioFallada: "0.32.1"))
+        #expect(m.textDiagnostic == "on, state inicial, automatic on, failures 1, failed version 0.32.1")
+        b.auto = false
+        m.posaAutomatiques(false)
+        #expect(m.textDiagnostic.contains("automatic off"))
+        let sense = Actualitzacions(noDisponible: .foraDAplicacions("/Users/qui/app.app"))
+        #expect(sense.textDiagnostic == "off: not in /Applications (/Users/qui/app.app)")
+        #expect(Actualitzacions(noDisponible: .senseFeed).textDiagnostic == "off: not a published build (no feed)")
+    }
+
     // MARK: - Els estats i els textos
 
     @Test func inicialNoAfirmaRes() throws {

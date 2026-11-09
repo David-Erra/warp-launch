@@ -907,6 +907,18 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
     }
 
+    /// Preparant o obrint finestres, l'app no es reinicia. Amb un full que només espera el clic, tampoc, però per un altre motiu.
+    @Test func quanEstaObrint() throws {
+        let b = try Banc()
+        #expect(!b.obertura.estaObrint)
+        b.obertura.estat = .preparantTot(UUID())
+        #expect(b.obertura.estaObrint)
+        b.obertura.estat = .preparant("Prova", UUID())
+        #expect(b.obertura.estaObrint)
+        b.obertura.estat = .noEsPot("no")
+        #expect(!b.obertura.estaObrint && b.obertura.mostraFull)
+    }
+
     /// Una pestanya tancada fa menys d'1 minut (el seu Claude encara és viu): el full ho diu, i no s'obre res.
     @Test func ambUnaPestanyaTancadaFaPocNoSObre() async throws {
         let b = try Banc()

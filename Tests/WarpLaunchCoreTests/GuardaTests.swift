@@ -251,6 +251,14 @@ private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
 /// Sparkle només el coneix aquest fitxer (`sparkleNomesAlServei`).
 private let serveiActualitzacions = "Sources/WarpLaunchApp/ServeiActualitzacions.swift"
 private let nomesAlServei = [#"import Sparkle"#, #"SPU[A-Z]"#, #"(^|[^A-Za-z0-9_])SU[A-Z]"#]
+/// Al servei, el delegat `updaterWillRelaunchApplication` porta la paraula a dins. La crida de `NSWorkspace`, no.
+private let obrirAppAlServei = #"(^|[^e])launchApplication|(^|[^R]e)launchApplication|(^|[^l]Re)launchApplication"#
+/// La firma del delegat que avisa que es baixarà: l'única línia que pot tenir el tipus, i el valor no es fa servir.
+private let firmaBaixada = "with request: NSMutableURLRequest) {"
+private let prohibitsAlServei = [#"feedURLString"#, #"setFeedURL"#, #"sendsSystemProfile"#, #"allowedChannels"#, #"startUpdater\(\)"#]
+/// Xarxa, a tot `Sources/` i sense excepcions (`capCodiNoFaServirLaXarxa`).
+private let xarxa = [#"URLSession"#, #"URLRequest"#, #"NSURLConnection"#, #"import Network"#, #"NWConnection"#, #"NWPathMonitor"#,
+                     #"CFNetwork"#, #"WKWebView"#, #"https?://"#]
 
 /// D-P12 (excepcions limitades, 0.29.2): on és Warp només ho pregunta `TrobaWarp`, amb aquesta sola crida i l'identificador
 /// que li passa `InstallacioWarp.troba` (`nomesTrobaWarpPreguntaOnEsWarp`). A la resta del codi, `workspace` la prohibeix.
@@ -265,6 +273,7 @@ private func prohibidesCodi(a ruta: String) -> [String] {
     switch ruta {
     case serveiArrencada: prohibidesCodi.filter { $0 != #"SMAppService"# }
     case trobaWarp: prohibidesCodi.map { $0 == workspace ? workspaceTrobaWarp : $0 }
+    case serveiActualitzacions: prohibidesCodi.map { $0 == #"launchApplication"# ? obrirAppAlServei : $0 }
     default: prohibidesCodi
     }
 }
@@ -2327,6 +2336,62 @@ private let prohibidesArrossegar = [
         #expect(try aparicions(de: nomesAlServei, a: [(ruta: "mostra", text: "let situacio: SituacioApp")]).isEmpty)
         let proves = try fitxers("Tests")
         #expect(try aparicions(de: [#"import Sparkle"#], a: proves).isEmpty)
+    }
+
+    /// Cap codi propi no parla amb la xarxa, ni la de l'actualitzador: això ho fa Sparkle, amb l'adreça que porta el paquet.
+    @Test func capCodiNoFaServirLaXarxa() throws {
+        var codi = try fitxers("Sources")
+        let i = try #require(codi.firstIndex { $0.ruta == serveiActualitzacions })
+        #expect(codi[i].text.components(separatedBy: firmaBaixada).count == 2)
+        #expect(!codi[i].text.contains("request."))
+        codi[i].text = codi[i].text.replacingOccurrences(of: firmaBaixada, with: "")
+        let trobades = try aparicions(de: xarxa, a: codi)
+        #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        for mostra in ["URLSession.shared", "URLRequest(url: a)", "NSURLConnection", "import Network", "NWConnection(", "NWPathMonitor()",
+                       "import CFNetwork", "WKWebView()", "http://a.b", "https://a.b"] {
+            #expect(!(try aparicions(de: xarxa, a: [(ruta: "mostra", text: mostra)])).isEmpty, "\(mostra)")
+        }
+    }
+
+    /// El que Sparkle deixa canviar per codi i no s'ha de fer: l'adreça, el perfil del sistema, els canals i engegar amb una alerta.
+    @Test func elServeiNoFaServirElQueNoToca() throws {
+        let servei = try #require(try fitxers("Sources/WarpLaunchApp").first { $0.ruta == serveiActualitzacions })
+        #expect(try aparicions(de: prohibitsAlServei, a: [servei]).isEmpty)
+        // L'excepció de `launchApplication` només és per al nom del delegat.
+        let obrir = [(ruta: serveiActualitzacions, text: "NSWorkspace.shared.launchApplication(x)")]
+        #expect(try aparicions(de: prohibidesCodi(a: serveiActualitzacions), a: obrir).contains { $0.contains("launchApplication") })
+        let delegat = [(ruta: serveiActualitzacions, text: "func updaterWillRelaunchApplication(_ u: SPUUpdater) {}")]
+        #expect(try aparicions(de: prohibidesCodi(a: serveiActualitzacions), a: delegat).isEmpty)
+        for mostra in ["u.feedURLString", "u.setFeedURL(a)", "sendsSystemProfile", "allowedChannels", "c.startUpdater()"] {
+            #expect(!(try aparicions(de: prohibitsAlServei, a: [(ruta: "mostra", text: mostra)])).isEmpty, "\(mostra)")
+        }
+        // Sense cap finestra sense demanar-la: la decisió és una sola línia que torna `false`.
+        #expect(servei.text.contains("andInImmediateFocus immediateFocus: Bool) -> Bool {\n        false\n    }"))
+        // Els mètodes dels quals depèn la seguretat, comprovats abans d'engegar.
+        for selector in ["willInstallUpdateOnQuit:immediateInstallationBlock:", "shouldPostponeRelaunchForUpdate:untilInvokingBlock:",
+                         "updaterWillRelaunchApplication(_:)", "updater(_:mayPerform:)", "shouldProceedWithUpdate:updateCheck:",
+                         "didAbortWithError:", "standardUserDriverShouldHandleShowingScheduledUpdate(_:andInImmediateFocus:)"] {
+            #expect(servei.text.contains(selector), "\(selector)")
+        }
+    }
+
+    /// Les accions de l'actualitzador, només al servei. El bloc que instal·la només es crida des del model, que abans escriu l'intent.
+    @Test func lesAccionsDeLActualitzadorNomesAlServei() throws {
+        let codi = try fitxers("Sources")
+        let accions = [#"checkForUpdates"#, #"secondsSinceLastEventType"#]
+        let fora = try aparicions(de: accions, a: codi.filter { $0.ruta != serveiActualitzacions })
+        #expect(fora.isEmpty, "\(fora.joined(separator: "\n"))")
+        let servei = try #require(codi.first { $0.ruta == serveiActualitzacions })
+        for accio in ["updater.checkForUpdatesInBackground()", "updater.checkForUpdateInformation()", "updater.checkForUpdates()"] {
+            #expect(servei.text.components(separatedBy: accio).count == 2, "\(accio)")
+        }
+        #expect(servei.text.components(separatedBy: "secondsSinceLastEventType").count == 2)
+        // Al servei, `bloc()` només dins de la clausura que es passa al model.
+        let blocs = servei.text.split(separator: "\n").filter { $0.contains("bloc()") }
+        #expect(blocs.count == 2 && blocs.allSatisfy { $0.contains("aplica: { bloc() })") }, "\(blocs)")
+        let model = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/Actualitzacions.swift" })
+        let despres = model.text.components(separatedBy: "try magatzem.desa(nou)")
+        #expect(despres.count == 3 && despres[2].contains("bloc()"), "el bloc, després d'haver escrit l'intent")
     }
 
     /// Una sola dependència, amb la versió exacta, i només per a l'app (regla 10).

@@ -91,6 +91,16 @@ final class Activacio {
         if let desfer = finestra.undoManager { enAdoptarDesferConfiguracio(desfer) }
     }
 
+    /// L'editor, la Configuració, «Quant a» o una finestra de l'actualitzador.
+    var hiHaFinestraVisible: Bool {
+        NSApp.windows.contains { $0.isVisible && $0.styleMask.contains(.titled) }
+    }
+
+    /// Un full sobre alguna finestra, també si no és dels models de l'app.
+    var hiHaFullObert: Bool {
+        NSApp.windows.contains { $0.attachedSheet != nil }
+    }
+
     /// Mostra l'editor. `obre` el crea si encara no existeix (`openWindow` de SwiftUI).
     func mostraEditor(obre: () -> Void) {
         posaAlDavant()
