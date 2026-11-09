@@ -357,12 +357,16 @@ i no toca el disc.
     les opcions);
   - **sessió viva en una altra carpeta que la pestanya (0.31.5, en David, 09/11/2026):** mana la de Claude, amb una nota
     (`.carpetaDeLaSessio` si Warp era a `~`, `.carpetesDiferents` si no), excepte si la de Claude és `~` o no existeix: es queda la
-    de Warp, amb `.carpetaDeClaudeNoServeix`. Avís a «Per revisar» (`Validacio.avisCarpetaDeClaude`): amb la carpeta de Warp de
+    de Warp, amb `.carpetaDeClaudeNoServeix` (si aquesta és `~`, vegeu el cas de sota). Avís a «Per revisar» (`Validacio.avisCarpetaDeClaude`): amb la carpeta de Warp de
     l'última foto o de la importació (`EstatSessions`, només a la memòria: el format d'`estat.json` no canvia) i, sense, amb
     `carpetaSessio` (l'últim Claude). Si Warp és a `~`, sense avís: només la nota. «Lliga amb Warp…» i `potserJaOberta` comparen
     totes dues carpetes;
-  - **sessió viva a `~` o en una carpeta que no existeix:** Claude activat, amb la seva ordre (D11: «les que ja
-    tenen Claude conserven la comanda llegida»), i l'avís de la carpeta. En aquella lectura, cap.
+  - **Warp a `~` i sessió viva en una carpeta que no existeix (0.31.5, decisió del 09/11/2026):** no hi ha cap carpeta bona, i
+    Claude s'engegaria a `~`. Es queda a `~` amb `activat: false` i les opcions de la seva ordre (no les de la plantilla), origen
+    `.carpetaInici` i nota `.claudeSenseCarpeta`. El pane i la conversa continuen al vincle;
+  - **altres sessions vives a `~` o en una carpeta que no existeix** (Warp i Claude a la mateixa, o Warp en una carpeta bona):
+    Claude activat, amb la seva ordre (D11: «les que ja tenen Claude conserven la comanda llegida»), i l'avís de la carpeta.
+    En aquella lectura, cap.
 - **Notes** (el full i el CLI les mostren): primer missatge descartat, sessió que reprenia una conversa concreta
   (`--resume <id>`, `--session-id`), carpetes de la sessió i de la pestanya diferents, panes descartats,
   finestres sense pestanyes de terminal i sessions sense pestanya. Aquestes no s'importen, i la nota diu quina
@@ -2120,7 +2124,7 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
     `cask/cask.rb` i `env_config.rb` de Homebrew).
   - **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de tancar-la i tornar-la a obrir en actualitzar.
 
-### 0.31.5: les quatre decisions del 09/11/2026 (sense publicar)
+### 0.31.5: les cinc decisions del 09/11/2026 (sense publicar)
 
 **Res d'això no s'ha vist funcionar a l'app ni amb Warp de debò.** El que hi ha és provat amb dades fictícies (`scripts/test.sh`) o
 llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especificacio.md`, fila del 09/11/2026. Fets:
@@ -2128,6 +2132,8 @@ llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especifi
 
 - **Provat (dades fictícies):**
   - La carpeta que guanya, en cada combinació de Claude a `~`, inexistent o existent.
+  - Warp a `~` i Claude en una carpeta que no existeix: `~`, sense Claude, amb les opcions de la seva ordre i la nota. Es comprova la
+    configuració que surt d'importar; que el pla d'obertura no engegui Claude en una pestanya desactivada és el camí de sempre.
   - L'avís a «Per revisar», que no surt a les pestanyes només terminal i no se'n va amb una foto de Warp sense cap Claude.
   - «Lliga amb Warp…» amb les dues carpetes, sense desfer empats i sense donar el mateix pane a dues pestanyes.
   - El pla d'obertura amb la carpeta del Claude del terminal.
@@ -2154,10 +2160,13 @@ llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especifi
 4. La carpeta de Warp, 1 finestra i 1 pestanya sense Claude: sense `~/.warp/launch_configurations`, amb Warp obert i la
    configuració de debò, «Obre a Warp…» la crea i Warp obre la finestra.
 5. Els dos fulls d'obrir mostren l'avís de les feines en segon pla.
+6. Warp a `~` i Claude sense carpeta, 1 finestra, 1 pestanya i 1 sessió de Claude: en David obre una pestanya a `~`, hi escriu
+   `cd C && claude` (C, una carpeta temporal) i esborra C. Importar a una carpeta de configuració de prova ha de donar `~`, Claude
+   desactivat amb les opcions de la seva ordre, i la nota.
 
 ### Resum
 
-- Proves: de 443 a 622 al core i de 232 a 330 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
+- Proves: de 443 a 623 al core i de 232 a 330 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
   i 313; a la 0.31.4, 573 i 323).
   `prototip/` surt del repo (és a l'historial, 114c97d).
 - De les versions del lot, només la 0.31.4 és publicada (09/11/2026), i s'instal·la també amb Homebrew.
