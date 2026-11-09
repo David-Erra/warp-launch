@@ -2538,8 +2538,29 @@ private let prohibidesArrossegar = [
         let arbre = try #require(try JSONSerialization.jsonObject(with: dades) as? [String: Any])
         let permisos = try #require(arbre["permissions"] as? [String: Any])
         let deny = try #require(permisos["deny"] as? [String])
-        for regla in ["Bash(generate_keys*)", "Bash(*/generate_keys*)", "Bash(sign_update*)", "Bash(*/sign_update*)", "Bash(*publica.sh --aplica*)"] {
+        for regla in ["Bash(generate_keys*)", "Bash(*/generate_keys*)", "Bash(sign_update*)", "Bash(*/sign_update*)", "Bash(*publica.sh*--aplica*)",
+                      "Bash(*generate_appcast*)", "Bash(*Sparkle/bin/*)"] {
             #expect(deny.contains(regla), "\(regla)")
+        }
+        // Com les aplica Claude Code: l'asterisc val per a qualsevol text, i la regla ha de cobrir tota l'ordre.
+        let patrons = try deny.filter { $0.hasPrefix("Bash(") }.map { regla in
+            try Regex("^" + regla.dropFirst(5).dropLast().split(separator: "*", omittingEmptySubsequences: false).map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: ".*") + "$")
+        }
+        let bloqueja = { (ordre: String) in patrons.contains { ordre.wholeMatch(of: $0) != nil } }
+        let bin = ".build/artifacts/sparkle/Sparkle/bin"
+        for ordre in [
+            "scripts/publica.sh --aplica", "./scripts/publica.sh --aplica", "bash scripts/publica.sh --aplica", #"GH_TOKEN="x" scripts/publica.sh --aplica"#,
+            "scripts/publica.sh  --aplica", "scripts/publica.sh\t--aplica", #"scripts/publica.sh "--aplica""#, #""scripts/publica.sh" --aplica"#, "cd scripts && ./publica.sh --aplica",
+            "sign_update x.zip", "\(bin)/sign_update x.zip", "./sign_update x.zip", "env -u GH_TOKEN \(bin)/sign_update x.zip", "env sign_update x.zip", "command sign_update x.zip",
+            "exec sign_update x.zip", "PATH=\(bin):$PATH sign_update x.zip", "\(bin)/sign_up* x.zip", #""\#(bin)/sign_update" x.zip"#,
+            "generate_keys", "generate_keys -x clau", "\(bin)/generate_keys", "./generate_keys -p", "env generate_keys", "command generate_keys", "exec generate_keys",
+            "PATH=\(bin):$PATH generate_keys", "\(bin)/generate_appcast carpeta", "generate_appcast carpeta",
+        ] {
+            #expect(bloqueja(ordre), "\(ordre)")
+        }
+        // El que fa cada dia qualsevol agent ha de continuar passant.
+        for ordre in ["scripts/publica.sh", "GH_TOKEN=x scripts/publica.sh", "scripts/test.sh", "swift build", "scripts/build-app.sh release", "grep -n sign_update scripts/publica.sh"] {
+            #expect(!bloqueja(ordre), "\(ordre)")
         }
     }
 

@@ -31,7 +31,17 @@
       "Bash(*/generate_keys*)",
       "Bash(sign_update*)",
       "Bash(*/sign_update*)",
-      "Bash(*publica.sh --aplica*)"
+      "Bash(*generate_appcast*)",
+      "Bash(*Sparkle/bin/*)",
+      "Bash(env *generate_keys*)",
+      "Bash(env *sign_update*)",
+      "Bash(command *generate_keys*)",
+      "Bash(command *sign_update*)",
+      "Bash(exec *generate_keys*)",
+      "Bash(exec *sign_update*)",
+      "Bash(PATH=*generate_keys*)",
+      "Bash(PATH=*sign_update*)",
+      "Bash(*publica.sh*--aplica*)"
     ]
   }
 }
