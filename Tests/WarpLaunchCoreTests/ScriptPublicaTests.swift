@@ -116,7 +116,9 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
                 /usr/bin/jq -n --arg commit "$GH_FALS_COMMIT" '{commit: {sha: $commit}}' | /usr/bin/jq -r "$FILTRE"
                 exit 0
             fi
-            /usr/bin/jq -n --arg contingut "$(/usr/bin/base64 < "$GH_FALS_RECEPTA" | /usr/bin/fold -w 60)" --arg blob "$BLOB" \
+            CONTINGUT="$(/usr/bin/base64 < "$GH_FALS_RECEPTA" | /usr/bin/fold -w 60)"
+            [[ -z "${GH_FALS_TRUNCA:-}" ]] || CONTINGUT="${CONTINGUT:0:$GH_FALS_TRUNCA}"
+            /usr/bin/jq -n --arg contingut "$CONTINGUT" --arg blob "$BLOB" \
                 --arg codificacio "${GH_FALS_CODIFICACIO:-base64}" \
                 '{type: "file", encoding: $codificacio, sha: $blob, content: ($contingut + "\n")}' | /usr/bin/jq -r "$FILTRE"
             [[ -z "${GH_FALS_CANVIA_EN_LLEGIR:-}" ]] || printf '# un altre canvi\n' >> "$GH_FALS_RECEPTA"
@@ -352,6 +354,20 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(sortida.contains("com s'esperava"))
         #expect(!b.compilat)
         #expect(!b.ordresGh.contains("release create"))
+    }
+
+    /// El contingut descodificat ha de ser el del blob que GitHub diu: el `base64` de macOS no falla amb una entrada tallada.
+    /// Tallat aquí, encara hi ha les línies `version` i `sha256`.
+    @Test(arguments: [("GH_FALS_TRUNCA", "200"), ("GH_FALS_BLOB", "xyz"), ("GH_FALS_BLOB", String(repeating: "0", count: 40))])
+    func siElContingutNoEsElDelBlobNoEsPublica(clau: String, valor: String) throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging([clau: valor]) { $1 })
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains("com s'esperava"), "\(sortida)")
+        #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+        #expect(!b.compilat)
+        #expect(!b.ordresGh.contains("release create"))
+        #expect(!b.ordresGh.contains("--method PUT"))
     }
 
     /// Exactament una línia `version` i una `sha256`, amb la forma de la recepta: qualsevol altra cosa es refusa.

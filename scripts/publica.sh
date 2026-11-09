@@ -93,8 +93,9 @@ if ! RESPOSTA="$(gh api "repos/$TAP/contents/$CAMI_RECEPTA?ref=main" --jq '.enco
     exit 1
 fi
 SHA_BLOB="$(sed -n 2p <<< "$RESPOSTA")"
-FORMA_BLOB='^[0-9a-f]{40}$'
-if [[ "$(sed -n 1p <<< "$RESPOSTA")" != base64 || ! "$SHA_BLOB" =~ $FORMA_BLOB ]] || ! sed 1,2d <<< "$RESPOSTA" | base64 --decode > "$RECEPTA"; then
+# El sha de git del que s'ha descodificat ha de ser el que diu GitHub: el base64 de macOS no falla amb una entrada tallada.
+if [[ "$(sed -n 1p <<< "$RESPOSTA")" != base64 ]] || ! sed 1,2d <<< "$RESPOSTA" | base64 --decode > "$RECEPTA" ||
+   [[ "$(git hash-object --no-filters -- "$RECEPTA")" != "$SHA_BLOB" ]]; then
     echo "publica: GitHub no ha tornat la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) com s'esperava. No s'ha publicat res." >&2
     exit 1
 fi
