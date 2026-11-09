@@ -149,9 +149,10 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
     @Test func elReiniciDeLaFinestraEscriuLIntent() throws {
         let b = try Banc()
         let m = b.model()
-        m.reiniciaDesDeLaFinestra(versio: "0.32.1")
+        m.reiniciaDesDeLaFinestra(versio: "0.32.1", ara: t)
         guard case let .llegit(intent) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
         #expect(intent.pendent == IntentActualitzacio.Pendent(objectiu: "0.32.1", tipus: .demanada, hora: t0))
+        #expect(m.estat == .aplicant("0.32.1") && m.aplicant, "fins que surt, no es pot començar res")
     }
 
     /// Amb el bloc, l'actualitzador també avisa del reinici: no pot canviar una automàtica per una demanada.
@@ -161,14 +162,14 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         m.reinicia(ara: t)
         #expect(m.aplicant)
         b.ara = t0.addingTimeInterval(5)
-        m.reiniciaDesDeLaFinestra(versio: "0.32.1")
+        m.reiniciaDesDeLaFinestra(versio: "0.32.1", ara: t + 5)
         guard case let .llegit(intent) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
         #expect(intent.pendent?.hora == t0)
     }
 
     @Test func unaVersioQueNoEsPotLlegirNoEsEscriu() throws {
         let b = try Banc()
-        b.model().reiniciaDesDeLaFinestra(versio: "1.0")
+        b.model().reiniciaDesDeLaFinestra(versio: "1.0", ara: t)
         #expect(b.magatzem.carrega() == .absent)
     }
 
@@ -496,6 +497,50 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         m.reinicia(ara: t)
         m.vigila(ara: t + 59)
         #expect(m.aplicant)
+        m.vigila(ara: t + 60)
+        #expect(m.estat == .aPunt("0.32.1") && !m.aplicant)
+    }
+
+    /// Registre de la ronda A, línia 19. Una sortida cancel·lada no és cap instal·lació fallida.
+    @Test func laSortidaCancellaLIntent() throws {
+        let b = try Banc()
+        let m = aPunt(b, intent: IntentActualitzacio(fallades: 1, versioFallada: "0.32.0"))
+        m.reinicia(ara: t)
+        guard case let .llegit(amb) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
+        #expect(amb.pendent != nil)
+        m.vigila(ara: t + 59)
+        guard case let .llegit(encara) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
+        #expect(encara.pendent != nil, "abans dels 60 s, l'app encara pot sortir")
+
+        m.vigila(ara: t + 60)
+        guard case let .llegit(sense) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
+        #expect(sense.pendent == nil && sense.fallades == 1 && sense.versioFallada == "0.32.0", "les fallades d'abans es queden")
+
+        let arrencada = IntentActualitzacio.enArrencar(magatzem: b.magatzem, versioActual: "0.31.9", ara: t0 + 3600, segonsEncesa: 86_400)
+        #expect(arrencada.efecte == .res, "\(arrencada.efecte)")
+        #expect(arrencada.intent.fallades == 1 && arrencada.intent.versioFallada == "0.32.0", "la 0.32.1 no ha fallat")
+    }
+
+    /// El mateix amb la finestra de l'actualitzador, on no hi ha bloc: torna a la versió trobada.
+    @Test func laSortidaCancellaLIntentTambeAlCamiDeLaFinestra() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.trobada("0.32.1"), ara: t)
+        m.reiniciaDesDeLaFinestra(versio: "0.32.1", ara: t)
+        m.vigila(ara: t + 60)
+        guard case let .llegit(intent) = b.magatzem.carrega() else { Issue.record("sense intent"); return }
+        #expect(intent.pendent == nil)
+        #expect(m.estat == .trobada("0.32.1") && m.boto == .actualitzaAra, "«Actualitza ara» torna a portar la finestra")
+        let arrencada = IntentActualitzacio.enArrencar(magatzem: b.magatzem, versioActual: "0.32.0", ara: t0 + 3600, segonsEncesa: 86_400)
+        #expect(arrencada.efecte != .fallada && arrencada.intent.fallades == 0)
+    }
+
+    /// Si no es pot treure, no fa res més: l'error només va al registre.
+    @Test func laSortidaCancellaTambeSiNoEsPotEscriure() throws {
+        let b = try Banc()
+        let m = aPunt(b)
+        m.reinicia(ara: t)
+        try b.trencaLaCarpeta()
         m.vigila(ara: t + 60)
         #expect(m.estat == .aPunt("0.32.1") && !m.aplicant)
     }

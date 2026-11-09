@@ -186,7 +186,7 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
 
     func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
         guard let versioInstallant else { return }
-        model?.reiniciaDesDeLaFinestra(versio: versioInstallant)
+        model?.reiniciaDesDeLaFinestra(versio: versioInstallant, ara: ara)
     }
 
     // MARK: - SPUStandardUserDriverDelegate

@@ -206,7 +206,8 @@ public final class Actualitzacions {
     }
 
     /// La finestra de l'actualitzador reinicia l'app: l'intent, per saber en arrencar si ha anat bé. Amb el bloc, ja l'ha escrit `aplica`.
-    public func reiniciaDesDeLaFinestra(versio: String) {
+    /// Com amb el bloc, `.aplicant`: si l'app no surt, `caducaEsperes` treu l'intent i torna enrere.
+    public func reiniciaDesDeLaFinestra(versio: String, ara: TimeInterval) {
         guard let entorn, let magatzem, !aplicant, PoliticaActualitzacions.Versio(versio) != nil else { return }
         var nou = intent
         nou.pendent = IntentActualitzacio.Pendent(objectiu: versio, tipus: .demanada, hora: entorn.rellotge())
@@ -216,6 +217,9 @@ public final class Actualitzacions {
         } catch {
             Registre.actualitzacions.error("no s'ha pogut escriure l'intent: \(error, privacy: .public)")
         }
+        aplicantDes = ara
+        quietDes = nil
+        estat = .aplicant(versio)
     }
 
     /// L'actualitzador ha canviat sense cap esdeveniment: si es pot comprovar, o quan es va comprovar per última vegada.
@@ -319,8 +323,21 @@ public final class Actualitzacions {
             pausaFins = ara + P.pausaEntreIntents
             self.aplicantDes = nil
             quietDes = nil
+            treuIntentPendent()
             estat = bloc != nil ? .aPunt(versio) : .trobada(versio)
         default: break
+        }
+    }
+
+    /// L'app no ha sortit: l'intent ja no val. Si es quedés escrit, una arrencada sense haver instal·lat res comptaria com a fallada,
+    /// i aquella versió ja no es reiniciaria sola.
+    private func treuIntentPendent() {
+        guard let magatzem, intent.pendent != nil else { return }
+        intent.pendent = nil
+        do {
+            try magatzem.desa(intent)
+        } catch {
+            Registre.actualitzacions.error("no s'ha pogut treure l'intent: \(error, privacy: .public)")
         }
     }
 
