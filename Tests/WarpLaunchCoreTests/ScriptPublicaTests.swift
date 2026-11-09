@@ -411,6 +411,23 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         try b.comprovaRefus(conte: "no té exactament una línia «  url")
     }
 
+    /// Una recepta que ja va per davant no es fa baixar de versió. Es compara com a nombres: la 0.100 és posterior a la 0.28.
+    @Test(arguments: ["0.29.0", "0.28.1", "0.100.0", "1.0.0"])
+    func unaReceptaMesNovaNoEsPublica(versio: String) throws {
+        let b = try Banc()
+        try Data(recepta(versio: versio).utf8).write(to: b.fitxerRecepta)
+        try b.comprovaRefus(conte: "més nova que la 0.28.0")
+    }
+
+    /// Una d'anterior o la mateixa sí: la 0.9 és anterior a la 0.28.
+    @Test(arguments: ["0.9.0", "0.27.99", "0.28.0"])
+    func unaReceptaAnteriorOIgualEsPublica(versio: String) throws {
+        let b = try Banc()
+        try Data(recepta(versio: versio).utf8).write(to: b.fitxerRecepta)
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+    }
+
     /// Sense l'autor del commit del tap a git config, no compila ni publica res.
     @Test(arguments: ["user.name", "user.email"])
     func senseLAutorNoEsPublica(clau: String) throws {

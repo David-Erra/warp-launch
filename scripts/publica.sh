@@ -9,7 +9,8 @@
 # - Només publica el que hi ha a origin/main, sense canvis per fer commit, i una versió que encara no hi sigui.
 # - Només amb la signatura «Warp Launch Dev» (D12): una app signada ad hoc no es pot instal·lar amb --github.
 # - Abans de compilar llegeix la recepta (Casks/warp-launch.rb del tap) i refusa publicar si no s'hi pot arribar, si no té exactament
-#   una línia `  version "X.Y.Z"`, una `  sha256 "…"` i la `  url` amb `#{version}`, o si falten git config user.name o user.email (l'autor del commit del tap).
+#   una línia `  version "X.Y.Z"`, una `  sha256 "…"` i la `  url` amb `#{version}`, si ja va per davant de VERSION, o si falten
+#   git config user.name o user.email (l'autor del commit del tap).
 # - Si, ja publicada la versió, no pot escriure la recepta, no esborra res: diu què cal canviar a mà i surt amb el codi 2.
 # - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre.
 # - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP i WARP_LAUNCH_REQUISIT canvien el repo de GitHub, el tap i el requisit de la signatura.
@@ -114,6 +115,11 @@ if [[ "$(LC_ALL=C grep -aFxc -- "$URL_RECEPTA" "$RECEPTA" || true)" != 1 ]]; the
 fi
 VERSIO_ABANS="$(LC_ALL=C sed -nE 's/^  version "(.*)"$/\1/p' "$RECEPTA")"
 SHA256_ABANS="$(LC_ALL=C sed -nE 's/^  sha256 "(.*)"$/\1/p' "$RECEPTA")"
+# Si la recepta ja va per davant, VERSION és enrere: qui fes `brew upgrade` baixaria de versió.
+if [[ "$(printf '%s\n%s\n' "$VERSIO_ABANS" "$VERSIO" | LC_ALL=C sort -t. -k1,1n -k2,2n -k3,3n | tail -n 1)" != "$VERSIO" ]]; then
+    echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) ja és a la ${VERSIO_ABANS}, més nova que la ${VERSIO} de VERSION: qui l'actualitzés baixaria de versió. No s'ha publicat res." >&2
+    exit 1
+fi
 
 scripts/build-app.sh
 if [[ "$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist" 2>/dev/null || true)" != "$VERSIO" ]]; then
