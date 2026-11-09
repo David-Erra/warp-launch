@@ -28,6 +28,7 @@ struct VistaImportacio: View {
                 if full.importacio != nil {
                     Button(WarpLaunch.ordreActualitzaEstat) { Task { await full.llegeix() } }
                         .help("\(WarpLaunch.ordreActualitzaEstat), per si hi has obert o tancat res")
+                        .disabled(!full.potLlegir)
                 }
                 Spacer()
                 Button("Cancel·la", role: .cancel) { tanca() }
@@ -60,6 +61,7 @@ struct VistaImportacio: View {
                     .symbolRenderingMode(.multicolor)
                     .textSelection(.enabled)
                 Button("Torna-ho a provar") { Task { await full.llegeix() } }
+                    .disabled(!full.potLlegir)
             }
         case let .senseFinestres(motiu):
             Section(full.titol) {

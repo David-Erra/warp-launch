@@ -124,8 +124,8 @@ extension Obertura {
             return .mostra
         }
         // En David pot haver obert un altre full abans: no es trepitja ni s'amaga.
-        guard estat == .cap else {
-            Registre.obertura.notice("en iniciar sessió: ja hi ha una altra obertura")
+        guard estat == .cap, !editor.demanaImportacio else {
+            Registre.obertura.notice("en iniciar sessió: ja hi ha una altra obertura o el full d'importar")
             return .res
         }
         guard potObrirTot else {

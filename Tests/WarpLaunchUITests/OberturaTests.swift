@@ -240,6 +240,14 @@ private struct NoObre: Error, CustomStringConvertible {
     var description: String { "Warp no respon" }
 }
 
+/// Quantes vegades s'ha llegit Warp: el lector d'`EstatWarp` corre fora del fil principal.
+private final class ComptaLectures: @unchecked Sendable {
+    private let pany = NSLock()
+    private var n = 0
+    var valor: Int { pany.withLock { n } }
+    func suma() { pany.withLock { n += 1 } }
+}
+
 @MainActor
 @Suite struct OberturaTests {
     /// Les pestanyes en bypass porten l'entorn de Claude, que s'escriu abans d'obrir; un terminal, no.
@@ -949,6 +957,143 @@ private struct NoObre: Error, CustomStringConvertible {
         #expect(warp.estat != .senseLlegir)
     }
 
+    /// Importar també activa la restauració de Warp (D19), i el menú Arxiu i l'estat buit obren el full amb la mateixa ordre
+    /// (`demanaImportar`). No mentre s'obre res a Warp ni s'aplica una actualització; i tampoc amb el full d'obrir a la vista,
+    /// encara que només esperi el clic: «Obre» començaria a obrir amb la lectura a mig fer.
+    @Test func importarNoEsPotMentreSObreNiSActualitza() async throws {
+        let b = try Banc()
+        var aplicant = false
+        b.obertura.aplicantActualitzacio = { aplicant }
+        #expect(b.editor.potImportar)
+
+        await b.obertura.demana(id(100))
+        let proposta = try #require(b.proposta)
+        for estat: Obertura.Estat in [.preparant("W", UUID()), .preparantTot(UUID()), .confirmant(proposta),
+                                      .obrint(proposta, .comprovant), .noEsPot("no")] {
+            b.obertura.estat = estat
+            #expect(!b.editor.potImportar, "\(estat)")
+            b.editor.demanaImportar()
+            #expect(!b.editor.demanaImportacio, "si el clic arriba igualment, no fa res: \(estat)")
+        }
+
+        b.obertura.estat = .cap
+        aplicant = true
+        #expect(!b.editor.potImportar, "aplicant")
+        b.editor.demanaImportar()
+        #expect(!b.editor.demanaImportacio, "si el clic arriba igualment, no fa res")
+
+        aplicant = false
+        #expect(b.editor.potImportar)
+        b.editor.demanaImportar()
+        #expect(b.editor.demanaImportacio)
+        #expect(!b.editor.potImportar, "ja és obert")
+    }
+
+    /// El botó de l'estat buit: sense configuració no hi ha res per obrir, però una actualització sí que es pot estar aplicant.
+    @Test func senseConfiguracioTampocNoEsPotImportarMentreSActualitza() throws {
+        let b = try Banc()
+        let magatzem = MagatzemConfiguracio(carpeta: b.carpeta.appending(path: "config"), inici: "/Users/prova")
+        try FileManager.default.removeItem(at: magatzem.fitxer)
+        b.editor.carrega()
+        #expect(b.editor.estat == .senseConfiguracio && b.editor.potImportar)
+
+        var aplicant = true
+        b.obertura.aplicantActualitzacio = { aplicant }
+        #expect(!b.editor.potImportar)
+        b.editor.demanaImportar()
+        #expect(!b.editor.demanaImportacio, "si el clic arriba igualment, no fa res")
+
+        aplicant = false
+        b.editor.demanaImportar()
+        #expect(b.editor.demanaImportacio)
+    }
+
+    /// El full d'importar llegeix Warp en obrir-se i amb dos botons (`potLlegir`). Si en obrir-se no pot, ho diu i no es queda
+    /// llegint; si ja mostra una previsualització, la previsualització es queda.
+    @Test func elFullDImportarNoLlegeixMentreSObreNiSActualitza() async throws {
+        let b = try Banc()
+        let lectures = ComptaLectures()
+        let warp = EstatWarp(lector: {
+            lectures.suma()
+            return abans
+        })
+        let full = try #require(FullImportacio(editor: b.editor, warp: warp))
+        var aplicant = false
+        b.obertura.aplicantActualitzacio = { aplicant }
+        #expect(full.potLlegir)
+
+        b.obertura.estat = .preparant("W", UUID())
+        #expect(!full.potLlegir)
+        await full.llegeix()
+        #expect(full.estat == .error(FullImportacio.motiuNoEsPotLlegir), "en obrir-se, no es queda llegint")
+        #expect(lectures.valor == 0 && warp.estat == .senseLlegir)
+
+        b.obertura.estat = .cap
+        #expect(full.potLlegir)
+        await full.llegeix()
+        let previsualitzada = try #require(full.importacio)
+        #expect(lectures.valor == 1)
+
+        aplicant = true
+        #expect(!full.potLlegir)
+        await full.llegeix()
+        #expect(full.importacio == previsualitzada, "la previsualització es queda")
+        #expect(lectures.valor == 1, "si el clic arriba igualment, no llegeix")
+
+        aplicant = false
+        b.obertura.estat = .preparantTot(UUID())
+        #expect(!full.potLlegir)
+        await full.llegeix()
+        #expect(full.importacio == previsualitzada && lectures.valor == 1)
+    }
+
+    /// «Lliga amb Warp…» també llegeix Warp amb les finestres (D19). El full d'obrir ja l'impedia; una actualització que s'aplica,
+    /// no. I, amb el full de lligar a la vista, no es pot importar.
+    @Test func lligarNoEsPotMentreSActualitza() async throws {
+        let b = try Banc()
+        var llegides = 0
+        let lligam = Lligam(editor: b.editor, sessions: b.sessions, inici: "/Users/prova", llegeix: {
+            llegides += 1
+            return .success(abans)
+        }, ambRefresc: { false })
+        var aplicant = false
+        b.obertura.aplicantActualitzacio = { aplicant }
+        #expect(lligam.potLligar)
+
+        aplicant = true
+        #expect(!lligam.potLligar)
+        await lligam.demana()
+        #expect(lligam.estat == .cap && llegides == 0, "si el clic arriba igualment, no fa res")
+
+        aplicant = false
+        #expect(lligam.potLligar)
+        await lligam.demana()
+        #expect(lligam.mostraFull && llegides == 1)
+
+        b.editor.lligam = lligam
+        #expect(!b.editor.potImportar)
+        lligam.cancela()
+        #expect(b.editor.potImportar)
+    }
+
+    /// Amb el full d'importar obert, el menú de la icona encara es podia fer servir: la lectura del full activa la restauració de
+    /// Warp (D19), i no pot coincidir amb una obertura. Tampoc amb les altres vies: totes passen per `potObrir` i `potObrirTot`.
+    @Test func ambElFullDImportarObertNoEsComencaAObrir() async throws {
+        let b = try Banc()
+        #expect(b.editor.potObrir(id(100)) && b.editor.potObrirTot)
+
+        b.editor.demanaImportacio = true
+        #expect(!b.obertura.potObrir(id(100)))
+        #expect(!b.obertura.potObrirTot)
+        #expect(!b.editor.potObrir(id(100)) && !b.editor.potObrirTot)
+        await b.obertura.demana(id(100))
+        await b.obertura.demanaTot()
+        #expect(b.obertura.estat == .cap && b.llegides == 0, "si el clic arriba igualment, no fa res")
+
+        b.editor.demanaImportacio = false
+        #expect(b.editor.potObrir(id(100)) && b.editor.potObrirTot)
+    }
+
     /// Una pestanya tancada fa menys d'1 minut (el seu Claude encara és viu): el full ho diu, i no s'obre res.
     @Test func ambUnaPestanyaTancadaFaPocNoSObre() async throws {
         let b = try Banc()
@@ -1425,6 +1570,15 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         let abans = b.obertura.estat
         #expect(await b.obertura.enIniciarSessio() == .res)
         #expect(b.obertura.estat == abans)
+    }
+
+    /// El full d'importar obert tampoc no es trepitja, i l'editor no s'amaga: «Obre-ho tot» no es pot demanar (`potObrirTot`).
+    @Test func noTrepitjaElFullDImportar() async throws {
+        let b = try Banc(configuracio: duesFinestres)
+        b.lectures = [senseBase([])]
+        b.editor.demanaImportacio = true
+        #expect(await b.obertura.enIniciarSessio() == .res)
+        #expect(b.obertura.estat == .cap && b.llegides == 0)
     }
 
     /// En David demana «Obre a Warp…» mentre es prepara el full de l'inici: el seu es queda, i l'editor no s'amaga (revisió).

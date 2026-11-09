@@ -46,10 +46,11 @@ public final class Lligam {
 
     public var mostraFull: Bool { estat != .cap }
 
-    /// La configuració és oberta, `estat.json` es pot fer servir i no hi ha cap altre full.
+    /// La configuració és oberta, `estat.json` es pot fer servir, no hi ha cap altre full i no s'aplica cap actualització: llegeix
+    /// Warp amb les finestres (D19), i l'app sortiria a mig refresc (`Obertura.impedeixRefresc`).
     public var potLligar: Bool {
         estat == .cap && editor.estat == .oberta && sessions.motiuNoEsPotObrir == nil && !editor.demanaImportacio
-            && !editor.demanaNovaPestanya && editor.obertura?.mostraFull != true
+            && !editor.demanaNovaPestanya && editor.obertura?.mostraFull != true && editor.obertura?.impedeixRefresc != true
     }
 
     /// Llegeix Warp i prepara el full. No desa res.

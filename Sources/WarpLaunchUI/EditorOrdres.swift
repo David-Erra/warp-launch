@@ -59,9 +59,18 @@ extension Editor {
     /// la configuració per sota).
     public var ordresActives: Bool { potEditar && !demanaImportacio && !demanaNovaPestanya }
 
-    /// Importa de Warp…: amb configuració o sense, i sense cap full ni diàleg obert.
+    /// Importa de Warp…: amb configuració o sense, i sense cap full ni diàleg obert. El full llegeix Warp amb les finestres, que
+    /// activa uns segons la restauració (D19): per això, no mentre s'obre res a Warp ni mentre s'aplica una actualització
+    /// (`Obertura.impedeixRefresc`). I tampoc amb el full d'obrir a la vista, encara que només esperi el clic: «Obre» començaria
+    /// a obrir amb la lectura a mig fer.
     public var potImportar: Bool {
         (estat == .oberta || estat == .senseConfiguracio) && !demanaImportacio && !demanaNovaPestanya
+            && obertura?.impedeixRefresc != true && obertura?.mostraFull != true && lligam?.mostraFull != true
+    }
+
+    /// «Importa de Warp…» o «Torna a importar-ho tot de Warp…» (l'estat buit i el menú Arxiu): obre el full, que llegeix Warp.
+    public func demanaImportar() {
+        if potImportar { demanaImportacio = true }
     }
 
     public var potNovaPestanya: Bool { ordresActives && potAfegirPestanya }

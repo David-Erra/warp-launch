@@ -39,6 +39,19 @@ public struct ItemActualitzaWarp: View {
     }
 }
 
+/// «Importa de Warp…» o «Torna a importar-ho tot de Warp…», al menú Arxiu. Una vista, com `ItemActualitzaWarp`, perquè observi
+/// l'obertura i l'actualització (`Editor.potImportar`).
+private struct ItemImportaWarp: View {
+    let editor: Editor?
+
+    var body: some View {
+        Button(editor?.estat == .oberta ? "Torna a importar-ho tot de Warp…" : "Importa de Warp…") {
+            editor?.demanaImportar()
+        }
+        .disabled(editor?.potImportar != true)
+    }
+}
+
 /// Ordres de la barra de menús (docs/disseny.md, «Ordres»). Una ordre que no s'aplica surt desactivada; Edició
 /// (Desfés, Retalla, Copia, Enganxa, Elimina) és la del sistema, i hi arriba des de la llista i la barra lateral.
 public struct OrdresEditor: Commands {
@@ -69,10 +82,7 @@ public struct OrdresEditor: Commands {
             Divider()
             // Amb importar i lligar, que també llegeixen Warp amb les finestres. No depèn de l'editor (com al menú de la icona).
             ItemActualitzaWarp(ordre: actualitzaWarp)
-            Button(editor?.estat == .oberta ? "Torna a importar-ho tot de Warp…" : "Importa de Warp…") {
-                editor?.demanaImportacio = true
-            }
-            .disabled(editor?.potImportar != true)
+            ItemImportaWarp(editor: editor)
             // Només desa a `estat.json`, i amb el full: no obre ni canvia res.
             Button("Lliga amb Warp…") { editor?.demanaLligam() }
                 .disabled(editor?.potLligar != true)

@@ -2291,6 +2291,36 @@ private let prohibidesArrossegar = [
         #expect(ordres.contains("Torna a importar-ho tot de Warp…"))
     }
 
+    /// Importar i lligar llegeixen Warp amb les finestres, que activa uns segons la restauració (D19). Les proves del model no
+    /// veuen les vistes: que totes les vies passin per la seva condició. I una lectura amb finestres nova s'ha de decidir aquí.
+    @Test func lesLecturesAmbFinestresPassenPerLaSevaCondicio() throws {
+        let codi = try fitxers("Sources")
+        let liniesDeCodi = codi.flatMap { f in
+            f.text.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.map { (ruta: f.ruta, text: String($0)) }
+        }
+        func text(_ ruta: String) throws -> String { try #require(codi.first { $0.ruta == ruta }?.text) }
+        let ordres = try text("Sources/WarpLaunchUI/Ordres.swift"), vistaEditor = try text("Sources/WarpLaunchUI/VistaEditor.swift")
+        let vistaImportacio = try text("Sources/WarpLaunchUI/VistaImportacio.swift")
+
+        // Un sol lloc obre el full d'importar, amb `potImportar`; i els dos botons que el demanen es desactiven amb la mateixa condició.
+        #expect(liniesDeCodi.filter { $0.text.contains("demanaImportacio = true") }.map(\.ruta) == ["Sources/WarpLaunchUI/EditorOrdres.swift"])
+        #expect(try text("Sources/WarpLaunchUI/EditorOrdres.swift").contains("if potImportar { demanaImportacio = true }"))
+        #expect(ordres.contains("editor?.demanaImportar()") && ordres.contains(".disabled(editor?.potImportar != true)"))
+        #expect(ordres.components(separatedBy: "ItemImportaWarp(editor: editor)").count == 2, "una vista: ha d'observar l'obertura")
+        #expect(vistaEditor.contains("editor.demanaImportar()") && vistaEditor.contains(".disabled(!editor.potImportar)"))
+
+        // El full llegeix en obrir-se (la condició és al model) i amb dos botons, que es desactiven.
+        #expect(vistaImportacio.components(separatedBy: "await full.llegeix()").count == 4)
+        #expect(vistaImportacio.components(separatedBy: ".disabled(!full.potLlegir)").count == 3)
+
+        // Qui llegeix amb finestres: la declaració, «Actualitza l'estat de Warp», el full d'importar i «Lliga amb Warp…».
+        #expect(liniesDeCodi.filter { $0.text.contains("llegeixAmbFinestres()") }.map(\.ruta).sorted()
+            == ["Sources/WarpLaunchApp/WarpLaunchApp.swift", "Sources/WarpLaunchUI/EditorOrdres.swift",
+                "Sources/WarpLaunchUI/EstatWarp.swift", "Sources/WarpLaunchUI/FullImportacio.swift"])
+        #expect(try text("Sources/WarpLaunchApp/WarpLaunchApp.swift")
+            .contains("Lligam(editor: editor, sessions: sessions, inici: inici, llegeix: { await warp.llegeixAmbFinestres() },"))
+    }
+
     /// Substituir el grup `.saveItem` treu «Tanca» (⌘W) i «Tanca-ho tot» (⌥⌘W) del menú Fitxer.
     @Test func tancaTeLaSevaDrecera() throws {
         let ordres = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/Ordres.swift"), encoding: .utf8)

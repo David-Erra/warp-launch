@@ -61,9 +61,10 @@ private struct SenseConfiguracio: View {
                 Label("Configuració de prova: \(carpetaDeProva)", systemImage: "testtube.2")
             }
         } actions: {
-            Button("Importa de Warp…") { editor.demanaImportacio = true }
+            Button("Importa de Warp…") { editor.demanaImportar() }
                 .buttonStyle(.borderedProminent)
                 .help("Llegeix Warp i mostra què se n'importaria, abans de crear res")
+                .disabled(!editor.potImportar)
             Button("Comença en blanc") { editor.comencaEnBlanc() }
         }
     }

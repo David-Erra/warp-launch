@@ -44,8 +44,21 @@ public final class FullImportacio {
         self.warp = warp
     }
 
-    /// Torna a llegir Warp (en obrir el full i amb «Actualitza l'estat de Warp»).
+    /// Si el full pot llegir Warp: la lectura activa uns segons la restauració (D19), i no es pot fer mentre s'obre res a Warp
+    /// ni mentre s'aplica una actualització (`Obertura.impedeixRefresc`). Els botons del full es desactiven.
+    public var potLlegir: Bool { editor.obertura?.impedeixRefresc != true }
+
+    /// Per què el full no ha pogut llegir Warp en obrir-se (`potLlegir`).
+    static let motiuNoEsPotLlegir = "ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. "
+        + "Torna-ho a provar quan acabi."
+
+    /// Torna a llegir Warp (en obrir el full, amb «Actualitza l'estat de Warp» i amb «Torna-ho a provar»). Si ara no es pot
+    /// (`potLlegir`), el que el full ja mostra es queda; només en obrir-se, sense res per mostrar, diu per què.
     public func llegeix() async {
+        guard potLlegir else {
+            if estat == .llegint { estat = .error(Self.motiuNoEsPotLlegir) }
+            return
+        }
         estat = .llegint
         avisosLectura = []
         switch await warp.llegeixAmbFinestres() {

@@ -176,9 +176,10 @@ public final class Obertura {
     public var impedeixRefresc: Bool { estaObrint || aplicantActualitzacio() }
 
     /// Si es pot començar a obrir aquesta finestra: s'ha acceptat el consentiment (D-P4), la configuració és oberta, la
-    /// finestra té pestanyes, no hi ha cap altra obertura en curs i `estat.json` es pot fer servir.
+    /// finestra té pestanyes, no hi ha cap altra obertura en curs ni el full d'importar obert, que llegeix Warp amb les finestres
+    /// (D19; des del menú de la icona, es podria demanar igualment), i `estat.json` es pot fer servir.
     public func potObrir(_ finestra: Finestra.ID?) -> Bool {
-        guard estat == .cap, !aplicantActualitzacio(), consentiment.potContinuar, editor.estat == .oberta,
+        guard estat == .cap, !aplicantActualitzacio(), !editor.demanaImportacio, consentiment.potContinuar, editor.estat == .oberta,
               sessions.motiuNoEsPotObrir == nil, let finestra else { return false }
         return editor.configuracio.finestres.first { $0.id == finestra }?.pestanyes.isEmpty == false
     }
