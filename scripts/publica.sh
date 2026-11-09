@@ -12,7 +12,7 @@
 #   una línia `  version "X.Y.Z"`, una `  sha256 "…"` i la `  url` amb `#{version}`, si ja va per davant de VERSION, o si falten
 #   git config user.name o user.email (l'autor del commit del tap).
 # - Si, ja publicada la versió, no pot escriure la recepta, no esborra res: diu què cal canviar a mà i surt amb el codi 2.
-# - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre.
+# - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre (la compilació no el veu).
 # - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP i WARP_LAUNCH_REQUISIT canvien el repo de GitHub, el tap i el requisit de la signatura.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -121,7 +121,8 @@ if [[ "$(printf '%s\n%s\n' "$VERSIO_ABANS" "$VERSIO" | LC_ALL=C sort -t. -k1,1n 
     exit 1
 fi
 
-scripts/build-app.sh
+# La compilació no necessita el token, i SwiftPM executa codi: que no el vegi.
+env -u GH_TOKEN -u GITHUB_TOKEN scripts/build-app.sh
 if [[ "$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist" 2>/dev/null || true)" != "$VERSIO" ]]; then
     echo "publica: «${APP}» no és la ${VERSIO}. No s'ha publicat res." >&2
     exit 1

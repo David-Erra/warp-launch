@@ -38,6 +38,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         var zip: URL { repo.appending(path: "build/WarpLaunch-0.28.0.zip") }
         var compilat: Bool { FileManager.default.fileExists(atPath: repo.appending(path: "build").path) }
         var fitxerPut: URL { carpeta.appending(path: "put.txt") }
+        var fitxerTokenCompilacio: URL { carpeta.appending(path: "token-compilacio.txt") }
         var fitxerZipPujat: URL { carpeta.appending(path: "zip-pujat.txt") }
         var zipPujat: String { ((try? String(contentsOf: fitxerZipPujat, encoding: .utf8)) ?? "").trimmingCharacters(in: .newlines) }
         /// Què ha rebut el PUT de la recepta: una línia `camp=valor` per cada `-f` (un valor amb salts de línia ocuparia més d'una línia).
@@ -71,6 +72,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             <key>CFBundleShortVersionString</key><string>$(cat VERSION)</string>
             </dict></plist>
             EOF
+            printf '%s' "${GH_TOKEN:-}${GITHUB_TOKEN:-}" > "$BUILD_FALS_TOKEN"
             printf '#!/bin/sh\nexit 0\n' > "$APP/Contents/MacOS/WarpLaunch"
             chmod 755 "$APP/Contents/MacOS/WarpLaunch"
             codesign --force --sign - --timestamp=none "$APP" 2>/dev/null
@@ -85,7 +87,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             // proves en posen de falses al PATH, només per a l'script.
             try Self.executable(carpeta.appending(path: "bin/gh"), #"""
             #!/bin/bash
-            echo "$*" >> "$GH_FALS_REGISTRE"
+            echo "${GH_TOKEN:+[token:$GH_TOKEN] }$*" >> "$GH_FALS_REGISTRE"
             case "$1 $2" in
                 "release view") [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1 ;;
                 "release list") echo "${GH_FALS_ANTERIOR:-}"; exit 0 ;;
@@ -162,6 +164,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
                 "WARP_LAUNCH_TAP": tapDeProva, "GH_FALS_TAP": tapDeProva, "GH_FALS_RECEPTA": fitxerRecepta.path,
                 "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
                 "GH_FALS_PUT": fitxerPut.path, "GH_FALS_ZIP_PUJAT": fitxerZipPujat.path, "GH_FALS_COMMIT": commitDelTap,
+                "BUILD_FALS_TOKEN": fitxerTokenCompilacio.path,
                 "LANG": "ca_ES.UTF-8", "LC_ALL": "ca_ES.UTF-8",
                 "PATH": carpeta.appending(path: "bin").path + ":/usr/bin:/bin",
             ]
@@ -616,6 +619,23 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(codi == 2, "\(sortida)")
         #expect(sortida.contains("Homebrew refusarà la 0.28.0"), "\(sortida)")
         #expect(!sortida.contains("continua instal·lant"), "\(sortida)")
+    }
+
+    /// El token només arriba a `gh`: ni a la compilació ni a cap missatge, tampoc quan falla l'escriptura.
+    @Test(arguments: [(true, [:]), (true, ["GH_FALS_PUT_FALLA": "1"]), (false, [:])] as [(Bool, [String: String])])
+    func elTokenNomesArribaAGh(aplica: Bool, extra: [String: String]) throws {
+        let token = "token-de-prova-1", altre = "token-de-prova-2"
+        let b = try Banc()
+        let entorn = Banc.requisitDeProva.merging(extra) { $1 }.merging(["GH_TOKEN": token, "GITHUB_TOKEN": altre]) { $1 }
+        let (codi, sortida) = aplica ? try b.executa("--aplica", entorn: entorn) : try b.executa(entorn: entorn)
+        #expect(codi == (extra.isEmpty ? 0 : 2), "\(sortida)")
+        #expect(!sortida.contains(token) && !sortida.contains(altre), "\(sortida)")
+        #expect(try String(contentsOf: b.fitxerTokenCompilacio, encoding: .utf8) == "")
+        #expect(b.ordresGh.contains("[token:\(token)] api repos/"), "\(b.ordresGh)")
+        if aplica {
+            #expect(b.ordresGh.contains("[token:\(token)] release create"), "\(b.ordresGh)")
+            #expect(b.ordresGh.contains("[token:\(token)] api --method PUT"), "\(b.ordresGh)")
+        }
     }
 
     /// El missatge final diu com es desfà tot: la versió i el commit del tap.
