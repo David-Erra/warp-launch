@@ -3,7 +3,7 @@
 App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestres i pestanyes de Warp,
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
-**Estat (08/11/2026, 0.31.3 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
+**Estat (09/11/2026, 0.31.4 al codi):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
 obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.28.0: el que
 aquí diu «des de la 0.29», «des de la 0.30» o «des de la 0.31» encara no s'ha publicat ni provat a l'app. Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
