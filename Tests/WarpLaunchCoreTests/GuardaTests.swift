@@ -356,11 +356,12 @@ private func lectorsDeWarpDeDebo(_ codi: [(ruta: String, text: String)]) throws 
 }
 
 /// Les línies de `Sources`, fora dels comentaris, que creen o declaren un lector de debò dels noms de `nom`, o que en diuen
-/// la ruta; `etiquetes`, les dels seus `init` (per als que es creen sense dir-ne el nom), i `rutes`, els seus fitxers.
+/// la ruta; `etiquetes`, les dels seus `init` (per als que es creen sense dir-ne el nom), i `rutes`, els seus fitxers. Un espai
+/// davant del parèntesi (`LectorWarp (ruta: r)`) compila igual, i també hi compta.
 private func lectorsDeDebo(_ codi: [(ruta: String, text: String)], nom: String, etiquetes: String,
                            rutes: [String]) throws -> [String] {
     let crea = try Regex(#"(^|[^A-Za-z0-9_])"# + nom
-        + #"(\(|\.(init|self|carpetaPerDefecte|rutaPerDefecte)(?![A-Za-z0-9_])|\??\s*=(?!=))"#)
+        + #"(\s*\(|\.(init|self|carpetaPerDefecte|rutaPerDefecte)(?![A-Za-z0-9_])|\??\s*=(?!=))"#)
     let aliesOExtensio = try Regex(#"(^|[^A-Za-z0-9_])(typealias|extension)(?![A-Za-z0-9_]).*[^A-Za-z0-9_]"# + nom
         + #"(?![A-Za-z0-9_])"#)
     let declaracio = try Regex(#"(^|[^A-Za-z0-9_])(struct|class|enum|actor|protocol)\s+"# + nom + #"(?![A-Za-z0-9_])"#)
@@ -370,7 +371,7 @@ private func lectorsDeDebo(_ codi: [(ruta: String, text: String)], nom: String, 
     let comencaAmbElNom = try Regex(#"^\.?([A-Za-z_][A-Za-z0-9_]*\.)*"# + nom + #"(?![A-Za-z0-9_]|\.[A-Z])"#)
     // Als seus fitxers: `Self(`, `.init(` i les rutes per defecte soles, i la declaració de qualsevol `init` (també `init?(`
     // i `init<T>(`; `self.init(` i `.init(` no la declaren).
-    let alSeuFitxer = try Regex(#"(^|[^A-Za-z0-9_])(Self(\(|\.init(?![A-Za-z0-9_]))|\.init\(|(carpeta|ruta)PerDefecte(?![A-Za-z0-9_]))"#
+    let alSeuFitxer = try Regex(#"(^|[^A-Za-z0-9_])(Self(\s*\(|\.init(?![A-Za-z0-9_]))|\.init\s*\(|(carpeta|ruta)PerDefecte(?![A-Za-z0-9_]))"#
         + #"|(^|[^A-Za-z0-9_.])init[?!]?\s*[(<]"#)
     return codi.flatMap { f in
         let linies = f.text.split(separator: "\n", omittingEmptySubsequences: false)
@@ -844,6 +845,7 @@ private let prohibidesArrossegar = [
                 transcripcions: LectorTranscripcions = .init(carpeta: c), confianca: LectorConfianca, usuari: String? = nil,
                 confianca: LectorConfianca? = LectorConfianca(ruta: LectorConfianca.rutaPerDefecte),
                 let t = WarpLaunchCore.LectorTranscripcions.init(carpeta: c)
+                let e = LectorConfianca (ruta: r)
                 let tipus = LectorConfianca.self
                 confianca: LectorConfianca
                     = .deDebo,
@@ -892,6 +894,7 @@ private let prohibidesArrossegar = [
                 static let deDebo = Self(ruta: r)
                 static var real: LectorConfianca { .init(ruta: r) }
                 static let altra = Self.init(ruta: r)
+                static let ambEspai = Self (ruta: r)
                 public init(ruta: URL = LectorConfianca.rutaPerDefecte) {
                 let r = Self.rutaPerDefecte
                 public init() { self.init(ruta: r) }
@@ -909,6 +912,7 @@ private let prohibidesArrossegar = [
             "\(diagnostic): transcripcions: LectorTranscripcions = .init(carpeta: c), confianca: LectorConfianca, usuari: String? = nil,",
             "\(diagnostic): confianca: LectorConfianca? = LectorConfianca(ruta: LectorConfianca.rutaPerDefecte),",
             "\(diagnostic): let t = WarpLaunchCore.LectorTranscripcions.init(carpeta: c)",
+            "\(diagnostic): let e = LectorConfianca (ruta: r)",
             "\(diagnostic): let tipus = LectorConfianca.self",
             "\(diagnostic): confianca: LectorConfianca = .deDebo,",
             "\(diagnostic): public typealias Transcripcions = WarpLaunchCore.LectorTranscripcions",
@@ -926,6 +930,7 @@ private let prohibidesArrossegar = [
             "\(rutesLectorsClaude[0]): static let deDebo = Self(ruta: r)",
             "\(rutesLectorsClaude[0]): static var real: LectorConfianca { .init(ruta: r) }",
             "\(rutesLectorsClaude[0]): static let altra = Self.init(ruta: r)",
+            "\(rutesLectorsClaude[0]): static let ambEspai = Self (ruta: r)",
             "\(rutesLectorsClaude[0]): public init(ruta: URL = LectorConfianca.rutaPerDefecte) {",
             "\(rutesLectorsClaude[0]): let r = Self.rutaPerDefecte",
             "\(rutesLectorsClaude[0]): public init() { self.init(ruta: r) }",
@@ -1021,6 +1026,7 @@ private let prohibidesArrossegar = [
                 ajustos: LectorAjustosWarp? = LectorAjustosWarp(ruta: LectorAjustosWarp.rutaPerDefecte),
                 lector: Lector = .deDebo,
                 let w = WarpLaunchCore.LectorWarp.init(ruta: r)
+                let e = LectorWarp (ruta: r)
                 let tipus = LectorAjustosWarp.self
                 lector: Lector
                     = .deDebo,
@@ -1068,6 +1074,7 @@ private let prohibidesArrossegar = [
                 static let deDebo = Self(ruta: r)
                 static var real: LectorWarp { .init(ruta: r) }
                 static let altra = Self.init(ruta: r)
+                static let ambEspai = Self (ruta: r)
                 public init(ruta: URL = LectorWarp.rutaPerDefecte) {
                 let r = Self.rutaPerDefecte
                 public init() { self.init(ruta: r) }
@@ -1091,6 +1098,7 @@ private let prohibidesArrossegar = [
             "\(diagnostic): ajustos: LectorAjustosWarp? = LectorAjustosWarp(ruta: LectorAjustosWarp.rutaPerDefecte),",
             "\(diagnostic): lector: Lector = .deDebo,",
             "\(diagnostic): let w = WarpLaunchCore.LectorWarp.init(ruta: r)",
+            "\(diagnostic): let e = LectorWarp (ruta: r)",
             "\(diagnostic): let tipus = LectorAjustosWarp.self",
             "\(diagnostic): lector: Lector = .deDebo,",
             "\(diagnostic): public typealias Ajustos = WarpLaunchCore.LectorAjustosWarp",
@@ -1111,6 +1119,7 @@ private let prohibidesArrossegar = [
             "\(warp): static let deDebo = Self(ruta: r)",
             "\(warp): static var real: LectorWarp { .init(ruta: r) }",
             "\(warp): static let altra = Self.init(ruta: r)",
+            "\(warp): static let ambEspai = Self (ruta: r)",
             "\(warp): public init(ruta: URL = LectorWarp.rutaPerDefecte) {",
             "\(warp): let r = Self.rutaPerDefecte",
             "\(warp): public init() { self.init(ruta: r) }",
