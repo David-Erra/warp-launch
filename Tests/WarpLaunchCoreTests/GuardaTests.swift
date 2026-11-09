@@ -2260,8 +2260,15 @@ private let prohibidesArrossegar = [
         #expect(app.components(separatedBy: "ItemActualitzacions(aplicacio: aplicacio)").count == 3, "al menú de l'app i al de la icona")
         // Un sol text, que fan servir els dos menús (per la vista) i el full d'importació.
         let codi = try fitxers("Sources")
-        #expect(codi.filter { $0.text.contains(#""Actualitza l'estat de Warp""#) }.map(\.ruta) == ["Sources/WarpLaunchCore/Versio.swift"])
+        // Les línies de codi: els comentaris sí que en poden parlar.
+        let liniesDeCodi = codi.flatMap { f in
+            f.text.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.map { (ruta: f.ruta, text: String($0)) }
+        }
+        #expect(liniesDeCodi.filter { $0.text.contains("Actualitza l'estat de Warp") }.map(\.ruta) == ["Sources/WarpLaunchCore/Versio.swift"])
         #expect(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaImportacio.swift" }?.text.contains("Button(WarpLaunch.ordreActualitzaEstat)") == true)
+        // El nom vell dins d'una frase visible, en minúscula (no «el JSON no es torna a llegir igual», que és una altra cosa).
+        let dinsDeFrase = try Regex(#"torna a llegir( Warp|\.")"#)
+        #expect(liniesDeCodi.filter { $0.text.contains(dinsDeFrase) }.map(\.ruta).isEmpty)
 
         #expect(WarpLaunch.ordreSobre == "Sobre l’app Warp Launch" && WarpLaunch.ordreSurt == "Surt de l’app Warp Launch")
         #expect(menuIcona.contains("Button(WarpLaunch.ordreSobre)"))
