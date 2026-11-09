@@ -65,7 +65,7 @@ public final class Editor {
     /// escriure el nom d'una altra fila: en tots aquests casos es desa (`acabaNom`).
     public private(set) var nomEnEdicio: ElementNom?
     public var textDelNom = ""
-    /// El full d'importació és obert (estat buit, o Fitxer › «Torna a importar-ho tot…»).
+    /// El full d'importació és obert (estat buit, o Arxiu › «Torna a importar-ho tot…»).
     public var demanaImportacio = false
     /// El diàleg de carpetes de «Nova pestanya…» és obert (⌘T, «+», el menú contextual o l'estat buit).
     public var demanaNovaPestanya = false

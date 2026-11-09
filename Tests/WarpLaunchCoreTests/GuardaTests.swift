@@ -2267,8 +2267,9 @@ private let prohibidesArrossegar = [
         #expect(menuIcona.contains("Button(WarpLaunch.ordreSobre)"))
         #expect(menuIcona.components(separatedBy: "Button(WarpLaunch.ordreSurt)").count == 3, "amb el permís i sense")
 
+        // «Fitxer ›»: el menú que es veu és «Arxiu» (`MainMenu.loctable` de SwiftUI).
         let vells = [#""Torna a llegir"#, #"«Torna a llegir"#, #"Obre la finestra a Warp…"#,
-                     #""Quant a "#, #"«Quant a"#, #""Surt de (Warp|\\\()"#, #"«Surt de Warp"#]
+                     #""Quant a "#, #"«Quant a"#, #""Surt de (Warp|\\\()"#, #"«Surt de Warp"#, #"Fitxer ›"#]
         let trobats = try aparicions(de: vells, a: codi)
         #expect(trobats.isEmpty, "\(trobats)")
         // Una altra funció: substitueix la configuració.

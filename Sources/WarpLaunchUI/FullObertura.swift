@@ -101,7 +101,7 @@ struct FullObertura: View {
             if potser > 0 {
                 Label(Plural.compta(potser, "pestanya sense lligam potser ja és oberta",
                                     "pestanyes sense lligam potser ja són obertes")
-                        + " a Warp: si ho són, cancel·la i fes Fitxer › Lliga amb Warp… abans d'obrir.",
+                        + " a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.",
                       systemImage: "link")
             }
             if let fase {
@@ -185,7 +185,7 @@ struct FullObertura: View {
             if pla.potserObertes > 0 {
                 Label(Plural.compta(pla.potserObertes, "pestanya sense lligam potser ja és oberta",
                                     "pestanyes sense lligam potser ja són obertes")
-                        + " a Warp: si ho són, cancel·la i fes Fitxer › Lliga amb Warp… abans d'obrir.",
+                        + " a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.",
                       systemImage: "link")
             }
             if let motiu = pla.motiuEspera {
