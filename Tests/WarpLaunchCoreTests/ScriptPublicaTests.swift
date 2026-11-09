@@ -594,7 +594,8 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(b.notes().contains("L'app s'actualitza sola"), "\(b.notes())")
         #expect(b.notes().contains("Va encès de sèrie"), "\(b.notes())")
         #expect(b.notes().contains("Configuració › «Actualitzacions» › «Actualitza automàticament»"), "\(b.notes())")
-        #expect(b.notes().contains("Si tens la 0.31.4 o una d'anterior, l'has d'actualitzar a mà una última vegada"), "\(b.notes())")
+        // La 0.31.5 és l'última publicada sense actualitzador: qui la tingui no es podria actualitzar sol.
+        #expect(b.notes().contains("Si tens la 0.31.5 o una d'anterior, l'has d'actualitzar a mà una última vegada"), "\(b.notes())")
     }
 
     /// Les notes diuen els commits des de l'última versió publicada.

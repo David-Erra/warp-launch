@@ -261,7 +261,7 @@ NOTES="build/notes-$VERSIO.md"
     echo
     echo "**L'app s'actualitza sola** des de la 0.32: un cop al dia mira a GitHub si hi ha una versió nova (GitHub veu la teva adreça IP i la versió de l'app) i, quan no la fas servir, es reinicia. Warp i Claude no es tanquen. Va encès de sèrie; per apagar-ho, Configuració › «Actualitzacions» › «Actualitza automàticament»."
     echo
-    echo "Si tens la 0.31.4 o una d'anterior, l'has d'actualitzar a mà una última vegada, amb les ordres d'aquí dalt. Des de llavors, és automàtic."
+    echo "Si tens la 0.31.5 o una d'anterior, l'has d'actualitzar a mà una última vegada, amb les ordres d'aquí dalt. Des de llavors, és automàtic."
 } > "$NOTES"
 
 # El fitxer que llegeix cada còpia. Sense l'eina d'appcasts de Sparkle, que escriu a ~/Library/Caches i toca el clauer. Tots els valors són segurs per a l'XML:
