@@ -568,7 +568,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
 
     /// Si GitHub no la dona com a última amb l'appcast, la versió es queda però la recepta no es toca, i ho diu.
     @Test(arguments: [
-        ["GH_FALS_DESPRES_ULTIMA": "v0.27.0"], ["GH_FALS_ACTIUS": "WarpLaunch-0.28.0.zip"], ["GH_FALS_DESPRES_FALLA": "1"],
+        ["GH_FALS_DESPRES_ULTIMA": "v0.27.0"], ["GH_FALS_ACTIUS": "WarpLaunch-0.28.0.zip"], ["GH_FALS_ACTIUS": "appcast.xml"], ["GH_FALS_DESPRES_FALLA": "1"],
     ])
     func siGitHubNoLaDonaComAUltimaAvisa(entorn: [String: String]) throws {
         let b = try Banc()

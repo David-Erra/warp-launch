@@ -372,11 +372,11 @@ canvia_la_recepta_a_ma() {
     fi
 }
 
-# GitHub ho ha de dir: si no, les còpies no la veuran, o veurien un 404.
-ESTAT_PUBLICADA="$(gh release view --repo "$REPO" --json tagName,assets --jq '.tagName, any(.assets[]; .name == "appcast.xml")' 2> /dev/null || true)"
+# GitHub ho ha de dir: si no, les còpies no la veuran, o veurien un 404 (de l'appcast, o del zip quan el vagin a baixar).
+ESTAT_PUBLICADA="$(gh release view --repo "$REPO" --json tagName,assets --jq ".tagName, (any(.assets[]; .name == \"appcast.xml\") and any(.assets[]; .name == \"$(basename "$ZIP")\"))" 2> /dev/null || true)"
 if [[ "$ESTAT_PUBLICADA" != "$ETIQUETA"$'\n'true ]]; then
     {
-        echo "publica: la ${ETIQUETA} ja és publicada a ${REPO}, però GitHub no la dona com a última amb el seu appcast.xml (no s'ha esborrat res): les còpies no s'hi actualitzaran. Mira-ho a la web de GitHub."
+        echo "publica: la ${ETIQUETA} ja és publicada a ${REPO}, però GitHub no la dona com a última amb el seu appcast.xml i el seu zip (no s'ha esborrat res): les còpies no s'hi actualitzaran. Mira-ho a la web de GitHub."
         if [[ "$RECEPTA_CANVIA" -eq 1 ]]; then canvia_la_recepta_a_ma; fi
         com_es_para
     } >&2
