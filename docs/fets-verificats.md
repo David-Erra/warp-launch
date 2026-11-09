@@ -755,6 +755,27 @@ Mesurat amb un programa a part, sense mostrar cap finestra, per a la 0.30.2 (`Vi
   fitxer i torna 0; amb un fitxer al destí, torna -1 amb `errno` `EEXIST` (17), i no toca ni el destí ni l'origen. És com
   `AjustRestauracio` crea `settings.toml` sense trepitjar el que Warp hagi creat mentrestant (0.31.2).
 
+## Homebrew (09/11/2026, Homebrew 7.0.12)
+
+Llegit al codi de Homebrew (`git describe`: `7.0.12-217-g25ccd49b8c`; les rutes són de `Library/Homebrew`) i provat amb
+`Casks/warp-launch.rb` en una carpeta temporal amb `--appdir`, sense tocar `/Applications`.
+- **`postflight` està deprecat** (`cask/dsl.rb`: `odeprecated`, amb `postflight_steps` com a substitut). `postflight_steps` corre
+  en una caixa de seguretat, que deixa escriure a `appdir` i al Caskroom (`cask/artifact/install_steps.rb`).
+  Un pas `run` amb `{{appdir}}` pot treure la quarantena.
+- **Taps que no són de confiança:** Homebrew en refusa les receptes (`brew trust`, `~/.homebrew/trust.json`; `trust.rb`).
+  `brew install` amb el nom complet (`david-erra/tap/warp-launch`) afegeix el tap i confia sol en aquesta recepta, no en tot el tap
+  (`cmd/install.rb`, `trust_fully_qualified_items!`). `brew audit` i `brew info`, amb el mateix nom, no hi confien sols.
+- **La quarantena:** el zip baixat la porta, i després del pas de la recepta l'app en té 0 atributs (`com.apple.quarantine`).
+- **`uninstall quit:`** també s'executa en actualitzar i, si ha tancat l'app, la torna a obrir amb `open -b`
+  (`cask/artifact/abstract_uninstall.rb` i `cask/upgrade.rb`, `reopen_apps_after_upgrade`). Si l'app no era oberta, no fa res.
+  **Això s'ha llegit al codi; no s'ha provat,** per no tancar l'app oberta.
+- **`depends_on macos: :tahoe`** vol dir «com a mínim macOS 26» (`cask/dsl/depends_on.rb`, comparador `>=`; `macos_version.rb`,
+  `tahoe: "26"`).
+- **`auto_updates true`** (llegit, per quan hi hagi Sparkle; `cask/cask.rb` i `env_config.rb`): per defecte, `brew upgrade` només
+  actualitza la recepta si la versió del paquet de l'app és més vella que la de la recepta.
+- **Provat de debò:** instal·lació des de zero sense el tap, actualització de la 0.28.0 a la 0.31.4 i desinstal·lació, amb la
+  recepta sense `quit`. **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de `quit` i reobrir.
+
 ## Foundation i JSON (03/11/2026, macOS 27.2)
 
 - **Claus repetides:** `JSONSerialization` i `JSONDecoder` es queden amb la **primera** aparició, sense error ni avís.
