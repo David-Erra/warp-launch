@@ -9,8 +9,8 @@ import Testing
 @MainActor
 @Suite struct PestanyaConfiguracioTests {
     @Test func generalPrimerIDespresLesPestanyesNoves() {
-        #expect(PestanyaConfiguracio.allCases == [.general, .pestanyesNoves])
-        #expect(PestanyaConfiguracio.allCases.map(\.titol) == ["General", "Pestanyes noves"])
+        #expect(PestanyaConfiguracio.allCases == [.general, .pestanyesNoves, .actualitzacions])
+        #expect(PestanyaConfiguracio.allCases.map(\.titol) == ["General", "Pestanyes noves", "Actualitzacions"])
         // settings.md: de dues a sis pestanyes; amb més, una barra lateral.
         #expect((2...6).contains(PestanyaConfiguracio.allCases.count))
     }

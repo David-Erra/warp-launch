@@ -29,6 +29,10 @@ struct WarpLaunchApp: App {
         .commands {
             OrdresEditor()
             SidebarCommands()
+            CommandGroup(after: .appInfo) {
+                ItemActualitzacions(aplicacio: aplicacio)
+                    .disabled(!aplicacio.consentiment.potContinuar)
+            }
         }
 
         Settings {
@@ -36,7 +40,8 @@ struct WarpLaunchApp: App {
                               surt: { NSApp.terminate(nil) }) {
                 VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
                                   deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada,
-                                  diagnostic: aplicacio.copiaDiagnostic, desinstallacio: aplicacio.desinstallacio)
+                                  diagnostic: aplicacio.copiaDiagnostic, desinstallacio: aplicacio.desinstallacio,
+                                  actualitzacions: aplicacio.actualitzacions)
             }
             .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
         }
@@ -344,6 +349,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+/// «Comprova si hi ha actualitzacions…» o, amb una versió a punt, reiniciar: al menú de la icona i al de l'app (docs/disseny.md, secció 11, 2.1).
+private struct ItemActualitzacions: View {
+    let aplicacio: Aplicacio
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        let actualitzacions = aplicacio.actualitzacions
+        Button(actualitzacions.textMenu) {
+            let ara = ProcessInfo.processInfo.systemUptime
+            switch actualitzacions.accioMenu {
+            case .reinicia:
+                actualitzacions.reinicia(ara: ara)
+            case .mostraIComprova:
+                aplicacio.activacio.posaAlDavant()
+                openSettings()
+                actualitzacions.mostraIComprova(ara: ara)
+            case .cap:
+                break
+            }
+        }
+        .disabled(actualitzacions.accioMenu == .cap)
+    }
+}
+
 /// Menú de la icona de la barra de menú (docs/disseny.md, «Menú de la icona»).
 private struct MenuIcona: View {
     let aplicacio: Aplicacio
@@ -443,6 +472,7 @@ private struct MenuIcona: View {
                 openSettings()
             }
             .keyboardShortcut(",")
+            ItemActualitzacions(aplicacio: aplicacio)
             Button("Quant a \(WarpLaunch.nom)") {
                 aplicacio.activacio.posaAlDavant()
                 NSApp.orderFrontStandardAboutPanel(nil)

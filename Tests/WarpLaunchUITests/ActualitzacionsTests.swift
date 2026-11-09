@@ -76,6 +76,62 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
 
 @MainActor
 @Suite struct ActualitzacionsTests {
+    // MARK: - El menú
+
+    @Test func elMenuComprovaOReinicia() throws {
+        let b = try Banc()
+        let m = b.model()
+        #expect(m.textMenu == "Comprova si hi ha actualitzacions…" && m.accioMenu == .mostraIComprova)
+        m.rep(.aPunt("0.32.1", aplica: b.aplica), ara: t)
+        #expect(m.textMenu == "Reinicia i actualitza a la 0.32.1" && m.accioMenu == .reinicia)
+    }
+
+    /// Decisió 5 de Sparkle: passats 7 dies a punt, el menú ho diu. Abans, no. No fa res més.
+    @Test func elMenuDiuElsDiesAPartirDeSet() throws {
+        let b = try Banc()
+        b.inactiu = 0
+        let m = aPunt(b)
+        b.ara = t0.addingTimeInterval(6 * 86_400 + 3000)
+        m.vigila(ara: t)
+        #expect(m.textMenu == "Reinicia i actualitza a la 0.32.1")
+        b.ara = t0.addingTimeInterval(7 * 86_400)
+        m.vigila(ara: t + 60)
+        #expect(m.textMenu == "Reinicia i actualitza a la 0.32.1 (fa 7 dies)")
+        #expect(b.blocs.isEmpty, "només l'avís: no aplica res")
+        b.ara = t0.addingTimeInterval(9 * 86_400 + 100)
+        m.vigila(ara: t + 120)
+        #expect(m.textMenu == "Reinicia i actualitza a la 0.32.1 (fa 9 dies)")
+    }
+
+    @Test func elMenuNoDeixaFerResAMigAplicarOAmbUnMotiu() throws {
+        let b = try Banc()
+        let m = aPunt(b)
+        b.models.obrint = true
+        m.vigila(ara: t)
+        #expect(m.accioMenu == .cap, "a mig obrir, no es pot reiniciar")
+        b.models.obrint = false
+        m.vigila(ara: t + 60)
+        m.reinicia(ara: t + 120)
+        #expect(m.aplicant && m.textMenu == "S'està actualitzant…" && m.accioMenu == .cap)
+    }
+
+    /// El menú porta a la pestanya d'actualitzacions, on es veu el resultat.
+    @Test func elMenuPortaALaPestanyaGeneralIComprova() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.pestanyaConfiguracio = .pestanyesNoves
+        m.mostraIComprova(ara: t)
+        #expect(m.pestanyaConfiguracio == .actualitzacions && m.estat == .comprovant && b.crides == ["comprovaIBaixa"])
+    }
+
+    @Test func aquestaCopiaNoSActualitzaIHoDiu() throws {
+        let m = Actualitzacions(noDisponible: .senseFeed)
+        #expect(!m.disponible)
+        #expect(m.textPeu == "Aquesta còpia no és una versió publicada i no s'actualitza sola.")
+        #expect(m.boto == .comprovaAra(actiu: false))
+        #expect(m.accioMenu == .mostraIComprova, "el menú porta a on es veu per què")
+    }
+
     // MARK: - El que necessita el servei
 
     @Test func elMotiuDeReiniciarDemanatEsElDelsModels() throws {

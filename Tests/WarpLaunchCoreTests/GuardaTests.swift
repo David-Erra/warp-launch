@@ -2394,6 +2394,21 @@ private let prohibidesArrossegar = [
         #expect(despres.count == 3 && despres[2].contains("bloc()"), "el bloc, després d'haver escrit l'intent")
     }
 
+    /// La secció, on toca; la versió, només aquí; i el menú, als dos llocs. El text del permís (decisió 7 de Sparkle), a la pantalla.
+    @Test func laSeccioIElsMenusDeLActualitzacio() throws {
+        let vista = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/VistaConfiguracio.swift"), encoding: .utf8)
+        // A la seva pestanya: a «General», passaria dels 640 pt.
+        #expect(vista.contains("            case .actualitzacions:\n                seccioActualitzacions\n"))
+        #expect(vista.components(separatedBy: "seccioActualitzacions").count == 3)
+        #expect(vista.components(separatedBy: #"LabeledContent("Versió""#).count == 2)
+        #expect(vista.contains("TabView(selection: $actualitzacions.pestanyaConfiguracio)"))
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        #expect(app.contains("CommandGroup(after: .appInfo) {\n                ItemActualitzacions(aplicacio: aplicacio)\n                    .disabled(!aplicacio.consentiment.potContinuar)"))
+        #expect(app.components(separatedBy: "ItemActualitzacions(aplicacio: aplicacio)").count == 3)
+        let permis = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/VistaConsentiment.swift"), encoding: .utf8)
+        #expect(permis.contains("Text(ConsentimentRestauracio.textActualitzacions)"))
+    }
+
     /// Una sola dependència, amb la versió exacta, i només per a l'app (regla 10).
     @Test func sparkleEsLUnicaDependenciaINomesDeLApp() throws {
         let paquet = try String(contentsOf: arrel.appending(path: "Package.swift"), encoding: .utf8)

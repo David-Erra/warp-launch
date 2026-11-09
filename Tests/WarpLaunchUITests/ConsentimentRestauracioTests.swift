@@ -71,6 +71,12 @@ private func consentiment(_ carpeta: Carpeta, _ ajust: AjustFals, _ demanats: Co
 
 @MainActor
 @Suite struct ConsentimentRestauracioTests {
+    /// Decisió 7 de Sparkle: la frase que veu qui accepta el permís.
+    @Test func laPantallaDiuQueLAppEsConnecta() {
+        #expect(ConsentimentRestauracio.textActualitzacions
+            == "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració.")
+    }
+
     /// Sense consentiment, no hi ha refresc, l'entorn de l'ajust ni es demana, i el que l'app fa cada minut, en obrir Warp
     /// i en sortir no crida mai `posa`. No es desa res: la propera vegada es torna a preguntar.
     @Test func senseConsentimentNoEsTocaLAjust() throws {

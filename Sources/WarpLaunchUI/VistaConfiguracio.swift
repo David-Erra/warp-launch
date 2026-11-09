@@ -4,18 +4,22 @@ import WarpLaunchCore
 /// Les pestanyes de la Configuració, en aquest ordre (settings.md de mac-design: una per tema, «General» primer). macOS en
 /// posa les icones a la barra d'eines, i el títol de la finestra és el de la pestanya que es veu. L'app no desa quina és
 /// l'última: no fa servir les preferències del sistema (prova de guarda), i la configuració JSON és d'en David.
-enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
+public enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
     /// «En iniciar sessió», «Fitxer», «Diagnòstic» i, al final, «Deixar de fer servir Warp Launch».
     case general
     /// La plantilla de les pestanyes noves, l'ordre que en surt i les opcions que la Configuració no canvia.
     case pestanyesNoves
+    /// La versió, si n'hi ha una de nova, i l'interruptor. A part de «General»: amb aquesta secció, «General» faria 738 pt, més dels 640
+    /// pt de la norma (mesurat amb un programa a part, sense finestres, 09/11/2026).
+    case actualitzacions
 
-    var id: Self { self }
+    public var id: Self { self }
 
     var titol: String {
         switch self {
         case .general: "General"
         case .pestanyesNoves: "Pestanyes noves"
+        case .actualitzacions: "Actualitzacions"
         }
     }
 
@@ -24,13 +28,14 @@ enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
         switch self {
         case .general: "gearshape"
         case .pestanyesNoves: "plus.rectangle.on.rectangle"
+        case .actualitzacions: "arrow.down.circle"
         }
     }
 }
 
-/// La finestra de Configuració (⌘,; docs/disseny.md, pas 11), en dues pestanyes (`PestanyaConfiguracio`): «General» (en
+/// La finestra de Configuració (⌘,; docs/disseny.md, pas 11), en tres pestanyes (`PestanyaConfiguracio`): «General» (en
 /// iniciar sessió, el fitxer, el diagnòstic, pla A4, i deixar de fer servir l'app, 0.31.0) i «Pestanyes noves» (la
-/// plantilla i l'ordre que en surt). Els canvis de la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`),
+/// plantilla i l'ordre que en surt) i «Actualitzacions». Els canvis de la plantilla van al Desfés d'aquesta finestra (`Editor.desferPlantilla`),
 /// no al de l'editor.
 public struct VistaConfiguracio: View {
     @Bindable var editor: Editor
@@ -41,9 +46,12 @@ public struct VistaConfiguracio: View {
     let diagnostic: CopiaDiagnostic
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch».
     @Bindable var desinstallacio: Desinstallacio
+    /// «Actualitzacions», i la pestanya que es veu.
+    @Bindable var actualitzacions: Actualitzacions
 
     public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio, diagnostic: CopiaDiagnostic,
-                desinstallacio: Desinstallacio) {
+                desinstallacio: Desinstallacio, actualitzacions: Actualitzacions) {
+        self.actualitzacions = actualitzacions
         self.editor = editor
         self.carpeta = carpeta
         self.deProva = deProva
@@ -58,9 +66,10 @@ public struct VistaConfiguracio: View {
 
     public var body: some View {
         // Sense cap marc al `TabView`: la mida és la de la pestanya que es veu (`formulari`).
-        TabView {
+        // La pestanya, al model i no en un `@State` (no compila amb les Command Line Tools): el menú hi ha de poder portar.
+        TabView(selection: $actualitzacions.pestanyaConfiguracio) {
             ForEach(PestanyaConfiguracio.allCases) { pestanya in
-                Tab(pestanya.titol, systemImage: pestanya.simbol) {
+                Tab(pestanya.titol, systemImage: pestanya.simbol, value: pestanya) {
                     formulari(pestanya)
                 }
             }
@@ -90,6 +99,8 @@ public struct VistaConfiguracio: View {
                 seccioDesinstallacio
             case .pestanyesNoves:
                 seccionsPestanyesNoves
+            case .actualitzacions:
+                seccioActualitzacions
             }
         }
         .formStyle(.grouped)
@@ -237,7 +248,56 @@ public struct VistaConfiguracio: View {
                     }
                 }
             }
+        }
+    }
+
+    /// L'actualització automàtica (docs/disseny.md, secció 11, 2.1): cap finestra de l'actualitzador sense demanar-la. Tots els textos i
+    /// el botó surten del model, amb proves.
+    private var seccioActualitzacions: some View {
+        Section {
             LabeledContent("Versió", value: WarpLaunch.versio)
+            if actualitzacions.disponible {
+                LabeledContent {
+                    botoActualitzacions
+                } label: {
+                    Text("Estat")
+                    Text(actualitzacions.text(avui: Date()))
+                }
+                if let avis = actualitzacions.textFallada ?? actualitzacions.textEspera {
+                    Text(avis)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let error = actualitzacions.errorPreparant {
+                    Label("No s'ha pogut preparar l'actualització: \(error)", systemImage: "exclamationmark.triangle.fill")
+                        .symbolRenderingMode(.multicolor)
+                }
+                Toggle("Actualitza automàticament", isOn: Binding { actualitzacions.automatiques } set: { actualitzacions.posaAutomatiques($0) })
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+            }
+        } header: {
+            Text("Actualitzacions")
+        } footer: {
+            Text(actualitzacions.textPeu)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private var botoActualitzacions: some View {
+        switch actualitzacions.boto {
+        case .cap:
+            EmptyView()
+        case let .comprovaAra(actiu):
+            Button("Comprova ara") { actualitzacions.comprova(ara: ProcessInfo.processInfo.systemUptime) }
+                .disabled(!actiu)
+        case .actualitzaAra:
+            Button("Actualitza ara") { actualitzacions.actualitzaAra() }
+        case let .reinicia(actiu):
+            Button("Reinicia i actualitza") { actualitzacions.reinicia(ara: ProcessInfo.processInfo.systemUptime) }
+                .disabled(!actiu)
         }
     }
 

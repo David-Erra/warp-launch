@@ -109,6 +109,13 @@ struct VistaConsentiment: View {
                 }
             }
 
+            // Amb una configuració de prova, l'app no s'actualitza.
+            if carpetaDeProva == nil {
+                apartat("Actualitzacions") {
+                    Text(ConsentimentRestauracio.textActualitzacions)
+                }
+            }
+
             // Amb un `preferencies.json` que no es pot llegir, l'error i on és el fitxer: la propera vegada no es pregunta.
             if case .error = consentiment.estat {
                 Label(consentiment.textSortir, systemImage: "exclamationmark.triangle.fill")

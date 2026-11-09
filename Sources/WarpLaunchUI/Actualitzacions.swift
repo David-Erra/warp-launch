@@ -92,6 +92,10 @@ public final class Actualitzacions {
     public private(set) var automatiques: Bool
     /// No s'ha pogut escriure l'intent, i per això no s'ha aplicat.
     public private(set) var errorPreparant: String?
+    /// La pestanya que es veu a la Configuració. No es desa. Viu aquí perquè el menú ha de poder portar-hi l'usuari.
+    public var pestanyaConfiguracio = PestanyaConfiguracio.general
+    /// Els dies que fa que la versió és a punt, si ja cal avisar-ho. Es posa al dia a cada `vigila`.
+    public private(set) var diesAvisAra: Int?
     /// Puja quan canvia alguna cosa de l'actualitzador que no arriba com a esdeveniment (`canviEntorn`): si es pot comprovar, per al botó.
     private var revisio = 0
 
@@ -134,6 +138,8 @@ public final class Actualitzacions {
         estat = .noDisponible(motiu.text)
         automatiques = false
     }
+
+    public var disponible: Bool { entorn != nil }
 
     /// Entre el bloc i la sortida: no es pot començar a obrir res (`Obertura.aplicantActualitzacio`).
     public var aplicant: Bool {
@@ -260,6 +266,7 @@ public final class Actualitzacions {
         automatiques = entorn.automatiques()
         let situacio = situacio(entorn, ara: ara, candidat: versio)
         posaMotius(situacio)
+        diesAvisAra = diesAPunt(avui: entorn.rellotge())
         guard automatiques, intents < P.maximIntents, pausaFins.map({ ara >= $0 }) ?? true, motiuAra == nil else {
             quietDes = nil
             return
@@ -420,6 +427,37 @@ public final class Actualitzacions {
         case .aPunt: .reinicia(actiu: motiuDemanatAra == nil)
         case .baixant, .aplicant: .cap
         }
+    }
+
+    /// L'ítem del menú: «Comprova…», o, si n'hi ha una a punt, reiniciar. Passats `diesAvis` dies a punt, també quants (decisió 5).
+    public var textMenu: String {
+        switch estat {
+        case let .aPunt(versio):
+            "Reinicia i actualitza a la \(versio)" + (diesAvisAra.map { " (fa \($0) dies)" } ?? "")
+        case .aplicant: "S'està actualitzant…"
+        default: "Comprova si hi ha actualitzacions…"
+        }
+    }
+
+    public enum AccioMenu: Equatable {
+        /// Porta l'usuari a la Configuració i comprova.
+        case mostraIComprova
+        case reinicia
+        case cap
+    }
+
+    public var accioMenu: AccioMenu {
+        switch estat {
+        case .aPunt: motiuDemanatAra == nil ? .reinicia : .cap
+        case .aplicant: .cap
+        default: .mostraIComprova
+        }
+    }
+
+    /// Va a la pestanya on es veu el resultat, i comprova. La finestra l'obre l'app.
+    public func mostraIComprova(ara: TimeInterval) {
+        pestanyaConfiguracio = .actualitzacions
+        comprova(ara: ara)
     }
 
     /// Els dies que fa que la versió és a punt, si en fa com a mínim `diesAvis` (decisió 5 de Sparkle).
