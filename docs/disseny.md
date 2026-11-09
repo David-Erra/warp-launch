@@ -353,7 +353,7 @@ i no toca el disc.
   - **sense sessió:** **només terminal** (0.29.1, D-P5a, en David, 07/11/2026): la plantilla amb `activat: false`, origen
     `.nomesTerminal`. Des de la 0.31.5, també en tornar a importar (en David, 09/11/2026, revisa D11): abans, sobre una
     configuració amb alguna pestanya, s'hi obria Claude amb la plantilla. També al CLI;
-  - **a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
+  - **sense sessió, a `~` o amb una carpeta que no existeix:** la plantilla amb `activat: false` («Activa Claude» ja hi troba
     les opcions);
   - **sessió viva en una altra carpeta que la pestanya (0.31.5, en David, 09/11/2026):** mana la de Claude, amb una nota
     (`.carpetaDeLaSessio` si Warp era a `~`, `.carpetesDiferents` si no), excepte si la de Claude és `~` o no existeix: es queda la
@@ -370,7 +370,7 @@ i no toca el disc.
 - **Notes** (el full i el CLI les mostren): primer missatge descartat, sessió que reprenia una conversa concreta
   (`--resume <id>`, `--session-id`), carpetes de la sessió i de la pestanya diferents, panes descartats,
   finestres sense pestanyes de terminal i sessions sense pestanya. Aquestes no s'importen, i la nota diu quina
-  pestanya importada és a la mateixa carpeta: potser és la seva (dins de tmux, per exemple) i no en porta les
+  pestanya importada sense Claude viu és a la mateixa carpeta: potser és la seva (dins de tmux, per exemple) i no en porta les
   opcions.
 - **Exemple** (xifres inventades): una lectura de 4 finestres i 30 pestanyes, 6 amb una sessió viva, 18 sense sessió en una
   carpeta que existeix i 6 a `~` o amb una carpeta que ja no hi és: «6 amb Claude, amb la seva ordre · 24 només terminal (18
@@ -2132,8 +2132,9 @@ llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especifi
 
 - **Provat (dades fictícies):**
   - La carpeta que guanya, en cada combinació de Claude a `~`, inexistent o existent.
-  - Warp a `~` i Claude en una carpeta que no existeix: `~`, sense Claude, amb les opcions de la seva ordre i la nota. Es comprova la
-    configuració que surt d'importar; que el pla d'obertura no engegui Claude en una pestanya desactivada és el camí de sempre.
+  - Warp a `~` i Claude en una carpeta que no existeix: `~`, sense Claude, amb les opcions de la seva ordre i la nota. També: les opcions passen pel JSON
+    i tornen en activar-la, sense ordre de Claude mentre és desactivada (`OrdreClaude.argv`, no el pla d'obertura sencer); `~` amb barra final o per un enllaç, des de la
+    lectura; les xifres del full i de «Torna a importar»; i que una sessió sense pestanya no la proposi com a seva.
   - L'avís a «Per revisar», que no surt a les pestanyes només terminal i no se'n va amb una foto de Warp sense cap Claude.
   - «Lliga amb Warp…» amb les dues carpetes, sense desfer empats i sense donar el mateix pane a dues pestanyes.
   - El pla d'obertura amb la carpeta del Claude del terminal.
@@ -2166,7 +2167,7 @@ llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especifi
 
 ### Resum
 
-- Proves: de 443 a 623 al core i de 232 a 330 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
+- Proves: de 443 a 627 al core i de 232 a 331 a la UI, totes bé (a la 0.31.1, 534 i 275; a la 0.31.2, 552 i 284; a la 0.31.3, 571
   i 313; a la 0.31.4, 573 i 323).
   `prototip/` surt del repo (és a l'historial, 114c97d).
 - De les versions del lot, només la 0.31.4 és publicada (09/11/2026), i s'instal·la també amb Homebrew.
