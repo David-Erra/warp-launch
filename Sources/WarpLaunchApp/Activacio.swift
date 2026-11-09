@@ -92,9 +92,10 @@ final class Activacio {
         if let desfer = finestra.undoManager { enAdoptarDesferConfiguracio(desfer) }
     }
 
-    /// L'editor, la Configuració, «Quant a» o una finestra de l'actualitzador.
+    /// L'editor, la Configuració, «Quant a» o una finestra de l'actualitzador. Una de minimitzada també compta: continua oberta, i en
+    /// reiniciar-se l'app desapareixeria.
     var hiHaFinestraVisible: Bool {
-        NSApp.windows.contains { $0.isVisible && $0.styleMask.contains(.titled) }
+        NSApp.windows.contains { ($0.isVisible || $0.isMiniaturized) && $0.styleMask.contains(.titled) }
     }
 
     /// Un full sobre alguna finestra, també si no és dels models de l'app.
@@ -124,6 +125,8 @@ final class Activacio {
     /// Abans de mostrar una finestra: al Dock, amb el menú principal, i al davant.
     func posaAlDavant() {
         if NSApp.activationPolicy() != .regular { NSApp.setActivationPolicy(.regular) }
+        // Després d'una reobertura silenciosa l'app és amagada (`NSApp.hide`): si l'activació no la mostrés, la finestra no es veuria.
+        if NSApp.isHidden { NSApp.unhide(nil) }
         NSApp.activate()
     }
 

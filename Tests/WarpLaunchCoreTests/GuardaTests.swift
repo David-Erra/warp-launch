@@ -2568,4 +2568,14 @@ private let prohibidesArrossegar = [
         let copia = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/CopiaDiagnostic.swift" }).text
         #expect(copia.contains("await Task.detached { diagnostic(anonimitzat) }.value"))
     }
+
+    /// Una finestra minimitzada continua oberta, i una app amagada per la reobertura silenciosa ha de tornar a mostrar el que s'obri.
+    @Test func lesFinestresOcultesNoEnganyenLActualitzacio() throws {
+        let activacio = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/Activacio.swift"), encoding: .utf8)
+        #expect(activacio.contains("var hiHaFinestraVisible: Bool {\n        NSApp.windows.contains { ($0.isVisible || $0.isMiniaturized) && $0.styleMask.contains(.titled) }"))
+        let mostra = try #require(activacio.range(of: "func posaAlDavant() {"))
+        let unhide = try #require(activacio.range(of: "if NSApp.isHidden { NSApp.unhide(nil) }"))
+        let activa = try #require(activacio.range(of: "NSApp.activate()", range: mostra.upperBound..<activacio.endIndex))
+        #expect(mostra.upperBound < unhide.lowerBound && unhide.upperBound < activa.lowerBound)
+    }
 }
