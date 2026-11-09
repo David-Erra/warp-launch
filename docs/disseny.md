@@ -2126,8 +2126,8 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
 
 ### 0.31.5: les cinc decisions del 09/11/2026 (sense publicar)
 
-**Res d'això no s'ha vist funcionar a l'app ni amb Warp de debò.** El que hi ha és provat amb dades fictícies (`scripts/test.sh`) o
-llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especificacio.md`, fila del 09/11/2026. Fets:
+**Vist a l'app amb Warp de debò el 09/11/2026 (un Mac): les proves 2, 3 i 5 de sota, aquesta només al full d'una finestra.** La resta és
+provada amb dades fictícies (`scripts/test.sh`) o llegida al codi de Warp i a la documentació de Claude Code. Decisions: `especificacio.md`, fila del 09/11/2026. Fets:
 `fets-verificats.md`, «La carpeta de la pestanya i la de Claude». Sense canvi de format: `estat.json` i `configuracio.json` són com a la 0.31.4.
 
 - **Provat (dades fictícies):**
@@ -2142,7 +2142,7 @@ llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especifi
   - Crear la carpeta: un sol nivell, res si el camí o `~/.warp` són un enllaç o un fitxer, i només amb el permís acceptat o migrat.
   - L'avís de les feines als dos fulls, i `GuardaTests`.
 - **Només llegit:**
-  - `cd B && claude` deixa Warp a A, i `/cd` i `EnterWorktree` mouen la sessió.
+  - `/cd` i `EnterWorktree` mouen la sessió.
   - Warp hauria de veure la carpeta `launch_configurations` creada amb ell obert.
   - Tancar Warp pot aturar les feines: observat una vegada, sense reproduir.
 - **Limitació de l'avís:** la carpeta de Warp només és a la memòria de l'app. Després de reiniciar-la, l'avís només surt si l'última
@@ -2150,7 +2150,10 @@ llegit al codi de Warp i a la documentació de Claude Code. Decisions: `especifi
   següent. Fer-lo del tot permanent demanaria un camp nou a `estat.json` (regla 11).
 - **Les configuracions ja importades no canvien soles:** cal corregir la carpeta a l'inspector o tornar a importar-ho tot.
 
-**Per provar a l'app** (cada prova, amb l'OK d'en David; regles 1 i 4). Amb carpetes temporals A i B:
+**Per provar a l'app** (cada prova, amb l'OK d'en David; regles 1 i 4). Amb carpetes temporals A i B. Amb una carpeta de configuració de
+prova, l'app només llegeix les finestres si `restore_session` és activat: cal sortir de l'app instal·lada i activar-lo amb l'script (regla 7).
+**Fetes el 09/11/2026:** la 2 (carpeta B, avís, i «Obre a Warp…» a B amb la mateixa conversa), la 3 (després d'un `/exit`, 70 amb Claude i 1
+només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i l'avís a «Obre-ho tot».
 
 1. Lectura, 0 finestres i 0 sessions: al Mac on es va veure el problema, per a cada pestanya on Warp i Claude difereixen, si el
    shell pare de Claude és a la carpeta de Claude (`warp-launch importa`, `lsof -a -d cwd -p <pid>`).

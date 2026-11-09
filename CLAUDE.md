@@ -151,7 +151,7 @@ Els requisits són a `docs/especificacio.md`.
     - **Guardes:** `Lector`, `LectorWarp` i `LectorAjustosWarp` ja no tenen cap valor per defecte (l'app i el CLI hi posen les
       rutes de debò, `lectorsDeWarpDeDebo`; una prova que se n'oblidi una no compila), i a tot `Sources/` només dues crides
       canvien permisos o atributs de fitxers: el `fchmod` del fitxer acabat de crear a `EscripturaAtomica` i a `FitxersLaunchWarp`.
-  - **0.31.5 (cinc decisions d'en David del 09/11/2026; sense publicar i sense veure a l'app).**
+  - **0.31.5 (cinc decisions d'en David del 09/11/2026; sense publicar; proves 2, 3 i 5 de `docs/disseny.md`, secció 10, fetes a l'app amb Warp de debò el mateix dia).**
     - **La carpeta:** si Warp i Claude no coincideixen i Claude és viu, mana la de Claude, excepte si és `~` o no existeix. Avís a
       «Per revisar» (`Validacio.avisCarpetaDeClaude`): la carpeta de Warp només és a la memòria (`estat.json` no canvia de format),
       i després d'un reinici l'avís només surt si l'última carpeta de Claude no és la de la pestanya. «Lliga amb Warp…» compara

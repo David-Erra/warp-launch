@@ -393,8 +393,9 @@ corregeix-lo i deixa'n constància.
   no provat): cerca al projecte actual i als seus worktrees i després, des de la v2.1.223, a tots els altres. Només el troba
   fora si exactament un altre projecte té aquella transcripció; si no, `No conversation found`.
 - **Amb `cd B && claude`, Warp es queda amb A** mentre Claude corre, si el shell no emet OSC 7 (llegit al codi de
-  `warpdotdev/warp`, commit `abb3fe33e004`; no observat): Warp només actualitza la carpeta al `precmd`.
-- **En aquell Mac, Warp i Claude coincidien a 74 de 74 pestanyes:** el cas no s'ha vist en execució. És la base de la decisió del
+  `warpdotdev/warp`, commit `abb3fe33e004`; **observat el 09/11/2026**, una pestanya amb Claude Code 2.1.319: Warp deia A i la sessió
+  corria a B): Warp només actualitza la carpeta al `precmd`.
+- **En aquell Mac, Warp i Claude coincidien a 74 de 74 pestanyes.** És la base de la decisió del
   09/11/2026 (mana la de Claude, excepte si és `~` o no existeix).
 
 ## Primera lectura real (03/11/2026, `warp-launch llegeix` 0.2.0)
