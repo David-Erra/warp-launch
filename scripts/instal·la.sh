@@ -106,7 +106,7 @@ if [[ "$GITHUB" -eq 1 ]]; then
     fi
     # codesign: 3 vol dir que no compleix el requisit; qualsevol altre error (el requisit mateix, una signatura trencada), es diu tal qual.
     CODI=0
-    ERROR="$(codesign --verify --strict -R="$REQUISIT" "$ORIGEN" 2>&1)" || CODI=$?
+    ERROR="$(codesign --verify --deep --strict -R="$REQUISIT" "$ORIGEN" 2>&1)" || CODI=$?
     if [[ "$CODI" -eq 3 ]]; then
         echo "instal·la: l'app baixada no està signada amb el certificat d'en David («Warp Launch Dev»): no la instal·lo." >&2
         exit 1
@@ -122,7 +122,7 @@ else
         echo "instal·la: no hi ha cap app de Warp Launch a «${ORIGEN}»: primer scripts/build-app.sh" >&2
         exit 1
     fi
-    codesign --verify --strict "$ORIGEN" || { echo "instal·la: la signatura de «${ORIGEN}» no és vàlida" >&2; exit 1; }
+    codesign --verify --deep --strict "$ORIGEN" || { echo "instal·la: la signatura de «${ORIGEN}» no és vàlida" >&2; exit 1; }
     FONT="«${ORIGEN}»"
 fi
 
@@ -151,7 +151,7 @@ fi
 # Primer, una còpia al costat; després, el canvi. Si alguna cosa falla, la d'abans continua al seu lloc.
 NOU="$DESTI_CARPETA/.Warp Launch.app.nova-$$"
 ditto "$ORIGEN" "$NOU"
-codesign --verify --strict "$NOU"
+codesign --verify --deep --strict "$NOU"
 if [[ "$GITHUB" -eq 1 ]]; then
     # Si el que l'ha baixat la marca com a baixada d'internet, macOS no l'obriria (no és signada per Apple). La signatura
     # ja s'ha comprovat amb el certificat d'en David.
@@ -182,6 +182,7 @@ Per desinstal·lar-la:
   1. Surt de l'app (menú de la icona › Surt).
   2. Esborra «${DESTI}».
   3. Si vols treure'n també les dades: ~/.config/warp-launch/ (la teva configuració; fes-ne còpia abans),
-     ~/Library/Preferences/$IDENTIFICADOR.plist i ~/Library/Saved Application State/$IDENTIFICADOR.savedState.
+     ~/Library/Preferences/$IDENTIFICADOR.plist, ~/Library/Saved Application State/$IDENTIFICADOR.savedState,
+     ~/Library/Caches/$IDENTIFICADOR i ~/Library/HTTPStorages/$IDENTIFICADOR.
   4. El permís per llegir les dades de Warp: tccutil reset All $IDENTIFICADOR
 EOF

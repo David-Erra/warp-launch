@@ -35,6 +35,24 @@ private let script = URL(filePath: #filePath).deletingLastPathComponent().deleti
             _ = try sortidaDe("/bin/bash", "codesign --force --sign - --timestamp=none '\(url.path)' 2>/dev/null")
         }
 
+        /// Hi posa un framework com el de Sparkle, amb un executable de dins, i ho torna a signar tot de dins cap a fora.
+        static func ambFramework(_ url: URL) throws {
+            let fw = url.appending(path: "Contents/Frameworks/Sparkle.framework")
+            let b = fw.appending(path: "Versions/B")
+            try FileManager.default.createDirectory(at: b.appending(path: "Resources"), withIntermediateDirectories: true)
+            try FileManager.default.copyItem(atPath: "/usr/bin/true", toPath: b.appending(path: "Sparkle").path)
+            try FileManager.default.copyItem(atPath: "/usr/bin/true", toPath: b.appending(path: "Autoupdate").path)
+            let plist: [String: Any] = ["CFBundleIdentifier": "cat.exemple.sparkle-fals", "CFBundleExecutable": "Sparkle", "CFBundlePackageType": "FMWK"]
+            try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+                .write(to: b.appending(path: "Resources/Info.plist"))
+            try FileManager.default.createSymbolicLink(atPath: fw.appending(path: "Versions/Current").path, withDestinationPath: "B")
+            try FileManager.default.createSymbolicLink(atPath: fw.appending(path: "Sparkle").path, withDestinationPath: "Versions/Current/Sparkle")
+            try FileManager.default.createSymbolicLink(atPath: fw.appending(path: "Resources").path, withDestinationPath: "Versions/Current/Resources")
+            for dins in [b.appending(path: "Autoupdate"), fw, url] {
+                _ = try sortidaDe("/bin/bash", "codesign --force --sign - --timestamp=none '\(dins.path)' 2>/dev/null")
+            }
+        }
+
         /// `pgrep` fals: diu si «Warp Launch» és oberta.
         func pgrep(obert: Bool) throws {
             let bin = carpeta.appending(path: "bin")
@@ -98,6 +116,41 @@ private let script = URL(filePath: #filePath).deletingLastPathComponent().deleti
         }
 
         var noms: [String] { ((try? FileManager.default.contentsOfDirectory(atPath: desti.path)) ?? []).sorted() }
+    }
+
+    /// Una app amb el framework ben signat s'instal·la.
+    @Test func ambElFrameworkSignatSInstalla() throws {
+        let b = try Banc()
+        try Banc.ambFramework(b.origen)
+        let (codi, sortida) = try b.executa("--aplica")
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.versioInstal·lada == "0.26.0")
+        #expect(FileManager.default.fileExists(atPath: b.instal·lada.appending(path: "Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate").path))
+    }
+
+    /// Un executable del framework tornat a signar després del framework: `--strict` sol no ho veu, i `--deep` sí.
+    @Test func ambElFrameworkAMigSignarNoSInstalla() throws {
+        let b = try Banc()
+        try Banc.ambFramework(b.origen)
+        let autoupdate = b.origen.appending(path: "Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate")
+        _ = try sortidaDe("/bin/bash", "codesign --force --sign - --identifier altre --timestamp=none '\(autoupdate.path)' 2>/dev/null")
+        // Aquí hi ha la gràcia de la prova.
+        _ = try sortidaDe("/bin/bash", "codesign --verify --strict '\(b.origen.path)'")
+        let (codi, sortida) = try b.executa("--aplica")
+        #expect(codi != 0, "\(sortida)")
+        #expect(sortida.contains("no és vàlida"), "\(sortida)")
+        #expect(b.noms.isEmpty)
+    }
+
+    /// Un framework sense signar tampoc no s'instal·la.
+    @Test func ambElFrameworkSenseSignarNoSInstalla() throws {
+        let b = try Banc()
+        try Banc.ambFramework(b.origen)
+        let fw = b.origen.appending(path: "Contents/Frameworks/Sparkle.framework")
+        _ = try sortidaDe("/bin/bash", "codesign --remove-signature '\(fw.path)'")
+        let (codi, sortida) = try b.executa("--aplica")
+        #expect(codi != 0, "\(sortida)")
+        #expect(b.noms.isEmpty)
     }
 
     /// Per defecte, mode de prova: no copia res (regla 4).

@@ -1,7 +1,7 @@
 // swift-tools-version: 6.0
 // Warp Launch: app de barra de menú per a macOS que llegeix, edita i torna a obrir
 // les finestres i pestanyes de Warp amb les sessions de Claude Code.
-// Sense dependències externes: només frameworks de macOS (vegeu CLAUDE.md).
+// Una sola dependència externa: Sparkle, amb la versió exacta i només a l'app (regla 10 de CLAUDE.md). La resta, només frameworks de macOS.
 import PackageDescription
 
 let package = Package(
@@ -12,6 +12,9 @@ let package = Package(
         .executable(name: "warp-launch", targets: ["WarpLaunchCLI"]),
         .library(name: "WarpLaunchCore", targets: ["WarpLaunchCore"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
+    ],
     targets: [
         // Lògica sense interfície: models, lectura de Warp i de Claude Code, configuració.
         .target(name: "WarpLaunchCore"),
@@ -21,7 +24,9 @@ let package = Package(
         // També hi ha l'única pregunta a macOS d'on és Warp (`TrobaWarp`, D-P12). Cap prova no en depèn.
         .target(name: "WarpLaunchObridor", dependencies: ["WarpLaunchCore"]),
         // App de barra de menú, prima: escenes, activació i Dock (s'empaqueta amb scripts/build-app.sh).
-        .executableTarget(name: "WarpLaunchApp", dependencies: ["WarpLaunchCore", "WarpLaunchUI", "WarpLaunchObridor"]),
+        .executableTarget(name: "WarpLaunchApp", dependencies: [
+            "WarpLaunchCore", "WarpLaunchUI", "WarpLaunchObridor", .product(name: "Sparkle", package: "Sparkle"),
+        ]),
         // Comanda `warp-launch` per a proves i diagnòstic des del terminal.
         .executableTarget(name: "WarpLaunchCLI", dependencies: ["WarpLaunchCore", "WarpLaunchObridor"]),
         .testTarget(name: "WarpLaunchCoreTests", dependencies: ["WarpLaunchCore"]),

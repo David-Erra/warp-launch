@@ -24,6 +24,8 @@ __pycache__/
 *.key
 *.pem
 *.cer
+*.ed25519
+*-privada-sparkle*
 
 # Editors
 *.swp

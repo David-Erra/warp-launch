@@ -248,6 +248,10 @@ private let prohibidesCodi = [
 
 private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
 
+/// Sparkle només el coneix aquest fitxer (`sparkleNomesAlServei`).
+private let serveiActualitzacions = "Sources/WarpLaunchApp/ServeiActualitzacions.swift"
+private let nomesAlServei = [#"import Sparkle"#, #"SPU[A-Z]"#, #"(^|[^A-Za-z0-9_])SU[A-Z]"#]
+
 /// D-P12 (excepcions limitades, 0.29.2): on és Warp només ho pregunta `TrobaWarp`, amb aquesta sola crida i l'identificador
 /// que li passa `InstallacioWarp.troba` (`nomesTrobaWarpPreguntaOnEsWarp`). A la resta del codi, `workspace` la prohibeix.
 private let trobaWarp = "Sources/WarpLaunchObridor/TrobaWarp.swift"
@@ -2270,9 +2274,11 @@ private let prohibidesArrossegar = [
         #expect(llicencia.contains(#"THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND"#))
         let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
         #expect(script.contains(#"cp -X LICENSE "$APP/Contents/Resources/LICENSE""#))
+        // I la de Sparkle, que hi va inclòs.
+        #expect(script.contains(#"cp -X .build/artifacts/sparkle/Sparkle/LICENSE "$APP/Contents/Resources/LICENSE-Sparkle""#))
         // Abans de signar: un fitxer afegit després trencaria la signatura.
-        let copia = try #require(script.range(of: "cp -X LICENSE"))
-        let signa = try #require(script.range(of: "codesign --force"))
+        let copia = try #require(script.range(of: "LICENSE-Sparkle\"\n"))
+        let signa = try #require(script.range(of: #"signa "$FW/Versions/B/Autoupdate""#))
         #expect(copia.lowerBound < signa.lowerBound)
     }
 
@@ -2280,7 +2286,107 @@ private let prohibidesArrossegar = [
         // D12: amb el certificat, el permís per llegir Warp no es perd a cada compilació; sense, ad hoc.
         let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
         #expect(script.contains("Warp Launch Dev"))
-        #expect(script.contains("codesign --force --sign \"$IDENTITAT\""))
-        #expect(script.contains("codesign --force --sign - "))
+        #expect(script.contains(#"FIRMA="$IDENTITAT""#))
+        #expect(script.contains(#"FIRMA="-""#))
+        #expect(script.contains(#"codesign --force --sign "$FIRMA" --timestamp=none "$1""#))
+        #expect(!script.contains("--options runtime\"") && !script.contains("--options=runtime"))
+    }
+
+    // MARK: - Sparkle (docs/disseny.md, secció 11, 10)
+
+    /// Una signatura de fora tanca les de dins: l'ordre, i la comprovació amb `--deep`, que és la que veu un framework a mig signar.
+    @Test func elPaquetSignaDeDinsCapAForaIComprovaAmbDeep() throws {
+        let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
+        let ordre = [#"signa "$FW/Versions/B/Autoupdate""#, #"signa "$FW/Versions/B/Updater.app""#, #"signa "$FW"\#n"#, #"signa "$APP"\#n"#,
+                     #"codesign --verify --deep --strict "$APP""#]
+        var darrer = script.startIndex
+        for pas in ordre {
+            let trobat = try #require(script.range(of: pas, range: darrer..<script.endIndex), "\(pas)")
+            darrer = trobat.upperBound
+        }
+        #expect(script.contains(#"rm -rf "$FW/Versions/B/XPCServices" "$FW/XPCServices""#))
+        #expect(script.contains(#"-Xlinker -rpath -Xlinker "$RPATH""#))
+        #expect(script.contains(#"RPATH="@executable_path/../Frameworks""#))
+        for fitxer in ["scripts/publica.sh", "scripts/instal·la.sh"] {
+            let text = try String(contentsOf: arrel.appending(path: fitxer), encoding: .utf8)
+            let verificacions = text.split(separator: "\n").filter { $0.contains("codesign --verify") }
+            #expect(!verificacions.isEmpty && verificacions.allSatisfy { $0.contains("--deep --strict") }, "\(fitxer)")
+        }
+    }
+
+    /// Sparkle només el coneix el servei. Avui, cap altre fitxer de `Sources/` no en té cap nom.
+    @Test func sparkleNomesAlServei() throws {
+        let codi = try fitxers("Sources")
+        let fora = try aparicions(de: nomesAlServei, a: codi.filter { $0.ruta != serveiActualitzacions })
+        #expect(fora.isEmpty, "\(fora.joined(separator: "\n"))")
+        // Una línia de mostra per expressió: si una no veiés res, la llista buida ho donaria per bo.
+        for mostra in ["@preconcurrency import Sparkle", "let a: SPUUpdater", "SUAppcastItem", "SUError.noUpdateError"] {
+            let trobades = try aparicions(de: nomesAlServei, a: [(ruta: "mostra", text: mostra)])
+            #expect(!trobades.isEmpty, "\(mostra)")
+        }
+        #expect(try aparicions(de: nomesAlServei, a: [(ruta: "mostra", text: "let situacio: SituacioApp")]).isEmpty)
+        let proves = try fitxers("Tests")
+        #expect(try aparicions(de: [#"import Sparkle"#], a: proves).isEmpty)
+    }
+
+    /// Una sola dependència, amb la versió exacta, i només per a l'app (regla 10).
+    @Test func sparkleEsLUnicaDependenciaINomesDeLApp() throws {
+        let paquet = try String(contentsOf: arrel.appending(path: "Package.swift"), encoding: .utf8)
+        let linies = paquet.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        #expect(linies.filter { $0.contains(".package(") } == [
+            #".package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),"#,
+        ])
+        #expect(paquet.components(separatedBy: #".product(name: "Sparkle""#).count == 2)
+        let inici = try #require(paquet.range(of: #".executableTarget(name: "WarpLaunchApp""#))
+        let producte = try #require(paquet.range(of: #".product(name: "Sparkle""#))
+        let seguent = try #require(paquet.range(of: ".executableTarget(", range: inici.upperBound..<paquet.endIndex))
+        #expect(inici.upperBound < producte.lowerBound && producte.upperBound < seguent.lowerBound)
+        // `Package.resolved` és al repo: sense, l'arbre quedaria brut, i `publica.sh` no publicaria.
+        let resolt = try String(contentsOf: arrel.appending(path: "Package.resolved"), encoding: .utf8)
+        #expect(resolt.contains(#""version" : "2.10.1""#) && resolt.contains("ab7d71291238df6e0492143b120c9b696a35f603"))
+    }
+
+    /// El que porta tota còpia, publicada o no. La decisió 1 de Sparkle no es pot activar després per a les còpies que ja corren.
+    @Test func lInfoPlistPortaLesClausDeLActualitzacio() throws {
+        let dades = try Data(contentsOf: arrel.appending(path: "Recursos/Info.plist"))
+        let plist = try #require(try PropertyListSerialization.propertyList(from: dades, format: nil) as? [String: Any])
+        #expect(plist["SUEnableAutomaticChecks"] as? Bool == true)
+        #expect(plist["SUAutomaticallyUpdate"] as? Bool == true)
+        #expect(plist["SUScheduledCheckInterval"] as? Int == 86_400)
+        #expect(plist["SUVerifyUpdateBeforeExtraction"] as? Bool == true)
+        for absent in ["SUEnableSystemProfiling", "SUFeedURL", "SUPublicEDKey", "SUEnableInstallerLauncherService"] {
+            #expect(plist[absent] == nil, "\(absent)")
+        }
+    }
+
+    /// Fins que l'autor no ha creat la clau (pas 11), cap còpia no pot portar l'adreça ni la clau pública.
+    @Test func lesAdrecesDeLActualitzacioEncaraNoHiSon() {
+        #expect(!FileManager.default.fileExists(atPath: arrel.appending(path: "Recursos/Actualitzacions.plist").path))
+    }
+
+    /// Decisió 3 de Sparkle: només les còpies per publicar porten l'adreça.
+    @Test func lAdrecaNomesAmbAmbFeed() throws {
+        let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
+        #expect(script.components(separatedBy: "PlistBuddy").count == 2)
+        let branca = try #require(script.range(of: #"if [[ "$AMB_FEED" -eq 1 ]]; then\#n    /usr/libexec/PlistBuddy -c "Merge $FEED" "$APP/Contents/Info.plist" > /dev/null\#nfi"#))
+        #expect(!branca.isEmpty)
+        // Cap script no el passa, llevat de `publica.sh`, que és el que publica.
+        let scripts = try FileManager.default.contentsOfDirectory(at: arrel.appending(path: "scripts"), includingPropertiesForKeys: nil)
+        for fitxer in scripts where !["build-app.sh", "publica.sh"].contains(fitxer.lastPathComponent) && fitxer.pathExtension == "sh" {
+            #expect(!(try String(contentsOf: fitxer, encoding: .utf8)).contains("--amb-feed"), "\(fitxer.lastPathComponent)")
+        }
+    }
+
+    /// Sense `--amb-feed` no hi ha res a demanar; amb, el que falta s'atura abans de compilar. Els arguments, sense compilar res.
+    @Test func elsArgumentsDelPaquet() throws {
+        let script = arrel.appending(path: "scripts/build-app.sh")
+        let camins = ["PATH": "/usr/bin:/bin"]
+        for dolent in [["provatura"], ["--amb-fed"], ["release", "debug"]] {
+            let (codi, sortida) = try executaScript(script, dolent, entorn: camins)
+            #expect(codi == 64, "\(dolent): \(sortida)")
+        }
+        let (codi, sortida) = try executaScript(script, ["release", "--amb-feed"],
+                                                entorn: camins.merging(["WARP_LAUNCH_IDENTITAT": "Prova"]) { _, nou in nou })
+        #expect(codi == 1 && sortida.contains("no accepta WARP_LAUNCH_IDENTITAT"), "\(sortida)")
     }
 }

@@ -128,7 +128,7 @@ if [[ "$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Con
     exit 1
 fi
 CODI=0
-ERROR="$(codesign --verify --strict -R="$REQUISIT" "$APP" 2>&1)" || CODI=$?
+ERROR="$(codesign --verify --deep --strict -R="$REQUISIT" "$APP" 2>&1)" || CODI=$?
 if [[ "$CODI" -eq 3 ]]; then
     echo "publica: «${APP}» no està signada amb «Warp Launch Dev» (al clauer d'aquest Mac?). No s'ha publicat res." >&2
     exit 1

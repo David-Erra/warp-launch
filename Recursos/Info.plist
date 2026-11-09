@@ -52,6 +52,17 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Actualització automàtica (docs/disseny.md, secció 11). Sense efecte si la còpia no porta l'adreça: només la hi posa
+	     `build-app.sh --amb-feed`. La signatura de l'actualització es comprova abans d'extreure-la, i no es pot activar després
+	     per a les còpies que ja corren: per això ha d'anar a la primera versió. -->
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 	<!-- App de barra de menú: sense icona al Dock. -->
 	<key>LSUIElement</key>
 	<true/>
