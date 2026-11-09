@@ -65,6 +65,8 @@ public final class Actualitzacions {
         case aPunt(String)
         case aplicant(String)
         case error(String, Date)
+        /// Ha fallat després de trobar-la: en baixar-la, en comprovar-ne la signatura o en preparar-la. La versió.
+        case errorBaixant(String, Date)
         /// El motiu, que surt al peu de la secció.
         case noDisponible(String)
     }
@@ -171,7 +173,7 @@ public final class Actualitzacions {
     public func comprova(ara: TimeInterval) {
         guard let entorn, entorn.potComprovar() else { return }
         switch estat {
-        case .inicial, .alDia, .error: break
+        case .inicial, .alDia, .error, .errorBaixant: break
         default: return
         }
         estat = .comprovant
@@ -277,6 +279,12 @@ public final class Actualitzacions {
             guard !ocupat else { return }
             // Una comprovació que falla sola no amaga que ja se sap d'una versió.
             if !demanat, case .trobada = estat { return }
+            // El que falla no és comprovar, i aquests textos de l'actualitzador no estan traduïts (fets-verificats, «Ronda A»): el detall, al registre.
+            if case let .baixant(versio) = estat {
+                Registre.actualitzacions.error("no s'ha pogut baixar o preparar la \(versio, privacy: .public): \(missatge, privacy: .public)")
+                estat = .errorBaixant(versio, entorn.rellotge())
+                return
+            }
             estat = .error(missatge, entorn.rellotge())
         }
     }
@@ -417,6 +425,7 @@ public final class Actualitzacions {
         case let .aPunt(versio): "a punt \(versio)"
         case let .aplicant(versio): "aplicant \(versio)"
         case .error: "error"
+        case .errorBaixant: "error baixant"
         case .noDisponible: "no disponible"
         }
     }
@@ -440,11 +449,19 @@ public final class Actualitzacions {
         case let .alDia(quan): "Tens l'última versió. Comprovat \(Self.quan(quan, avui: avui))."
         case let .trobada(versio): "Hi ha la \(versio)."
         case let .baixant(versio): ambFinestra ? "L'actualització a la \(versio) continua a la seva finestra." : "Baixant la \(versio)…"
-        case let .aPunt(versio): "La \(versio) és a punt: s'aplicarà sola quan no facis servir l'app."
+        case let .aPunt(versio):
+            aplicaraSola(versio) ? "La \(versio) és a punt: s'aplicarà sola quan no facis servir l'app."
+                : "La \(versio) és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»."
         case .aplicant: "S'està actualitzant…"
         case let .error(missatge, _): "No s'ha pogut comprovar: \(missatge)."
+        case let .errorBaixant(versio, _): "No s'ha pogut baixar o preparar la \(versio)."
         case .noDisponible: ""
         }
+    }
+
+    /// Si `vigila` encara l'aplicarà sola. Si no, només en sortir o amb el botó.
+    private func aplicaraSola(_ versio: String) -> Bool {
+        automatiques && intents < P.maximIntents && !intent.bloquejaAutomatic(candidat: versio)
     }
 
     /// El motiu de no reiniciar ara: amb una versió a punt, o amb un reinici ajornat des de la finestra.
@@ -479,7 +496,7 @@ public final class Actualitzacions {
         // Ajornat: la finestra té el botó mort, i portar-la al davant no ajudaria. El que cal fer ho diu `textEspera`.
         if postposat != nil { return .cap }
         return switch estat {
-        case .inicial, .alDia, .error: .comprovaAra(actiu: revisio >= 0 && entorn?.potComprovar() == true)
+        case .inicial, .alDia, .error, .errorBaixant: .comprovaAra(actiu: revisio >= 0 && entorn?.potComprovar() == true)
         case .comprovant, .noDisponible: .comprovaAra(actiu: false)
         case .trobada: .actualitzaAra
         case .aPunt: .reinicia(actiu: motiuDemanatAra == nil)

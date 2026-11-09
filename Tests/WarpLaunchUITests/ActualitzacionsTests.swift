@@ -294,7 +294,30 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         m.rep(.baixant("0.32.1"), ara: t)
         #expect(m.text(avui: t0) == "Baixant la 0.32.1…" && m.boto == .cap)
         m.rep(.error("sense espai", demanat: false), ara: t)
-        #expect(m.estat == .error("sense espai", t0), "una baixada que falla no es queda baixant")
+        #expect(m.estat == .errorBaixant("0.32.1", t0), "una baixada que falla no es queda baixant")
+    }
+
+    /// Registre de la ronda A, línia 25: «No s'ha pogut comprovar: The update is improperly signed…». No és comprovar el que falla, i surt en anglès.
+    @Test func unErrorDesprésDeTrobarLaNoDiuComprovar() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.baixant("0.32.1"), ara: t)
+        let anglès = "The update is improperly signed and could not be validated"
+        m.rep(.error(anglès, demanat: false), ara: t)
+        #expect(m.text(avui: t0) == "No s'ha pogut baixar o preparar la 0.32.1.")
+        #expect(!m.text(avui: t0).contains("improperly"))
+        #expect(m.boto == .comprovaAra(actiu: true), "es pot tornar a provar")
+        m.comprova(ara: t + 1)
+        #expect(m.estat == .comprovant && b.crides == ["comprovaIBaixa"])
+    }
+
+    /// Fins a trobar-la, sí que és comprovar: el text de l'actualitzador, que aquest error sí que porta en català.
+    @Test func unErrorAbansDeBaixarDiuComprovar() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.comprova(ara: t)
+        m.rep(.error("Hi ha hagut un error obtenint la informació d'actualització", demanat: true), ara: t + 1)
+        #expect(m.text(avui: t0) == "No s'ha pogut comprovar: Hi ha hagut un error obtenint la informació d'actualització.")
     }
 
     /// Registre de la ronda A, línia 62: 2 min 30 s dient «Baixant» amb la finestra de Sparkle a «Instal·la i reinicia», i cap manera de tornar-hi.
@@ -408,6 +431,36 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         #expect(m.text(avui: t0) == "La 0.32.1 és a punt: s'aplicarà sola quan no facis servir l'app.")
         #expect(m.boto == .reinicia(actiu: true))
         #expect(m.textEspera == nil)
+    }
+
+    /// Registre de la ronda A, línies 40 a 42: l'estat deia que s'aplicaria sola quan justament no ho faria.
+    @Test func aPuntNoPrometQueSAplicaraSolaSiNoHoFara() throws {
+        let sola = "La 0.32.1 és a punt: s'aplicarà sola quan no facis servir l'app."
+        let noSola = "La 0.32.1 és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»."
+        let b = try Banc()
+        #expect(aPunt(b).text(avui: t0) == sola)
+        #expect(aPunt(b, intent: IntentActualitzacio(fallades: 1, versioFallada: "0.32.1")).text(avui: t0) == noSola, "aquesta versió ja ha fallat")
+        #expect(aPunt(b, intent: IntentActualitzacio(fallades: 2, versioFallada: "0.32.0")).text(avui: t0) == noSola, "n'han fallat massa")
+
+        let m = aPunt(b)
+        b.auto = false
+        m.posaAutomatiques(false)
+        #expect(m.text(avui: t0) == noSola, "amb l'interruptor apagat")
+    }
+
+    /// El tercer intent sense sortir: `vigila` ja no ho torna a provar sola.
+    @Test func aPuntDiuQueNoSAplicaraSolaDespresDelsIntents() throws {
+        let b = try Banc()
+        let m = aPunt(b)
+        var ara = t
+        for _ in 1...P.maximIntents {
+            m.vigila(ara: ara)
+            m.vigila(ara: ara + 60)
+            ara += 60 + P.tempsAplicant
+            m.vigila(ara: ara)
+            ara += P.pausaEntreIntents
+        }
+        #expect(m.text(avui: t0) == "La 0.32.1 és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza».")
     }
 
     @Test func unaVersioAPuntNoLaTrepitjaRes() throws {
