@@ -1046,6 +1046,20 @@ Per veure el permís d'Arxius i carpetes i l'ítem d'inici, caldrà una actualit
 
 ---
 
+### 14. En implementar-ho (09/11/2026, de la 0.32.0 a la 0.32.5)
+
+**Res d'això no diu que funcioni a l'app:** no se n'ha obert cap.
+
+- **PROVAT** (`swift build` i `otool -l .build/debug/WarpLaunch`, 0.32.5): els rpaths són `/usr/lib/swift`, `@loader_path` i la carpeta `PackageFrameworks` de `.build`, amb
+  `Sparkle.framework` al costat del binari. El binari no s'ha executat (regla 4): que arrenqui és **SUPOSAT**.
+- **PROVAT** (un programa a part, sense finestres): amb la secció, «General» faria 738 pt, més dels 640 de la norma.
+- **PROVAT** (`xmllint --noout`): `--` dins d'un comentari d'un `Info.plist` no és XML vàlid. Els lectors d'Apple el deixen passar.
+- **PROVAT** (`build-app.sh release --amb-feed`, amb adreça i clau falses, i un fitxer fals esborrat després): la còpia porta les dues claus i passa `codesign` amb el
+  requisit a l'app i a les tres peces de Sparkle. Sense l'opció, no porta `SUFeedURL`.
+- **PROVAT** (`scripts/verifica-signatura.swift`, des de l'arrel del repo, amb una clau d'un sol ús en memòria): 0 amb la bona, 1 amb una altra.
+- **LLEGIT, sense provar:** el `sign_update` real amb la clau del clauer; que `gh release create` publiqui els dos fitxers de cop i mogui `latest` només amb tots dos; que
+  Sparkle accepti l'appcast a l'app; que Claude Code apliqui les regles `deny` com les simula la guarda.
+
 ### Què impedeix o canvia el plantejament
 
 1. **Qui té la 0.31.4 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.
