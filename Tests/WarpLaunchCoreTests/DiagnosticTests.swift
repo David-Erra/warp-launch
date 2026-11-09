@@ -133,6 +133,18 @@ private struct MacDeProva {
         #expect((json["updates"] as? String)?.hasPrefix("off: not in /Applications (~/") == true)
     }
 
+    /// Una còpia fora d'Aplicacions: l'anonimitzat no pot deixar veure el nom de les carpetes, ni a casa ni en un altre disc.
+    @Test(arguments: ["CASA/Feina/Secret/Warp Launch.app", "/Volumes/Feina/Secret/Warp Launch.app"])
+    func laRutaDeLaCopiaEsAnonimitza(ruta: String) throws {
+        let mac = try MacDeProva()
+        var entorn = mac.entorn
+        let text = "off: " + PoliticaActualitzacions.NoDisponible.foraDAplicacions(ruta.replacingOccurrences(of: "CASA", with: mac.inici)).diagnostic
+        entorn.actualitzacions = { text }
+        let anonim = Diagnostic.executa(entorn, anonimitza: true).text
+        #expect(anonim.contains("Updates: off: not in /Applications («"))
+        #expect(!anonim.contains("Feina") && !anonim.contains("Secret") && !anonim.contains(mac.inici), "\(anonim)")
+    }
+
     // MARK: - a) Terminals de Warp
 
     @Test func ambClaudeAWarpISenseCapTerminalReconegutEsUnError() throws {

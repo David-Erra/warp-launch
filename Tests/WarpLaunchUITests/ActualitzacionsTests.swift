@@ -198,7 +198,7 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         m.posaAutomatiques(false)
         #expect(m.textDiagnostic.contains("automatic off"))
         let sense = Actualitzacions(noDisponible: .foraDAplicacions("/Users/qui/app.app"))
-        #expect(sense.textDiagnostic == "off: not in /Applications (/Users/qui/app.app)")
+        #expect(sense.textDiagnostic == "off: not in /Applications («/Users/qui/app.app»)")
         #expect(Actualitzacions(noDisponible: .senseFeed).textDiagnostic == "off: not a published build (no feed)")
     }
 
