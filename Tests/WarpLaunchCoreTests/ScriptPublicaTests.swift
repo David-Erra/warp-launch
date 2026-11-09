@@ -8,7 +8,6 @@ private let script = URL(filePath: #filePath).deletingLastPathComponent().deleti
     .appending(path: "scripts/publica.sh")
 
 private let tapDeProva = "exemple/homebrew-proves"
-private let blobDeProva = "0123456789abcdef0123456789abcdef01234567"
 private let sha256Antic = String(repeating: "a1", count: 32)
 private let commitDelTap = "fedcba9876543210fedcba9876543210fedcba98"
 
@@ -34,6 +33,8 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         var registreGh: URL { carpeta.appending(path: "gh.log") }
         var ordresGh: String { (try? String(contentsOf: registreGh, encoding: .utf8)) ?? "" }
         var fitxerRecepta: URL { carpeta.appending(path: "recepta.rb") }
+        /// El sha de git de la recepta tal com és ara: el mateix que dona GitHub.
+        var blobDeLaRecepta: String { get throws { try git("hash-object", "--no-filters", "--", fitxerRecepta.path) } }
         var zip: URL { repo.appending(path: "build/WarpLaunch-0.28.0.zip") }
         var compilat: Bool { FileManager.default.fileExists(atPath: repo.appending(path: "build").path) }
         var fitxerPut: URL { carpeta.appending(path: "put.txt") }
@@ -79,7 +80,9 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             try Data("/build/\n".utf8).write(to: repo.appending(path: ".gitignore"))
             try Data(recepta().utf8).write(to: fitxerRecepta)
             // `gh` fals: `release view` diu si ja hi és (GH_FALS_JA_HI_ES), `release list` diu l'última (GH_FALS_ANTERIOR). I `api`
-            // fa de GitHub per a la recepta: el GET torna el JSON de debò (el base64 amb salts de línia) i aplica-hi el --jq.
+            // fa de GitHub per a la recepta: el GET torna el JSON de debò (el base64 amb salts de línia, i el sha de git del fitxer)
+            // i hi aplica el --jq, i el PUT només passa si el sha és el del fitxer d'ara. Les eines, amb la ruta sencera: unes
+            // proves en posen de falses al PATH, només per a l'script.
             try Self.executable(carpeta.appending(path: "bin/gh"), #"""
             #!/bin/bash
             echo "$*" >> "$GH_FALS_REGISTRE"
@@ -88,7 +91,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
                 "release list") echo "${GH_FALS_ANTERIOR:-}"; exit 0 ;;
                 "release create")
                     [[ -z "${GH_FALS_RELEASE_FALLA:-}" ]] || exit 1
-                    shasum -a 256 "$4" | cut -c1-64 > "$GH_FALS_ZIP_PUJAT"
+                    /usr/bin/shasum -a 256 "$4" | cut -c1-64 > "$GH_FALS_ZIP_PUJAT"
                     exit 0 ;;
             esac
             [[ "$1" == api ]] || exit 1
@@ -105,15 +108,18 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             [[ "${RUTA%%\?*}" == "repos/$GH_FALS_TAP/contents/Casks/warp-launch.rb" && -f "$GH_FALS_RECEPTA" ]] || {
                 echo '{"message":"Not Found"}'; echo 'gh: Not Found (HTTP 404)' >&2; exit 1
             }
+            BLOB="${GH_FALS_BLOB:-$(/usr/bin/git hash-object --no-filters -- "$GH_FALS_RECEPTA")}"
             if [[ "$METODE" == PUT ]]; then
                 printf '%s\n' "${CAMPS[@]}" > "$GH_FALS_PUT"
                 [[ -z "${GH_FALS_PUT_FALLA:-}" ]] || { echo '{"message":"conflict"}'; echo 'gh: conflict (HTTP 409)' >&2; exit 1; }
+                [[ " ${CAMPS[*]} " == *" sha=$BLOB "* ]] || { echo '{"message":"does not match"}'; echo 'gh: does not match (HTTP 409)' >&2; exit 1; }
                 /usr/bin/jq -n --arg commit "$GH_FALS_COMMIT" '{commit: {sha: $commit}}' | /usr/bin/jq -r "$FILTRE"
                 exit 0
             fi
-            /usr/bin/jq -n --arg contingut "$(base64 < "$GH_FALS_RECEPTA" | fold -w 60)" --arg blob "$GH_FALS_BLOB" \
+            /usr/bin/jq -n --arg contingut "$(/usr/bin/base64 < "$GH_FALS_RECEPTA" | /usr/bin/fold -w 60)" --arg blob "$BLOB" \
                 --arg codificacio "${GH_FALS_CODIFICACIO:-base64}" \
                 '{type: "file", encoding: $codificacio, sha: $blob, content: ($contingut + "\n")}' | /usr/bin/jq -r "$FILTRE"
+            [[ -z "${GH_FALS_CANVIA_EN_LLEGIR:-}" ]] || printf '# un altre canvi\n' >> "$GH_FALS_RECEPTA"
 
             """#)
             try git("init", "-q", "--bare", "-b", "main", carpeta.appending(path: "origen.git").path, a: carpeta)
@@ -152,7 +158,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             [
                 "HOME": carpeta.path, "GH_FALS_REGISTRE": registreGh.path, "WARP_LAUNCH_REPO": "exemple/prova",
                 "WARP_LAUNCH_TAP": tapDeProva, "GH_FALS_TAP": tapDeProva, "GH_FALS_RECEPTA": fitxerRecepta.path,
-                "GH_FALS_BLOB": blobDeProva, "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
+                "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
                 "GH_FALS_PUT": fitxerPut.path, "GH_FALS_ZIP_PUJAT": fitxerZipPujat.path, "GH_FALS_COMMIT": commitDelTap,
                 "LANG": "ca_ES.UTF-8", "LC_ALL": "ca_ES.UTF-8",
                 "PATH": carpeta.appending(path: "bin").path + ":/usr/bin:/bin",
@@ -182,7 +188,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
             }
         }
 
-        /// Signatura ad hoc: el requisit només hi demana l'identificador (sense el certificat d'en David).
+        /// Signatura ad hoc: el requisit només hi demana l'identificador (sense el certificat de debò).
         static let requisitDeProva = ["WARP_LAUNCH_REQUISIT": #"identifier "cat.davide.warp-launch""#]
     }
 
@@ -257,7 +263,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(!b.notes().contains("Primera versió publicada."))
     }
 
-    /// Una app sense el certificat d'en David no es publica: no es podria instal·lar amb --github.
+    /// Una app sense el certificat de debò no es publica: no es podria instal·lar amb --github.
     @Test func adHocNoEsPublica() throws {
         let b = try Banc()
         let (codi, sortida) = try b.executa("--aplica")
@@ -310,6 +316,10 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(!b.ordresGh.contains("--method PUT"))
         #expect(!b.ordresGh.contains("release create"))
         #expect(try Data(contentsOf: b.fitxerRecepta) == abans)
+        // Només lectures, per cap branca: qualsevol altra ordre de `gh` fa fallar la prova.
+        for ordre in b.ordresGh.split(separator: "\n") {
+            #expect(ordre.hasPrefix("release view ") || ordre.hasPrefix("release list ") || ordre == "api repos/\(tapDeProva)/contents/Casks/warp-launch.rb?ref=main --jq .encoding, .sha, .content", "\(ordre)")
+        }
     }
 
     /// Per defecte, el tap és el de debò (`WARP_LAUNCH_TAP` buit fa servir el valor per defecte; el `gh` fals només accepta aquest).
@@ -349,6 +359,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         recepta().replacing("  version \"0.27.0\"", with: "  version '0.27.0'"),
         recepta().replacing("  version \"0.27.0\"", with: "  version \"0.27.0\" # comentari"),
         recepta().replacing("  version \"0.27.0\"", with: "  version \"0.27.0\"\r"),  // CRLF
+        recepta().replacing("\n", with: "\r\n"),  // CRLF a tot el fitxer
         recepta().replacing("  sha256 \"\(sha256Antic)\"", with: "  sha256 :no_check"),
         recepta().replacing("  sha256 \"\(sha256Antic)\"", with: "  sha256 \"abc\""),
         recepta().replacing("  sha256 \"\(sha256Antic)\"", with: "  sha256 \"\(sha256Antic.uppercased())\""),
@@ -397,7 +408,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(b.liniesPut.count == 8, "\(b.liniesPut)")
         #expect(b.campsPut["message"] == "chore: warp-launch passa a la 0.28.0")
         #expect(b.campsPut["branch"] == "main")
-        #expect(b.campsPut["sha"] == blobDeProva)
+        #expect(try b.campsPut["sha"] == b.blobDeLaRecepta)
         #expect(b.campsPut["author[name]"] == "Prova")
         #expect(b.campsPut["author[email]"] == "prova@example.com")
         #expect(b.campsPut["committer[name]"] == "Prova")
@@ -417,14 +428,96 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
 
     /// Només canvien les dues línies: la resta queda byte a byte igual, encara que no sigui UTF-8 o no acabi amb un salt de línia.
     @Test func laRestaDeLaReceptaNoCanvia() throws {
-        let abans = Data("# Recepta amb accents: línia\n  # version \"9.9.9\"\n\tdesc \"x\"   \r\n".utf8) + Data([0xFF, 0x00, 0x0A])
-        let despres = Data("\n  url \"https://exemple.test/v#{version}.zip\"\n  sha256sum = 1\nend".utf8)
+        let abans = Data("# Recepta amb accents: línia\n  # version \"9.9.9\"\n#  version \"9.9.9\"\n#  sha256 \"\(sha256Antic)\"\n\tdesc \"x\"   \r\n".utf8) + Data([0xFF, 0x00, 0x0A])
+        let despres = Data("\n  url \"https://github.com/exemple/prova/releases/download/v#{version}/WarpLaunch-#{version}.zip\"\n  sha256sum = 1\nend".utf8)
         let b = try Banc()
         try (abans + Data("  version \"0.27.0\"\n  sha256 \"\(sha256Antic)\"\n".utf8) + despres).write(to: b.fitxerRecepta)
         let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
         #expect(codi == 0, "\(sortida)")
         let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
         #expect(contingut == abans + Data("  version \"0.28.0\"\n  sha256 \"\(b.zipPujat)\"\n".utf8) + despres)
+    }
+
+    /// Com la recepta de debò (un `livecheck` amb `url`, i textos en UTF-8): en surt la mateixa, amb les dues línies noves.
+    @Test func unaReceptaComLaDeDebo() throws {
+        func text(_ versio: String, _ sha256: String) -> String {
+            #"""
+            cask "warp-launch" do
+              version "\#(versio)"
+              sha256 "\#(sha256)"
+
+              url "https://github.com/exemple/prova/releases/download/v#{version}/WarpLaunch-#{version}.zip"
+              name "Warp Launch"
+              desc "Reobre les finestres de Warp, cada pestanya amb la seva sessió de Claude Code"
+
+              livecheck do
+                url :url
+                strategy :github_latest
+              end
+
+              postflight_steps do
+                run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/Warp Launch.app"], must_succeed: false
+              end
+
+              caveats <<~EOS
+                Abans de desinstal·lar-la, a l'app: Configuració (⌘,) › General › «Restaura Warp i surt…».
+                «« ·l· »»
+              EOS
+            end
+
+            """#
+        }
+        let b = try Banc()
+        try Data(text("0.27.0", sha256Antic).utf8).write(to: b.fitxerRecepta)
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
+        #expect(contingut == Data(text("0.28.0", b.zipPujat).utf8))
+    }
+
+    /// Amb un `base64` que talla la sortida en línies (el de GNU), el contingut continua essent d'una sola línia i el mateix.
+    @Test func elContingutEsDUnaSolaLinia() throws {
+        let b = try Banc()
+        try Banc.executable(b.carpeta.appending(path: "bin/base64"), """
+        #!/bin/bash
+        [[ "${1:-}" == --decode ]] && exec /usr/bin/base64 "$@"
+        exec /usr/bin/base64 -b 76 "$@"
+
+        """)
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.liniesPut.count == 8, "\(b.liniesPut)")
+        let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
+        #expect(String(decoding: contingut, as: UTF8.self) == recepta(versio: "0.28.0", sha256: b.zipPujat))
+    }
+
+    /// Si una eina falla a mig d'una canonada, l'script s'atura abans de publicar (no fa servir el que n'hagi sortit).
+    @Test(arguments: ["base64", "shasum"])
+    func siUnaEinaFallaNoEsPublica(eina: String) throws {
+        let b = try Banc()
+        try Banc.executable(b.carpeta.appending(path: "bin/\(eina)"), """
+        #!/bin/bash
+        [[ "${1:-}" == --decode ]] && exec /usr/bin/\(eina) "$@"
+        printf 'a mitges  x'
+        exit 1
+
+        """)
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi != 0, "\(sortida)")
+        #expect(!b.ordresGh.contains("release create"))
+        #expect(!b.ordresGh.contains("--method PUT"))
+    }
+
+    /// Si algú canvia la recepta entre la lectura i l'escriptura, GitHub refusa el PUT (porta el sha llegit al principi) i no es trepitja res.
+    @Test func siLaReceptaCanviaMentrestantNoLaTrepitja() throws {
+        let b = try Banc()
+        let blobLlegit = try b.blobDeLaRecepta
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_CANVIA_EN_LLEGIR": "1"]) { $1 })
+        #expect(codi == 2, "\(sortida)")
+        #expect(b.campsPut["sha"] == blobLlegit)
+        #expect(b.ordresGh.components(separatedBy: "?ref=main").count == 2, "una sola lectura: \(b.ordresGh)")
+        #expect(try String(contentsOf: b.fitxerRecepta, encoding: .utf8).hasSuffix("# un altre canvi\n"))
+        #expect(sortida.contains("sha256 \"\(b.zipPujat)\""))
     }
 
     /// El missatge final diu com es desfà tot: la versió i el commit del tap.
