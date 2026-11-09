@@ -241,6 +241,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             try Self.executable(carpeta.appending(path: "bin/verifica-fals"), #"""
             #!/bin/bash
             echo "$*" >> "$VERIFICA_FALS_REGISTRE"
+            printf '%s' "${GH_TOKEN:-}${GITHUB_TOKEN:-}" >> "$SIGN_FALS_TOKEN"
             exit "${VERIFICA_FALS_CODI:-0}"
 
             """#)
@@ -330,6 +331,8 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                 #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
                 #expect(!ordresGh.contains("release create"))
                 #expect(!ordresGh.contains("--method PUT"))
+                #expect(ordresSign.isEmpty, "un paquet refusat no es signa")
+                #expect(ordresVerifica.isEmpty, "un paquet refusat no es comprova")
             }
         }
 
@@ -1006,7 +1009,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(codi == (extra.isEmpty ? 0 : 2), "\(sortida)")
         #expect(!sortida.contains(token) && !sortida.contains(altre), "\(sortida)")
         #expect(try String(contentsOf: b.fitxerTokenCompilacio, encoding: .utf8) == "")
-        #expect(((try? String(contentsOf: b.fitxerTokenSign, encoding: .utf8)) ?? "") == "", "ni a l'eina de signar")
+        #expect(((try? String(contentsOf: b.fitxerTokenSign, encoding: .utf8)) ?? "") == "", "ni a les eines de signar i comprovar")
         #expect(b.ordresGh.contains("[token:\(token)] api repos/"), "\(b.ordresGh)")
         if aplica {
             #expect(b.ordresGh.contains("[token:\(token)] release create"), "\(b.ordresGh)")
