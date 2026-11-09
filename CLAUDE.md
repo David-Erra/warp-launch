@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (08/11/2026, 0.31.3)
+## Estat (09/11/2026, 0.31.4)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -80,10 +80,10 @@ Els requisits són a `docs/especificacio.md`.
   `claude` sense saltar els permisos ni ultracode (`.perOmissio`, continuant la conversa). «Salta els permisos», l'esforç i
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
-- **Per a altres usuaris, de la 0.29.0 a la 0.31.3** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
+- **Per a altres usuaris, de la 0.29.0 a la 0.31.4** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
   passos, proves, el que falta provar a l'app i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha
   publicat** (la versió de GitHub és la 0.28.0), **i res de la 0.30.3 endavant no s'ha donat per provat a l'app:** en David
-  prova ara la 0.31.1, compilada a part; la 0.31.2 i la 0.31.3 no s'han vist.
+  prova ara la 0.31.1, compilada a part; de la 0.31.2 a la 0.31.4 no s'han vist.
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
     obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
@@ -138,6 +138,18 @@ Els requisits són a `docs/especificacio.md`.
       diagnòstic i l'ajust no poden canviar permisos ni atributs, ni obrir, crear o escriure per altres camins (només el `fchmod`
       del fitxer que `FitxersLaunchWarp` acaba de crear); l'ajust té un sol `rename(`; i, a les proves, `Lector.init(` també ha de
       portar les dues rutes de prova.
+  - **0.31.4 (ronda 6, set decisions d'en David del 08/11/2026).**
+    - **Rellotge:** a `settings.toml`, «recent» vol dir de 2 s enrere a 2 s endavant; una data més enllà ja no bloqueja l'app.
+    - **Si `settings.toml` no para de canviar** i fa més de 5 minuts seguits que l'ajust no es pot desactivar ni se'n pot saber
+      el valor (comptats amb el Mac despert), el menú de la icona ho diu, amb el triangle (`RefrescWarp.avisNoParaDeCanviar`). Pot
+      sortir amb l'ajust ja desactivat: mentre el fitxer canvia, l'app no ho sap.
+    - **Sense `~/.warp`,** el menú ho diu com a nota, sense el triangle (`Pendent.warpMaiObert`, `notaWarpMaiObert`).
+    - **Warp obert i sense la base:** «si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons» (`LecturaWarp.senseBase`).
+    - **Ja era així, ara amb proves:** amb Warp tancat i sense `settings.toml`, els fulls d'obrir avisen que Warp restaurarà les
+      finestres d'abans (`Obertura.textWarpTancat`); amb una carpeta de prova i sense la base, «Obre a Warp…» obre pels processos.
+    - **Guardes:** `Lector`, `LectorWarp` i `LectorAjustosWarp` ja no tenen cap valor per defecte (l'app i el CLI hi posen les
+      rutes de debò, `lectorsDeWarpDeDebo`; una prova que se n'oblidi una no compila), i a tot `Sources/` només dues crides
+      canvien permisos o atributs de fitxers: el `fchmod` del fitxer acabat de crear a `EscripturaAtomica` i a `FitxersLaunchWarp`.
   - **Guardes (08/11/2026, sense versió):** cap expressió de `GuardaTests` no fa servir `\b`, que no veia els noms amb mòdul
     (`Foundation.Process()`, `NSApp.terminate`); `Process` i `kill` compten com a paraula sencera, i `exec…` i `NSUser…Task` són
     prohibides; les proves no poden fer servir la carpeta d'inici de debò per cap camí; i `Lector(carpetaSessions:)` és
