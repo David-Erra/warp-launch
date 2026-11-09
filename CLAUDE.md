@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (09/11/2026, 0.31.5)
+## Estat (09/11/2026, 0.32.5 al codi; publicada, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -168,6 +168,26 @@ Els requisits són a `docs/especificacio.md`.
     fitxers per cap altra crida (també `remove` de C); `copyfile`, `linkItem`, `createSymbolicLink` i `renamex_np` només a
     `AjustRestauracio.swift`, que no pot obrir `settings.toml` per escriure-hi directament; i els lectors de Claude de debò, només
     a l'app i al CLI (`lectorsDeClaudeDeDebo`).
+- **Actualització automàtica amb Sparkle 2.10.1 (de la 0.32.0 a la 0.32.5, 09/11/2026): al codi, sense publicar.** Les 13 decisions
+  de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
+  `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
+  - **Res no s'ha vist funcionar.** No s'ha obert cap app. Les proves són amb falsos i carpetes temporals, i el que depèn de Sparkle
+    i de macOS està llegit o suposat. Compila, i `build-app.sh` empaqueta i signa el framework; prou.
+  - **Falta, en aquest ordre:** les rondes A a F (amb clau d'un sol ús i l'OK de l'autor per a cada una); la clau de signatura, que
+    només crea l'autor, i `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (pas 11; sense aquest fitxer, cap còpia
+    s'actualitza); `auto_updates true` i `zap` a la recepta del tap (pas 12; sense, `publica.sh` refusa); publicar (l'autor); i la
+    primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia. Si les rondes B o E no surten netes, s'espera el
+    Developer ID (decisió 11).
+  - **Les còpies d'abans (0.31.4 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
+    avisar-ne. Com a molt 5 instal·lacions.
+  - **Com va:** l'únic `import Sparkle` és a `ServeiActualitzacions.swift`; la lògica, sense Sparkle i amb proves, a
+    `PoliticaActualitzacions`, `IntentActualitzacio` i el model `Actualitzacions`. Mira un cop al dia, va encès de sèrie, té pestanya
+    a la Configuració («Actualitzacions») i ítem al menú. Només amb el permís de la restauració acceptat o migrat, a `/Applications`,
+    i amb l'adreça, que només hi posa `build-app.sh --amb-feed`. Es reinicia sola amb 2 minuts sense teclat ni ratolí i sense res de
+    l'app en ús; Warp i Claude no es toquen. `actualitzacio.json` (l'intent i les fallades) és al costat de la configuració, i
+    l'escriu l'app.
+  - **Privacitat:** és la primera connexió a internet de l'app: GitHub veu l'adreça IP i la versió. A `Sources/` no hi ha cap crida
+    de xarxa (guarda): la fa Sparkle.
 - **Signatura:** `scripts/build-app.sh` signa amb el certificat «Warp Launch Dev» del clauer d'en David (D12).
   Per llegir les dades de Warp, cal donar a l'app el permís de Privacitat i seguretat › Arxius i carpetes.
 - **Ordre de feina acordat:**
@@ -189,8 +209,10 @@ Llegeix, en aquest ordre:
 
 ## Entorn i comandes
 
-- Swift 6.4.2 de les **Command Line Tools**, en mode de llenguatge Swift 6. **Sense dependències externes**
-  (només frameworks de macOS: Foundation, SwiftUI, AppKit, SQLite3, UniformTypeIdentifiers, CoreTransferable, ServiceManagement i os).
+- Swift 6.4.2 de les **Command Line Tools**, en mode de llenguatge Swift 6. **Una sola dependència externa: Sparkle 2.10.1,**
+  amb la versió exacta i només al target de l'app (regla 10). La resta, només frameworks de macOS: Foundation, SwiftUI, AppKit, SQLite3,
+  UniformTypeIdentifiers, CoreTransferable, ServiceManagement i os (i CryptoKit, només a `scripts/verifica-signatura.swift`).
+  La primera compilació d'un clon nou necessita internet, també només per al CLI.
   La compilació s'ha provat només a macOS 27.2; la versió mínima declarada és macOS 26.
 - **Proves amb `swift-testing`** (`import Testing`), que fa servir les macros de TestingMacros. XCTest no
   està disponible amb les Command Line Tools.
@@ -213,10 +235,10 @@ scripts/test.sh                          # proves; no facis servir `swift test` 
 .build/debug/warp-launch obre <finestra> --obre [--config <carpeta>]   # obre de debò (regla 1: només amb l'OK d'en David)
 .build/debug/warp-launch diagnostica [--json] [--anonimitza]  # si Warp i Claude Code tenen la forma que l'app llegeix (només lectura; no és a la regla 4: sobre l'estat real, amb l'OK d'en David)
 /usr/bin/log show --last 10m --predicate 'subsystem == "cat.davide.warp-launch"'  # registre de l'app (arrossegar)
-scripts/build-app.sh                     # crea «build/Warp Launch.app» (release, signada amb «Warp Launch Dev» o ad hoc); no l'obre
+scripts/build-app.sh [release|debug]     # crea «build/Warp Launch.app» (release, signada amb «Warp Launch Dev» o ad hoc); no l'obre. --amb-feed només el passa publica.sh
 scripts/instal·la.sh [--aplica]          # sense --aplica, diu què copiaria a /Applications; amb, copia (regla 3: només amb l'OK d'en David)
 scripts/instal·la.sh --github [--aplica] [--versio x.y.z]  # igual, amb la versió publicada a GitHub (per a altres Macs; README.md)
-GH_TOKEN=… scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub i posa al dia la recepta de Homebrew (regla 3: OK cada vegada)
+GH_TOKEN=… scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, signa el zip, crea la versió a GitHub i posa al dia la recepta de Homebrew (regles 3 i 12: --aplica només l'executa l'autor, al seu terminal)
 scripts/warp-restauracio.sh estat         # si Warp desa les finestres (només lectura)
 scripts/warp-restauracio.sh activa|desactiva [--aplica]  # regla 7: sense --aplica no escriu; amb, cal l'OK d'en David
 scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-banana (cal GEMINI_API_KEY)
@@ -238,16 +260,17 @@ scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-bana
 | `Sources/WarpLaunchCore/` | Lògica sense interfície: models, lectura de Warp i de Claude, configuració JSON |
 | `Sources/WarpLaunchUI/` | Model de l'editor (`Editor`, `EstatWarp`) i vistes SwiftUI; no toca `NSApp` |
 | `Sources/WarpLaunchObridor/` | L'única crida que obre res a Warp (`ObreWarp`) i l'única pregunta a macOS d'on és Warp (`TrobaWarp`); la fan servir l'app i el CLI, cap prova no en depèn |
-| `Sources/WarpLaunchApp/` | App de barra de menú, prima: escenes, activació i Dock (executable `WarpLaunch`, `--config <carpeta>`) |
+| `Sources/WarpLaunchApp/` | App de barra de menú, prima: escenes, activació i Dock (executable `WarpLaunch`, `--config <carpeta>`); `ServeiActualitzacions.swift`, l'únic que importa Sparkle |
 | `Sources/WarpLaunchCLI/` | Comanda `warp-launch`: només hi posa els valors reals; la lògica és a `OrdreCLI` (core), que es prova amb fixtures |
 | `Tests/WarpLaunchCoreTests/` | Proves `swift-testing`, sempre amb dades fictícies; inclou la prova de guarda (`GuardaTests`) |
 | `Tests/WarpLaunchUITests/` | Proves del model de l'editor, amb carpetes temporals |
 | `Recursos/Info.plist` | Plantilla del bundle (`LSUIElement`; la versió surt de `VERSION`); `ca.lproj` per als menús en català |
-| `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub i posa al dia la recepta de Homebrew), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
+| `Recursos/Actualitzacions.plist` | **Encara no hi és (pas 11; una guarda ho comprova).** L'adreça de les actualitzacions i la clau pública: només les porta la còpia que es publica |
+| `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub i posa al dia la recepta de Homebrew), `verifica-signatura.swift` (comprova la signatura del zip amb la clau pública de l'app), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
 | `.claude/skills/mac-design/` | Normes de disseny d'app de Mac (adaptada de BAMA, MIT); `docs/disseny.md` hi mana |
 | `.claude/skills/app-icon/` | Com es fa la icona: dibuix amb codi (nano-banana, com a alternativa), Icon Composer i `actool` (adaptada de BAMA, MIT) |
 | `.claude/settings.json` | Regles `deny` de Claude Code (vegeu sota) |
-| `LICENSE` | Llicència MIT (© 2026 David Erra); les skills de BAMA porten la seva (`LICENSE-BAMA`) |
+| `LICENSE` | Llicència MIT (© 2026 David Erra); les skills de BAMA porten la seva (`LICENSE-BAMA`), i la de Sparkle va dins de l'app (`LICENSE-Sparkle`) |
 
 ## Regles de seguretat (obligatòries)
 
@@ -274,11 +297,19 @@ desenes de sessions o les tanca totes de cop.
    - **Des de la 0.27.0 (D3),** l'app té un interruptor a la Configuració («Obre Warp Launch en iniciar sessió») que l'afegeix
      als ítems d'inici. Només l'activa en David, a mà; tu no l'activis ni el provis sense el seu OK. Es desfà amb el mateix
      interruptor o a Configuració del Sistema › General › Ítems d’inici de sessió.
-   - **No publiquis cap versió a GitHub** (`scripts/publica.sh --aplica`) sense l'OK d'en David, cada vegada: la instal·la qui faci
-     la comanda del README, i també posa al dia la recepta de Homebrew del tap (la rep qui faci `brew upgrade`). Es desfà en aquest
-     ordre, perquè Homebrew no demani un zip que ja no hi és: `git revert <commit>` (el que diu l'script) en un clon del tap, i push;
-     després, `gh release delete vX.Y.Z --repo David-Erra/warp-launch --cleanup-tag`.
+   - **No publiquis cap versió a GitHub** (`scripts/publica.sh --aplica`): l'executa només l'autor, al seu terminal (decisió 6 de
+     Sparkle; regla 12). La instal·la qui faci la comanda del README, i també posa al dia la recepta de Homebrew del tap (la rep qui
+     faci `brew upgrade`).
+   - **Des de la primera 0.32.x, publicar arriba sol a tots els Macs en un dia i no es desfà.** Es para com diu `docs/disseny.md`,
+     secció 11, apartat 7: `latest` torna a l'anterior, es reverteix la recepta i es publica una correcció amb una versió superior.
+     Fins llavors (cap còpia no s'actualitza sola), es desfà en aquest ordre, perquè Homebrew no demani un zip que ja no hi és:
+     `git revert <commit>` (el que diu l'script) en un clon del tap, i push; després, `gh release delete vX.Y.Z --repo
+     David-Erra/warp-launch --cleanup-tag`.
+   - Sparkle crea una tasca temporal de `launchd` a cada instal·lació (llegit a les seves fonts): no és un ítem d'inici ni un
+     LaunchAgent permanent, i no l'ha de registrar cap codi nostre.
 4. **No obris l'app** (`open "build/Warp Launch.app"`, `.build/*/WarpLaunch`) sense OK.
+   - **Una prova d'actualització reinicia l'app:** l'OK ha de cobrir-ho, i has de dir quantes vegades. Cap ronda obre finestres de
+     Warp ni sessions de Claude (`docs/disseny.md`, secció 11, apartat 8).
    - Del CLI, sense OK només pots executar ordres de lectura: `--versio`, `llegeix`, i a la fase 2 `importa` sense
      `--desa` i `configuracio valida` (OK d'en David, 03/11/2026).
    - Tota ordre que obri finestres o escrigui fora del repo ha de tenir un mode de prova, i ha de ser el
@@ -323,15 +354,28 @@ desenes de sessions o les tanca totes de cop.
 **Canvis**
 
 10. **Res de dependències noves sense acordar-ho:** ni paquets SwiftPM, ni eines de Homebrew, ni llibreries fora de macOS.
+    L'única acordada és Sparkle (fila del 07/11/2026, decisió 6), amb la versió exacta: pujar-la és un canvi més d'aquesta regla.
 11. **Canvis de format amb migració.** La configuració porta un camp de versió. Si el format canvia, cal
-    escriure una migració que no perdi dades i demanar l'OK abans.
+    escriure una migració que no perdi dades i demanar l'OK abans. Amb les actualitzacions automàtiques, una migració arriba a
+    tothom sense que ningú ho decideixi: cap canvi de format sense que la versió anterior en sàpiga llegir el resultat o recuperar
+    la còpia.
+
+**Clau de signatura de les actualitzacions**
+
+12. **Cap agent no crea, llegeix ni fa servir la clau EdDSA de Sparkle.**
+    - No executis `generate_keys` (sense arguments la crea; només `--help`), `sign_update` ni `generate_appcast` amb la clau real,
+      ni `scripts/publica.sh --aplica` (decisió 6).
+    - Tampoc cap ordre que llegeixi o busqui la seva entrada al clauer (`security find-generic-password`, `dump-keychain`…).
+    - Les proves fan servir falsos, o una clau d'un sol ús en un fitxer temporal.
+    - Si aquesta clau es perd sense còpia, cap instal·lació no es pot tornar a actualitzar sola (`docs/disseny.md`, secció 11, apartat 5).
 
 **Sobre `.claude/settings.json`:** les regles `deny` es compleixen fins i tot amb
 `--dangerously-skip-permissions`. Bloquegen dues coses:
 - l'edició amb Edit/Write dels fitxers protegits (`~/.claude`, que no inclou la memòria; Warp; LaunchAgents;
   `espai-warp`; la configuració de Warp Launch, `~/.config/warp-launch/`);
 - algunes ordres de Bash: `killall`, `pkill`, `osascript`, `launchctl bootstrap|load|enable|kickstart`,
-  `claude agents` i les subcomandes d'`espai.py`.
+  `claude agents`, les subcomandes d'`espai.py`, i les eines de la clau de Sparkle i `publica.sh --aplica` (regla 12). La regla
+  de `publica.sh` val per a tota l'ordre: un missatge o un text que porti tots dos trossos també queda bloquejat.
 
 **No cobreixen** l'escriptura amb altres ordres de Bash (`sed -i`, `cp`, redireccions) ni `open warp://`.
 Aquestes regles s'han de complir igualment. `Edit(~/.warp/**)` es manté també amb l'excepció de la regla 7: l'únic camí
