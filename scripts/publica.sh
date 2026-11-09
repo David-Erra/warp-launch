@@ -14,6 +14,8 @@ cd "$(dirname "$0")/.."
 
 IDENTIFICADOR="cat.davide.warp-launch"
 REPO="${WARP_LAUNCH_REPO:-David-Erra/warp-launch}"
+TAP="${WARP_LAUNCH_TAP:-David-Erra/homebrew-tap}"
+CAMI_RECEPTA="Casks/warp-launch.rb"
 # El mateix requisit que comprova `instal·la.sh --github`.
 REQUISIT="${WARP_LAUNCH_REQUISIT:-identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\"}"
 APP="build/Warp Launch.app"
@@ -62,6 +64,40 @@ if [[ -n "$ANTERIOR" ]]; then
     BASE="$(git rev-parse 'FETCH_HEAD^{commit}')"
 fi
 
+# Abans de compilar res: l'autor del commit del tap ha de ser explícit (que no en surti cap altre correu), i la recepta s'ha de
+# poder llegir i tenir la forma que aquest script sap canviar. Si no, no es publica res.
+AUTOR_NOM="$(git config user.name || true)"
+AUTOR_CORREU="$(git config user.email || true)"
+if [[ -z "$AUTOR_NOM" || -z "$AUTOR_CORREU" ]]; then
+    echo "publica: falta git config user.name o user.email, que seran l'autor del commit de la recepta de Homebrew. No s'ha publicat res." >&2
+    exit 1
+fi
+TEMPORAL="$(mktemp -d)"
+trap 'rm -rf "$TEMPORAL"' EXIT
+RECEPTA="$TEMPORAL/recepta.rb"
+RECEPTA_NOVA="$TEMPORAL/recepta-nova.rb"
+# Una sola lectura, perquè el sha del blob i el contingut siguin de la mateixa versió del fitxer. El contingut, sempre en un fitxer:
+# una variable de bash perdria els salts de línia finals, i la resta de la recepta ha de quedar byte a byte igual.
+if ! RESPOSTA="$(gh api "repos/$TAP/contents/$CAMI_RECEPTA?ref=main" --jq '.encoding, .sha, .content')"; then
+    echo "publica: no s'ha pogut llegir la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}). No s'ha publicat res." >&2
+    exit 1
+fi
+SHA_BLOB="$(sed -n 2p <<< "$RESPOSTA")"
+FORMA_BLOB='^[0-9a-f]{40}$'
+if [[ "$(sed -n 1p <<< "$RESPOSTA")" != base64 || ! "$SHA_BLOB" =~ $FORMA_BLOB ]] || ! sed 1,2d <<< "$RESPOSTA" | base64 --decode > "$RECEPTA"; then
+    echo "publica: GitHub no ha tornat la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) com s'esperava. No s'ha publicat res." >&2
+    exit 1
+fi
+# Exactament una línia de cada, amb aquesta forma: una altra (dins d'un bloc, amb un comentari al final, amb CRLF…) voldria dir endevinar.
+compta_linies() { LC_ALL=C grep -Eac "$1" "$RECEPTA" || true; }
+if [[ "$(compta_linies '^[[:space:]]*version([^[:alnum:]_]|$)')" != 1 || "$(compta_linies '^  version "[0-9]+\.[0-9]+\.[0-9]+"$')" != 1 ||
+      "$(compta_linies '^[[:space:]]*sha256([^[:alnum:]_]|$)')" != 1 || "$(compta_linies '^  sha256 "[0-9a-f]{64}"$')" != 1 ]]; then
+    echo "publica: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) no té exactament una línia «  version \"X.Y.Z\"» i una línia «  sha256 \"…\"». No s'ha publicat res." >&2
+    exit 1
+fi
+VERSIO_ABANS="$(LC_ALL=C sed -nE 's/^  version "(.*)"$/\1/p' "$RECEPTA")"
+SHA256_ABANS="$(LC_ALL=C sed -nE 's/^  sha256 "(.*)"$/\1/p' "$RECEPTA")"
+
 scripts/build-app.sh
 if [[ "$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist" 2>/dev/null || true)" != "$VERSIO" ]]; then
     echo "publica: «${APP}» no és la ${VERSIO}. No s'ha publicat res." >&2
@@ -79,6 +115,9 @@ fi
 rm -f "$ZIP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 MIDA="$(du -h "$ZIP" | cut -f1 | tr -d ' ')"
+SHA256_ZIP="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
+# Amb LC_ALL=C, sed no refusa cap byte i deixa la resta com és (també si l'última línia no acaba amb un salt de línia).
+LC_ALL=C sed -E -e "s/^  version \"[^\"]*\"\$/  version \"$VERSIO\"/" -e "s/^  sha256 \"[^\"]*\"\$/  sha256 \"$SHA256_ZIP\"/" "$RECEPTA" > "$RECEPTA_NOVA"
 
 NOTES="build/notes-$VERSIO.md"
 {
@@ -100,6 +139,9 @@ NOTES="build/notes-$VERSIO.md"
 if [[ "$APLICA" -eq 0 ]]; then
     echo "Mode de prova: no s'ha publicat res."
     echo "Amb --aplica, publicaria Warp Launch $VERSIO a $REPO com a ${ETIQUETA} (commit ${COMMIT:0:7}), amb $ZIP ($MIDA)."
+    echo "I canviaria la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}, amb l'autor ${AUTOR_NOM} <${AUTOR_CORREU}>):"
+    echo "  version: ${VERSIO_ABANS} -> ${VERSIO}"
+    echo "  sha256: ${SHA256_ABANS} -> ${SHA256_ZIP} (el d'aquest zip; amb --aplica, el del zip que es pugi)"
     echo "Notes ($NOTES):"
     sed 's/^/  /' "$NOTES"
     exit 0
