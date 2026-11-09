@@ -18,7 +18,7 @@
 # - Compila amb --amb-feed: només aquesta còpia porta l'adreça de les actualitzacions. Refusa si la recepta no té `auto_updates true`, si l'última
 #   versió de GitHub ja és aquesta o una de més nova, si falta el framework o si alguna de les seves peces no és del nostre certificat.
 # - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP, WARP_LAUNCH_REQUISIT i WARP_LAUNCH_REQUISIT_SPARKLE canvien el repo de GitHub, el tap i el
-#   requisit de la signatura de l'app i de les peces de Sparkle; WARP_LAUNCH_SIGN_UPDATE i WARP_LAUNCH_VERIFICA, les eines de signar i comprovar.
+#   requisit de la signatura de l'app i de les peces de Sparkle; WARP_LAUNCH_SIGN_UPDATE i WARP_LAUNCH_VERIFICA, les eines de signar i comprovar. Contra el repo de debò, aquestes quatre no valen.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -47,6 +47,16 @@ case "${1:-}" in
     --aplica) APLICA=1 ;;
     *) echo "ús: scripts/publica.sh [--aplica]" >&2; exit 64 ;;
 esac
+
+# Aquestes variables canvien qui signa i què es comprova: contra el repo de debò, una que hagi quedat definida publicaria sense les comprovacions.
+if [[ "$(tr '[:upper:]' '[:lower:]' <<< "$REPO")" == david-erra/warp-launch ]]; then
+    for VARIABLE in WARP_LAUNCH_SIGN_UPDATE WARP_LAUNCH_VERIFICA WARP_LAUNCH_REQUISIT WARP_LAUNCH_REQUISIT_SPARKLE; do
+        if [[ -n "${!VARIABLE:-}" ]]; then
+            echo "publica: ${VARIABLE} i les altres variables de signar i comprovar només valen per a proves, no contra ${REPO}. No s'ha publicat res." >&2
+            exit 1
+        fi
+    done
+fi
 
 VERSIO="$(tr -d '[:space:]' < VERSION)"
 # Va a l'etiqueta, a la URL i a la substitució de la recepta, i la recepta només en sap llegir aquesta forma.

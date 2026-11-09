@@ -1048,6 +1048,25 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(!sortida.contains("Fet:"), "\(sortida)")
     }
 
+    /// Les variables de les proves canvien qui signa i què es comprova: contra el repo de debò, no valen, si n'hi ha alguna.
+    @Test(arguments: ["WARP_LAUNCH_SIGN_UPDATE", "WARP_LAUNCH_VERIFICA", "WARP_LAUNCH_REQUISIT", "WARP_LAUNCH_REQUISIT_SPARKLE"],
+          ["David-Erra/warp-launch", "david-erra/WARP-launch"])
+    func lesVariablesDeProvaNoValenContraElRepoDeDebo(variable: String, repo: String) throws {
+        let b = try Banc()
+        let netes = ["WARP_LAUNCH_SIGN_UPDATE": "", "WARP_LAUNCH_VERIFICA": "", "WARP_LAUNCH_REQUISIT": "", "WARP_LAUNCH_REQUISIT_SPARKLE": ""]
+        let entorn = netes.merging(["WARP_LAUNCH_REPO": repo, variable: "/usr/bin/true"]) { $1 }
+        try b.comprovaRefus(conte: "només valen per a proves", entorn: entorn)
+        #expect(b.ordresGh.isEmpty, "\(b.ordresGh)")
+        #expect(b.ordresSign.isEmpty)
+    }
+
+    /// Sense cap d'aquestes variables, el repo de debò no es refusa per això.
+    @Test func senseVariablesDeProvaElRepoDeDeboNoEsRefusaPerAixo() throws {
+        let b = try Banc()
+        let (_, sortida) = try b.executa(entorn: ["WARP_LAUNCH_REPO": "David-Erra/warp-launch", "WARP_LAUNCH_SIGN_UPDATE": "", "WARP_LAUNCH_VERIFICA": ""])
+        #expect(!sortida.contains("només valen per a proves"), "\(sortida)")
+    }
+
     /// Si l'escriptura de la recepta falla, la versió es queda publicada i el missatge diu què cal canviar a mà.
     @Test func siLEscripturaFallaDiuQueCalFerAMa() throws {
         let b = try Banc()
