@@ -935,8 +935,8 @@ explícita, també obre) i D18 (lectura cada 60 s).
 ### Fitxer temporal (0.15.0, fet)
 
 - **Carpeta:** `~/.warp/launch_configurations/`, l'única que llegeix Warp, també amb `--config`. Si no hi és, l'app la crea en
-  fer «Obre» (0.31.5, regla 7, tercera excepció): un sol nivell, mai `~/.warp`, res si el camí és un enllaç o un fitxer, i només amb
-  la configuració de debò i el permís. El CLI no la crea.
+  fer «Obre» (0.31.5, regla 7, tercera excepció): un sol nivell, mai `~/.warp`, res si el camí o `~/.warp` són un enllaç o un fitxer, i
+  només amb la configuració de debò i el permís, mirat just abans d'escriure. El CLI no la crea.
 - **Nom:** `warp-launch-<llançament>.yaml`, amb un UUID nou en minúscules. `name:` és el nom sense `.yaml`, i l'URL,
   `warp://launch/warp-launch-<llançament>`: sense punts ni res a codificar, no pot coincidir amb cap configuració d'en
   David ni activar el reintent sense extensió de Warp (`uri/mod.rs:746-811`).
@@ -1202,7 +1202,7 @@ Com a la fase 2: cada `feat:` porta proves, el bump de `VERSION` i `WarpLaunch.v
      la configuració, Warp o `estat.json`), 2 (alguna pestanya no s'obriria) i 64.
 5. **0.19.0 — escriure i esborrar el fitxer temporal (core).** Fet (04/11/2026). `FitxersLaunchWarp` (`escriu` amb
    `O_EXCL`, 0644 i `fsync`; `esborra` amb totes les comprovacions; `neteja`) i les regles noves de la guarda.
-   - **Detalls:** no crea mai la carpeta de Warp (si no hi és, error). `escriu` també porta `O_NOFOLLOW`, i si falla a
+   - **Detalls:** no crea mai la carpeta de Warp (si no hi és, error; des de la 0.31.5, «Obre» de l'app la crea, secció «Fitxer temporal»). `escriu` també porta `O_NOFOLLOW`, i si falla a
      mig escriure, treu el fitxer només si és el mateix inode que acaba de crear. `neteja(llancaments:ara:)` torna el
      resultat per llançament, per posar-lo al dia a `estat.json`; als fitxers propis que no hi són no els pot mirar la
      mida, només la marca i l'edat (`mtime`). La guarda: `launch_configurations` només en aquest fitxer, un sol

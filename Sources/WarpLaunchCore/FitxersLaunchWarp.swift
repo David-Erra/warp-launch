@@ -21,8 +21,8 @@ public struct FitxersLaunchWarp: Sendable {
     public static let edatPerNetejar: TimeInterval = 2 * 60
 
     public enum ErrorFitxers: Error, Equatable, CustomStringConvertible {
-        /// La carpeta no hi és, o no és una carpeta, i no s'ha creat: no es podia (`~/.warp` no hi és, o el camí és un enllaç
-        /// o un fitxer) o no s'havia de fer (`warp-launch obre --obre`).
+        /// La carpeta no hi és, o no és una carpeta, i no s'ha creat: no es podia (`~/.warp` no hi és, o el camí passa per un
+        /// enllaç o un fitxer) o no s'havia de fer (`--config`, sense el permís o `warp-launch obre --obre`).
         case senseCarpeta
         /// Ja hi ha un fitxer amb aquest nom: no se sobreescriu mai.
         case jaExisteix
@@ -39,7 +39,8 @@ public struct FitxersLaunchWarp: Sendable {
         public var description: String {
             switch self {
             case .senseCarpeta: "Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp "
-                + "encara no s'hagi obert mai, o que el camí sigui un enllaç o un fitxer"
+                + "encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, "
+                + "que no la creen"
             case .jaExisteix: "ja hi ha un fitxer amb aquest nom, i no se sobreescriu"
             case let .escriptura(error): "no s'ha pogut escriure el fitxer: \(error)"
             case .noEsUnFitxer: "no és un fitxer normal, i no s'esborra"
@@ -96,11 +97,19 @@ public struct FitxersLaunchWarp: Sendable {
         return dades.count
     }
 
-    /// La carpeta, un sol nivell: sense el pare (`~/.warp`), `mkdir` falla, i no el crea mai. Si el camí ja és un fitxer o un
-    /// enllaç trencat, també falla, i no s'hi toca res. Si no, només pot ser que Warp l'hagi creada just ara.
+    /// La carpeta, un sol nivell: el pare (`~/.warp`) ha de ser una carpeta de debò, ni un enllaç (es crearia a una altra banda)
+    /// ni un fitxer, i no el crea mai. Si el camí ja és un fitxer o un enllaç, encara que sigui trencat, la crida falla, i no s'hi
+    /// toca res. Si ja hi és una carpeta de debò, només pot ser que Warp l'hagi creada just ara.
     private func creaLaCarpeta() -> Bool {
+        guard esCarpetaDeDebo(carpeta.deletingLastPathComponent().path) else { return false }
         guard mkdir(carpeta.path, mode_t(0o755)) != 0 else { return true }
-        return errno == EEXIST && esCarpeta()
+        return errno == EEXIST && esCarpetaDeDebo(carpeta.path)
+    }
+
+    /// Sense seguir enllaços, a diferència de `esCarpeta`.
+    private func esCarpetaDeDebo(_ ruta: String) -> Bool {
+        var info = stat()
+        return lstat(ruta, &info) == 0 && (info.st_mode & S_IFMT) == S_IFDIR
     }
 
     private func escriuTot(_ dades: Data, a fd: Int32) -> Bool {

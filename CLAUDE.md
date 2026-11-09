@@ -311,8 +311,8 @@ desenes de sessions o les tanca totes de cop.
      l'app.
    - **Tercera excepció (en David, 09/11/2026): l'app** crea la carpeta `~/.warp/launch_configurations` en fer «Obre», si no hi
      és (`FitxersLaunchWarp.escriu`, un sol `mkdir`, un sol nivell). Mai `~/.warp`: si no hi és, com fins ara, no s'obre res.
-     Res si el camí és un enllaç o un fitxer. Només amb la carpeta de debò i el permís acceptat o migrat (hi ha refresc); el CLI
-     no la crea.
+     Res si el camí o `~/.warp` són un enllaç o un fitxer. Només amb la carpeta de debò i el permís acceptat o migrat
+     (`ConsentimentRestauracio.potCrearCarpetaDeWarp`); el CLI no la crea.
    - Quan arribi la fase 3, l'app només escriurà els fitxers que generi ella, amb una marca pròpia, i amb l'OK d'en David.
 8. **`~/.config/espai-warp/` és només de lectura.** Hi ha la configuració i l'historial del prototip.
 9. **La configuració JSON de Warp Launch és d'en David** (a `~/.config/warp-launch/`). Edita-la només si t'ho

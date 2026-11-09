@@ -117,6 +117,38 @@ private func fitxer(_ n: Int) throws -> FitxerLaunch {
         #expect(try Data(contentsOf: unFitxer) == Data("d'en David".utf8))
     }
 
+    /// Si `~/.warp` és un enllaç, la carpeta es crearia a una altra banda: no es crea. Tampoc amb una URL de directori, la de
+    /// la carpeta de debò, on una barra final faria seguir l'enllaç trencat a la crida.
+    @Test func noCreaLaCarpetaSiElPareEsUnEnllacOUnFitxer() throws {
+        let c = try Carpeta()
+        let f = try fitxer(1)
+        let mgr = FileManager.default
+
+        let altra = c.tmp.url("altra-banda")
+        try mgr.createDirectory(at: altra, withIntermediateDirectories: false)
+        let enllac = c.tmp.url("punt-warp-enllac")
+        try mgr.createSymbolicLink(at: enllac, withDestinationURL: altra)
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) {
+            try FitxersLaunchWarp(carpeta: enllac.appending(path: "carpeta-nova", directoryHint: .isDirectory)).escriu(f, creaCarpeta: true)
+        }
+        #expect(try mgr.contentsOfDirectory(atPath: altra.path).isEmpty)
+
+        let unFitxer = c.tmp.url("punt-warp-fitxer")
+        try Data("d'algú".utf8).write(to: unFitxer)
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) {
+            try FitxersLaunchWarp(carpeta: unFitxer.appending(path: "carpeta-nova", directoryHint: .isDirectory)).escriu(f, creaCarpeta: true)
+        }
+        #expect(try Data(contentsOf: unFitxer) == Data("d'algú".utf8))
+
+        let desti = c.tmp.url("desti-que-no-hi-es")
+        let trencat = c.fitxers.carpeta.appending(path: "enllac-trencat")
+        try mgr.createSymbolicLink(at: trencat, withDestinationURL: desti)
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) {
+            try FitxersLaunchWarp(carpeta: c.fitxers.carpeta.appending(path: "enllac-trencat", directoryHint: .isDirectory)).escriu(f, creaCarpeta: true)
+        }
+        #expect(!mgr.fileExists(atPath: desti.path))
+    }
+
     @Test func esborraElQueVaEscriure() throws {
         let c = try Carpeta()
         let f = try fitxer(1)
