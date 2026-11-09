@@ -800,6 +800,262 @@ Llegit al codi de Homebrew (`git describe`: `7.0.12-217-g25ccd49b8c`; les rutes 
 - **Provat de debò:** instal·lació des de zero sense el tap, actualització de la 0.28.0 a la 0.31.4 i desinstal·lació, amb la
   recepta sense `quit`. **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de `quit` i reobrir.
 
+## Sparkle (09/11/2026, Sparkle 2.10.1)
+
+Per a l'actualització automàtica (`docs/disseny.md`, secció 11). Marques: **PROVAT**, executat amb l'ordre i el resultat; **LLEGIT**, al codi o a la
+documentació, amb fitxer i línia, sense veure-ho funcionar; **SUPOSAT**, deduït sense evidència directa.
+`SP/` és el codi de Sparkle a l'etiqueta 2.10.1; `D/` és `documentation/` del web de Sparkle (`sparkle-project.github.io`, commit 6524f21, 31/10/2026).
+
+Entorn: macOS 27.2 arm64, Swift 6.4.2 de les Command Line Tools, sense Xcode. **Cap app amb interfície s'ha obert:** només eines de consola i `codesign`.
+Les signatures de prova no han fet servir el clauer: una clau EdDSA d'un sol ús, generada amb CryptoKit i desada en un fitxer temporal.
+**No s'ha vist mai funcionar aquí:** la descàrrega i la instal·lació reals, el tancament i la reobertura de l'app, els avisos, l'efecte sobre el permís
+d'Arxius i carpetes i sobre l'ítem d'inici, i signar amb «Warp Launch Dev».
+
+
+### 1. Versió, paquet i binaryTarget
+
+- **PROVAT** (API de GitHub, `repos/sparkle-project/Sparkle/releases`): l'última estable és la **2.10.1**, del 25/10/2026 (commit
+  `ab7d71291238df6e0492143b120c9b696a35f603`). Les anteriors: 2.10.0 (13/09/2026) i 2.9.6 (17/08/2026).
+- **LLEGIT** (`SP/Package.swift`): URL del paquet `https://github.com/sparkle-project/Sparkle`; eines 5.5; macOS 12 com a mínim;
+  `.binaryTarget` amb
+  `https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-for-Swift-Package-Manager.zip`, checksum
+  `4c2e48a3e50ebcc2c88a58a4c7264a1a99c3c31857ce754357afb9cdb323022a`.
+- **PROVAT** (API): el zip de SwiftPM fa 10.197.413 bytes; el `tar.xz` amb les eines, 16.346.336 (sha256 `1a856d2a…cf27`).
+- **LLEGIT** (`D/security-and-reliability/index.md:14`): la 2.9.6 corregeix errors de seguretat. No s'ha d'anar per sota.
+
+### 2. Compilar amb SwiftPM i les Command Line Tools
+
+Paquet de prova: eines 6.0, macOS 26, `.package(url:…, exact: "2.10.1")`, un target amb Sparkle, un CLI sense Sparkle, una biblioteca
+sense Sparkle i les seves proves.
+
+- **PROVAT:** `swift build -c release` compila sense Xcode (1 min 35 s la primera vegada, amb la baixada).
+- **PROVAT, on és el framework:** `<bin>/Sparkle.framework` (`<bin>` és `swift build -c release --show-bin-path`, que
+  `build-app.sh:22` ja fa servir; en aquest entorn, `.build/out/Products/Release`), i a
+  `.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework`.
+- **PROVAT, rpaths** (`otool -l`, `otool -L`): el binari enllaça `@rpath/Sparkle.framework/Versions/B/Sparkle`, però SwiftPM no hi posa
+  `@executable_path/../Frameworks`. Segons el target, hi deixa `/usr/lib/swift` i `@loader_path`, o només `/usr/lib/swift`.
+  Cal afegir-lo; les dues maneres funcionen:
+
+  | Manera | Resultat |
+  |---|---|
+  | `install_name_tool -add_rpath @executable_path/../Frameworks` abans de signar | dyld carrega el framework des del bundle |
+  | `linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]` | compila (paquet arrel) i dyld el carrega des del bundle |
+
+  Fora del bundle, el binari amb només aquests rpaths falla: `Library not loaded: @rpath/Sparkle.framework…`, codi 134. Afecta qualsevol
+  execució directa des de `.build`.
+  **Recomanació:** `install_name_tool` a `build-app.sh`, on ja s'arma el bundle: no toca `Package.swift`.
+- **PROVAT, altres targets:** el CLI no enllaça Sparkle (`otool -L`), i les proves de la biblioteca passen amb la ruta del connector
+  (`-plugin-path`, com a `scripts/test.sh`).
+- **PROVAT, xarxa** (amb `sandbox-exec … (deny network*)`):
+
+  | Situació | Resultat |
+  |---|---|
+  | Amb `.build` | compila, codi 0 |
+  | Sense `.build`, amb la memòria cau de SwiftPM | compila, codi 0 («from cache») |
+  | Sense `.build` i sense memòria cau | falla, codi 1, **també si només es compila el CLI** |
+
+  Avui el repo compila sense internet; amb Sparkle, la primera compilació d'un clon nou en necessitarà. Memòria cau: 9,7 MB
+  d'artefactes i 49 MB de repositoris.
+- **PROVAT:** `Package.resolved` fixa la revisió. Al repo avui no n'hi ha (`git ls-files`) i `.gitignore` no l'exclou: **s'ha de fer commit**.
+
+### 3. Muntar i signar l'app
+
+- **PROVAT:** un `.app` mínim amb `Contents/Frameworks/Sparkle.framework` (copiat amb `ditto`) i signat de dins cap a fora, sense `--deep`,
+  passa `codesign --verify --strict` i `--strict --deep`. Ordre: `Installer.xpc`, `Downloader.xpc` (`--preserve-metadata=entitlements`),
+  `Autoupdate`, `Updater.app`, el framework, l'executable i l'app.
+- **LLEGIT:** és l'ordre de `D/sandboxing/index.md:75-94`.
+- **PROVAT, com ve signat:** `flags=0x10002(adhoc,runtime)`, sense Team ID, entitlements buits a `Downloader` i `Updater`.
+- **PROVAT, mides** (`du`): framework tal com ve, 2,9 MB. Amb XPC, 2.836 KB; sense XPC, 2.512 KB. El zip de l'app de prova
+  (sense XPC, amb executables petits): 1.002.251 bytes. La 0.31.4 fa 3.714.522 bytes comprimida.
+- **LLEGIT, XPC:** només calen en apps amb sandbox (`D/sandboxing/index.md:100-140`, `D/customization/index.md:48,53-56`,
+  `SP/Sparkle/SPUUpdater.m:232-252`). Warp Launch no en té (cap `entitlements` al repo). Treure-les estalvia 0,3 MB i dos passos de signatura.
+  Cal treure `Versions/B/XPCServices` **i** l'enllaç `XPCServices`, i tornar a signar el framework.
+- **PROVAT, casos negatius** — `--verify --strict` sol **no veu** dos errors que `--deep` sí:
+
+  | Cas | `--strict` | `--strict --deep` |
+  |---|---|---|
+  | XPC trets, framework sense tornar a signar | codi 0 | codi 1, «a sealed resource is missing or invalid» |
+  | `Autoupdate` tornat a signar, framework no | codi 0 | codi 1, «nested code is modified or invalid» |
+  | `Info.plist` del framework alterat | codi 1 | codi 1 |
+  | Enllaç `XPCServices` penjat | codi 0 | codi 0 |
+  | Només l'app signada, framework tal com ve | codi 0 | codi 0 |
+
+  **Conseqüència:** `build-app.sh:54` i `publica.sh:131` verifiquen sense `--deep` i no ho veurien.
+- **SUPOSAT:** el mateix ordre val amb «Warp Launch Dev» (aquí, només ad hoc, per no tocar el clauer).
+
+### 4. App sense notaritzar i amb certificat propi
+
+- **LLEGIT, la regla** (`SP/Sparkle/SUUpdateValidator.m:296-303`, `:373`): una actualització s'accepta si la clau EdDSA (la vella i la
+  nova iguals i vàlides) **o** la identitat de codi (igual i vàlida) passen.
+- **LLEGIT:** la signatura EdDSA es comprova amb la clau pública de l'app **vella** (`:338-341`). Una signatura corrupta es refusa (`:364`).
+- **LLEGIT:** identitat: `SecCodeCopyDesignatedRequirement` de la vella i `SecStaticCodeCheckValidityWithErrors` a la nova
+  (`SP/Autoupdate/SUCodeSigningVerifier.m:26-137`, `SUUpdateValidator.m:344-345`). Ad hoc compta com a signada (`SUCodeSigningVerifier.m:248-270`, `:285`).
+- **LLEGIT:** no es pot perdre la clau EdDSA ni la signatura de codi entre versions, i «adhoc signing can be used at minimum» (`SUUpdateValidator.m:271-294`, `:285`).
+- **LLEGIT:** **Sparkle no comprova notarització ni Gatekeeper** (cap `spctl`; a `SUPlainInstaller.m:349` només un comentari).
+- **LLEGIT, quarantena:** Sparkle la treu de tot el paquet (`SP/Autoupdate/SUPlainInstaller.m:48-53`, `SP/Sparkle/SUFileManager.m:120-160`); si falla, continua.
+  `gktool scan` tampoc no és fatal (`SUPlainInstaller.m:94-124`).
+- **LLEGIT:** refusa versions més velles (`SUPlainInstaller.m:327-343`), i si l'app corre traslladada per macOS, avorta (`SP/Sparkle/SPUBasicUpdateDriver.m:77-78`).
+- **PROVAT:** el zip fet com a `publica.sh:140` no porta quarantena en extreure'l (`xattr`), manté 8 enllaços simbòlics i passa
+  `--strict --deep`.
+- **SUPOSAT:** una app sense quarantena i sense notaritzar s'obre sense avisos, com amb Homebrew (`docs/especificacio.md:62`). No s'ha obert.
+
+### 5. De «Warp Launch Dev» a Developer ID
+
+- **LLEGIT:** amb la mateixa clau EdDSA, el canvi d'identitat passa (`SUUpdateValidator.m:299,373`; `D/index.md:127`: «either your Apple code
+  signing certificate or your EdDSA keys (but not both)»).
+- **LLEGIT:** si canvien totes dues, es refusa (`:379-416`).
+- **LLEGIT:** el Team ID nou és diferent del d'`Autoupdate` vell (cap), i llavors no hi ha substitució atòmica ni `gktool`: passa pel camí antic
+  (`SUPlainInstaller.m:349-365,371-376,247-314`), amb un comentari que avisa d'avisos de Privacitat i seguretat.
+- **LLEGIT:** l'alternativa per Developer ID només és amb `SUVerifyUpdateBeforeExtraction` (`SUUpdateValidator.m:76-95`, `SUCodeSigningVerifier.m:323-363`), i necessita un Team ID vell.
+  No aplica.
+- **LLEGIT:** rotar la clau amb el mateix certificat passaria per `:345,351-358`. No s'ha provat.
+- **SUPOSAT:** un cop signada amb Developer ID, cal tornar a signar el framework amb la mateixa identitat, per la validació de biblioteques amb
+  «hardened runtime» (`D/index.md:55`).
+
+### 6. Actualitzacions silencioses
+
+| Clau de l'`Info.plist` | Efecte | Evidència (LLEGIT) |
+|---|---|---|
+| `SUEnableAutomaticChecks` | Qualsevol valor: **no pregunta**. Sense la clau, pregunta al segon llançament | `SP/Sparkle/SPUUpdater.m:405-409,415-416`, `D/customization/index.md:12,24` |
+| `SUAutomaticallyUpdate` | `YES`: baixa i prepara sola. Sense la clau, `NO` | `SP/Sparkle/SPUUpdaterSettings.m:326-329`, `D/customization/index.md:26` |
+| `SUAllowsAutomaticUpdates` | Sense la clau, segueix les comprovacions automàtiques; `NO` ho prohibeix | `SPUUpdaterSettings.m:302-318`, `D/customization/index.md:28` |
+| `SUScheduledCheckInterval` | 86.400 s per defecte, mínim 3.600 | `D/customization/index.md:25`, `SPUUpdaterSettings.m:377-430` |
+
+Després de la baixada silenciosa (LLEGIT):
+
+- Hi ha excepcions que demanen l'atenció de l'usuari: informativa, major, signatura fallida (`SP/Sparkle/SPUAutomaticUpdateDriver.m:82-85`).
+- Si necessita autorització, no s'instal·la sola (`SPUAutomaticUpdateDriver.m:150`, `D/customization/index.md:26`).
+- L'instal·lador **espera que l'app es tanqui**. En tancar-se, instal·la i **no la torna a obrir** (`SP/Autoupdate/AppInstaller.m:399-417,765-831`, `:821`).
+- Passats 7 dies sense tancar, se li mostra a l'usuari (`SUScheduledImpatientCheckInterval`: `SPUUpdater.m:528-537`, `D/gentle-reminders/index.md:22`).
+
+Delegats (LLEGIT):
+
+- `updater(_:willInstallUpdateOnQuit:immediateInstallationBlock:)` (`SPUAutomaticUpdateDriver.m:104-129`, capçalera `SPUUpdaterDelegate.h:421-440`): si torna
+  `true`, l'app decideix quan. **El bloc instal·la i torna a obrir l'app.** Es pot cridar més d'un cop des de la 2.3. L'actualització s'instal·la igualment en tancar.
+- El camí del bloc: `SPUCoreBasedUpdateDriver.m:316-317` → `SPUInstallerDriver.m:509-561` → `AppInstaller.m:654-680,749-763` → `SP/Sparkle/InstallerProgress/InstallerProgressAppController.m:375-385`.
+- `updaterShouldRelaunchApplication` amb `false` **avorta la instal·lació** (`SPUInstallerDriver.m:503-519`). No s'ha de fer servir per ajornar.
+- `updater(_:shouldPostponeRelaunchForUpdate:untilInvokingBlock:)` ajorna, una sola vegada (`SPUInstallerDriver.m:521-535`, capçalera `:342-356`).
+
+Com tanca l'app (LLEGIT):
+
+- `Updater.app` envia un Apple Event de sortida: `[runningApplication terminate]`, amb el comentari «gives the application or user a chance to delay or cancel»
+  (`InstallerProgressAppController.m:375-385`). A les fonts de Sparkle no hi ha cap `NSApp terminate:`.
+- Espera `isTerminated` amb KVO, **sense temps límit** (`:335-357`), i llavors reobre (`:387-421`).
+- Per tant, passa per `applicationShouldTerminate` (`Sources/WarpLaunchApp/WarpLaunchApp.swift:283-317`). **`.terminateLater` es respecta** i
+  `.terminateCancel` deixa l'actualització preparada. Tancar Warp Launch no toca Warp.
+
+**Per a Warp Launch** (LLEGIT del repo, comportament no provat):
+
+- Una app de barra de menú gairebé no es tanca: sense el bloc, l'actualització pot quedar esperant fins a 7 dies. Cal cridar-lo en un moment segur (sense
+  fulls oberts ni obertures en marxa).
+- La reobertura, si és als primers 600 s des de l'arrencada i amb l'ítem d'inici registrat, compta com a inici de sessió per a `InicDeSessio.es`
+  (`Sources/WarpLaunchCore/InicDeSessio.swift`, `marge = 600`) i mostraria el full «Obre-ho tot». Cal una condició (ajornar-la o distingir-ho).
+
+### 7. App de barra de menú (`LSUIElement`)
+
+- **LLEGIT:** Sparkle la considera «en segon pla» si la política és `.accessory` (`SP/Sparkle/SUApplicationInfo.m:17-20`). L'app hi va quan no té finestres
+  (`Sources/WarpLaunchApp/Activacio.swift:124-125`).
+- **LLEGIT:** sense recordatoris suaus, Sparkle deixa un avís al registre (`SP/Sparkle/SPUStandardUserDriver.m:161-172`) i porta la finestra al davant
+  (`:129-135,203-207`). Cal implementar `supportsGentleScheduledUpdateReminders`, `standardUserDriverShouldHandleShowingScheduledUpdate`, etc.
+  (`SPUStandardUserDriverDelegate.h:92-102,134`; `D/gentle-reminders/index.md:20-22,64-130`).
+- **LLEGIT:** si l'ha demanat l'usuari, enfoca la finestra (`SPUStandardUserDriver.m:185-191,488-490,552-556`).
+- **SUPOSAT:** la finestra de Sparkle i el canvi de política de `Activacio.swift` conviuen. Cal veure-ho a l'app.
+
+### 8. API amb SwiftUI i Swift 6
+
+- **PROVAT:** compila en mode Swift 6, sense avisos, un `MenuBarExtra` amb `SPUStandardUpdaterController(startingUpdater: false, updaterDelegate:, userDriverDelegate:)`,
+  un `@Observable` que observa `canCheckForUpdates` i `lastUpdateCheckDate` per KVO, i un delegat `@MainActor`.
+- **PROVAT, concurrència:** sense `@MainActor SPUStandardUserDriverDelegate`, error «crosses into main actor-isolated code». Aquest protocol no és `NS_SWIFT_UI_ACTOR`
+  (`SPUStandardUserDriverDelegate.h:31`); `SPUUpdaterDelegate`, `SPUUpdater` i `SPUStandardUpdaterController`, sí.
+- **PROVAT:** `standardUserDriverDidReceiveUserAttention(forUpdate:)` és el nom en Swift. `@State` no compila amb les Command Line Tools (`plugin for module 'SwiftUIMacros' not found`, fet ja conegut del repo).
+- **LLEGIT:** els delegats són febles: cal retenir-los (`SPUStandardUpdaterController.h`). Exemple oficial: `D/programmatic-setup/index.md:40-98`. KVO: `SPUUpdater.h:167`, `SPUUpdater.m:495-499`.
+- **LLEGIT, «ja la tens al dia»:** `SPUBasicUpdateDriver.m:193-232`, `SPUNoUpdateFoundInfo.m:61`, alerta a `SPUStandardUserDriver.m:616-655`.
+- **PROVAT, català:** `ca.lproj/Sparkle.strings` té 26 claus, per 82 de `Base` (`es`: 44). El que no hi és surt en anglès (`SULocalizations.h:20`). Amb `CFBundleLocalizations` només `ca`,
+  el framework tria `["ca"]` amb `AppleLanguages` en, es, fr, de i ca, i tradueix «You’re up to date!» com a «Ja esteu al dia!». «Checking for updates…» queda en anglès.
+  «Install on Quit» es tradueix «Reinicia el programa més tard» (`ca.lproj:38`), que no és el que fa.
+
+### 9. Appcast a GitHub
+
+- **PROVAT** (`curl` i `URLSession`): `…/releases/latest/download/appcast.xml` fa 302 (`cache-control: no-cache`) a `/releases/download/v0.31.4/appcast.xml`, que avui és 404
+  (la 0.31.4 no en porta). Un fitxer existent: 302, 302 i `release-assets.githubusercontent.com` 200, `application/octet-stream`, amb memòria cau CDN (`age: 6777`, `x-cache: HIT`).
+- **LLEGIT:** Sparkle fa servir `URLSession` per defecte, que segueix redireccions (`SP/Downloader/SPUDownloader.m:83-84`), només accepta http/https (`:75-76`) i ignora la memòria cau local (`SP/Sparkle/SPUDownloadDriver.m:125-129`).
+- **LLEGIT:** `gh release create` amb fitxers fa esborrany, puja i publica (`cli/cli`, `pkg/cmd/release/create/create.go`, `draftWhileUploading`). Si `appcast.xml` i el zip van a la mateixa ordre, `latest` només canvia amb tots dos a dalt.
+  Una versió publicada **sense** `appcast.xml` deixa tothom amb un 404 fins a la següent: `publica.sh` ho ha de refusar.
+- **LLEGIT, camps** (`SP/Sparkle/SUAppcastItem.m`): `sparkle:version` (`:473-500`), `enclosure url` (`:597-632`), `length` (`:606-611`), `sparkle:edSignature` (`:635`), `sparkle:minimumSystemVersion` (`:644`), `sparkle:hardwareRequirements` (`:649`), `sparkle:shortVersionString` (`:737-743`), `sparkle:releaseNotesLink` (`:818`).
+- **PROVAT, `generate_appcast`** amb clau de fitxer i `--download-url-prefix`: sobre una carpeta amb un zip, codi 0, un `<item>` amb versió, versió curta, `minimumSystemVersion 26.0` i `hardwareRequirements arm64` (trets del paquet), `enclosure` amb URL, `length` i `edSignature`. Cap `.delta` amb un sol zip.
+  Escriu una memòria cau a `~/Library/Caches/Sparkle_generate_appcast` (`generate_appcast/main.swift:74`); aquí redirigida amb `CFFIXED_USER_HOME`, i la real no s'ha creat.
+- **Recomanació:** `generate_appcast` amb una carpeta temporal que només tingui el zip nou, i `--download-url-prefix …/releases/download/vX.Y.Z/`. Fa menys feina i no s'ha de mantenir la plantilla XML.
+- **PROVAT, zip:** és el mateix `ditto -c -k --sequesterRsrc --keepParent` de `publica.sh:140` (`D/publishing/index.md:14-22`).
+- **PROVAT, signatura:** `sign_update -f <fitxer>` dona `sparkle:edSignature="…" length="1002251"`. `--verify` passa (codi 0), CryptoKit ho confirma de manera independent, i amb un bit canviat falla («failed to pass signing verification», codi 1).
+- **PROVAT, comparació de versions** (`SUStandardVersionComparator`): 0.31.4 < 0.32.0, 0.31.4 < 0.31.10, 0.31.9 < 0.31.10, 0.31.4 < 1.0.0, 0.31 = 0.31.0. **`0.31.4-beta` = 0.31.4** (el guió atura la lectura, `SUStandardVersionComparator.m:114-116`); `0.31.4b1` és menor que 0.31.4.
+  Compara `CFBundleVersion` (`D/index.md:148`), que `Recursos/Info.plist` treu de `VERSION`.
+
+### 10. Eines i clau EdDSA
+
+- **PROVAT:** són a `.build/artifacts/sparkle/Sparkle/bin/` (i al `tar.xz`): `generate_appcast`, `generate_keys`, `sign_update`, `BinaryDelta`. Només s'ha fet `--help` de `generate_keys`: **sense arguments, crea la clau**.
+- **LLEGIT:** es desa al clauer d'inici de sessió, «generic password», servei `https://sparkle-project.org`, compte `ed25519`, el valor és la llavor de 32 bytes en base64 (`generate_keys/main.swift:13-30,105-126`, `common_cli/Secret.swift:19-47`).
+- **LLEGIT:** `-x fitxer` l'exporta (no sobreescriu, `:220-222`), `-f fitxer` la importa, `-p` mostra la pública (`:161-170,206-260`).
+- **LLEGIT:** `sign_update` i `generate_appcast` fan servir el fitxer si s'indica i, si no, el clauer (`sign_update/main.swift:97,177-181`, `generate_appcast/main.swift:19-38,83`).
+- **LLEGIT, si es perd:** `D/index.md:111`. Amb la clau perduda i el mateix certificat, encara es podria canviar la clau (`SUUpdateValidator.m:345,351-358`).
+- **SUPOSAT** (de `:373-416`): sense la clau **ni** el certificat, les instal·lacions existents no es poden actualitzar mai més soles. Cal una còpia fora del Mac.
+
+### 11. Prova de punta a punta sense publicar
+
+- **PROVAT, ATS** (eina de consola dins d'un bundle sense `NSAppTransportSecurity`, sessió `URLSession`, macOS 27.2):
+
+  | URL | Resultat |
+  |---|---|
+  | `http://127.0.0.1:<port>/appcast.xml` | HTTP 200 |
+  | `http://localhost:<port>/appcast.xml` | HTTP 200 |
+  | `http://example.com/` | `NSURLErrorDomain -1022` (ATS) |
+
+  Per tant, **no cal cap excepció d'ATS** per a un servidor local. Sparkle només deixa un avís al registre si no hi ha `https` (`SPUUpdater.m:284-313`).
+- **LLEGIT:** `file://` es refusa (`SPUDownloader.m:75-76`, `SUAppcastItem.m:625-632`).
+- **LLEGIT:** `D/index.md:168-178` explica el procediment; `SPUUpdater.m:179-181` permet canviar l'adreça amb `defaults write`, amb un avís, però una app de prova a part és més net.
+- **PROVAT, peces ja fetes:** dues versions (0.31.4 i 0.32.0), zip, signatura amb la clau de prova, appcast i servidor local (`python3 -I -m http.server --bind 127.0.0.1 <port>`). Comproveu abans que el port és lliure (`lsof -nP -iTCP:<port> -sTCP:LISTEN`).
+
+El camí menys invasiu (**no executat: obre una app i cal OK, regla 1 i 4**):
+
+1. Una app de prova **a part**, amb identificador propi (`cat.exemple.prova-sparkle`), a una carpeta temporal, amb clau de prova. Obre **1 app, 0 finestres de Warp, 0 sessions de Claude**.
+2. Compilar la 0.31.4 i la 0.32.0; `SUFeedURL` a `http://127.0.0.1:<port>/appcast.xml`. Generar l'appcast amb `--download-url-prefix http://127.0.0.1:<port>/`.
+3. Obrir la 0.31.4 i prémer «Comprova…». Mirar el registre (`/usr/bin/log show --last 5m --predicate 'process == "ProvaApp" OR process == "Autoupdate"'`).
+4. Comprovar: `CFBundleVersion` = 0.32.0, `codesign --verify --strict --deep`, i que torna a obrir.
+5. Repetir amb el bloc immediat, amb `.terminateLater` i amb l'appcast amb un bit canviat (ha de refusar).
+6. Repetir **amb «Warp Launch Dev»**, per veure la identitat de debò.
+7. Neteja: esborrar la carpeta, `defaults delete cat.exemple.prova-sparkle` i `~/Library/Caches/cat.exemple.prova-sparkle` (Sparkle hi escriu fora de la carpeta temporal).
+
+Per veure el permís d'Arxius i carpetes i l'ítem d'inici, caldrà una actualització real de l'app, en un Mac on es pugui repetir.
+
+### 12. Privacitat
+
+- **LLEGIT:** un GET a `SUFeedURL` amb `User-Agent` `$(BundleDisplayName)/$(BundleDisplayVersion) Sparkle/$(SparkleDisplayVersion)` (`SPUUpdater.h:330-331`) i `Accept: application/rss+xml,*/*;q=0.1`; sense paràmetres si no s'envia el perfil (`SPUUpdater.m:1249-1277`).
+- **LLEGIT:** el perfil (versió de macOS, CPU, model, idioma, RAM, nom i versió de l'app: `SP/Sparkle/SUSystemProfiler.m:20-30,47-163`), com a molt un cop per setmana (`SPUUpdater.m:1251-1262`), **només si `SUSendProfileInfo`** és actiu (`SPUUpdaterSettings.m:349-352`). `SUEnableSystemProfiling` només mostra l'opció al primer avís (`SUUpdatePermissionPrompt.m:78`, `D/system-profiling/index.md:8-32`).
+- GitHub rep l'adreça IP de cada comprovació. **SUPOSAT** que no hi ha res més: cap altra connexió trobada a les fonts llegides.
+- `docs/especificacio.md:57` (decisió 6): és la primera connexió a internet de l'app.
+
+### 13. Riscos a macOS 26 i 27
+
+- **App Management** (LLEGIT): el missatge d'error és només per a actualitzadors externs (`SPUInstallerDriver.m:105-129`, `:108`); `SUPlainInstaller.m:349-352`. Amb el mateix Team ID no hauria d'aparèixer. **SUPOSAT** amb «Warp Launch Dev» (sense Team ID).
+- **Arxius i carpetes** (LLEGIT del repo, `build-app.sh:43`): depèn de la identitat de la signatura. **SUPOSAT:** amb «Warp Launch Dev», es conserva en actualitzar. Amb Developer ID, es perd un cop (`docs/especificacio.md:57`, decisió 1).
+- **`SMAppService.mainApp`** (SUPOSAT): Sparkle substitueix a la mateixa ruta i l'ítem es manté. No provat.
+- **App d'un altre usuari o usuari sense administrador** (LLEGIT): `SUInstallerLauncher.m:340-375` comprova si es pot escriure a l'app i a la carpeta; si no, necessita autorització (`:161,173`), i la silenciosa queda ajornada (`:469-472`). `instal·la.sh:54-56` demana un compte d'administrador per instal·lar; un altre usuari sense permís no s'actualitzarà sol.
+- **Instal·ladors** (LLEGIT): `SUInstallerLauncher.m:278-285`, tasca temporal de `launchd` (`SMJobSubmit`), etiqueta `<id>-sparkle-updater`. No és un LaunchAgent permanent.
+- **Altres usuaris amb sessió oberta** (LLEGIT): `InstallerProgressAppController.m:300`.
+- **macOS 27** (SUPOSAT): Sparkle es compila amb l'SDK 26.5; aquí s'ha carregat i s'ha comparat versions, sense instal·lar res.
+- **Homebrew:** `auto_updates true` (`docs/disseny.md:2116-2118`), perquè `brew upgrade` no hi passi pel damunt.
+
+---
+
+### Què impedeix o canvia el plantejament
+
+1. **Qui té la 0.31.4 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.
+2. **Si es canvia la clau EdDSA i la signatura alhora, es perden les actualitzacions.** El pas a Developer ID ha de mantenir la clau; **una versió publicada amb signatura ad hoc** trencaria la identitat: `publica.sh:131` ja ho refusa amb un requisit, i s'ha de mantenir.
+3. **Instal·lar en tancar no n'hi ha prou** en una app de barra de menú: cal el bloc immediat en un moment segur.
+4. **`build-app.sh` i `publica.sh` han de canviar:** copiar el framework, l'rpath, signar de dins cap a fora i `--deep` a la verificació.
+5. **La reobertura en els primers 600 s** es confon amb un inici de sessió (`InicDeSessio.es`).
+6. **El català és parcial** i «Install on Quit» diu una cosa que no fa.
+7. **Clon nou sense xarxa:** ja no compilarà, tampoc el CLI sol.
+
 ## Foundation i JSON (03/11/2026, macOS 27.2)
 
 - **Claus repetides:** `JSONSerialization` i `JSONDecoder` es queden amb la **primera** aparició, sense error ni avís.
