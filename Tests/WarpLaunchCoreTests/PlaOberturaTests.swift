@@ -613,6 +613,21 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
             .description.contains("no és de cap pestanya") == true)
     }
 
+    /// Sense la base (la restauració desactivada, D6): un Claude que corre a la carpeta de la pestanya, amb el shell a una altra,
+    /// també avisa (decisió d'en David del 09/11/2026). El d'una altra pestanya, no.
+    @Test func unClaudeALaCarpetaAmbElShellAUnaAltraAvisa() {
+        func claude(_ id: String, _ p: Character, _ carpeta: String, marca: UUID? = nil) -> SessioClaude {
+            var s = sessio(id, pane: pane(p), marca: marca)
+            s.carpeta = carpeta
+            return s
+        }
+        let resultat = pla(processos([TerminalViu(pid: 7, carpeta: "/x/altra", pane: pane("h"), claude: true),
+                                      TerminalViu(pid: 8, carpeta: "/x/altra", pane: pane("m"), marca: id(9), claude: true)],
+                                     sessions: [claude("s1", "h", "/x/t1"), claude("s2", "m", "/x/t2", marca: id(9))]),
+                           pestanyes: [pestanya(1), pestanya(2)])
+        #expect(avisosDeTerminal(resultat) == [id(1): true])
+    }
+
     /// Les pestanyes amb l'avís del terminal, i si és un Claude.
     private func avisosDeTerminal(_ pla: Pla) -> [UUID: Bool] {
         var avisos: [UUID: Bool] = [:]

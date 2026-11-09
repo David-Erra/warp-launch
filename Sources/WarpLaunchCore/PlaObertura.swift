@@ -357,6 +357,8 @@ public enum PlaObertura {
         let terminalPerPane = Dictionary(lectura.terminals.compactMap { t in t.pane.map { ($0, t) } },
                                          uniquingKeysWith: { a, _ in a })
         let panesRecordats = Set(entrada.estat.pestanyes.values.compactMap(\.pane))
+        let carpetaClaudePerPane = Dictionary(interactives.compactMap { s in s.paneUUID.map { ($0, s.carpeta) } },
+                                              uniquingKeysWith: { a, _ in a })
         // També les dels Claude que encara no han escrit la sessió: no surten a `perSessio` (R9).
         let enCurs = entrada.conversesEnCurs.merging(lectura.conversesArrencant) { _, viu in viu }
 
@@ -500,7 +502,9 @@ public enum PlaObertura {
             }
             if !desaFinestres, carpeta != entrada.inici, let viu = lectura.terminals.first(where: { terminal in
                 // Un Claude amb marca, o en un pane recordat, és d'una altra pestanya.
-                terminal.carpeta == carpeta && (!terminal.claude || (terminal.marca == nil && !panesRecordats.contains(terminal.pane ?? "")))
+                // Si Warp i Claude no coincideixen, la pestanya hi pot ser per Claude (09/11/2026), com a `potserJaOberta`.
+                (terminal.carpeta == carpeta || terminal.pane.flatMap { carpetaClaudePerPane[$0] } == carpeta)
+                    && (!terminal.claude || (terminal.marca == nil && !panesRecordats.contains(terminal.pane ?? "")))
             }) {
                 avisosPestanya.append(.terminalALaCarpeta(ambClaude: viu.claude))
             }
