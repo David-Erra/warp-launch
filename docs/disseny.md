@@ -2191,6 +2191,16 @@ com «decisió N de Sparkle». Etiquetes: **[P]** provat, amb l'ordre i el resul
 `SP/` és el codi de Sparkle a l'etiqueta 2.10.1 (commit ab7d712); `HB/`, `Library/Homebrew` de Homebrew 7.0.12. Rutes sense prefix: el repo, amb les línies de la 0.31.4.
 Els fets, a `docs/fets-verificats.md`, «Sparkle».
 
+**Fet (09/11/2026, sense versió nova, sense canvis visibles): els passos 0 a 4** (secció 9), només amb proves amb falsos. Sparkle encara no és al paquet, i l'app encara no crea
+ni fa servir el model. El codi dels passos 1 a 4 s'aparta del que hi ha a sota en això:
+- `Actualitzacions.Entorn` té tres camps més: `darreraComprovacio` (l'estat inicial), `models` (la `SituacioApp.Models`, que omplirà el servei) i `rellotge` (les hores). `comprova`, `rep`,
+  `reinicia` i `vigila` reben `ara`, els segons amb el Mac despert.
+- `SituacioApp` separa `Models` (el que diuen els models de l'app) del temps en marxa, la inactivitat i la instal·lació fallida.
+- `enclosureValid` és més estricte: també refusa que la resta de l'adreça surti de la carpeta del feed (`..`, `%`, `?`, `#`, trossos buits).
+- `cicleAcabat` també treu de `.baixant`, i un error de baixada també: si no, «Baixant…» es podria quedar per sempre. Un error d'una comprovació sola no amaga una versió ja `.trobada`.
+- `.aplicant` que caduca sense bloc (camí de la finestra, `postposada`) torna a `.trobada`.
+- Si no es pot escriure l'intent en un reinici automàtic, compta com un intent (pausa d'1 h). El botó diu l'error (`errorPreparant`).
+
 **Decisions anteriors** (`docs/especificacio.md`, fila del 07/11/2026, 6 i 8): Sparkle 2 com a dependència acordada (regla 10), clau EdDSA, appcast a GitHub, framework signat
 i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa i una prova que les limiti.
 

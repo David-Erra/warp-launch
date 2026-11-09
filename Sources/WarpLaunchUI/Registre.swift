@@ -19,6 +19,9 @@ enum Registre {
     /// El consentiment per gestionar la restauració de Warp (D-P4): si s'accepta, i els errors de `preferencies.json`.
     static let consentiment = Logger(subsystem: "cat.davide.warp-launch", category: "consentiment")
 
+    /// L'actualització automàtica (docs/disseny.md, secció 11): una línia per canvi d'estat.
+    static let actualitzacions = Logger(subsystem: "cat.davide.warp-launch", category: "actualitzacions")
+
     /// Els 8 primers caràcters d'un id: prou per distingir les finestres d'una prova.
     static func curt(_ id: UUID) -> String { String(id.uuidString.prefix(8)) }
 }
