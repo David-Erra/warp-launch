@@ -97,6 +97,18 @@ private let paquetBo = P.Paquet(arguments: .normals, ruta: "/Applications/Warp L
         #expect(P.motiuEspera(s, demanat: false) == nil)
     }
 
+    /// Un rellotge que ha anat molt enrere no pot aturar el reinici fins que torni a arribar a aquella hora.
+    @Test func desfesRecentAmbElRellotgeEnrere() {
+        var s = tranquil
+        s.models.potDesfer = true
+        s.models.segonsDesDelDarrerCanvi = -60
+        #expect(P.motiuEspera(s, demanat: false) == .desfesRecent, "pocs segons: encara és recent")
+        s.models.segonsDesDelDarrerCanvi = -P.limitDesfes
+        #expect(P.motiuEspera(s, demanat: false) == nil)
+        s.models.segonsDesDelDarrerCanvi = -30 * 86_400
+        #expect(P.motiuEspera(s, demanat: false) == nil)
+    }
+
     @Test func desfesRecentNomesAmbPasIUltimCanviDeFaMenysDUnaHora() {
         var s = tranquil
         s.models.potDesfer = true

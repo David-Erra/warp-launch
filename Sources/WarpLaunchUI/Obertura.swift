@@ -533,10 +533,11 @@ public final class Obertura {
     }
 
     /// Hi ha alguna conversa en curs dels darrers 10 min. Va per la data, com `conversesRecents`: una pestanya on Claude no
-    /// arriba mai no pot deixar aquest valor cert per sempre (`enLlegir` només en treu les que veu).
+    /// arriba mai no pot deixar aquest valor cert per sempre (`enLlegir` només en treu les que veu). En valor absolut: un rellotge
+    /// que va molt enrere tampoc.
     public var teConversesEnCurs: Bool {
         let ara = entorn.rellotge()
-        return conversesEnCurs.contains { ara.timeIntervalSince($0.value.desDe) < PlaObertura.tempsDarrerLlancament }
+        return conversesEnCurs.contains { abs(ara.timeIntervalSince($0.value.desDe)) < PlaObertura.tempsDarrerLlancament }
     }
 
     /// Les converses en curs dels darrers 10 min; les més velles s'obliden.

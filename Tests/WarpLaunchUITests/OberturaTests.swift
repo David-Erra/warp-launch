@@ -877,6 +877,12 @@ private struct NoObre: Error, CustomStringConvertible {
         b.ara = desDe + 601
         #expect(!b.obertura.teConversesEnCurs)
 
+        // Amb el rellotge molt enrere tampoc no queda cert: esperaria fins que tornés a arribar a aquella hora.
+        b.ara = desDe - 30 * 86_400
+        #expect(!b.obertura.teConversesEnCurs)
+        b.ara = desDe - PlaObertura.tempsDarrerLlancament + 1
+        #expect(b.obertura.teConversesEnCurs, "uns segons enrere, encara és en curs")
+
         // Si es veu el Claude abans, deixa de ser cert de seguida.
         let c = try await banc()
         await c.obertura.confirmaIObre()

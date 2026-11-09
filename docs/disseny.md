@@ -2411,7 +2411,7 @@ Un GET a GitHub amb `User-Agent: Warp Launch/0.32.0 Sparkle/2.10.1` [L: `SP/Spar
 
 #### 3.2 Canvis als models
 
-- `Obertura.teConversesEnCurs`: **amb la data**, com `conversesRecents()` (`Obertura.swift:527`): `conversesEnCurs.contains { ara.timeIntervalSince($0.value.desDe) < PlaObertura.tempsDarrerLlancament }`. Si no, una pestanya on Claude no arriba mai bloquejaria per sempre, perquè `enLlegir` només esborra si veu el Claude (`:368-376`).
+- `Obertura.teConversesEnCurs`: **amb la data**, com `conversesRecents()` (`Obertura.swift:527`): `conversesEnCurs.contains { abs(ara.timeIntervalSince($0.value.desDe)) < PlaObertura.tempsDarrerLlancament }` (en valor absolut, perquè un rellotge que va enrere no el deixi cert fins que torni a arribar a aquella hora). Si no, una pestanya on Claude no arriba mai bloquejaria per sempre, perquè `enLlegir` només esborra si veu el Claude (`:368-376`).
 - `RefrescWarp.refrescant`: `enCurs != nil`.
 - `Editor.darrerCanvi: Date?`: a `canvia(...)` (`Editor.swift:1005`) i `canviaPlantilla` (`:952`).
 - `Obertura.aplicantActualitzacio: () -> Bool` (per defecte `{ false }`, l'assigna `Aplicacio`) i `potObrir` / `potObrirTot` la miren. Tapa el clic a «Obre» entre el bloc i la sortida, que ja no es torna a preguntar [L: `SPUInstallerDriver.m:522-527`].

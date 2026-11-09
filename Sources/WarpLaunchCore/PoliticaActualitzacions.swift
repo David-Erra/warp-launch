@@ -199,7 +199,7 @@ public struct SituacioApp: Equatable, Sendable {
         public var canvisSenseDesar: Bool
         /// L'editor o la plantilla tenen algun pas per desfer.
         public var potDesfer: Bool
-        /// Quant fa de l'últim canvi; `nil` si no n'hi ha cap en aquesta sessió.
+        /// Quant fa de l'últim canvi, segons el rellotge; `nil` si no n'hi ha cap en aquesta sessió. Negatiu si el rellotge ha anat enrere.
         public var segonsDesDelDarrerCanvi: TimeInterval?
 
         public init(errorEnDesar: Bool, nomAMigEscriure: Bool, obrint: Bool, fullObert: Bool, conversesEnCurs: Bool, refrescant: Bool,
@@ -244,7 +244,8 @@ public struct SituacioApp: Equatable, Sendable {
         case .finestraVisible: models.finestraVisible
         case .canvisSenseDesar: models.canvisSenseDesar
         case .desfesRecent:
-            models.potDesfer && (models.segonsDesDelDarrerCanvi.map { $0 < PoliticaActualitzacions.limitDesfes } ?? false)
+            // En valor absolut: si el rellotge ha anat molt enrere, no pot bloquejar fins que torni a arribar a aquella hora.
+            models.potDesfer && (models.segonsDesDelDarrerCanvi.map { abs($0) < PoliticaActualitzacions.limitDesfes } ?? false)
         case .acabaDArrencar: segonsEnMarxa < PoliticaActualitzacions.minimEnMarxa
         case .macEnUs: segonsInactiu < PoliticaActualitzacions.inactivitatMinima
         case .installacioFallida: installacioFallida
