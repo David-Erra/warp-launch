@@ -187,8 +187,18 @@ public final class FullImportacio {
         case .substitueix:
             "Substitueix el que hi ha ara (\(Plural.compta(editor.configuracio.finestres.count, "finestra", "finestres"))"
                 + " i \(Plural.compta(editor.configuracio.finestres.flatMap(\.pestanyes).count, "pestanya", "pestanyes"))). "
-                + "Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia."
+                + perdenClaude + "Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia."
         }
+    }
+
+    /// Quantes pestanyes es queden sense Claude en substituir (decisió d'en David del 09/11/2026), o res si no se'n perd cap.
+    private var perdenClaude: String {
+        guard let importacio else { return "" }
+        let ara = editor.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat).count
+        let despres = importacio.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat).count
+        guard despres < ara else { return "" }
+        return "Ara hi ha \(Plural.compta(ara, "pestanya", "pestanyes")) amb Claude i en "
+            + (despres == 1 ? "quedarà 1" : "quedaran \(despres)") + ": les altres seran només terminal. "
     }
 
     /// «a», «a i b», «a, b i c».

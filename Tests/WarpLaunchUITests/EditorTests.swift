@@ -1328,6 +1328,10 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(full.xifres[2] == "4 només terminal: 2 sense Claude obert, 1 a la carpeta d'inici i 1 amb una carpeta que ja no existeix")
         #expect(full.ordrePlantilla == "claude --dangerously-skip-permissions --effort ultracode")
         #expect(full.notaSenseClaudeObert != nil)
+        // Tornar a importar treu Claude de les que no el tenien obert: es diu abans de confirmar.
+        let ambClaude = editor.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat).count
+        #expect(ambClaude > 1)
+        #expect(full.explicacio.contains("Ara hi ha \(ambClaude) pestanyes amb Claude i en quedarà 1: les altres seran només terminal."))
         #expect(full.confirma())
         #expect(editor.undoManager.undoActionName == "Torna a importar")
         #expect(editor.configuracio.finestres.map(\.nom) == ["GitHub", "GitHub 2"])
