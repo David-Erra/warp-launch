@@ -21,8 +21,10 @@ Els requisits són a `docs/especificacio.md`.
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
+  - **Homebrew:** el tap és `David-Erra/homebrew-tap`, públic (`Casks/warp-launch.rb`): `brew install --cask
+    david-erra/tap/warp-launch`. `publica.sh --aplica` en posa al dia la recepta. `docs/disseny.md`, secció 10, «Homebrew».
   - **Compte de GitHub:** les ordres de `gh` que escriuen (`publica.sh`, `gh release`) necessiten `GH_TOKEN` d'un compte
-    que pugui escriure al repo, passat només a aquella ordre (`GH_TOKEN="$(gh auth token -u <compte>)"`). No canviïs el compte
+    que pugui escriure al repo i al tap, passat només a aquella ordre (`GH_TOKEN="$(gh auth token -u <compte>)"`). No canviïs el compte
     actiu de `gh` (`gh auth switch`): el poden fer servir altres sessions.
 - **Fase 1 (lectura) feta, versió 0.2.0.** `warp-launch llegeix [--json]` mostra les finestres, les pestanyes, la
   carpeta i la sessió de Claude de cada pestanya.
@@ -81,9 +83,8 @@ Els requisits són a `docs/especificacio.md`.
   «Ultracode» es trien a la Configuració › «Pestanyes noves» o per pestanya a l'inspector. La configuració que ja existeix
   conserva la seva plantilla.
 - **Per a altres usuaris, de la 0.29.0 a la 0.31.4** (decisions d'en David del 07 i el 08/11/2026 a `docs/especificacio.md`;
-  passos, proves, el que falta provar a l'app i el que queda per decidir a `docs/disseny.md`, secció 10). **Res no s'ha
-  publicat** (la versió de GitHub és la 0.28.0), **i res de la 0.30.3 endavant no s'ha donat per provat a l'app:** en David
-  prova ara la 0.31.1, compilada a part; de la 0.31.2 a la 0.31.4 no s'han vist.
+  passos, proves i el que queda per decidir a `docs/disseny.md`, secció 10). **La versió de GitHub és la 0.31.4,** i en David
+  l'ha provada a l'app i en un usuari de macOS nou (09/11/2026, ho ha dit ell).
   - **0.29.0 (D-P4): consentiment previ** perquè l'app gestioni `restore_session` (D19). `preferencies.json` (versió 1, al costat
     de la configuració) el desa amb el valor original de l'ajust. Sense consentiment, l'app no toca ni llegeix Warp i no proposa
     obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
@@ -119,7 +120,7 @@ Els requisits són a `docs/especificacio.md`.
     Warp i surt…» hi deixa `restore_session = true`. Ho diuen el diagnòstic, la pantalla del permís i l'script (`estat`:
     «activat (de sèrie, sense la línia)»). També: «Lliga amb Warp…» amb `--config` diu per què no hi ha finestres
     (`MotiuSenseFinestres`), i sense cap Warp ni la seva base l'app diu que no hi ha Warp també amb `--config`
-    (`Lector.llegeixDeLApp`). Falta veure-ho a l'app i en un usuari de macOS nou.
+    (`Lector.llegeixDeLApp`).
   - **0.31.3 (ronda 5).** Warp buida `settings.toml` i l'escriu sencer a cada canvi, i en arrencar, si el fitxer no hi és, hi passa
     una vegada els ajustos de les preferències de macOS (`docs/fets-verificats.md`, codi públic de Warp, llegit i no vist).
     - **Escriptura prudent:** si `settings.toml` ha canviat fa menys de 2 s, l'app no l'analitza ni hi escriu (`.mesTard`, no és
@@ -205,7 +206,7 @@ scripts/test.sh                          # proves; no facis servir `swift test` 
 scripts/build-app.sh                     # crea «build/Warp Launch.app» (release, signada amb «Warp Launch Dev» o ad hoc); no l'obre
 scripts/instal·la.sh [--aplica]          # sense --aplica, diu què copiaria a /Applications; amb, copia (regla 3: només amb l'OK d'en David)
 scripts/instal·la.sh --github [--aplica] [--versio x.y.z]  # igual, amb la versió publicada a GitHub (per a altres Macs; README.md)
-GH_TOKEN=… scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub (regla 3: OK cada vegada)
+GH_TOKEN=… scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, crea la versió a GitHub i posa al dia la recepta de Homebrew (regla 3: OK cada vegada)
 scripts/warp-restauracio.sh estat         # si Warp desa les finestres (només lectura)
 scripts/warp-restauracio.sh activa|desactiva [--aplica]  # regla 7: sense --aplica no escriu; amb, cal l'OK d'en David
 scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-banana (cal GEMINI_API_KEY)
@@ -232,7 +233,7 @@ scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-bana
 | `Tests/WarpLaunchCoreTests/` | Proves `swift-testing`, sempre amb dades fictícies; inclou la prova de guarda (`GuardaTests`) |
 | `Tests/WarpLaunchUITests/` | Proves del model de l'editor, amb carpetes temporals |
 | `Recursos/Info.plist` | Plantilla del bundle (`LSUIElement`; la versió surt de `VERSION`); `ca.lproj` per als menús en català |
-| `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
+| `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub i posa al dia la recepta de Homebrew), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
 | `.claude/skills/mac-design/` | Normes de disseny d'app de Mac (adaptada de BAMA, MIT); `docs/disseny.md` hi mana |
 | `.claude/skills/app-icon/` | Com es fa la icona: dibuix amb codi (nano-banana, com a alternativa), Icon Composer i `actool` (adaptada de BAMA, MIT) |
 | `.claude/settings.json` | Regles `deny` de Claude Code (vegeu sota) |
@@ -264,7 +265,9 @@ desenes de sessions o les tanca totes de cop.
      als ítems d'inici. Només l'activa en David, a mà; tu no l'activis ni el provis sense el seu OK. Es desfà amb el mateix
      interruptor o a Configuració del Sistema › General › Ítems d’inici de sessió.
    - **No publiquis cap versió a GitHub** (`scripts/publica.sh --aplica`) sense l'OK d'en David, cada vegada: la instal·la qui faci
-     la comanda del README. Es desfà amb `gh release delete vX.Y.Z --repo David-Erra/warp-launch --cleanup-tag`.
+     la comanda del README, i també posa al dia la recepta de Homebrew del tap (la rep qui faci `brew upgrade`). Es desfà en aquest
+     ordre, perquè Homebrew no demani un zip que ja no hi és: `git revert <commit>` (el que diu l'script) en un clon del tap, i push;
+     després, `gh release delete vX.Y.Z --repo David-Erra/warp-launch --cleanup-tag`.
 4. **No obris l'app** (`open "build/Warp Launch.app"`, `.build/*/WarpLaunch`) sense OK.
    - Del CLI, sense OK només pots executar ordres de lectura: `--versio`, `llegeix`, i a la fase 2 `importa` sense
      `--desa` i `configuracio valida` (OK d'en David, 03/11/2026).
