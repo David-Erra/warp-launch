@@ -4,19 +4,21 @@
 #
 # Ús:
 #   scripts/publica.sh            # mode de prova: compila, ho comprova tot i diu què publicaria i quin canvi faria a la recepta; no escriu res
-#   scripts/publica.sh --aplica   # a més, crea la versió vX.Y.Z al repo de GitHub, amb WarpLaunch-X.Y.Z.zip, i escriu la recepta nova
+#   scripts/publica.sh --aplica   # a més, signa el zip amb la clau del clauer, crea la versió vX.Y.Z a GitHub, amb WarpLaunch-X.Y.Z.zip i
+#                                 # appcast.xml, i escriu la recepta nova. L'executa la persona que publica, al seu terminal, cap agent: arriba sol a tots els Macs.
 #
 # - Només publica el que hi ha a origin/main, sense canvis per fer commit, i una versió que encara no hi sigui.
 # - Només amb la signatura «Warp Launch Dev» (D12): una app signada ad hoc no es pot instal·lar amb --github.
 # - Abans de compilar llegeix la recepta (Casks/warp-launch.rb del tap) i refusa publicar si no s'hi pot arribar, si no té exactament
 #   una línia `  version "X.Y.Z"`, una `  sha256 "…"` i la `  url` amb `#{version}`, si ja va per davant de VERSION, o si falten
 #   git config user.name o user.email (l'autor del commit del tap).
-# - Si, ja publicada la versió, no pot escriure la recepta, no esborra res: diu què cal canviar a mà i surt amb el codi 2.
+# - Si, ja publicada la versió, no pot escriure la recepta, o GitHub no la dona com a última amb el seu appcast.xml, no esborra res: diu què
+#   cal fer a mà i surt amb el codi 2. Una versió publicada ja no es desfà: es para com diu docs/disseny.md, «Aturar una versió dolenta».
 # - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre (la compilació no el veu).
 # - Compila amb --amb-feed: només aquesta còpia porta l'adreça de les actualitzacions. Refusa si la recepta no té `auto_updates true`, si l'última
 #   versió de GitHub ja és aquesta o una de més nova, si falta el framework o si alguna de les seves peces no és del nostre certificat.
 # - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP, WARP_LAUNCH_REQUISIT i WARP_LAUNCH_REQUISIT_SPARKLE canvien el repo de GitHub, el tap i el
-#   requisit de la signatura de l'app i de les peces de Sparkle.
+#   requisit de la signatura de l'app i de les peces de Sparkle; WARP_LAUNCH_SIGN_UPDATE i WARP_LAUNCH_VERIFICA, les eines de signar i comprovar.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -56,6 +58,9 @@ fi
 ETIQUETA="v$VERSIO"
 ZIP="build/WarpLaunch-$VERSIO.zip"
 URL_ZIP="https://github.com/$REPO/releases/download/$ETIQUETA/WarpLaunch-$VERSIO.zip"
+APPCAST="build/appcast.xml"
+SIGN_UPDATE="${WARP_LAUNCH_SIGN_UPDATE:-.build/artifacts/sparkle/Sparkle/bin/sign_update}"
+if [[ -n "${WARP_LAUNCH_VERIFICA:-}" ]]; then VERIFICA=("$WARP_LAUNCH_VERIFICA"); else VERIFICA=(swift scripts/verifica-signatura.swift); fi
 
 command -v gh > /dev/null || { echo "publica: cal l'eina de GitHub, \`gh\`" >&2; exit 1; }
 if [[ -n "$(git status --porcelain)" ]]; then
@@ -232,7 +237,7 @@ NOTES="build/notes-$VERSIO.md"
     echo "brew install --cask david-erra/tap/warp-launch"
     echo '```'
     echo
-    echo "Per actualitzar-la:"
+    echo "Per actualitzar-la a mà:"
     echo
     echo '```bash'
     echo "brew upgrade --cask warp-launch"
@@ -243,11 +248,20 @@ NOTES="build/notes-$VERSIO.md"
     echo '```bash'
     echo "s=\"\$(gh api -H 'Accept: application/vnd.github.raw' repos/$REPO/contents/scripts/instal%C2%B7la.sh)\" && bash -c \"\$s\" instal·la --github --aplica"
     echo '```'
+    echo
+    echo "**L'app s'actualitza sola** des de la 0.32: un cop al dia mira a GitHub si hi ha una versió nova (GitHub veu la teva adreça IP i la versió de l'app) i, quan no la fas servir, es reinicia. Warp i Claude no es tanquen. Va encès de sèrie; per apagar-ho, Configuració › «Actualitzacions» › «Actualitza automàticament»."
+    echo
+    echo "Si tens la 0.31.4 o una d'anterior, l'has d'actualitzar a mà una última vegada, amb les ordres d'aquí dalt. Des de llavors, és automàtic."
 } > "$NOTES"
 
 # El fitxer que llegeix cada còpia. Sense `generate_appcast`, que escriu a ~/Library/Caches i toca el clauer. Tots els valors són segurs per a l'XML:
-# VERSION i la clau tenen forma coneguda, i el repo és un nom de GitHub.
+# VERSION i la signatura tenen forma coneguda, i el repo és un nom de GitHub.
+rm -f "$APPCAST"
 MINIM_SISTEMA="$(llegeix_plist LSMinimumSystemVersion "$INFO")"
+if [[ -z "$MINIM_SISTEMA" ]]; then
+    echo "publica: «${APP}» no diu quina versió de macOS necessita. No s'ha publicat res." >&2
+    exit 1
+fi
 escriu_appcast() {
     cat > "$1" <<APPCAST
 <?xml version="1.0" standalone="yes"?>
@@ -296,14 +310,72 @@ if [[ "$APLICA" -eq 0 ]]; then
     exit 0
 fi
 
-if ! gh release create "$ETIQUETA" "$ZIP" --repo "$REPO" --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"; then
+# El zip que es puja és el que es signa, i la clau ha de ser la que porten les apps: si no, totes les còpies baixarien la versió per refusar-la.
+# El token no fa falta per signar.
+if ! SORTIDA_SIGNATURA="$(env -u GH_TOKEN -u GITHUB_TOKEN "$SIGN_UPDATE" "$ZIP")"; then
+    echo "publica: no s'ha pogut signar «${ZIP}» amb la clau del clauer. No s'ha publicat res." >&2
+    exit 1
+fi
+FORMA_SIGNATURA='^sparkle:edSignature="([A-Za-z0-9+/]{86}==)" length="([0-9]+)"$'
+if [[ ! "$SORTIDA_SIGNATURA" =~ $FORMA_SIGNATURA ]]; then
+    echo "publica: la signatura de «${ZIP}» no té la forma esperada. No s'ha publicat res." >&2
+    exit 1
+fi
+SIGNATURA="${BASH_REMATCH[1]}"
+if [[ "${BASH_REMATCH[2]}" != "$MIDA_BYTES" ]]; then
+    echo "publica: la signatura és d'un fitxer de ${BASH_REMATCH[2]} bytes, i «${ZIP}» en fa ${MIDA_BYTES}. No s'ha publicat res." >&2
+    exit 1
+fi
+if ! env -u GH_TOKEN -u GITHUB_TOKEN "${VERIFICA[@]}" "$(llegeix_plist SUPublicEDKey "$INFO")" "$SIGNATURA" "$ZIP"; then
+    echo "publica: la clau d'aquest clauer no és la que porten les apps. No s'ha publicat res." >&2
+    exit 1
+fi
+escriu_appcast "$APPCAST" "$SIGNATURA"
+
+# Tots dos fitxers en una sola ordre: `latest` no canvia fins que hi són. Sense appcast, totes les còpies veurien un 404.
+if ! gh release create "$ETIQUETA" "$ZIP" "$APPCAST" --repo "$REPO" --latest --target "$COMMIT" --title "Warp Launch $VERSIO" --notes-file "$NOTES"; then
     echo "publica: no s'ha pogut crear la ${ETIQUETA} a ${REPO}, i la recepta de Homebrew no s'ha tocat. Abans de tornar-ho a provar, mira si n'ha quedat un esborrany o l'etiqueta: gh release view ${ETIQUETA} --repo ${REPO}" >&2
     exit 1
 fi
 
+# Publicar ja no es desfà: qui l'hagi baixada la instal·larà. $1, el commit de la recepta, si n'hi ha.
+com_es_para() {
+    echo "Publicar ja no es desfà. Per aturar aquesta versió (docs/disseny.md, «Aturar una versió dolenta»), en aquest ordre:"
+    if [[ -n "$ULTIMA" ]]; then
+        echo "  - gh release edit ${ULTIMA} --latest --repo $REPO"
+    fi
+    if [[ -n "${1:-}" ]]; then
+        echo "  - git revert ${1} en un clon de ${TAP}, i push"
+    fi
+    echo "  - publica una correcció amb una versió superior. No tornis a pujar un fitxer amb el mateix nom a la mateixa etiqueta."
+}
+
+# Les dues línies que la recepta necessita, si s'han de posar a mà.
+canvia_la_recepta_a_ma() {
+    echo "Canvia a mà aquestes dues línies de ${CAMI_RECEPTA}, a la branca main de ${TAP}:"
+    echo "  version \"${VERSIO}\""
+    echo "  sha256 \"${SHA256_ZIP}\""
+    if [[ "$VERSIO_ABANS" == "$VERSIO" ]]; then
+        echo "Mentre no ho facis, Homebrew refusarà la ${VERSIO}: el sha256 de la recepta és el d'un altre zip."
+    else
+        echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
+    fi
+}
+
+# GitHub ho ha de dir: si no, les còpies no la veuran, o veurien un 404.
+ESTAT_PUBLICADA="$(gh release view --repo "$REPO" --json tagName,assets --jq '.tagName, any(.assets[]; .name == "appcast.xml")' 2> /dev/null || true)"
+if [[ "$ESTAT_PUBLICADA" != "$ETIQUETA"$'\n'true ]]; then
+    {
+        echo "publica: la ${ETIQUETA} ja és publicada a ${REPO}, però GitHub no la dona com a última amb el seu appcast.xml (no s'ha esborrat res): les còpies no s'hi actualitzaran. Mira-ho a la web de GitHub."
+        if [[ "$RECEPTA_CANVIA" -eq 1 ]]; then canvia_la_recepta_a_ma; fi
+        com_es_para
+    } >&2
+    exit 2
+fi
+
 if [[ "$RECEPTA_CANVIA" -eq 0 ]]; then
     echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}). La recepta de ${TAP} ja deia aquesta versió i aquest sha256, i no s'ha escrit."
-    echo "Es desfà amb: gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag"
+    com_es_para
     exit 0
 fi
 
@@ -315,17 +387,10 @@ if ! COMMIT_TAP="$(gh api --method PUT "repos/$TAP/contents/$CAMI_RECEPTA" \
     -f "committer[name]=$AUTOR_NOM" -f "committer[email]=$AUTOR_CORREU" --jq '.commit.sha')"; then
     {
         echo "publica: la ${ETIQUETA} ja és publicada a ${REPO} (no s'ha esborrat), però no s'ha pogut escriure la recepta de Homebrew a ${TAP}."
-        echo "Canvia a mà aquestes dues línies de ${CAMI_RECEPTA}, a la branca main de ${TAP}:"
-        echo "  version \"${VERSIO}\""
-        echo "  sha256 \"${SHA256_ZIP}\""
-        if [[ "$VERSIO_ABANS" == "$VERSIO" ]]; then
-            echo "Mentre no ho facis, Homebrew refusarà la ${VERSIO}: el sha256 de la recepta és el d'un altre zip."
-        else
-            echo "Mentre no ho facis, Homebrew continua instal·lant la ${VERSIO_ABANS}."
-        fi
-        echo "O, per desfer la versió: gh release delete ${ETIQUETA} --repo ${REPO} --cleanup-tag"
+        canvia_la_recepta_a_ma
+        com_es_para
     } >&2
     exit 2
 fi
 echo "Fet: Warp Launch $VERSIO és publicada a $REPO (${ETIQUETA}), i la recepta de ${TAP} ja la instal·la (sha256 ${SHA256_ZIP})."
-echo "Es desfà, en aquest ordre (perquè Homebrew no demani un zip que ja no hi és): git revert ${COMMIT_TAP} en un clon de ${TAP}, i push; després, gh release delete ${ETIQUETA} --repo $REPO --cleanup-tag"
+com_es_para "$COMMIT_TAP"

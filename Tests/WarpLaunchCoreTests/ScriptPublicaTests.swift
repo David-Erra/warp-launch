@@ -29,6 +29,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
     """
 }
 
+private let signaturaDeProva = String(repeating: "S", count: 86) + "=="
 private let clauPublicaDeProva = String(repeating: "A", count: 43) + "="
 private let feedDeProva = "https://github.com/exemple/prova/releases/latest/download/appcast.xml"
 
@@ -87,6 +88,12 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         var fitxerZipPujat: URL { carpeta.appending(path: "zip-pujat.txt") }
         var fitxerArgumentsCompilacio: URL { carpeta.appending(path: "arguments-compilacio.txt") }
         var fitxerActualitzacions: URL { repo.appending(path: "Recursos/Actualitzacions.plist") }
+        var registreSign: URL { carpeta.appending(path: "sign.log") }
+        var ordresSign: [String] { ((try? String(contentsOf: registreSign, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init) }
+        var fitxerTokenSign: URL { carpeta.appending(path: "token-sign.txt") }
+        var registreVerifica: URL { carpeta.appending(path: "verifica.log") }
+        var ordresVerifica: [String] { ((try? String(contentsOf: registreVerifica, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init) }
+        var appcast: String { (try? String(contentsOf: repo.appending(path: "build/appcast.xml"), encoding: .utf8)) ?? "" }
         var appcastDeProva: String { (try? String(contentsOf: repo.appending(path: "build/appcast-prova-0.28.0.xml"), encoding: .utf8)) ?? "" }
         var zipPujat: String { ((try? String(contentsOf: fitxerZipPujat, encoding: .utf8)) ?? "").trimmingCharacters(in: .newlines) }
         /// Què ha rebut el PUT de la recepta: una línia `camp=valor` per cada `-f` (un valor amb salts de línia ocuparia més d'una línia).
@@ -125,6 +132,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             </dict></plist>
             EOF
             if [[ -z "${BUILD_FALS_SENSE_FEED:-}" ]]; then /usr/libexec/PlistBuddy -c "Merge Recursos/Actualitzacions.plist" "$APP/Contents/Info.plist" > /dev/null; fi
+            if [[ -n "${BUILD_FALS_SENSE_MINIM:-}" ]]; then /usr/libexec/PlistBuddy -c "Delete LSMinimumSystemVersion" "$APP/Contents/Info.plist"; fi
             if [[ -n "${BUILD_FALS_ALTRA_CLAU:-}" ]]; then /usr/libexec/PlistBuddy -c "Set SUPublicEDKey $BUILD_FALS_ALTRA_CLAU" "$APP/Contents/Info.plist"; fi
             printf '%s' "${GH_TOKEN:-}${GITHUB_TOKEN:-}" > "$BUILD_FALS_TOKEN"
             printf '#!/bin/sh\nexit 0\n' > "$APP/Contents/MacOS/WarpLaunch"
@@ -170,6 +178,12 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                 "release view")
                     if [[ "$3" != --repo ]]; then [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1; fi
                     # Sense etiqueta, `gh` torna la marcada com a última.
+                    if [[ "$6" == tagName,assets ]]; then
+                        [[ -z "${GH_FALS_DESPRES_FALLA:-}" ]] || exit 1
+                        /usr/bin/jq -n --arg tag "${GH_FALS_DESPRES_ULTIMA:-$(cat "$GH_FALS_CREADA")}" --arg actius "${GH_FALS_ACTIUS:-WarpLaunch-0.28.0.zip appcast.xml}" \
+                            '{tagName: $tag, assets: ($actius | split(" ") | map({name: .}))}' | /usr/bin/jq -r "$8"
+                        exit 0
+                    fi
                     [[ -z "${GH_FALS_ULTIMA_FALLA:-}" ]] || exit 1
                     ULTIMA="${GH_FALS_ULTIMA:-${GH_FALS_ANTERIOR:-}}"
                     [[ -n "$ULTIMA" ]] || exit 1
@@ -179,6 +193,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                 "release create")
                     [[ -z "${GH_FALS_RELEASE_FALLA:-}" ]] || exit 1
                     /usr/bin/shasum -a 256 "$4" | cut -c1-64 > "$GH_FALS_ZIP_PUJAT"
+                    printf '%s' "$3" > "$GH_FALS_CREADA"
                     exit 0 ;;
             esac
             [[ "$1" == api ]] || exit 1
@@ -209,6 +224,23 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                 --arg codificacio "${GH_FALS_CODIFICACIO:-base64}" \
                 '{type: "file", encoding: $codificacio, sha: $blob, content: ($contingut + "\n")}' | /usr/bin/jq -r "$FILTRE"
             [[ -z "${GH_FALS_CANVIA_EN_LLEGIR:-}" ]] || printf '# un altre canvi\n' >> "$GH_FALS_RECEPTA"
+
+            """#)
+            // Les eines de signar i comprovar, falses: mai no toquen el clauer. La falsa de signar només accepta el zip, sense opcions.
+            try Self.executable(carpeta.appending(path: "bin/sign-fals"), #"""
+            #!/bin/bash
+            echo "$*" >> "$SIGN_FALS_REGISTRE"
+            printf '%s' "${GH_TOKEN:-}${GITHUB_TOKEN:-}" >> "$SIGN_FALS_TOKEN"
+            [[ -z "${SIGN_FALS_FALLA:-}" ]] || exit 1
+            if [[ -n "${SIGN_FALS_SORTIDA:-}" ]]; then printf '%s\n' "$SIGN_FALS_SORTIDA"; exit 0; fi
+            [[ $# -eq 1 ]] || exit 9
+            printf 'sparkle:edSignature="%s" length="%s"\n' "$SIGN_FALS_SIGNATURA" "${SIGN_FALS_MIDA:-$(/usr/bin/wc -c < "$1" | /usr/bin/tr -d ' ')}"
+
+            """#)
+            try Self.executable(carpeta.appending(path: "bin/verifica-fals"), #"""
+            #!/bin/bash
+            echo "$*" >> "$VERIFICA_FALS_REGISTRE"
+            exit "${VERIFICA_FALS_CODI:-0}"
 
             """#)
             try git("init", "-q", "--bare", "-b", "main", carpeta.appending(path: "origen.git").path, a: carpeta)
@@ -249,6 +281,11 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                 "WARP_LAUNCH_TAP": tapDeProva, "GH_FALS_TAP": tapDeProva, "GH_FALS_RECEPTA": fitxerRecepta.path,
                 "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
                 "GH_FALS_PUT": fitxerPut.path, "GH_FALS_ZIP_PUJAT": fitxerZipPujat.path, "GH_FALS_COMMIT": commitDelTap,
+                "GH_FALS_CREADA": carpeta.appending(path: "creada.txt").path,
+                "WARP_LAUNCH_SIGN_UPDATE": carpeta.appending(path: "bin/sign-fals").path,
+                "WARP_LAUNCH_VERIFICA": carpeta.appending(path: "bin/verifica-fals").path,
+                "SIGN_FALS_REGISTRE": registreSign.path, "SIGN_FALS_TOKEN": fitxerTokenSign.path, "SIGN_FALS_SIGNATURA": signaturaDeProva,
+                "VERIFICA_FALS_REGISTRE": registreVerifica.path,
                 "BUILD_FALS_TOKEN": fitxerTokenCompilacio.path, "BUILD_FALS_ARGUMENTS": fitxerArgumentsCompilacio.path,
                 "LANG": "ca_ES.UTF-8", "LC_ALL": "ca_ES.UTF-8",
                 "PATH": carpeta.appending(path: "bin").path + ":/usr/bin:/bin",
@@ -343,6 +380,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
     @Test(arguments: [
         (["BUILD_FALS_SENSE_FRAMEWORK": "1"], "no porta Sparkle.framework"),
         (["BUILD_FALS_BUNDLE_VERSION": "0.27.0"], "CFBundleVersion"),
+        (["BUILD_FALS_SENSE_MINIM": "1"], "quina versió de macOS"),
         (["BUILD_FALS_SENSE_FEED": "1"], "no porta l'adreça i la clau"),
         (["BUILD_FALS_ALTRA_CLAU": String(repeating: "B", count: 43) + "="], "no porta l'adreça i la clau"),
         (["BUILD_FALS_ALIE": "Autoupdate"], "Versions/B/Autoupdate» no està signada"),
@@ -467,9 +505,92 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         let commit = try b.git("rev-parse", "HEAD")
         let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
         #expect(codi == 0, "\(sortida)")
-        #expect(b.ordresGh.contains("release create v0.28.0 build/WarpLaunch-0.28.0.zip --repo exemple/prova --target \(commit)"
+        #expect(b.ordresGh.contains("release create v0.28.0 build/WarpLaunch-0.28.0.zip build/appcast.xml --repo exemple/prova --latest --target \(commit)"
                                     + " --title Warp Launch 0.28.0 --notes-file build/notes-0.28.0.md"))
-        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"))
+        #expect(!sortida.contains("release delete"), "publicar ja no es desfà: \(sortida)")
+        #expect(sortida.contains("Publicar ja no es desfà."), "\(sortida)")
+    }
+
+    // --- La signatura: només amb --aplica, i abans de crear res a GitHub.
+
+    /// El mode de prova no toca el clauer: ni signa ni comprova.
+    @Test func elModeDeProvaNoSigna() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresSign.isEmpty)
+        #expect(b.ordresVerifica.isEmpty)
+        #expect(b.appcast.isEmpty)
+    }
+
+    /// Signa el zip que es puja, una sola vegada i sense cap opció, i comprova la signatura amb la clau que porta l'app compilada.
+    @Test func signaIComprovaElZipQueEsPuja() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresSign == ["build/WarpLaunch-0.28.0.zip"])
+        #expect(b.ordresVerifica == ["\(clauPublicaDeProva) \(signaturaDeProva) build/WarpLaunch-0.28.0.zip"])
+    }
+
+    /// L'appcast que es puja porta la versió, l'adreça, la mida i la signatura del zip.
+    @Test func lAppcastPortaElQueToca() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let xml = b.appcast
+        let mida = try #require(try FileManager.default.attributesOfItem(atPath: b.zip.path)[.size] as? Int)
+        let url = "https://github.com/exemple/prova/releases/download/v0.28.0/WarpLaunch-0.28.0.zip"
+        #expect(xml.contains("<sparkle:version>0.28.0</sparkle:version>"), "\(xml)")
+        #expect(xml.contains(#"<enclosure url="\#(url)" length="\#(mida)" type="application/octet-stream" sparkle:edSignature="\#(signaturaDeProva)"/>"#), "\(xml)")
+        #expect(!xml.contains("SENSE-SIGNAR"), "\(xml)")
+    }
+
+    /// Si la signatura no és bona, no es crea res a GitHub ni es toca la recepta.
+    @Test(arguments: [
+        (["SIGN_FALS_FALLA": "1"], "no s'ha pogut signar"),
+        (["SIGN_FALS_SORTIDA": "alguna cosa"], "no té la forma esperada"),
+        (["SIGN_FALS_SORTIDA": #"sparkle:edSignature="\#(String(repeating: "S", count: 85))==" length="10""#], "no té la forma esperada"),
+        (["SIGN_FALS_SORTIDA": #"sparkle:edSignature="\#(signaturaDeProva)""#], "no té la forma esperada"),
+        (["SIGN_FALS_SORTIDA": "avís\nsparkle:edSignature=\"\(signaturaDeProva)\" length=\"10\""], "no té la forma esperada"),
+        (["SIGN_FALS_MIDA": "1"], "bytes"),
+        (["VERIFICA_FALS_CODI": "1"], "la clau d'aquest clauer no és la que porten les apps"),
+        (["VERIFICA_FALS_CODI": "64"], "la clau d'aquest clauer no és la que porten les apps"),
+    ] as [([String: String], String)])
+    func siLaSignaturaNoEsBonaNoEsPublica(entorn: [String: String], missatge: String) throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(entorn) { $1 })
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains(missatge), "\(sortida)")
+        #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+        #expect(!b.ordresGh.contains("release create"), "\(b.ordresGh)")
+        #expect(!b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+    }
+
+    /// Si GitHub no la dona com a última amb l'appcast, la versió es queda però la recepta no es toca, i ho diu.
+    @Test(arguments: [
+        ["GH_FALS_DESPRES_ULTIMA": "v0.27.0"], ["GH_FALS_ACTIUS": "WarpLaunch-0.28.0.zip"], ["GH_FALS_DESPRES_FALLA": "1"],
+    ])
+    func siGitHubNoLaDonaComAUltimaAvisa(entorn: [String: String]) throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(entorn) { $1 })
+        #expect(codi == 2, "\(sortida)")
+        #expect(sortida.contains("GitHub no la dona com a última amb el seu appcast.xml"), "\(sortida)")
+        #expect(b.ordresGh.contains("release create"))
+        #expect(!b.ordresGh.contains("--method PUT"))
+        #expect(!b.ordresGh.contains("release delete"))
+        #expect(sortida.contains("sha256 \"\(b.zipPujat)\""), "\(sortida)")
+        #expect(!sortida.contains("Fet:"), "\(sortida)")
+    }
+
+    /// Les notes diuen que l'app s'actualitza sola, que va encès de sèrie, com apagar-ho i que la primera vegada és a mà.
+    @Test func lesNotesDiuenQueSActualitzaSola() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.notes().contains("L'app s'actualitza sola"), "\(b.notes())")
+        #expect(b.notes().contains("Va encès de sèrie"), "\(b.notes())")
+        #expect(b.notes().contains("Configuració › «Actualitzacions» › «Actualitza automàticament»"), "\(b.notes())")
+        #expect(b.notes().contains("Si tens la 0.31.4 o una d'anterior, l'has d'actualitzar a mà una última vegada"), "\(b.notes())")
     }
 
     /// Les notes diuen els commits des de l'última versió publicada.
@@ -804,7 +925,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
     }
 
     /// Si una eina falla a mig d'una canonada, l'script s'atura abans de publicar (no fa servir el que n'hagi sortit).
-    @Test(arguments: ["base64", "shasum"])
+    @Test(arguments: ["base64", "shasum", "xmllint"])
     func siUnaEinaFallaNoEsPublica(eina: String) throws {
         let b = try Banc()
         try Banc.executable(b.carpeta.appending(path: "bin/\(eina)"), """
@@ -855,7 +976,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(b.ordresGh.contains("release create"))
         #expect(!b.ordresGh.contains("--method PUT"))
         #expect(sortida.contains("no s'ha escrit"), "\(sortida)")
-        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"), "\(sortida)")
+        #expect(sortida.contains("Publicar ja no es desfà."), "\(sortida)")
         #expect(!sortida.contains("git revert"), "no hi ha cap commit per revertir: \(sortida)")
     }
 
@@ -884,6 +1005,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(codi == (extra.isEmpty ? 0 : 2), "\(sortida)")
         #expect(!sortida.contains(token) && !sortida.contains(altre), "\(sortida)")
         #expect(try String(contentsOf: b.fitxerTokenCompilacio, encoding: .utf8) == "")
+        #expect(((try? String(contentsOf: b.fitxerTokenSign, encoding: .utf8)) ?? "") == "", "ni a l'eina de signar")
         #expect(b.ordresGh.contains("[token:\(token)] api repos/"), "\(b.ordresGh)")
         if aplica {
             #expect(b.ordresGh.contains("[token:\(token)] release create"), "\(b.ordresGh)")
@@ -891,18 +1013,25 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         }
     }
 
-    /// El missatge final diu com es desfà tot: la versió i el commit del tap.
-    @Test func elMissatgeFinalDiuComEsDesfa() throws {
+    /// El missatge final diu com s'atura: tornar `latest` a l'anterior, revertir la recepta i publicar una correcció. Esborrar no serveix.
+    @Test func elMissatgeFinalDiuComSAtura() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_ULTIMA": "v0.27.0"]) { $1 })
+        #expect(codi == 0, "\(sortida)")
+        let anterior = try #require(sortida.range(of: "gh release edit v0.27.0 --latest --repo exemple/prova"), "\(sortida)")
+        let revert = try #require(sortida.range(of: "git revert \(commitDelTap) en un clon de \(tapDeProva)"), "\(sortida)")
+        let correccio = try #require(sortida.range(of: "publica una correcció amb una versió superior"), "\(sortida)")
+        #expect(anterior.lowerBound < revert.lowerBound && revert.lowerBound < correccio.lowerBound, "\(sortida)")
+        #expect(!sortida.contains("release delete"), "\(sortida)")
+    }
+
+    /// La primera publicació no té cap versió anterior a la qual tornar.
+    @Test func laPrimeraVersioNoProposaTornarEnrere() throws {
         let b = try Banc()
         let (codi, sortida) = try b.executa("--aplica", entorn: Banc.requisitDeProva)
         #expect(codi == 0, "\(sortida)")
-        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"))
-        #expect(sortida.contains("git revert \(commitDelTap)"))
-        #expect(sortida.contains(tapDeProva))
-        // Primer la recepta: si no, Homebrew demanaria un zip que ja no hi és.
-        let revert = try #require(sortida.range(of: "git revert"))
-        let esborra = try #require(sortida.range(of: "gh release delete"))
-        #expect(revert.lowerBound < esborra.lowerBound, "\(sortida)")
+        #expect(!sortida.contains("gh release edit"), "\(sortida)")
+        #expect(sortida.contains("publica una correcció"), "\(sortida)")
     }
 
     /// Si la publicació falla, la recepta no es toca.
@@ -931,7 +1060,8 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(sortida.contains("version \"0.28.0\""))
         #expect(sortida.contains("sha256 \"\(b.zipPujat)\""))
         #expect(sortida.contains("Homebrew continua instal·lant la 0.27.0"), "\(sortida)")
-        #expect(sortida.contains("gh release delete v0.28.0 --repo exemple/prova --cleanup-tag"), "\(sortida)")
+        #expect(sortida.contains("Publicar ja no es desfà."), "\(sortida)")
+        #expect(!sortida.contains("release delete"), "\(sortida)")
         #expect(!sortida.contains("Fet:"))
     }
 }
