@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (09/11/2026, 0.31.4)
+## Estat (09/11/2026, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -90,7 +90,7 @@ Els requisits són a `docs/especificacio.md`.
     obrir res; la pantalla («Accepta» o «Surt de Warp Launch») surt a l'editor i a la Configuració. Una carpeta amb
     `configuracio.json` o `estat.json` compta com a acceptada (a qui ja feia servir l'app no li pregunta; decisió 1, es queda així). Només `ConsentimentRestauracio` crea el refresc (`GuardaTests`).
   - **0.29.1 (D-P5a):** en una configuració nova, les pestanyes on no corria Claude queden només terminal (amb la lectura d'un
-    Mac de prova del 04/11/2026, una cinquena part amb Claude i la resta només terminal, en lloc de tres quartes parts amb Claude). Tornar a importar no canvia.
+    Mac de prova del 04/11/2026, una cinquena part amb Claude i la resta només terminal, en lloc de tres quartes parts amb Claude). Des de la 0.31.5, també en tornar a importar.
   - **0.29.2 i 0.29.3 (D-P12): Warp Stable a qualsevol carpeta.** On és ho diu macOS, només a `WarpLaunchObridor/TrobaWarp.swift`
     (l'única `urlForApplication`); si no, `/Applications`. Una còpia a la Paperera no compta. El binari surt del paquet
     (`CFBundleExecutable`). Amb només Warp Preview, o Preview obert i Stable no, l'app no obre res i ho diu.
@@ -151,6 +151,14 @@ Els requisits són a `docs/especificacio.md`.
     - **Guardes:** `Lector`, `LectorWarp` i `LectorAjustosWarp` ja no tenen cap valor per defecte (l'app i el CLI hi posen les
       rutes de debò, `lectorsDeWarpDeDebo`; una prova que se n'oblidi una no compila), i a tot `Sources/` només dues crides
       canvien permisos o atributs de fitxers: el `fchmod` del fitxer acabat de crear a `EscripturaAtomica` i a `FitxersLaunchWarp`.
+  - **0.31.5 (quatre decisions d'en David del 09/11/2026; sense publicar i sense veure a l'app).**
+    - **La carpeta:** si Warp i Claude no coincideixen i Claude és viu, mana la de Claude, excepte si és `~` o no existeix. Avís a
+      «Per revisar» (`Validacio.avisCarpetaDeClaude`): la carpeta de Warp només és a la memòria (`estat.json` no canvia de format),
+      i després d'un reinici l'avís només surt si l'última carpeta de Claude no és la de la pestanya. «Lliga amb Warp…» compara
+      totes dues.
+    - **Tornar a importar:** les pestanyes sense Claude viu queden sempre «Només terminal» (revisa D11), també al CLI.
+    - **`~/.warp/launch_configurations`:** «Obre» la crea si no hi és (regla 7, tercera excepció).
+    - **Avís** als fulls d'obrir i al README: tancar Warp pot deixar a mitges les feines en segon pla de Claude.
   - **Guardes (08/11/2026, sense versió):** cap expressió de `GuardaTests` no fa servir `\b`, que no veia els noms amb mòdul
     (`Foundation.Process()`, `NSApp.terminate`); `Process` i `kill` compten com a paraula sencera, i `exec…` i `NSUser…Task` són
     prohibides; les proves no poden fer servir la carpeta d'inici de debò per cap camí; i `Lector(carpetaSessions:)` és
