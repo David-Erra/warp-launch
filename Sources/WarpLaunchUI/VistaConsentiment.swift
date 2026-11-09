@@ -9,7 +9,7 @@ public struct PortaConsentiment<Contingut: View>: View {
     let surt: () -> Void
     let contingut: () -> Contingut
 
-    /// - Parameter surt: «Surt de Warp Launch». L'app hi fa sortir el procés (aquí no es toca `NSApp`).
+    /// - Parameter surt: «Surt de l’app Warp Launch». L'app hi fa sortir el procés (aquí no es toca `NSApp`).
     public init(consentiment: ConsentimentRestauracio, carpetaDeProva: String? = nil, surt: @escaping () -> Void,
                 @ViewBuilder contingut: @escaping () -> Contingut) {
         self.consentiment = consentiment
@@ -28,7 +28,7 @@ public struct PortaConsentiment<Contingut: View>: View {
 }
 
 /// La pantalla de consentiment (D-P4, en David, 07/11/2026): per què l'app ha de desactivar la restauració de Warp, què
-/// canvia, i dos botons. «Surt de Warp Launch» no desa res, i la propera vegada es torna a preguntar. Retorn prem
+/// canvia, i dos botons. «Surt de l’app Warp Launch» no desa res, i la propera vegada es torna a preguntar. Retorn prem
 /// «Accepta», que és el botó per defecte (decisió d'en David del 07/11/2026). Escapada no fa res (vegeu `botons`).
 ///
 /// Després de «Deixa de fer servir Warp Launch» (0.31.0), l'app surt; si la sortida es cancel·la, aquesta pantalla diu que
@@ -59,7 +59,7 @@ struct VistaConsentiment: View {
             Text(consentiment.textSortir)
             HStack {
                 Spacer()
-                Button("Surt de Warp Launch", action: surt)
+                Button(WarpLaunch.ordreSurt, action: surt)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -144,14 +144,14 @@ struct VistaConsentiment: View {
     }
 
     /// «Accepta» és el botó per defecte: Retorn el prem, si es pot acceptar (amb un `preferencies.json` que no es pot
-    /// llegir, no). «Surt de Warp Launch» no respon a Escapada, i cap botó no ho fa: a macOS, Escapada és «Cancel·la»,
+    /// llegir, no). «Surt de l’app Warp Launch» no respon a Escapada, i cap botó no ho fa: a macOS, Escapada és «Cancel·la»,
     /// que torna on eres sense fer res (`NSAlert` només la dona a un botó «Cancel·la»), i aquí no hi ha on tornar: el botó
     /// tanca l'app sencera, i una Escapada per costum la tancaria. Per sortir hi ha les maneres de sempre: ⌘Q i tancar la
     /// finestra.
     private var botons: some View {
         HStack {
             Spacer()
-            Button("Surt de Warp Launch", action: surt)
+            Button(WarpLaunch.ordreSurt, action: surt)
             Button("Accepta") { consentiment.accepta() }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)

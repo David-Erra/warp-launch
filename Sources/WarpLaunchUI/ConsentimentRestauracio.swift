@@ -114,7 +114,7 @@ public final class ConsentimentRestauracio {
     }
 
     /// Tancar una finestra de l'app (l'editor o la Configuració) amb la pantalla de consentiment a la vista és no
-    /// acceptar-lo, com «Surt de Warp Launch» (D-P4; la Configuració, decisió d'en David del 08/11/2026): crida `surt` i
+    /// acceptar-lo, com «Surt de l’app Warp Launch» (D-P4; la Configuració, decisió d'en David del 08/11/2026): crida `surt` i
     /// torna `false`, sense desar res (no hi ha res per desar). Amb el consentiment acceptat, o si no cal, torna `true`: la
     /// finestra es tanca com sempre i l'app continua.
     /// - Parameter surt: l'app hi fa sortir el procés (aquí no es toca `NSApp`).

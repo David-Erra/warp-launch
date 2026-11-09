@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// Dock i activació (docs/disseny.md, «Dock i activació»). L'app és `LSUIElement`: només surt al Dock i a ⌘⇥
-/// mentre hi ha una finestra a la vista (l'editor, la Configuració o «Quant a»).
+/// mentre hi ha una finestra a la vista (l'editor, la Configuració o «Sobre l’app»).
 @MainActor
 final class Activacio {
     private(set) weak var finestraEditor: NSWindow?
@@ -92,7 +92,7 @@ final class Activacio {
         if let desfer = finestra.undoManager { enAdoptarDesferConfiguracio(desfer) }
     }
 
-    /// L'editor, la Configuració, «Quant a» o una finestra de l'actualitzador. Una de minimitzada també compta: continua oberta, i en
+    /// L'editor, la Configuració, «Sobre l’app» o una finestra de l'actualitzador. Una de minimitzada també compta: continua oberta, i en
     /// reiniciar-se l'app desapareixeria.
     var hiHaFinestraVisible: Bool {
         NSApp.windows.contains { ($0.isVisible || $0.isMiniaturized) && $0.styleMask.contains(.titled) }

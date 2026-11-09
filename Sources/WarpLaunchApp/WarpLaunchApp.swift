@@ -424,7 +424,7 @@ private struct MenuIcona: View {
                 Button("Mostra Warp Launch") { mostraEditor() }
             }
             Section {
-                Button("Surt de \(WarpLaunch.nom)") { NSApp.terminate(nil) }
+                Button(WarpLaunch.ordreSurt) { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
         }
@@ -507,11 +507,11 @@ private struct MenuIcona: View {
             }
             .keyboardShortcut(",")
             ItemActualitzacions(aplicacio: aplicacio)
-            Button("Quant a \(WarpLaunch.nom)") {
+            Button(WarpLaunch.ordreSobre) {
                 aplicacio.activacio.posaAlDavant()
                 NSApp.orderFrontStandardAboutPanel(nil)
             }
-            Button("Surt de \(WarpLaunch.nom)") { NSApp.terminate(nil) }
+            Button(WarpLaunch.ordreSurt) { NSApp.terminate(nil) }
                 .keyboardShortcut("q")
         }
     }

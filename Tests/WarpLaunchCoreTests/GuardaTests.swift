@@ -2225,6 +2225,53 @@ private let prohibidesArrossegar = [
         #expect(usos.allSatisfy { inici.upperBound < $0.lowerBound && $0.upperBound < fi.lowerBound })
     }
 
+    /// En David (09/11/2026): la mateixa funció es diu igual al menú de l'app i al de la icona. Les que són un `Button` a tots
+    /// dos es troben per l'acció (`editor.demana…`): el mateix títol, i una de nova a tots dos menús ha d'entrar aquí. Les altres
+    /// són una mateixa vista als dos menús. «Sobre» i «Surt», que al menú de l'app les posa macOS, amb els textos de macOS.
+    @Test func laMateixaOrdreEsDiuIgualAlsDosMenus() throws {
+        let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
+        let ordres = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/Ordres.swift"), encoding: .utf8)
+        let inici = try #require(app.range(of: "private struct MenuIcona"))
+        let menuIcona = String(app[inici.lowerBound...])
+
+        /// Per cada acció `editor.demana…`, els títols literals dels `Button` que la criden.
+        func titols(_ codi: String) throws -> [String: Set<String>] {
+            let accio = try Regex(#"editor\??\.(demana[A-Za-z]+)\("#)
+            var resultat: [String: Set<String>] = [:]
+            for tros in codi.components(separatedBy: "Button(").dropFirst() where tros.hasPrefix("\"") {
+                let titol = String(tros.dropFirst().prefix { $0 != "\"" })
+                for trobada in tros.matches(of: accio) {
+                    resultat[String(try #require(trobada.output[1].substring)), default: []].insert(titol)
+                }
+            }
+            return resultat
+        }
+        let deLApp = try titols(ordres), deLaIcona = try titols(menuIcona)
+        #expect(Set(deLApp.keys).intersection(deLaIcona.keys) == ["demanaObertura", "demanaObreTot"])
+        #expect(deLApp["demanaObertura"] == ["Obre a Warp…"] && deLaIcona["demanaObertura"] == ["Obre a Warp…"])
+        #expect(deLApp["demanaObreTot"] == ["Obre-ho tot a Warp…"] && deLaIcona["demanaObreTot"] == ["Obre-ho tot a Warp…"])
+
+        #expect(app.contains("OrdresEditor(actualitzaWarp: aplicacio.actualitzaWarp)"))
+        #expect(ordres.components(separatedBy: "ItemActualitzaWarp(ordre: actualitzaWarp)").count == 2)
+        #expect(menuIcona.components(separatedBy: "ItemActualitzaWarp(ordre: aplicacio.actualitzaWarp)").count == 2)
+        #expect(app.components(separatedBy: "ItemActualitzacions(aplicacio: aplicacio)").count == 3, "al menú de l'app i al de la icona")
+        // Un sol text, que fan servir els dos menús (per la vista) i el full d'importació.
+        let codi = try fitxers("Sources")
+        #expect(codi.filter { $0.text.contains(#""Actualitza l'estat de Warp""#) }.map(\.ruta) == ["Sources/WarpLaunchCore/Versio.swift"])
+        #expect(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaImportacio.swift" }?.text.contains("Button(WarpLaunch.ordreActualitzaEstat)") == true)
+
+        #expect(WarpLaunch.ordreSobre == "Sobre l’app Warp Launch" && WarpLaunch.ordreSurt == "Surt de l’app Warp Launch")
+        #expect(menuIcona.contains("Button(WarpLaunch.ordreSobre)"))
+        #expect(menuIcona.components(separatedBy: "Button(WarpLaunch.ordreSurt)").count == 3, "amb el permís i sense")
+
+        let vells = [#""Torna a llegir"#, #"«Torna a llegir"#, #"Obre la finestra a Warp…"#,
+                     #""Quant a "#, #"«Quant a"#, #""Surt de (Warp|\\\()"#, #"«Surt de Warp"#]
+        let trobats = try aparicions(de: vells, a: codi)
+        #expect(trobats.isEmpty, "\(trobats)")
+        // Una altra funció: substitueix la configuració.
+        #expect(ordres.contains("Torna a importar-ho tot de Warp…"))
+    }
+
     /// Substituir el grup `.saveItem` treu «Tanca» (⌘W) i «Tanca-ho tot» (⌥⌘W) del menú Fitxer.
     @Test func tancaTeLaSevaDrecera() throws {
         let ordres = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/Ordres.swift"), encoding: .utf8)
