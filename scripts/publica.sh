@@ -1,14 +1,18 @@
 #!/bin/bash
-# Publica a GitHub la versió de VERSION, compilada i signada, perquè altres Macs la instal·lin sense compilar:
-# `scripts/instal·la.sh --github --aplica` (README.md). Regla 3 de CLAUDE.md: només amb l'OK d'en David, cada vegada.
+# Publica a GitHub la versió de VERSION, compilada i signada, perquè altres Macs la instal·lin sense compilar, i posa al dia la
+# recepta de Homebrew (README.md). Regla 3 de CLAUDE.md: només amb un OK explícit, cada vegada.
 #
 # Ús:
-#   scripts/publica.sh            # mode de prova: compila, ho comprova tot i diu què publicaria; no publica res
-#   scripts/publica.sh --aplica   # a més, crea la versió vX.Y.Z al repo de GitHub, amb WarpLaunch-X.Y.Z.zip
+#   scripts/publica.sh            # mode de prova: compila, ho comprova tot i diu què publicaria i quin canvi faria a la recepta; no escriu res
+#   scripts/publica.sh --aplica   # a més, crea la versió vX.Y.Z al repo de GitHub, amb WarpLaunch-X.Y.Z.zip, i escriu la recepta nova
 #
 # - Només publica el que hi ha a origin/main, sense canvis per fer commit, i una versió que encara no hi sigui.
 # - Només amb la signatura «Warp Launch Dev» (D12): una app signada ad hoc no es pot instal·lar amb --github.
-# - Proves: WARP_LAUNCH_REPO i WARP_LAUNCH_REQUISIT canvien el repo de GitHub i el requisit de la signatura.
+# - Abans de compilar llegeix la recepta (Casks/warp-launch.rb del tap) i refusa publicar si no s'hi pot arribar, si no té exactament
+#   una línia `  version "X.Y.Z"` i una `  sha256 "…"`, o si falten git config user.name o user.email (l'autor del commit del tap).
+# - Si, ja publicada la versió, no pot escriure la recepta, no esborra res: diu què cal canviar a mà i surt amb el codi 2.
+# - Amb --aplica, cal GH_TOKEN d'un compte que pugui escriure al repo i al tap, passat només a aquesta ordre.
+# - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP i WARP_LAUNCH_REQUISIT canvien el repo de GitHub, el tap i el requisit de la signatura.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -130,7 +134,19 @@ NOTES="build/notes-$VERSIO.md"
         echo "Primera versió publicada."
     fi
     echo
-    echo "Per instal·lar-la o actualitzar-la (Apple Silicon, macOS 26 o posterior i un compte d'administrador del Mac; cal \`gh auth login\`):"
+    echo "Per instal·lar-la amb Homebrew (Apple Silicon, macOS 26 o posterior i un compte d'administrador del Mac):"
+    echo
+    echo '```bash'
+    echo "brew install --cask david-erra/tap/warp-launch"
+    echo '```'
+    echo
+    echo "Per actualitzar-la:"
+    echo
+    echo '```bash'
+    echo "brew upgrade --cask warp-launch"
+    echo '```'
+    echo
+    echo "Com a alternativa, per instal·lar-la o actualitzar-la sense Homebrew, amb l'eina de GitHub (cal \`gh auth login\`):"
     echo
     echo '```bash'
     echo "s=\"\$(gh api -H 'Accept: application/vnd.github.raw' repos/$REPO/contents/scripts/instal%C2%B7la.sh)\" && bash -c \"\$s\" instal·la --github --aplica"

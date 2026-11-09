@@ -368,6 +368,19 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         try b.comprovaRefus(conte: "falta git config user.name o user.email")
     }
 
+    /// Les notes donen primer Homebrew; el camí amb `gh` és l'alternativa.
+    @Test func lesNotesDonenPrimerHomebrew() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let notes = b.notes()
+        let instal·la = try #require(notes.range(of: "brew install --cask david-erra/tap/warp-launch"))
+        let actualitza = try #require(notes.range(of: "brew upgrade --cask warp-launch"))
+        let ambGh = try #require(notes.range(of: "gh api -H 'Accept: application/vnd.github.raw'"))
+        #expect(instal·la.lowerBound < actualitza.lowerBound)
+        #expect(actualitza.lowerBound < ambGh.lowerBound)
+    }
+
     // --- Amb --aplica, la recepta s'escriu després de publicar.
 
     /// El PUT porta el sha del blob llegit, la branca, l'autor de git config, un missatge en català i el contingut d'una sola línia.
