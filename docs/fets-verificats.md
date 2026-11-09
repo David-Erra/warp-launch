@@ -811,6 +811,20 @@ Llegit al codi de Homebrew (`git describe`: `7.0.12-217-g25ccd49b8c`; les rutes 
   actualitza la recepta si la versió del paquet de l'app és més vella que la de la recepta.
 - **Provat de debò:** instal·lació des de zero sense el tap, actualització de la 0.28.0 a la 0.31.4 i desinstal·lació, amb la
   recepta sense `quit`. **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de `quit` i reobrir.
+- **`publica.sh` escriu la recepta al tap de debò (provat el 09/11/2026, amb la 0.31.5).** És la primera vegada: la recepta de la
+  0.31.4 es va escriure en crear el tap. L'autor va executar l'script amb l'opció d'aplicar, al seu terminal, des del commit `4fdcbcb`,
+  amb el `GH_TOKEN` només a aquella ordre, i va acabar bé (n'ha enganxat la sortida). Comprovat després, només llegint, amb
+  `gh release view` i `gh api`:
+  - La `v0.31.5` apunta a `4fdcbcb`, és la `latest` i porta només `WarpLaunch-0.31.5.zip` (3.734.199 bytes). Cap `appcast.xml`: aquesta
+    versió no porta Sparkle.
+  - El commit `cd8c304c41cec6236a9fbd80238354b2537ab1d9` és l'últim de `main` al tap, fet 1 s després de la versió (16:12:58 i 16:12:59
+    UTC), amb el missatge que posa l'script. Només toca `Casks/warp-launch.rb`: 2 línies afegides i 2 tretes (`version` i `sha256`).
+  - El sha256 de la recepta és el `digest` que dona GitHub del zip pujat: `e908f041934bc150abe8a53403cae5ebef3145a50dd4bca9a66f7c6d9a2b2718`.
+  - **Val per a la 0.32.7 només en aquest tros:** la crida `gh api --method PUT` i el contingut que envia són idèntics (`diff` de les dues
+    versions de l'script). El que el `publica.sh` de la 0.32.x hi afegeix abans i després (signar, `appcast.xml`, `--latest`, la
+    comprovació final) no s'ha executat mai de debò.
+  - **Sense provar de debò:** que GitHub refusi el `PUT` si la recepta ha canviat mentrestant, i què diu llavors l'script (només amb el
+    `gh` fals de `ScriptPublicaTests`). No consta que `brew` hagi instal·lat la recepta de la 0.31.5; amb la de la 0.31.4, sí (a dalt).
 
 ## Sparkle (09/11/2026, Sparkle 2.10.1)
 

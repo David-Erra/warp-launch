@@ -1538,7 +1538,7 @@ el codi les cita pel número («decisió 3», «decisió 4»…). Les de la rond
 amb Warp obert), a la fila de després. Les set de la ronda 6 (08/11/2026, 0.31.4), a l'última: el codi les cita amb la data o
 amb la ronda («decisió 3 d'en David, 08/11/2026», «decisió 7 (ronda 6)»), i aquí, «ronda 6, decisió 3». Cada pas va tenir una
 revisió, amb correccions.
-**La 0.31.4 és publicada a GitHub, i en David l'ha provada a l'app i en un usuari de macOS nou** (09/11/2026, ho ha dit ell).
+**L'última versió de GitHub és la 0.31.5** (09/11/2026; què s'hi ha provat, a «0.31.5: les cinc decisions»). **La 0.31.4, també publicada, en David l'ha provada a l'app i en un usuari de macOS nou** (09/11/2026, ho ha dit ell).
 «Per provar a l'app» i «Per provar en un usuari de macOS nou», al final, i els apartats «A l'app» de cada pas queden com a guia:
 no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'en David (regla 4).
 
@@ -2133,9 +2133,12 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
     després, `gh release delete vX.Y.Z --repo David-Erra/warp-launch --cleanup-tag`.
   - `GH_TOKEN` d'un compte que pugui escriure al repo i al tap, només per a aquesta ordre; la compilació no el veu. Proves:
     `ScriptPublicaTests`, amb un `gh` fals.
+- **Provat de debò (09/11/2026, amb la 0.31.5):** en David va executar l'script al seu terminal, i el `PUT` va escriure la recepta (commit `cd8c304` del tap: només
+  les dues línies, i el sha256 és el `digest` que GitHub dona del zip). És la primera que ha escrit l'script: la de la 0.31.4 es va escriure en crear el tap. La crida del
+  `PUT` i el contingut que envia no han canviat a la 0.32.7. `fets-verificats.md`, «Homebrew».
 - **Què falta:**
-  - **`publica.sh` només ha escrit al tap de debò una vegada:** la recepta de la 0.31.4 es va escriure en crear el tap, i la de la
-    0.31.5 (09/11/2026, commit `cd8c304` del tap) és la primera que ha escrit l'script, ho va executar en David.
+  - **Contra GitHub de debò, encara sense provar:** un `PUT` refusat perquè la recepta ha canviat mentrestant (només amb el `gh` fals), i tot el que el `publica.sh` de la
+    0.32.x hi afegeix abans i després (signar, `appcast.xml`, `--latest`, la comprovació final).
   - **Quan hi hagi notarització** (decisió 1 de la fila del 07/11/2026): treure de la recepta el pas de la quarantena, i les
     frases que l'expliquen al README d'aquí i al del tap.
   - **Amb Sparkle** (decisió 6 de la mateixa fila; encara no és a la recepta: pas 12 de la secció 11, i `publica.sh` refusa sense): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
@@ -2143,7 +2146,7 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
     `cask/cask.rb` i `env_config.rb` de Homebrew).
   - **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de tancar-la i tornar-la a obrir en actualitzar.
 
-### 0.31.5: les cinc decisions del 09/11/2026 (sense publicar)
+### 0.31.5: les cinc decisions del 09/11/2026 (publicada el mateix dia)
 
 **Vist a l'app amb Warp de debò el 09/11/2026 (un Mac): les proves 2, 3 i 5 de sota, aquesta només al full d'una finestra.** La resta és
 provada amb dades fictícies (`scripts/test.sh`) o llegida al codi de Warp i a la documentació de Claude Code. Decisions: `especificacio.md`, fila del 09/11/2026. Fets:
@@ -2215,6 +2218,7 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
 - **Provat:** només amb falsos i carpetes temporals (`scripts/test.sh`), la compilació i el paquet (`otool`, `codesign --verify --deep --strict`).
 - **Llegit o suposat, res vist funcionar:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Cap app no s'ha obert.
 - **Falta:** les rondes A a F (Porta 1); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
+- **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
 
 El codi s'aparta del que hi ha a sota en això:
 - `Actualitzacions.Entorn` té tres camps més: `darreraComprovacio` (l'estat inicial), `models` (la `SituacioApp.Models`, que omplirà el servei) i `rellotge` (les hores). `comprova`, `rep`,
@@ -2628,7 +2632,7 @@ Cap versió publicada porta Sparkle ni cap codi de xarxa [P: `grep`], de manera 
 | 0.31.4 o 0.31.5 | Homebrew | `brew upgrade --cask warp-launch` |
 | 0.31.5, 0.31.4 o 0.28.0 | L'ordre amb `gh` | Sortir de l'app i tornar a fer l'ordre del README |
 
-Són com a molt 5 instal·lacions [P: `download_count`, API de GitHub, 3 + 2 baixades]. S'avisa a les notes i al README, on també es diu que les actualitzacions van encès de sèrie.
+Són com a molt 7 instal·lacions [P: `download_count`, API de GitHub, 09/11/2026, després de publicar la 0.31.5: 1 + 4 + 2 baixades; quan es va fer aquest disseny, 3 + 2]. S'avisa a les notes i al README, on també es diu que les actualitzacions van encès de sèrie.
 
 ### 7. Aturar una versió dolenta
 

@@ -4,9 +4,9 @@ App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestr
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
 **Estat (09/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
-obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.5, i
-s'instal·la amb Homebrew. El codi del repo és a la 0.32.7, amb actualització automàtica, però **no s'ha publicat ni s'ha vist
-funcionar** (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
+obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.5 (09/11/2026), i
+s'instal·la amb Homebrew. El codi del repo és a la 0.32.7, amb actualització automàtica: l'autor ha decidit activar-la, però encara
+**no s'ha publicat ni s'ha vist funcionar** (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
 
@@ -98,15 +98,16 @@ del tap). És la que instal·len `brew` i la comanda de «Sense Homebrew».
 Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui. Si la recepta no
 es pot escriure, la versió no s'esborra, i l'script diu què cal canviar a mà.
 
-**Avui encara no es pot executar:** falta `Recursos/Actualitzacions.plist` (l'adreça i la clau pública), i la recepta encara no té
-`auto_updates true`. **Des de la primera 0.32.x, publicar ja no es desfà:** la versió arriba sola a tots els Macs en un dia. Com
+**El d'ara (0.32.x) encara no es pot executar:** falta `Recursos/Actualitzacions.plist` (l'adreça i la clau pública), i la recepta
+encara no té `auto_updates true`. La 0.31.5 es va publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
+**Des de la primera 0.32.x, publicar ja no es desfà:** la versió arriba sola a tots els Macs en un dia. Com
 s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, apartat 7.
 
 ## Actualitzacions automàtiques
 
 **Encara no les porta cap còpia publicada.** El codi és al repo des de la 0.32.0, però l'última versió publicada és la 0.31.5.
 **Res d'això no s'ha vist funcionar a l'app:** només hi ha proves amb falsos, i el que depèn de Sparkle i de macOS s'ha llegit al
-codi o es dona per suposat. Abans de publicar-les falten la clau de signatura de l'autor, les proves reals (rondes A a F de
+codi o es dona per suposat. L'autor ha decidit activar-les (09/11/2026), i abans de publicar-les falten la clau de signatura de l'autor, les proves reals (rondes A a F de
 [`docs/disseny.md`](docs/disseny.md), secció 11) i la primera actualització real amb l'adreça i la clau de debò. Si les rondes B o E
 no surten netes, s'esperarà el Developer ID d'Apple, i l'app continuarà com avui. El que segueix diu com funcionaran.
 

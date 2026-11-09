@@ -22,7 +22,9 @@ Els requisits són a `docs/especificacio.md`.
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
   - **Homebrew:** el tap és `David-Erra/homebrew-tap`, públic (`Casks/warp-launch.rb`): `brew install --cask
-    david-erra/tap/warp-launch`. `publica.sh --aplica` en posa al dia la recepta. `docs/disseny.md`, secció 10, «Homebrew».
+    david-erra/tap/warp-launch`. `publica.sh --aplica` en posa al dia la recepta: provat de debò una vegada, amb la 0.31.5
+    (09/11/2026, commit `cd8c304` del tap; l'script de la 0.32.x, amb la clau i l'appcast, encara no s'ha executat de debò).
+    `docs/disseny.md`, secció 10, «Homebrew»; `docs/fets-verificats.md`, «Homebrew».
   - **Compte de GitHub:** les ordres de `gh` que escriuen (`publica.sh`, `gh release`) necessiten `GH_TOKEN` d'un compte
     que pugui escriure al repo i al tap, passat només a aquella ordre (`GH_TOKEN="$(gh auth token -u <compte>)"`). No canviïs el compte
     actiu de `gh` (`gh auth switch`): el poden fer servir altres sessions.
@@ -176,6 +178,8 @@ Els requisits són a `docs/especificacio.md`.
 - **Actualització automàtica amb Sparkle 2.10.1 (de la 0.32.0 a la 0.32.5, 09/11/2026): al codi, sense publicar.** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
+  - **L'autor ha decidit activar-la (09/11/2026, després de publicar la 0.31.5).** Vol dir fer el que falta, en l'ordre de sota: no treu l'OK de cada ronda
+    (regla 4), i la clau i publicar només els fa ell (regles 3 i 12).
   - **Res no s'ha vist funcionar.** No s'ha obert cap app. Les proves són amb falsos i carpetes temporals, i el que depèn de Sparkle
     i de macOS està llegit o suposat. Compila, i `build-app.sh` empaqueta i signa el framework; prou.
   - **Falta, en aquest ordre:** les rondes A a F (amb clau d'un sol ús i l'OK de l'autor per a cada una); la clau de signatura, que
@@ -184,7 +188,7 @@ Els requisits són a `docs/especificacio.md`.
     primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia. Si les rondes B o E no surten netes, s'espera el
     Developer ID (decisió 11).
   - **Les còpies d'abans (0.31.5 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
-    avisar-ne. Com a molt 5 instal·lacions.
+    avisar-ne. Com a molt 7 instal·lacions (baixades dels zips, API de GitHub, 09/11/2026: 1 de la 0.31.5, 4 de la 0.31.4 i 2 de la 0.28.0).
   - **Com va:** l'únic `import Sparkle` és a `ServeiActualitzacions.swift`; la lògica, sense Sparkle i amb proves, a
     `PoliticaActualitzacions`, `IntentActualitzacio` i el model `Actualitzacions`. Mira un cop al dia, va encès de sèrie, té pestanya
     a la Configuració («Actualitzacions») i ítem al menú. Només amb el permís de la restauració acceptat o migrat, a `/Applications`,
