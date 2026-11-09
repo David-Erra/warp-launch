@@ -134,7 +134,7 @@ Una sola finestra d'editor (`Window` amb id `editor`): `NavigationSplitView` amb
 | Nova pestanya… (demana la carpeta) | Fitxer | ⌘T | `plus` a la barra d'eines, menú contextual |
 | Duplica la pestanya / les pestanyes / la finestra (sense nom fix) | Fitxer | ⌘D | menú contextual |
 | Canvia el nom | Fitxer | cap al menú; Retorn a la llista i a la barra lateral | menú contextual |
-| Importa de Warp… / Torna a importar-ho tot de Warp… | Fitxer | — | estat buit |
+| Importa de Warp… / Torna a importar-ho tot de Warp… | Fitxer | — | estat buit; desactivada mentre s'obre res a Warp o s'aplica una actualització, i amb un full d'obrir o de lligar a la vista (0.32.8): el full activa uns segons la restauració (D19). Amb el full d'importar obert, no es pot començar cap obertura |
 | Actualitza l'estat de Warp (0.32.6; abans, «Torna a llegir Warp») | Fitxer | — | menú de la icona i peu del full d'importació; desactivada sense el permís, mentre ja es llegeix i mentre s'obre res a Warp o s'aplica una actualització (0.32.7) |
 | Mostra el fitxer al Finder (el fitxer, o la carpeta si encara no n'hi ha) | Fitxer | — | Configuració |
 | Obre a Warp… | Fitxer | **cap** | desactivat fins a la fase 3, sempre amb confirmació |

@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (09/11/2026, 0.32.7 al codi; publicada, 0.31.5)
+## Estat (09/11/2026, 0.32.8 al codi; publicada, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -175,6 +175,10 @@ Els requisits són a `docs/especificacio.md`.
   sense el permís, mentre ja es llegeix i, des de la 0.32.7, mentre s'obre res a Warp o s'aplica una actualització (`OrdreActualitzaWarp`). «Obre la finestra a Warp…» és «Obre a Warp…». El menú de la icona
   i la pantalla del permís diuen «Sobre l’app Warp Launch» i «Surt de l’app Warp Launch», com el menú que posa macOS. Guarda:
   `laMateixaOrdreEsDiuIgualAlsDosMenus`. Només proves i codi llegit: no s'ha vist a l'app.
+  - **0.32.8: importar i lligar, amb la mateixa condició** (`Obertura.impedeixRefresc`), perquè també activen la restauració de Warp (D19). `Editor.potImportar` i
+    `demanaImportar` (el menú Arxiu i l'estat buit), `FullImportacio.potLlegir` (els dos botons del full; si en obrir-se no pot llegir, ho diu) i `Lligam.potLligar`
+    (l'actualització que s'aplica). Importar tampoc amb el full d'obrir o de lligar a la vista, i amb el full d'importar obert no es comença cap obertura (el menú de
+    la icona ho deixava), ni el full d'iniciar sessió el trepitja. Guarda: `lesLecturesAmbFinestresPassenPerLaSevaCondicio`. Només proves i codi llegit: no s'ha vist a l'app.
 - **Actualització automàtica amb Sparkle 2.10.1 (de la 0.32.0 a la 0.32.5, 09/11/2026): al codi, sense publicar.** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».

@@ -5,7 +5,7 @@ cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessi
 
 **Estat (09/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
 obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.5 (09/11/2026), i
-s'instal·la amb Homebrew. El codi del repo és a la 0.32.7, amb actualització automàtica: l'autor ha decidit activar-la, però encara
+s'instal·la amb Homebrew. El codi del repo és a la 0.32.8, amb actualització automàtica: l'autor ha decidit activar-la, però encara
 **no s'ha publicat ni s'ha vist funcionar** (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
