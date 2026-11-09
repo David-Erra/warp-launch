@@ -406,6 +406,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         recepta().replacing("github.com/exemple/prova/", with: "github.com/exemple/una-altra/"),
         recepta().replacing("WarpLaunch-#{version}.zip\"", with: "WarpLaunch-#{version}.zip\" # comentari"),
         recepta().replacing("  url \"https", with: "    url \"https"),  // dins d'un bloc
+        recepta().replacing("  name \"Warp Launch\"\n", with: "  url \"https://github.com/exemple/prova/releases/download/v#{version}/WarpLaunch-#{version}.zip\"\n  name \"Warp Launch\"\n"),  // dues
         recepta().split(separator: "\n", omittingEmptySubsequences: false).filter { !$0.contains("  url ") }.joined(separator: "\n"),  // sense la línia
     ])
     func unaReceptaAmbUnaAltraUrlNoEsPublica(text: String) throws {
