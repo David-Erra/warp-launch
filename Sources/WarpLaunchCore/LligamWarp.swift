@@ -234,28 +234,38 @@ public enum LligamWarp {
                 case .conversa: nil
                 }
             }
-            func clauWarp(_ i: Int) -> String? {
-                let w = warp[i]
-                if alt && w.alternativa == nil { return nil }
-                let carpeta = alt ? w.alternativa!.carpeta : w.carpeta
-                let clau = alt ? w.alternativa!.clau : w.clau
-                return switch criteri {
-                case .titolICarpeta: clau.map { $0 + "\u{0}" + carpeta }
-                case .titol: clau
+            func clau(carpeta: String, titol: String?) -> String? {
+                switch criteri {
+                case .titolICarpeta: titol.map { $0 + "\u{0}" + carpeta }
+                case .titol: titol
                 case .carpeta: carpeta == inici ? nil : carpeta
                 case .conversa: nil
                 }
             }
-            let deWarpPerClau = Dictionary(grouping: deWarp.filter { clauWarp($0) != nil }, by: { clauWarp($0)! })
+            // Amb `alt`, la pestanya de Warp compta per la carpeta de Claude i també per la seva: si només es comptés per
+            // la de Claude, es desfaria un empat i es lligaria una pestanya que no és inequívoca.
+            func clausWarp(_ i: Int) -> [String] {
+                let w = warp[i]
+                let principal = clau(carpeta: w.carpeta, titol: w.clau)
+                let deClaude = alt ? w.alternativa.flatMap { clau(carpeta: $0.carpeta, titol: $0.clau) } : nil
+                return deClaude == nil || deClaude == principal ? principal.map { [$0] } ?? [] : [principal, deClaude].compactMap { $0 }
+            }
+            var deWarpPerClau: [String: [Int]] = [:]
+            for i in deWarp {
+                for clau in clausWarp(i) { deWarpPerClau[clau, default: []].append(i) }
+            }
             var vistes = Set<String>()
+            var usades = Set<Int>()  // Amb `alt`, una pestanya de Warp pot ser a dues claus.
             for p in pendents {
-                guard let k = clauPendent(p), vistes.insert(k).inserted, let candidates = deWarpPerClau[k] else { continue }
+                guard let k = clauPendent(p), vistes.insert(k).inserted,
+                      let candidates = deWarpPerClau[k]?.filter({ !usades.contains($0) }) else { continue }
                 let mateixa = pendents.filter { clauPendent($0) == k }
                 guard mateixa.count == candidates.count,
                       arreu.map({ $0.filter { clauPendent($0) == k }.count == mateixa.count }) ?? true
                 else { continue }
                 for (pendent, i) in zip(mateixa, candidates) {
                     triades[pendent.pestanya.id] = Triada(warp: i, pane: warp[i].principal, criteri: criteri)
+                    usades.insert(i)
                 }
             }
         }

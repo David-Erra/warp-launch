@@ -103,6 +103,59 @@ private func avis(_ p: Pestanya, vincle v: VincleEstat? = vincle(), warp: String
         #expect(p.parelles.isEmpty)
     }
 
+    /// Una pestanya de Warp amb títol, al pane `uuid`, i Claude a `claude` si n'hi ha.
+    private func deWarp(_ uuid: String, titol: String?, _ carpeta: String, claude: String? = nil) -> PestanyaLlegida {
+        let viu = claude.map {
+            SessioClaude(pid: 10, sessionId: "s-\(uuid)", carpeta: $0, iniciada: t0, ordre: ["claude"], opcions: OpcionsClaude(),
+                         paneUUID: uuid, dinsDeWarp: true)
+        }
+        return PestanyaLlegida(posicio: 0, titol: titol, color: nil, panes: [
+            PaneLlegit(uuid: uuid, carpeta: carpeta, origenCarpeta: .pane, carpetaExisteix: true, claude: viu),
+        ])
+    }
+
+    private func warp(_ pestanyes: [PestanyaLlegida]) -> LecturaWarp {
+        LecturaWarp(finestres: [FinestraLlegida(numero: 1, pestanyaActiva: 0, pestanyes: pestanyes)], sessionsSensePestanya: [], avisos: [])
+    }
+
+    private func pane(_ n: Int) -> String { String(repeating: "\(n)", count: 32) }
+
+    /// Tres pestanyes de Warp a la mateixa carpeta, una només per Claude, i una sola a la configuració: no se sap quina és.
+    @Test func trobarUnaPerClaudeNoDesfaLEmpat() {
+        let p = LligamWarp.proposa(configuracio(pestanya(B, titol: "T")), lectura: warp([
+            deWarp(pane(1), titol: "T", A, claude: B), deWarp(pane(2), titol: "T", B), deWarp(pane(3), titol: "T", B),
+        ]), estat: EstatApp(), inici: inici)
+        #expect(p.parelles.isEmpty)
+    }
+
+    /// El mateix títol a dues pestanyes de Warp i només una amb Claude: el títol no prou per triar-la.
+    @Test func elTitolAmbClaudeNoDesfaLEmpat() {
+        let p = LligamWarp.proposa(configuracio(pestanya("/x/repo-c", titol: "T")), lectura: warp([
+            deWarp(pane(1), titol: "T", A, claude: B), deWarp(pane(2), titol: "T", "/x/repo-d"),
+        ]), estat: EstatApp(), inici: inici)
+        #expect(p.parelles.isEmpty)
+    }
+
+    /// Tres pestanyes a la mateixa carpeta, a la configuració i a Warp, on una només hi és per Claude: se'n lliguen totes tres.
+    @Test func lligaLesTresQueCompartienCarpeta() {
+        let tres = (1...3).map { Pestanya(id: id($0), titol: "t\($0)", carpeta: B, claude: .habituals) }
+        let c = Configuracio(plantilla: .habituals, finestres: [Finestra(id: id(100), nom: "f", pestanyes: tres)])
+        let p = LligamWarp.proposa(c, lectura: warp([
+            deWarp(pane(1), titol: "x", A, claude: B), deWarp(pane(2), titol: "y", B), deWarp(pane(3), titol: "z", B),
+        ]), estat: EstatApp(), inici: inici)
+        #expect(Set(p.parelles.map(\.pane)) == [pane(1), pane(2), pane(3)])
+    }
+
+    /// Dues pestanyes de la configuració, una a cada carpeta del mateix pane: només una se'l queda.
+    @Test func unPaneNomesEsDeUnaPestanya() {
+        let dues = [Pestanya(id: id(1), titol: "t1", carpeta: A, claude: .habituals),
+                    Pestanya(id: id(2), titol: "t2", carpeta: B, claude: .habituals)]
+        let c = Configuracio(plantilla: .habituals, finestres: [Finestra(id: id(100), nom: "f", pestanyes: dues)])
+        let p = LligamWarp.proposa(c, lectura: warp([deWarp(pane(1), titol: "x", A, claude: B)]), estat: EstatApp(), inici: inici)
+        #expect(p.parelles.count == 1)
+        #expect(p.parelles.first?.pestanya.id == id(1), "primer la carpeta de Warp")
+    }
+
     // MARK: El pla
 
     @Test func elPlaAvisaSiLaCarpetaEsLaDelClaudeDUnPane() {
