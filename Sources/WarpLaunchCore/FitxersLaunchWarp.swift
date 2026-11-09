@@ -2,7 +2,7 @@ import Foundation
 
 /// L'única peça que escriu i esborra a la carpeta de launch configurations de Warp (fase 3.1, D5; docs/disseny.md,
 /// secció 7, «Fitxer temporal»). Només hi toca els seus fitxers: `warp-launch-<uuid>.yaml`, que comencen amb la marca.
-/// Mai els d'en David (les `espai-*.yaml` ni cap altre), ni la carpeta, que no crea mai.
+/// Mai els d'en David (les `espai-*.yaml` ni cap altre). La carpeta només la crea si qui escriu ho demana (`escriu`).
 public struct FitxersLaunchWarp: Sendable {
     /// La carpeta. A les proves, una de temporal.
     public let carpeta: URL
@@ -21,7 +21,8 @@ public struct FitxersLaunchWarp: Sendable {
     public static let edatPerNetejar: TimeInterval = 2 * 60
 
     public enum ErrorFitxers: Error, Equatable, CustomStringConvertible {
-        /// La carpeta no hi és, o no és una carpeta: l'app no la crea.
+        /// La carpeta no hi és, o no és una carpeta, i no s'ha creat: no es podia (`~/.warp` no hi és, o el camí és un enllaç
+        /// o un fitxer) o no s'havia de fer (`warp-launch obre --obre`).
         case senseCarpeta
         /// Ja hi ha un fitxer amb aquest nom: no se sobreescriu mai.
         case jaExisteix
@@ -37,7 +38,8 @@ public struct FitxersLaunchWarp: Sendable {
 
         public var description: String {
             switch self {
-            case .senseCarpeta: "Warp no té la carpeta de launch configurations (l'app no la crea)"
+            case .senseCarpeta: "Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp "
+                + "encara no s'hagi obert mai, o que el camí sigui un enllaç o un fitxer"
             case .jaExisteix: "ja hi ha un fitxer amb aquest nom, i no se sobreescriu"
             case let .escriptura(error): "no s'ha pogut escriure el fitxer: \(error)"
             case .noEsUnFitxer: "no és un fitxer normal, i no s'esborra"
@@ -60,8 +62,12 @@ public struct FitxersLaunchWarp: Sendable {
 
     /// Escriu el fitxer d'un llançament, i en retorna la mida (bytes). Només si no n'hi ha cap amb el mateix nom
     /// (`O_EXCL`); 0644 i sincronitzat abans de tornar, perquè Warp el trobi sencer.
-    public func escriu(_ fitxer: FitxerLaunch) throws(ErrorFitxers) -> Int {
-        guard esCarpeta() else { throw .senseCarpeta }
+    /// - Parameter creaCarpeta: si la carpeta no hi és, la crea (decisió d'en David del 09/11/2026, regla 7: només l'app, amb
+    ///   la carpeta de debò i el permís; `ExecucioObertura.Entorn.potCrearCarpeta`).
+    public func escriu(_ fitxer: FitxerLaunch, creaCarpeta: Bool = false) throws(ErrorFitxers) -> Int {
+        if !esCarpeta() {
+            guard creaCarpeta, creaLaCarpeta() else { throw .senseCarpeta }
+        }
         let dades = Data(fitxer.text.utf8)
         let ruta = carpeta.appending(path: fitxer.nomFitxer).path
         let fd = open(ruta, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, mode_t(0o600))
@@ -88,6 +94,13 @@ public struct FitxersLaunchWarp: Sendable {
         }
         guard close(fd) == 0 else { throw .escriptura(String(cString: strerror(errno))) }
         return dades.count
+    }
+
+    /// La carpeta, un sol nivell: sense el pare (`~/.warp`), `mkdir` falla, i no el crea mai. Si el camí ja és un fitxer o un
+    /// enllaç trencat, també falla, i no s'hi toca res. Si no, només pot ser que Warp l'hagi creada just ara.
+    private func creaLaCarpeta() -> Bool {
+        guard mkdir(carpeta.path, mode_t(0o755)) != 0 else { return true }
+        return errno == EEXIST && esCarpeta()
     }
 
     private func escriuTot(_ dades: Data, a fd: Int32) -> Bool {

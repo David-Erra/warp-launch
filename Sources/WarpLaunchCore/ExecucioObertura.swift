@@ -17,6 +17,8 @@ public enum ExecucioObertura {
         /// Demana a Warp que obri el fitxer (`ObreWarp.obre`).
         public var obre: @MainActor (URLLlancament) async throws -> Void
         public var fitxers: FitxersLaunchWarp
+        /// Si es pot crear la carpeta de Warp si no hi és (`FitxersLaunchWarp.escriu`). L'app, amb el permís; el CLI, no.
+        public var potCrearCarpeta: @MainActor () -> Bool
         public var inici: String
         public var rellotge: () -> Date
         public var espera: @MainActor (Duration) async -> Void
@@ -42,6 +44,7 @@ public enum ExecucioObertura {
 
         public init(llegeix: @escaping @MainActor () async -> LecturaWarp?,
                     obre: @escaping @MainActor (URLLlancament) async throws -> Void, fitxers: FitxersLaunchWarp,
+                    potCrearCarpeta: @escaping @MainActor () -> Bool = { false },
                     inici: String, rellotge: @escaping () -> Date, espera: @escaping @MainActor (Duration) async -> Void,
                     desaLlancament: @escaping @MainActor (Llancament) -> String?,
                     lligaPanes: @escaping @MainActor ([UUID: String]) -> Void,
@@ -55,6 +58,7 @@ public enum ExecucioObertura {
             self.llegeix = llegeix
             self.obre = obre
             self.fitxers = fitxers
+            self.potCrearCarpeta = potCrearCarpeta
             self.inici = inici
             self.rellotge = rellotge
             self.espera = espera
@@ -165,7 +169,7 @@ public enum ExecucioObertura {
         entorn.enFase(.obrint)
         do {
             if pla.necessitaEntornClaude { try entorn.desaEntornClaude() }
-            _ = try entorn.fitxers.escriu(fitxer)
+            _ = try entorn.fitxers.escriu(fitxer, creaCarpeta: entorn.potCrearCarpeta())
         } catch {
             llancament.estat = .error
             _ = entorn.desaLlancament(llancament)

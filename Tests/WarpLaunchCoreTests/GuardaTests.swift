@@ -95,6 +95,9 @@ private let iniciDeDebo = [#"homeDirectoryForCurrentUser"#, #"NSHomeDirectory"#,
 private let cridaUnlink = #"(^|[^A-Za-z0-9_])unlink\("#
 private let cridaRename = #"(^|[^A-Za-z0-9_])rename\("#
 private let cridaMkdir = #"(^|[^A-Za-z0-9_])mkdir\("#
+/// L'única crida de `FitxersLaunchWarp` que crea una carpeta (regla 7, decisió d'en David del 09/11/2026): un sol nivell, i
+/// `prohibidesCarpetaWarp` continua prohibint qualsevol altra.
+private let creaCarpetaWarp = "guard mkdir(carpeta.path, mode_t(0o755)) != 0 else { return true }"
 /// Les altres maneres d'esborrar, moure o crear un fitxer o una carpeta, de C i de `FileManager` (revisió de la 0.31.2).
 /// Com a paraula, sense demanar el parèntesi (`let f = rmdir` també hi surt), i amb tota la família (`renameatx_np`,
 /// `removefileat`). `remove` de C també, sense un punt davant (`remove(ruta)`) o amb el mòdul (`Darwin.remove(`): un
@@ -2043,7 +2046,12 @@ private let prohibidesArrossegar = [
             == ["Sources/WarpLaunchCore/FitxersLaunchWarp.swift"])
         let fitxer = try #require(codi.first { $0.ruta.hasSuffix("/FitxersLaunchWarp.swift") })
         #expect(try aparicions(de: [cridaUnlink], a: [fitxer]).count == 1)
-        let trobades = try aparicions(de: prohibidesCarpetaWarp, a: [fitxer])
+        // L'única crida a `mkdir`, exactament, un sol cop; i només s'hi arriba si qui escriu ho demana.
+        #expect(fitxer.text.components(separatedBy: creaCarpetaWarp).count == 2)
+        #expect(fitxer.text.components(separatedBy: "creaLaCarpeta()").count == 3)
+        #expect(fitxer.text.contains("guard creaCarpeta, creaLaCarpeta() else { throw .senseCarpeta }"))
+        let senseLaCrida = fitxer.text.replacingOccurrences(of: creaCarpetaWarp, with: "")
+        let trobades = try aparicions(de: prohibidesCarpetaWarp, a: [(ruta: fitxer.ruta, text: senseLaCrida)])
         #expect(trobades.isEmpty, "\(trobades)")
         #expect(fitxer.text.contains("O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW"))
         #expect(try obertures(fitxer.text) == obrenAFitxersLaunchWarp)
@@ -2052,6 +2060,15 @@ private let prohibidesArrossegar = [
         // canviar els permisos d'un fitxer que ja hi era.
         #expect(permisosDelFitxerAcabatDeCrear(fitxer.text, obre: obrenAFitxersLaunchWarp[0],
                                                permisos: canvienAtributsAFitxersLaunchWarp[0]))
+    }
+
+    /// Regla 7 (09/11/2026): la carpeta de Warp només la crea l'app, i només amb el refresc (la carpeta de debò i el permís).
+    @Test func nomesLAppCreaLaCarpetaDeWarpAmbElPermis() throws {
+        let codi = try fitxers("Sources")
+        func llocs(_ text: String) -> [String] { codi.filter { $0.text.contains(text) }.map(\.ruta).sorted() }
+        #expect(llocs("escriu(fitxer, creaCarpeta: entorn.potCrearCarpeta())") == ["Sources/WarpLaunchCore/ExecucioObertura.swift"])
+        #expect(llocs("potCrearCarpeta: {") == ["Sources/WarpLaunchUI/Obertura.swift"])
+        #expect(llocs("potCrearCarpeta: { [consentiment] in consentiment.refresc != nil }") == ["Sources/WarpLaunchUI/Obertura.swift"])
     }
 
     /// Decisió 7 (ronda 6): a tot `Sources`, només dues crides canvien els permisos o els atributs d'un fitxer, cadascuna al seu

@@ -286,7 +286,10 @@ public final class Obertura {
         let execucio = ExecucioObertura.Entorn(
             llegeix: llegeix ?? { [entorn] in try? await entorn.llegeix().get() },
             obre: entorn.obre,
-            fitxers: entorn.fitxers, inici: entorn.inici, rellotge: entorn.rellotge, espera: entorn.espera,
+            fitxers: entorn.fitxers,
+            // El refresc només existeix amb la carpeta de debò i el permís acceptat o migrat (regla 7).
+            potCrearCarpeta: { [consentiment] in consentiment.refresc != nil },
+            inici: entorn.inici, rellotge: entorn.rellotge, espera: entorn.espera,
             desaLlancament: { sessions.desa(llancament: $0) },
             lligaPanes: { sessions.lliga(panes: $0) },
             desaEntornClaude: { if let carpeta { try EntornClaude.desa(carpeta: carpeta) } },

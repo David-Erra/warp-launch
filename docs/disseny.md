@@ -931,7 +931,9 @@ explícita, també obre) i D18 (lectura cada 60 s).
 
 ### Fitxer temporal (0.15.0, fet)
 
-- **Carpeta:** `~/.warp/launch_configurations/`, l'única que llegeix Warp, també amb `--config`.
+- **Carpeta:** `~/.warp/launch_configurations/`, l'única que llegeix Warp, també amb `--config`. Si no hi és, l'app la crea en
+  fer «Obre» (0.31.5, regla 7, tercera excepció): un sol nivell, mai `~/.warp`, res si el camí és un enllaç o un fitxer, i només amb
+  la configuració de debò i el permís. El CLI no la crea.
 - **Nom:** `warp-launch-<llançament>.yaml`, amb un UUID nou en minúscules. `name:` és el nom sense `.yaml`, i l'URL,
   `warp://launch/warp-launch-<llançament>`: sense punts ni res a codificar, no pot coincidir amb cap configuració d'en
   David ni activar el reintent sense extensió de Warp (`uri/mod.rs:746-811`).

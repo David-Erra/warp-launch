@@ -63,6 +63,60 @@ private func fitxer(_ n: Int) throws -> FitxerLaunch {
         #expect(!FileManager.default.fileExists(atPath: c.tmp.url("no-hi-es").path))
     }
 
+    /// Decisió d'en David del 09/11/2026 (regla 7): amb `creaCarpeta`, la carpeta, un sol nivell.
+    @Test func creaLaCarpetaNomesSiEsDemanaIUnSolNivell() throws {
+        let c = try Carpeta()
+        let f = try fitxer(1)
+        let mgr = FileManager.default
+
+        let nova = c.fitxers.carpeta.appending(path: "carpeta-nova")
+        let fitxers = FitxersLaunchWarp(carpeta: nova)
+        #expect(try fitxers.escriu(f, creaCarpeta: true) == f.mida)
+        #expect(try String(contentsOf: nova.appending(path: f.nomFitxer), encoding: .utf8) == f.text)
+        #expect(try mgr.attributesOfItem(atPath: nova.path)[.posixPermissions] as? Int == 0o755)
+        // Ja hi és: torna a escriure-hi, i no toca res del que hi ha.
+        #expect(try fitxers.escriu(try fitxer(2), creaCarpeta: true) > 0)
+        #expect(try mgr.contentsOfDirectory(atPath: nova.path).count == 2)
+
+        // Sense el pare (`~/.warp`): com fins ara, i no el crea.
+        let pare = c.tmp.url("punt-warp")
+        let sensePare = FitxersLaunchWarp(carpeta: pare.appending(path: "carpeta-nova"))
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) { try sensePare.escriu(f, creaCarpeta: true) }
+        #expect(!mgr.fileExists(atPath: pare.path))
+    }
+
+    /// Si el camí és un fitxer o un enllaç trencat, no es crea ni es toca res.
+    @Test func noCreaLaCarpetaSiElCamiEsUnFitxerOUnEnllac() throws {
+        let c = try Carpeta()
+        let f = try fitxer(1)
+        let mgr = FileManager.default
+
+        let unFitxer = c.fitxers.carpeta.appending(path: "es-un-fitxer")
+        try Data("d'en David".utf8).write(to: unFitxer)
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) {
+            try FitxersLaunchWarp(carpeta: unFitxer).escriu(f, creaCarpeta: true)
+        }
+        #expect(try Data(contentsOf: unFitxer) == Data("d'en David".utf8))
+
+        // Un enllaç trencat: `mkdir` no el segueix, i el destí no apareix.
+        let desti = c.tmp.url("desti-que-no-hi-es")
+        let enllac = c.fitxers.carpeta.appending(path: "enllac")
+        try mgr.createSymbolicLink(at: enllac, withDestinationURL: desti)
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) {
+            try FitxersLaunchWarp(carpeta: enllac).escriu(f, creaCarpeta: true)
+        }
+        #expect(!mgr.fileExists(atPath: desti.path))
+        #expect(try mgr.destinationOfSymbolicLink(atPath: enllac.path) == desti.path)
+
+        // Un enllaç a un fitxer: tampoc.
+        let enllacAFitxer = c.fitxers.carpeta.appending(path: "enllac-a-fitxer")
+        try mgr.createSymbolicLink(at: enllacAFitxer, withDestinationURL: unFitxer)
+        #expect(throws: FitxersLaunchWarp.ErrorFitxers.senseCarpeta) {
+            try FitxersLaunchWarp(carpeta: enllacAFitxer).escriu(f, creaCarpeta: true)
+        }
+        #expect(try Data(contentsOf: unFitxer) == Data("d'en David".utf8))
+    }
+
     @Test func esborraElQueVaEscriure() throws {
         let c = try Carpeta()
         let f = try fitxer(1)

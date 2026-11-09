@@ -297,6 +297,24 @@ private struct NoObre: Error, CustomStringConvertible {
 
     /// El camí bo: el full, el fitxer escrit abans d'obrir i amb el llançament ja desat, la finestra nova vista, el
     /// fitxer esborrat, i el pane i la conversa de cada pestanya a `estat.json`.
+    /// Decisió d'en David del 09/11/2026 (regla 7): si la carpeta de launch configurations no hi és, «Obre» la crea, però només amb la
+    /// carpeta de debò i el permís (hi ha refresc). Sense, com fins ara: no la crea i no obre res.
+    @Test(arguments: [true, false])
+    func laCarpetaDeWarpNomesEsCreaAmbElPermis(ambPermis: Bool) async throws {
+        let ajust = AjustSenseFitxer(senseFitxer: false)
+        let b = try Banc(refresc: ambPermis ? ajust.entorn : nil)
+        #expect((b.consentiment.refresc != nil) == ambPermis)
+        try FileManager.default.removeItem(at: b.warp.carpeta)
+        b.lectures = [abans]
+        await b.obertura.demana(id(100))
+        await b.obertura.confirmaIObre()
+        #expect(FileManager.default.fileExists(atPath: b.warp.carpeta.path) == ambPermis)
+        #expect(b.urls.count == (ambPermis ? 1 : 0))
+        if !ambPermis {
+            #expect(b.obertura.resultat?.text.contains("Warp no té la carpeta de launch configurations") == true)
+        }
+    }
+
     @Test func obreIConfirma() async throws {
         let b = try Banc()
         #expect(b.obertura.potObrir(id(100)))
