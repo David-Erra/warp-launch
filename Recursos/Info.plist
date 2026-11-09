@@ -53,7 +53,7 @@
 		</dict>
 	</array>
 	<!-- Actualització automàtica (docs/disseny.md, secció 11). Sense efecte si la còpia no porta l'adreça: només la hi posa
-	     `build-app.sh --amb-feed`. La signatura de l'actualització es comprova abans d'extreure-la, i no es pot activar després
+	     l'opció «amb-feed» de `build-app.sh`. La signatura de l'actualització es comprova abans d'extreure-la, i no es pot activar després
 	     per a les còpies que ja corren: per això ha d'anar a la primera versió. -->
 	<key>SUEnableAutomaticChecks</key>
 	<true/>

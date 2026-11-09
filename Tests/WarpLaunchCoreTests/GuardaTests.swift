@@ -2492,4 +2492,12 @@ private let prohibidesArrossegar = [
                                                 entorn: camins.merging(["WARP_LAUNCH_IDENTITAT": "Prova"]) { _, nou in nou })
         #expect(codi == 1 && sortida.contains("no accepta WARP_LAUNCH_IDENTITAT"), "\(sortida)")
     }
+
+    /// L'XML no admet dos guions dins d'un comentari. Els lectors d'Apple ho deixen passar; un de més estricte refusaria la plantilla del paquet.
+    @Test func elsComentarisDeLInfoPlistSonXMLValid() throws {
+        let text = try String(contentsOf: arrel.appending(path: "Recursos/Info.plist"), encoding: .utf8)
+        let comentaris = text.components(separatedBy: "<!--").dropFirst().map { $0.components(separatedBy: "-->")[0] }
+        #expect(!comentaris.isEmpty)
+        #expect(comentaris.allSatisfy { !$0.contains("--") }, "\(comentaris.filter { $0.contains("--") })")
+    }
 }
