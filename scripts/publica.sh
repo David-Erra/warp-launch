@@ -32,6 +32,12 @@ case "${1:-}" in
 esac
 
 VERSIO="$(tr -d '[:space:]' < VERSION)"
+# Va a l'etiqueta, a la URL i a la substitució de la recepta, i la recepta només en sap llegir aquesta forma.
+FORMA_VERSIO='^[0-9]+\.[0-9]+\.[0-9]+$'
+if [[ ! "$VERSIO" =~ $FORMA_VERSIO ]]; then
+    echo "publica: VERSION («${VERSIO}») no té la forma X.Y.Z. No s'ha publicat res." >&2
+    exit 1
+fi
 ETIQUETA="v$VERSIO"
 ZIP="build/WarpLaunch-$VERSIO.zip"
 

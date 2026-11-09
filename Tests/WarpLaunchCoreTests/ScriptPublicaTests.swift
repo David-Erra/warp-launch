@@ -301,6 +301,14 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         #expect(!b.ordresGh.contains("release create"))
     }
 
+    /// Una VERSION que no sigui X.Y.Z no es publica: va a la substitució de la recepta, i la recepta només en sap llegir aquesta forma.
+    @Test(arguments: ["0.28", "0.28.0-beta", "1.2.3.4", "v0.28.0", "0.28/0", "0.28.0&", "0.28.0\\", ""])
+    func unaVersioAmbUnaAltraFormaNoEsPublica(versio: String) throws {
+        let b = try Banc(versio: versio)
+        try b.comprovaRefus(conte: "no té la forma X.Y.Z")
+        #expect(b.ordresGh.isEmpty, "\(b.ordresGh)")
+    }
+
     // --- La recepta de Homebrew: es llegeix abans de compilar, i si no té la forma esperada no es publica res.
 
     /// El mode de prova llegeix la recepta i diu quin canvi hi faria, sense escriure-hi.
