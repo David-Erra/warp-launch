@@ -26,7 +26,12 @@
       "Bash(claude agents *)",
       "Bash(prototip/espai.py *)",
       "Bash(./prototip/espai.py *)",
-      "Bash(python3 prototip/espai.py *)"
+      "Bash(python3 prototip/espai.py *)",
+      "Bash(generate_keys*)",
+      "Bash(*/generate_keys*)",
+      "Bash(sign_update*)",
+      "Bash(*/sign_update*)",
+      "Bash(*publica.sh --aplica*)"
     ]
   }
 }

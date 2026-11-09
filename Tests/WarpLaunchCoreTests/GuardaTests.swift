@@ -2532,6 +2532,17 @@ private let prohibidesArrossegar = [
         }
     }
 
+    /// Decisions 6 i 13 de Sparkle: cap agent no crea ni fa servir la clau, ni publica. Les regles `deny` es compleixen fins i tot saltant els permisos.
+    @Test func capAgentNoPotSignarNiPublicar() throws {
+        let dades = try Data(contentsOf: arrel.appending(path: ".claude/settings.json"))
+        let arbre = try #require(try JSONSerialization.jsonObject(with: dades) as? [String: Any])
+        let permisos = try #require(arbre["permissions"] as? [String: Any])
+        let deny = try #require(permisos["deny"] as? [String])
+        for regla in ["Bash(generate_keys*)", "Bash(*/generate_keys*)", "Bash(sign_update*)", "Bash(*/sign_update*)", "Bash(*publica.sh --aplica*)"] {
+            #expect(deny.contains(regla), "\(regla)")
+        }
+    }
+
     /// Sense `--amb-feed` no hi ha res a demanar; amb, el que falta s'atura abans de compilar. Els arguments, sense compilar res.
     @Test func elsArgumentsDelPaquet() throws {
         let script = arrel.appending(path: "scripts/build-app.sh")
