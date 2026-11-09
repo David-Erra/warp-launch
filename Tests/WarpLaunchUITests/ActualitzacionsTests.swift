@@ -297,6 +297,102 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         #expect(m.estat == .error("sense espai", t0), "una baixada que falla no es queda baixant")
     }
 
+    /// Registre de la ronda A, línia 62: 2 min 30 s dient «Baixant» amb la finestra de Sparkle a «Instal·la i reinicia», i cap manera de tornar-hi.
+    @Test func laFinestraDeLActualitzacioEsPotRecuperar() throws {
+        let b = try Banc()
+        b.auto = false
+        let m = b.model()
+        m.rep(.trobada("0.32.1"), ara: t)
+        m.actualitzaAra()
+        m.rep(.baixant("0.32.1"), ara: t)
+        #expect(m.text(avui: t0) == "L'actualització a la 0.32.1 continua a la seva finestra.")
+        #expect(!m.text(avui: t0).contains("Baixant"), "pot ser que ja no baixi")
+        #expect(m.boto == .mostraFinestra && m.accioMenu == .mostraFinestra)
+        #expect(m.textMenu == "Mostra la finestra de l'actualització")
+
+        m.mostraFinestra()
+        #expect(b.crides == ["actualitzaAra", "actualitzaAra"], "la mateixa crida la porta al davant")
+
+        m.rep(.cicleAcabat, ara: t + 150)
+        #expect(m.boto == .comprovaAra(actiu: true) && m.accioMenu == .mostraIComprova)
+        m.mostraFinestra()
+        #expect(b.crides.count == 2, "sense finestra, no fa res")
+    }
+
+    /// El camí sense finestra no canvia: «Baixant», i cap botó.
+    @Test func sensFinestraNoEsPotMostrar() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.baixant("0.32.1"), ara: t)
+        #expect(m.text(avui: t0) == "Baixant la 0.32.1…" && m.boto == .cap && m.accioMenu == .mostraIComprova)
+        m.mostraFinestra()
+        #expect(b.crides.isEmpty)
+    }
+
+    /// Un cop a punt pel bloc, ja no hi ha cap finestra de res.
+    @Test func aPuntOblidaLaFinestra() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.trobada("0.32.1"), ara: t)
+        m.actualitzaAra()
+        m.rep(.aPunt("0.32.1", aplica: b.aplica), ara: t)
+        #expect(m.boto == .reinicia(actiu: true))
+        m.mostraFinestra()
+        #expect(b.crides == ["actualitzaAra"])
+    }
+
+    /// El botó de la finestra ha gastat el clic (`SPUStandardUserDriver.m:521-527`): sense això, mort i sense cap explicació.
+    @Test func unReiniciAjornatDiuPerQue() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.trobada("0.32.1"), ara: t)
+        m.actualitzaAra()
+        m.rep(.baixant("0.32.1"), ara: t)
+        b.models.fullObert = true
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
+        #expect(m.text(avui: t0) == "La 0.32.1 s'instal·larà quan l'app es pugui reiniciar.")
+        #expect(m.textEspera == "Ara no: hi ha un full obert", "de seguida, sense esperar el minut de `vigila`")
+        #expect(m.boto == .cap, "la finestra ja no respon")
+        #expect(m.textMenu == "L'actualització espera per reiniciar…" && m.accioMenu == .mostraIComprova)
+
+        b.models.fullObert = false
+        b.models.obrint = true
+        m.vigila(ara: t + 60)
+        #expect(m.textEspera == "Ara no: s'estan obrint finestres a Warp", "el motiu es posa al dia")
+        #expect(b.blocs.isEmpty)
+
+        b.models.obrint = false
+        m.vigila(ara: t + 120)
+        #expect(b.blocs.count == 1 && m.aplicant && m.textEspera == nil)
+    }
+
+    /// Amb una fallada anterior, la línia diu el que passa ara.
+    @Test func elReiniciAjornatManaSobreLaFallada() throws {
+        let b = try Banc()
+        let m = b.model(intent: IntentActualitzacio(fallades: 1, versioFallada: "0.32.1"))
+        #expect(m.textAvis == m.textFallada && m.textAvis != nil)
+        b.models.refrescant = true
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
+        #expect(m.textAvis == "Ara no: s'està llegint Warp")
+    }
+
+    /// Si la sessió s'acaba, el bloc ja no faria res: ni text, ni reinici.
+    @Test func unAjornamentNoSobreviuALaSessio() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.trobada("0.32.1"), ara: t)
+        m.actualitzaAra()
+        m.rep(.baixant("0.32.1"), ara: t)
+        b.models.fullObert = true
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
+        m.rep(.cicleAcabat, ara: t + 1)
+        #expect(m.textEspera == nil && m.textAvis == nil && m.estat == .inicial(nil))
+        #expect(m.text(avui: t0) == "Encara no s'ha comprovat")
+        b.models.fullObert = false
+        m.vigila(ara: t + 60)
+        #expect(b.blocs.isEmpty)
+    }
+
     @Test func baixantNoEsQuedaPerSempreSiElCicleAcaba() throws {
         let b = try Banc()
         let m = b.model()

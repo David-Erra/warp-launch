@@ -264,7 +264,7 @@ public struct VistaConfiguracio: View {
                     Text("Estat")
                     Text(actualitzacions.text(avui: Date()))
                 }
-                if let avis = actualitzacions.textFallada ?? actualitzacions.textEspera {
+                if let avis = actualitzacions.textAvis {
                     Text(avis)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -299,6 +299,8 @@ public struct VistaConfiguracio: View {
         case let .reinicia(actiu):
             Button("Reinicia i actualitza") { actualitzacions.reinicia(ara: ProcessInfo.processInfo.systemUptime) }
                 .disabled(!actiu)
+        case .mostraFinestra:
+            Button("Mostra la finestra") { actualitzacions.mostraFinestra() }
         }
     }
 

@@ -395,6 +395,8 @@ private struct ItemActualitzacions: View {
             switch actualitzacions.accioMenu {
             case .reinicia:
                 actualitzacions.reinicia(ara: ara)
+            case .mostraFinestra:
+                actualitzacions.mostraFinestra()
             case .mostraIComprova:
                 aplicacio.activacio.posaAlDavant()
                 openSettings()

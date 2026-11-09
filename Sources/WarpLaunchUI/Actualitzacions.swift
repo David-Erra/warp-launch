@@ -75,6 +75,8 @@ public final class Actualitzacions {
         case comprovaAra(actiu: Bool)
         case actualitzaAra
         case reinicia(actiu: Bool)
+        /// La finestra de l'actualitzador continua oberta: no es pot tancar, i l'app no té Dock per trobar-la.
+        case mostraFinestra
     }
 
     private typealias P = PoliticaActualitzacions
@@ -98,6 +100,11 @@ public final class Actualitzacions {
     public private(set) var diesAvisAra: Int?
     /// Puja quan canvia alguna cosa de l'actualitzador que no arriba com a esdeveniment (`canviEntorn`): si es pot comprovar, per al botó.
     private var revisio = 0
+    /// «Actualitza ara» ha obert la finestra de l'actualitzador i la sessió no ha acabat. Sense més: el model no sap què hi diu, si baixa o si
+    /// ja espera el clic, i no li cal per dir la veritat.
+    private var ambFinestra = false
+    /// Reinici demanat des de la finestra, ajornat per un motiu. El botó d'aquella finestra ja no fa res: el text ho ha d'explicar.
+    private var postposat: (versio: String, aplica: @MainActor () -> Void)?
 
     @ObservationIgnored private let motiuNoDisponible: PoliticaActualitzacions.NoDisponible?
     @ObservationIgnored private let entorn: Entorn?
@@ -107,7 +114,6 @@ public final class Actualitzacions {
     @ObservationIgnored private let versioActual: String
     @ObservationIgnored private var intent: IntentActualitzacio
     @ObservationIgnored private var bloc: (@MainActor () -> Void)?
-    @ObservationIgnored private var postposat: (versio: String, aplica: @MainActor () -> Void)?
     @ObservationIgnored private var aPuntDes: Date?
     @ObservationIgnored private var comprovantDes: TimeInterval?
     @ObservationIgnored private var aplicantDes: TimeInterval?
@@ -180,6 +186,13 @@ public final class Actualitzacions {
     /// «Actualitza ara».
     public func actualitzaAra() {
         guard let entorn, case .trobada = estat else { return }
+        ambFinestra = true
+        entorn.actualitzaAra()
+    }
+
+    /// «Mostra la finestra»: amb una finestra oberta, la mateixa crida la porta al davant.
+    public func mostraFinestra() {
+        guard let entorn, ambFinestra else { return }
         entorn.actualitzaAra()
     }
 
@@ -246,14 +259,20 @@ public final class Actualitzacions {
             guard !ocupat else { return }
             estat = .baixant(versio)
         case .cicleAcabat:
+            ambFinestra = false
+            // La sessió s'ha acabat: el bloc ja no faria res.
+            postposat = nil
             if estat == .comprovant || baixant { tornaAInicial(entorn) }
         case let .aPunt(versio, aplica):
             if case .aPunt(versio) = estat {} else { aPuntDes = entorn.rellotge() }
             bloc = aplica
             quietDes = nil
+            ambFinestra = false
             estat = .aPunt(versio)
         case let .postposada(versio, aplica):
             postposat = (versio, aplica)
+            // De seguida: l'usuari acaba de prémer el botó, i `vigila` pot trigar un minut.
+            motiuDemanatAra = motiu(entorn, ara: ara, candidat: nil, demanat: true)
         case let .error(missatge, demanat):
             guard !ocupat else { return }
             // Una comprovació que falla sola no amaga que ja se sap d'una versió.
@@ -276,7 +295,7 @@ public final class Actualitzacions {
 
         guard case let .aPunt(versio) = estat else {
             motiuAra = nil
-            motiuDemanatAra = nil
+            motiuDemanatAra = postposat != nil ? motiu(entorn, ara: ara, candidat: nil, demanat: true) : nil
             quietDes = nil
             return
         }
@@ -413,13 +432,14 @@ public final class Actualitzacions {
 
     /// El text de la fila «Estat». `avui`: l'hora de mirar-ho, per als textos.
     public func text(avui: Date) -> String {
-        switch estat {
+        if let postposat { return "La \(postposat.versio) s'instal·larà quan l'app es pugui reiniciar." }
+        return switch estat {
         case let .inicial(ultima):
             ultima.map { "Última comprovació: \(Self.fa($0, avui: avui))" } ?? "Encara no s'ha comprovat"
         case .comprovant: "Comprovant…"
         case let .alDia(quan): "Tens l'última versió. Comprovat \(Self.quan(quan, avui: avui))."
         case let .trobada(versio): "Hi ha la \(versio)."
-        case let .baixant(versio): "Baixant la \(versio)…"
+        case let .baixant(versio): ambFinestra ? "L'actualització a la \(versio) continua a la seva finestra." : "Baixant la \(versio)…"
         case let .aPunt(versio): "La \(versio) és a punt: s'aplicarà sola quan no facis servir l'app."
         case .aplicant: "S'està actualitzant…"
         case let .error(missatge, _): "No s'ha pogut comprovar: \(missatge)."
@@ -427,10 +447,16 @@ public final class Actualitzacions {
         }
     }
 
-    /// El motiu de no reiniciar ara, amb una versió a punt.
+    /// El motiu de no reiniciar ara: amb una versió a punt, o amb un reinici ajornat des de la finestra.
     public var textEspera: String? {
+        if postposat != nil, let motiuDemanatAra { return "Ara no: \(motiuDemanatAra.text)" }
         guard case .aPunt = estat, let motiuAra else { return nil }
         return "Ara no: \(motiuAra.text)"
+    }
+
+    /// La línia de sota l'estat. Un reinici ajornat mana: és el que l'usuari acaba de demanar i no ha passat.
+    public var textAvis: String? {
+        postposat != nil ? textEspera : textFallada ?? textEspera
     }
 
     /// Una versió no s'ha pogut instal·lar sola, i encara no s'ha instal·lat.
@@ -450,21 +476,26 @@ public final class Actualitzacions {
     }
 
     public var boto: Boto {
-        switch estat {
+        // Ajornat: la finestra té el botó mort, i portar-la al davant no ajudaria. El que cal fer ho diu `textEspera`.
+        if postposat != nil { return .cap }
+        return switch estat {
         case .inicial, .alDia, .error: .comprovaAra(actiu: revisio >= 0 && entorn?.potComprovar() == true)
         case .comprovant, .noDisponible: .comprovaAra(actiu: false)
         case .trobada: .actualitzaAra
         case .aPunt: .reinicia(actiu: motiuDemanatAra == nil)
-        case .baixant, .aplicant: .cap
+        case .baixant: ambFinestra ? .mostraFinestra : .cap
+        case .aplicant: .cap
         }
     }
 
     /// L'ítem del menú: «Comprova…», o, si n'hi ha una a punt, reiniciar. Passats `diesAvis` dies a punt, també quants (decisió 5).
     public var textMenu: String {
-        switch estat {
+        if postposat != nil { return "L'actualització espera per reiniciar…" }
+        return switch estat {
         case let .aPunt(versio):
             "Reinicia i actualitza a la \(versio)" + (diesAvisAra.map { " (fa \($0) dies)" } ?? "")
         case .aplicant: "S'està actualitzant…"
+        case .baixant where ambFinestra: "Mostra la finestra de l'actualització"
         default: "Comprova si hi ha actualitzacions…"
         }
     }
@@ -473,13 +504,17 @@ public final class Actualitzacions {
         /// Porta l'usuari a la Configuració i comprova.
         case mostraIComprova
         case reinicia
+        case mostraFinestra
         case cap
     }
 
     public var accioMenu: AccioMenu {
-        switch estat {
+        // A la Configuració, on es veu el motiu. Comprovar no fa res mentre hi hagi una sessió.
+        if postposat != nil { return .mostraIComprova }
+        return switch estat {
         case .aPunt: motiuDemanatAra == nil ? .reinicia : .cap
         case .aplicant: .cap
+        case .baixant where ambFinestra: .mostraFinestra
         default: .mostraIComprova
         }
     }

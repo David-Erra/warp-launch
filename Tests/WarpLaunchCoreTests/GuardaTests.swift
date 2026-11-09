@@ -2506,6 +2506,10 @@ private let prohibidesArrossegar = [
         let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
         #expect(app.contains("CommandGroup(after: .appInfo) {\n                ItemActualitzacions(aplicacio: aplicacio)\n                    .disabled(!aplicacio.consentiment.potContinuar)"))
         #expect(app.components(separatedBy: "ItemActualitzacions(aplicacio: aplicacio)").count == 3)
+        // La finestra de l'actualitzador no es pot tancar, i l'app no té Dock: sempre s'hi ha de poder tornar, i la línia ha de dir per què s'espera.
+        #expect(vista.contains(#"Button("Mostra la finestra") { actualitzacions.mostraFinestra() }"#))
+        #expect(vista.contains("if let avis = actualitzacions.textAvis {"))
+        #expect(app.contains("case .mostraFinestra:\n                actualitzacions.mostraFinestra()"))
         let permis = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/VistaConsentiment.swift"), encoding: .utf8)
         #expect(permis.contains("Text(ConsentimentRestauracio.textActualitzacions)"))
     }
