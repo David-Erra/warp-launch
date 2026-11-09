@@ -343,6 +343,7 @@ private func recepta(versio: String = "0.27.0", sha256: String = sha256Antic) ->
         recepta().replacing("  version \"0.27.0\"\n", with: "  version \"0.27.0\"\n    version \"0.26.0\"\n"),  // una d'exacta i una altra dins d'un bloc
         recepta().replacing("  sha256 \"\(sha256Antic)\"\n", with: ""),  // sense sha256
         recepta().replacing("  sha256 \"\(sha256Antic)\"\n", with: "  sha256 \"\(sha256Antic)\"\n  sha256 \"\(sha256Antic)\"\n"),  // dues
+        recepta().replacing("  sha256 \"\(sha256Antic)\"\n", with: "  sha256 \"\(sha256Antic)\"\n    sha256 \"\(sha256Antic)\"\n"),  // una d'exacta i una altra dins d'un bloc
         recepta().replacing("  version \"0.27.0\"", with: "  version :latest"),
         recepta().replacing("  version \"0.27.0\"", with: "    version \"0.27.0\""),
         recepta().replacing("  version \"0.27.0\"", with: "  version '0.27.0'"),
