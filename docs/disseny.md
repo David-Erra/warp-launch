@@ -2309,10 +2309,13 @@ actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versi�
 | `.alDia(quan)` | «Tens l'última versió. Comprovat avui a les 10:42.» **Només després d'un `updaterDidNotFindUpdate` d'aquesta sessió** | «Comprova ara» |
 | `.trobada(v)` | «Hi ha la v.» | «Actualitza ara» (la finestra de Sparkle) |
 | `.baixant(v)` | «Baixant la v…» | Cap |
-| `.aPunt(v)` | «La v és a punt: s'aplicarà sola quan no facis servir l'app.» | «Reinicia i actualitza» |
+| `.baixant(v)` després d'«Actualitza ara» | «L'actualització a la v continua a la seva finestra.» Tant si baixa com si ja espera el clic: el model no ho sap | «Mostra la finestra» (0.32.9) |
+| Reinici ajornat des de la finestra | «La v s'instal·larà quan l'app es pugui reiniciar.», i «Ara no: <motiu>» (`textAvis`, mana sobre la fallada anterior) | Cap: el botó de la finestra ja no respon (0.32.9) |
+| `.aPunt(v)` | «La v és a punt: s'aplicarà sola quan no facis servir l'app.» Sense reinici sol (interruptor apagat, versió que ha fallat, 3 intents): «La v és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza».» (0.32.9) | «Reinicia i actualitza» |
 | `.aPunt` amb motiu | El mateix, i «Ara no: <motiu>» (2.2) | Desactivat si el motiu val també per a «demanat» |
 | `.aplicant(v)` | «S'està actualitzant…» | Cap |
 | `.error(msg, quan)` | «No s'ha pogut comprovar: msg.» Substitueix «Tens l'última versió» | «Comprova ara» |
+| `.errorBaixant(v, quan)` | Ha fallat després de trobar-la (baixar, signatura, preparar): «No s'ha pogut baixar o preparar la v.» El detall, al registre: Sparkle el dona en anglès (0.32.9) | «Comprova ara» |
 | Fallada anterior (2.3) | «La v no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la.» | Segons l'estat |
 | `.noDisponible(motiu)` | Només el motiu al peu (2.4) | Tot desactivat |
 
@@ -2324,8 +2327,12 @@ Mecanismes:
     **Si surt malament:** `checkForUpdateInformation()` i «Actualitza ara», com amb l'interruptor apagat.
   - Interruptor apagat: `checkForUpdateInformation()` no baixa res [L: `SPUUpdater.h:140-154`]. Amb versió: `.trobada`.
 - **«Actualitza ara»:** `checkForUpdates()`. Si ja s'està mostrant una actualització, la porta al davant [L: `SPUUpdater.m:695-705`].
+- **«Mostra la finestra» (0.32.9):** la mateixa crida, al botó i al menú. Fa falta perquè la finestra de baixada acabada no es pot tancar [L: `SPUStandardUserDriver.m:514`] i l'app no té Dock.
+  El model només recorda que l'ha obert «Actualitza ara» (fins a `.cicleAcabat`): sense res nou al disc, i sense haver de saber què hi diu la finestra.
+- **Reinici ajornat des de la finestra (0.32.9):** Sparkle gasta el clic [L: `SPUStandardUserDriver.m:521-527`] i no es pot reactivar el botó sense canviar l'actualitzador estàndard: la Configuració i el menú diuen per què s'espera, i `vigila` el fa quan es pot. El botó de la finestra es continua veient actiu.
 - **«Reinicia i actualitza»:** crida el bloc de `willInstallUpdateOnQuit` (2.2).
 - **L'interruptor** canvia només `automaticallyChecksForUpdates`: Sparkle ho desa a les seves preferències, i la baixada automàtica en depèn [L: `SPUUpdaterSettings.m:229-234,316,327`]. Apagat amb una versió a punt: no es reinicia sola, però s'instal·la en sortir [L: `SPUUpdaterDelegate.h:421-440`]. El peu ho diu.
+- **La casella de la finestra de Sparkle (0.32.9):** una altra preferència, `SUAutomaticallyUpdate` [L: `SUUpdateAlert.xib:119`], que només es veu amb l'interruptor encès (`SUUpdateAlert.m:385`): per exemple, si s'encén amb una versió ja trobada. Desmarcar-la **apaga l'interruptor** i torna a posar la baixada sola, perquè en tornar-lo a encendre funcioni (`Actualitzacions.canviEntorn`). Una sola preferència a l'app.
 
 **Menú de la icona** (`Sources/WarpLaunchApp/WarpLaunchApp.swift:413-425`, entre «Configuració…» i «Sobre l’app»): «Comprova si hi ha actualitzacions…» porta l'app al davant, obre la Configuració a «General» i comprova; amb una versió a punt, «Reinicia i actualitza a la v»; passats 7 dies a punt, «… (fa N dies)» (decisió 5). Fins que s'accepta el permís, només els dos ítems de sempre (`:329-340`).
 
@@ -2335,7 +2342,7 @@ Mecanismes:
 
 **Alçada:** el màxim és 640 pt (`VistaConfiguracio.swift:57`). Es mesura amb el programa de la 0.30.2. Si passa, tercera pestanya «Actualitzacions»; `PestanyaConfiguracioTests` n'admet de 2 a 6. **Mesurat: 738 pt. Tercera pestanya.**
 
-**Les finestres de Sparkle** només surten amb «Actualitza ara» (interruptor apagat, o el cas rar de `.trobada`), en català parcial (26 claus de 82 [P]) i amb «Install on Quit» traduït com «Reinicia el programa més tard». S'accepta.
+**Les finestres de Sparkle** només surten amb «Actualitza ara» (interruptor apagat, o el cas rar de `.trobada`), en català parcial (26 claus de 82 [P]). S'accepta. **«Install on Quit» no surt en aquesta finestra** [P: ronda A; la de baixada acabada només té «Instal·la i reinicia»]: només a l'alerta d'una actualització ja preparada [L: `SP/Sparkle/SUUpdateAlert.m:462-468`], on es tradueix «Reinicia el programa més tard».
 
 #### 2.2 Quan es reinicia sola
 
@@ -2369,7 +2376,7 @@ Mantingut amb la decisió 2. Si es rebutja, `macEnUs` es treu i només queden el
 - `Actualitzacions.vigila(ara:)` es crida des de `llegeixPeriodicament` (`WarpLaunchApp.swift:215-221`), cada minut. **Cap temporitzador nou.** `ara` és `systemUptime`: el Mac adormit no compta.
 - Automàtic: **60 s seguits sense cap motiu** (`quietud`), és a dir, dues crides de `vigila`. Un motiu reinicia el compte. Amb `macEnUs`: uns 3 o 4 minuts sense tocar el Mac.
 - Demanat: de seguida. Amb motiu, el botó queda desactivat i diu per què: res «per fer després».
-- Després del bloc, `.aplicant` (i «Obre» desactivat). Passats 60 s amb l'app viva, s'ha cancel·lat: torna a `.aPunt`, `intents += 1`, i pausa d'1 h. Com a molt, 3 intents per arrencada; després, només en sortir o amb el botó.
+- Després del bloc, `.aplicant` (i «Obre» desactivat). Passats 60 s amb l'app viva, s'ha cancel·lat: torna a `.aPunt`, treu l'intent (0.32.9: si no, una arrencada sense instal·lar comptaria com a fallada), `intents += 1`, i pausa d'1 h. Com a molt, 3 intents per arrencada; després, només en sortir o amb el botó.
 - Si en un portàtil el Mac s'adorm abans d'arribar-hi, queda a punt fins que surtis o premis el botó. El menú ho diu (decisió 5).
 - Una sola línia al registre per canvi d'estat.
 - `shouldPostponeRelaunchForUpdate` només ajorna el camí de la finestra de Sparkle: si hi ha motiu, guarda el bloc i torna `true`, i `vigila` el crida quan es pugui. Una sola vegada [L: `SPUInstallerDriver.m:521-535`]. **Mai** `updaterShouldRelaunchApplication`: amb `false`, avorta [L: `:503-519`].
@@ -2478,7 +2485,7 @@ public enum Esdeveniment {
 - `didAbortWithError`: només si `esErrorVisible(codi:)`, és a dir, ni `SUNoUpdateError` (1001) ni `SUInstallationCanceledError` (4007). Sparkle hi passa sempre el 1001 quan no hi ha res de nou [L: `SPUBasicUpdateDriver.m:257-276`, `SPUUpdater.m:798-804`].
 - `didFinishUpdateCycleFor` envia `.cicleAcabat`: si encara és `.comprovant`, torna a `.inicial`. A més, `vigila` hi posa un límit de 180 s.
 - `standardUserDriverShouldHandleShowingScheduledUpdate` torna **sempre `false`**, i `standardUserDriverWillHandleShowingUpdate(handle: false, …)` envia `.trobada(versio)`. És l'exemple de `documentation/gentle-reminders`. Mai cap finestra sense demanar-la. `supportsGentleScheduledUpdateReminders = true`.
-- `updaterWillRelaunchApplication`: només per al camí de la finestra de Sparkle sense ajornar (escriu un intent `demanada`). Sparkle només el crida el primer cop [L: `SPUInstallerDriver.m:551-554`]: per això, al camí del bloc i al de la postposada l'intent l'escriu el model cada vegada. **Sparkle també el crida al camí del bloc** [L: `SPUCoreBasedUpdateDriver.m:322-335`]: si el model ja és `.aplicant`, no s'ha de tocar l'intent, o un reinici sol quedaria com a `demanada` i obriria l'editor.
+- `updaterWillRelaunchApplication`: només per al camí de la finestra de Sparkle sense ajornar (escriu un intent `demanada` i passa a `.aplicant`, 0.32.9, perquè també caduqui si l'app no surt). Sparkle només el crida el primer cop [L: `SPUInstallerDriver.m:551-554`]: per això, al camí del bloc i al de la postposada l'intent l'escriu el model cada vegada. **Sparkle també el crida al camí del bloc** [L: `SPUCoreBasedUpdateDriver.m:322-335`]: si el model ja és `.aplicant`, no s'ha de tocar l'intent, o un reinici sol quedaria com a `demanada` i obriria l'editor.
 - KVO de `canCheckForUpdates`, `sessionInProgress` i `lastUpdateCheckDate` [P].
 - Sense `feedURLString`, `setFeedURL`, `sendsSystemProfile`, `allowedChannels` ni `startUpdater()`.
 - Retenir els delegats: són febles [L: `SPUStandardUpdaterController.h`].
@@ -2696,7 +2703,7 @@ Regles 1, 3 i 4: cada ronda, només amb l'OK de l'autor, que sabrà quantes cose
 | A8 | `chflags uchg` a l'app i cridar el bloc | Surt, no torna, `Failed to finalize installation` al registre **[S: que `uchg` faci fallar]**. Reobrir-la: no es reinicia sola, i la secció ho diu |
 | A9 | Aturar el servidor, «Comprova ara»; rearrencar | Error, i cap «Tens l'última versió». Rearrencada: `.inicial` |
 | A10 | Appcast amb `sparkle:informationalUpdate`, critical, o enclosure a un altre domini | Refusat, cap finestra |
-| A11 | Interruptor apagat: «Comprova», «Actualitza ara» i tancar amb «Install on Quit». «Comprova» a mitja baixada | Cap «Comprovant…» eternament. Sense finestres noves |
+| A11 | Interruptor apagat: «Comprova», «Actualitza ara», baixada sencera (la finestra acaba amb «Instal·la i reinicia», sense «Install on Quit»; vegeu 2.1) i sortir de l'app. «Comprova» a mitja baixada | Cap «Comprovant…» eternament. Sense finestres noves |
 | A12 | `secondsSinceLastEventType` dins de l'app | Valor correcte, cap diàleg |
 
 **Ronda B: deixa macOS actualitzar una app amb un certificat propi?** A1, A3 i A6, a `/Applications`. Afegir la prova de la decisió 1: una versió signada amb el mateix certificat, amb **una altra clau pública** i el zip signat amb aquesta altra clau: amb la clau activada, refusada [L]. Només val juntament amb la ronda E.
@@ -2736,7 +2743,7 @@ gh release edit v1 --latest                                                     
 gh release create v3 appcast.xml …                                                   # ha de portar a v3
 ```
 
-**Neteja:** esborrar el clon, el repo de prova i les carpetes temporals; aturar el servidor; `defaults delete cat.exemple.prova-sparkle`; esborrar `~/Library/Caches/cat.exemple.prova-sparkle` i `~/Library/Caches/cat.davide.warp-launch`; les claus `SU*` de `cat.davide.warp-launch`; tornar a posar la Warp Launch publicada (`scripts/instal·la.sh --github --versio 0.31.4 --aplica`, o Homebrew); treure l'app de prova i l'usuari nou. L'OK inclou aquest pas (regla 3).
+**Neteja:** esborrar el clon, el repo de prova i les carpetes temporals; aturar el servidor; `defaults delete cat.exemple.prova-sparkle`; esborrar `~/Library/Caches/cat.exemple.prova-sparkle` i `~/Library/Caches/cat.davide.warp-launch`; les claus `SU*` de `cat.davide.warp-launch`; tornar a posar la Warp Launch publicada (`scripts/instal·la.sh --github --versio 0.31.5 --aplica`, o Homebrew); treure l'app de prova i l'usuari nou. L'OK inclou aquest pas (regla 3).
 
 ### 9. Passos, en commits petits
 

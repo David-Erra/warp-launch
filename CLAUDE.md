@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (09/11/2026, 0.32.8 al codi; publicada, 0.31.5)
+## Estat (09/11/2026, 0.32.9 al codi; publicada, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -184,9 +184,13 @@ Els requisits són a `docs/especificacio.md`.
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
   - **L'autor ha decidit activar-la (09/11/2026, després de publicar la 0.31.5).** Vol dir fer el que falta, en l'ordre de sota: no treu l'OK de cada ronda
     (regla 4), i la clau i publicar només els fa ell (regles 3 i 12).
-  - **Res no s'ha vist funcionar.** No s'ha obert cap app. Les proves són amb falsos i carpetes temporals, i el que depèn de Sparkle
-    i de macOS està llegit o suposat. Compila, i `build-app.sh` empaqueta i signa el framework; prou.
-  - **Falta, en aquest ordre:** les rondes A a F (amb clau d'un sol ús i l'OK de l'autor per a cada una); la clau de signatura, que
+  - **De l'app de debò, res no s'ha vist funcionar.** Warp Launch no s'ha obert mai amb Sparkle: les proves del repo són amb falsos i carpetes temporals, i el que depèn de Sparkle i de macOS en aquesta app està llegit o suposat.
+    **Amb una app de prova, la ronda A és feta** (09/11/2026, signatura ad hoc, carpeta temporal, clau d'un sol ús i l'OK de l'autor): cicle complet, sortir amb la versió a punt,
+    sortida cancel·lada, un zip dolent, interruptor apagat sense cap petició, instal·lació fallida (`chflags uchg`), sense servidor i appcasts refusats. **Sense clics reals**
+    (canal d'ordres dins de l'app de prova); no s'ha premut «Instal·la i reinicia», ni s'ha vist cap diàleg a la pantalla. `docs/fets-verificats.md`, «Sparkle», secció 15.
+  - **0.32.9: el que va sortir de la ronda A.** «Mostra la finestra» (la finestra de baixada acabada no es pot tancar i l'app no té Dock), el reinici ajornat diu per què, l'intent es treu si l'app
+    no surt, l'estat no promet el que no farà ni diu «comprovar» quan falla la baixada, i desmarcar la casella de Sparkle apaga l'interruptor. Només proves i codi llegit: no s'ha vist a l'app.
+  - **Falta, en aquest ordre:** les rondes B a F (amb clau d'un sol ús i l'OK de l'autor per a cada una); la clau de signatura, que
     només crea l'autor, i `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (pas 11; sense aquest fitxer, cap còpia
     s'actualitza); `auto_updates true` i `zap` a la recepta del tap (pas 12; sense, `publica.sh` refusa); publicar (l'autor); i la
     primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia. Si les rondes B o E no surten netes, s'espera el
