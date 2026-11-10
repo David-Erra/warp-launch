@@ -107,9 +107,9 @@ s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, a
 
 **Encara no les porta cap còpia publicada.** El codi és al repo des de la 0.32.0, però l'última versió publicada és la 0.31.5.
 **Res d'això no s'ha vist funcionar a l'app:** només hi ha proves amb falsos, i el que depèn de Sparkle i de macOS s'ha llegit al
-codi o es dona per suposat. L'autor ha decidit activar-les (09/11/2026), i abans de publicar-les falten la clau de signatura de l'autor, les proves reals que queden (rondes B a F de
-[`docs/disseny.md`](docs/disseny.md), secció 11; la A s'ha fet amb una app de prova) i la primera actualització real amb l'adreça i la clau de debò. Si les rondes B o E
-no surten netes, s'esperarà el Developer ID d'Apple, i l'app continuarà com avui. El que segueix diu com funcionaran.
+codi o es dona per suposat. L'autor ha decidit activar-les (09/11/2026), i abans de publicar-les falten la clau de signatura de l'autor, les proves reals que queden (rondes C a F de
+[`docs/disseny.md`](docs/disseny.md), secció 11; la A i la B s'han fet amb una app de prova, i la B, sense cap diàleg de macOS) i la primera actualització real amb l'adreça i la clau de debò.
+Si la ronda E no surt neta, s'esperarà el Developer ID d'Apple, i l'app continuarà com avui. El que segueix diu com funcionaran.
 
 - **Qui tingui la 0.31.5 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
   versions no porten res per actualitzar-se ni per avisar-ne. Des de llavors, és automàtic.

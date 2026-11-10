@@ -2216,8 +2216,8 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
 
 **Fet (09/11/2026): els passos 0 a 10** (secció 9): els 1 a 4 i el 9, sense versió, i els 5 a 8, de la 0.32.0 a la 0.32.3, amb dues revisions (0.32.4 i 0.32.5).
 - **Provat:** només amb falsos i carpetes temporals (`scripts/test.sh`), la compilació i el paquet (`otool`, `codesign --verify --deep --strict`).
-- **Llegit o suposat, res vist funcionar a l'app de debò:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Warp Launch no s'ha obert cap vegada amb Sparkle; una app de prova, a la ronda A (`docs/fets-verificats.md`, «Sparkle», secció 15).
-- **Falta:** les rondes B a F (Porta 1; la A és feta, 09/11/2026); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
+- **Llegit o suposat, res vist funcionar a l'app de debò:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Warp Launch no s'ha obert cap vegada amb Sparkle; una app de prova, a les rondes A i B (`docs/fets-verificats.md`, «Sparkle», seccions 15 i 16).
+- **Falta:** les rondes C a F (Porta 1; la A és feta, 09/11/2026, i la B, 10/11/2026, neta: apartat 8); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
 - **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
 
 El codi s'aparta del que hi ha a sota en això:
@@ -2335,6 +2335,10 @@ Mecanismes:
 - **L'interruptor** canvia només `automaticallyChecksForUpdates`: Sparkle ho desa a les seves preferències, i la baixada automàtica en depèn [L: `SPUUpdaterSettings.m:229-234,316,327`]. Apagat amb una versió a punt: no es reinicia sola, però s'instal·la en sortir [L: `SPUUpdaterDelegate.h:421-440`]. El peu ho diu.
 - **La casella de la finestra de Sparkle (0.32.9):** una altra preferència, `SUAutomaticallyUpdate` [L: `SUUpdateAlert.xib:119`], que només es veu amb l'interruptor encès (`SUUpdateAlert.m:385`): per exemple, si s'encén amb una versió ja trobada. Desmarcar-la **apaga l'interruptor** i torna a posar la baixada sola, perquè en tornar-lo a encendre funcioni (`Actualitzacions.canviEntorn`). Una sola preferència a l'app.
 
+**Vist a la ronda B, amb l'app de prova** [P: `docs/fets-verificats.md`, «Sparkle», secció 16]: els textos de `.errorBaixant`, de `.aPunt` sense reinici sol i de `.baixant` després d'«Actualitza ara»;
+«Mostra la finestra», que la porta al davant; «Instal·la i reinicia», que reobre l'app amb `reobertura=demanada`; la casella, que apaga l'interruptor; i, amb l'interruptor apagat i una versió a punt,
+la instal·lació en sortir, sense reobrir-la. **No s'ha vist:** el reinici ajornat des de la finestra.
+
 **Menú de la icona** (`Sources/WarpLaunchApp/WarpLaunchApp.swift:413-425`, entre «Configuració…» i «Sobre l’app»): «Comprova si hi ha actualitzacions…» porta l'app al davant, obre la Configuració a «General» i comprova; amb una versió a punt, «Reinicia i actualitza a la v»; passats 7 dies a punt, «… (fa N dies)» (decisió 5). Fins que s'accepta el permís, només els dos ítems de sempre (`:329-340`).
 
 **Menú de l'app:** el mateix, amb `CommandGroup(after: .appInfo)`, al target de l'app.
@@ -2369,7 +2373,7 @@ Mecanismes:
 
 `.quanSObriWarp` no bloqueja: pot durar dies i no es perd res.
 
-**La inactivitat** és necessària, no una millora: en reobrir, Sparkle fa `openURL:` sense opcions i busca ser l'app del davant [L: `InstallerProgressAppController.m:408-412`]. És `CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)`: **[P]** retorna valor i no demana cap permís des d'una eina de consola; compila amb només `import AppKit`, en mode Swift 6. **[S]** també dins de l'app: ronda A.
+**La inactivitat** és necessària, no una millora: en reobrir, Sparkle fa `openURL:` sense opcions i busca ser l'app del davant [L: `InstallerProgressAppController.m:408-412`]. És `CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)`: **[P]** retorna valor i no demana cap permís des d'una eina de consola; compila amb només `import AppKit`, en mode Swift 6. **[P]** també dins de l'app de prova: puja sense tocar res (ronda A) i baixa a 0 en moure el ratolí (ronda B).
 Mantingut amb la decisió 2. Si es rebutja, `macEnUs` es treu i només queden els altres motius.
 
 **El temps:**
@@ -2715,6 +2719,12 @@ Regles 1, 3 i 4: cada ronda, només amb l'OK de l'autor, que sabrà quantes cose
 | Diàleg de Gestió d'apps o de Gatekeeper | No és silenciosa: decisió 11 |
 | Falla en substituir | Sparkle ha d'esperar el Developer ID |
 
+**Feta el 10/11/2026, neta** (`docs/fets-verificats.md`, «Sparkle», secció 16). L'app de prova, signada amb «Warp Launch Dev» a `/Applications`, amb clics reals de l'autor: 6 obertures (B5,
+dues vegades) i 2 reinicis de Sparkle. **S'actualitza sense cap diàleg de macOS** (B2; i B5, pel camí de la finestra fins a «Instal·la i reinicia»), s'instal·la en sortir sense reobrir-se
+(primer intent de B5), i refusa abans d'extreure el zip amb un bit canviat (B3) i la versió amb una altra clau (B4). Segons la taula, el pla val, però només juntament amb la ronda E.
+**No ha cobert:** el reinici ajornat des de la finestra (l'app de prova no el pot provocar), el reinici sol (C2), res amb Developer ID, un usuari sense el certificat (E) ni l'app de debò.
+**La següent és la C.**
+
 **Ronda C: la Warp Launch de debò.** Abans: `scripts/warp-restauracio.sh estat` i anotar «Obre Warp Launch en iniciar sessió».
 
 | Pas | Ha de passar |
@@ -2826,14 +2836,14 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 
 | Fet | Estat | Com | Si surt malament |
 |---|---|---|---|
-| macOS deixa `Autoupdate` substituir una app amb certificat propi, sense Team ID | [S] | B, E | Decisió 11 |
-| Gatekeeper no bloqueja la versió nova sense notaritzar | [L], no vist | B, E | Igual |
+| macOS deixa `Autoupdate` substituir una app amb certificat propi, sense Team ID | [P] a B, amb l'app de prova al Mac de l'autor; falta E | B, E | Decisió 11 |
+| Gatekeeper no bloqueja la versió nova sense notaritzar | [P] a B, sense quarantena i cap diàleg; falta E | B, E | Igual |
 | «Comprova ara» amb `checkForUpdatesInBackground` no fa nosa | [L] | A2 | `checkForUpdateInformation` i «Actualitza ara» |
 | `latest` torna a l'anterior | [S] | F | Una versió superior; 1 dia de retard |
 | Permís d'Arxius i carpetes i ítem d'inici | [S] | C6, E | README, fins al Developer ID |
 | `.suppressed` i `openWindow` capturat | [S] | C4, C5 | `amagaEditorSiNoSHaFetServir` |
 | L'app no es queda el focus (`NSApp.hide`) | [S] | C4 | Pujar `inactivitatMinima` |
-| `secondsSinceLastEventType` dins de l'app | [S] | A12 | Treure `macEnUs`: decisió 2 |
+| `secondsSinceLastEventType` dins de l'app | [P] a l'app de prova: puja (A12) i baixa en moure el ratolí (B) | A12, B | Treure `macEnUs`: decisió 2 |
 | Instal·lar durant un reinici o un tancament de sessió | No se sap | D | README: a la propera sortida |
 | Altres usuaris amb sessió oberta | [S] | E | README |
 | Homebrew i Sparkle alhora | Sense provar | Porta 3 | README |

@@ -175,7 +175,7 @@ Per a en David, **una finestra de Warp és un grup de sessions** (pestanyes). No
 
 ## Pendents
 
-- **Actualització automàtica (Sparkle), abans d'anunciar-la:** les rondes B a F (la A és feta, amb una app de prova), amb l'OK de l'autor per a cada una; la clau de
+- **Actualització automàtica (Sparkle), abans d'anunciar-la:** les rondes C a F (la A i la B són fetes, amb una app de prova; la B, neta, el 10/11/2026), amb l'OK de l'autor per a cada una; la clau de
   signatura, amb una còpia fora del Mac; `Recursos/Actualitzacions.plist`; `auto_updates true` i `zap` a la recepta; publicar; i la
   primera actualització real, també amb Homebrew. Després, treure del README que encara no és publicada. `docs/disseny.md`, secció 11.
 - **Revisar tot el que es va fer abans:**

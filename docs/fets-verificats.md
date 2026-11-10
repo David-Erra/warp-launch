@@ -838,7 +838,8 @@ documentació, amb fitxer i línia, sense veure-ho funcionar; **SUPOSAT**, dedu�
 Entorn: macOS 27.2 arm64, Swift 6.4.2 de les Command Line Tools, sense Xcode. **A les seccions 1 a 14, cap app amb interfície s'ha obert:** només eines de consola i `codesign`.
 Les signatures de prova no han fet servir el clauer: una clau EdDSA d'un sol ús, generada amb CryptoKit i desada en un fitxer temporal.
 **En aquelles seccions no s'ha vist mai funcionar:** la descàrrega i la instal·lació reals, el tancament i la reobertura de l'app, els avisos, l'efecte sobre el permís
-d'Arxius i carpetes i sobre l'ítem d'inici, i signar amb «Warp Launch Dev». La secció 15 (ronda A) n'ha vist una part amb una app de prova; la resta continua sense veure's.
+d'Arxius i carpetes i sobre l'ítem d'inici, i signar amb «Warp Launch Dev». Les seccions 15 (ronda A) i 16 (ronda B, amb «Warp Launch Dev» a `/Applications`) n'han vist una part amb una app de prova;
+el permís d'Arxius i carpetes, l'ítem d'inici i l'app de debò continuen sense veure's.
 
 
 ### 1. Versió, paquet i binaryTarget
@@ -910,7 +911,8 @@ sense Sparkle i les seves proves.
   | Només l'app signada, framework tal com ve | codi 0 | codi 0 |
 
   **Conseqüència:** `build-app.sh:54` i `publica.sh:131` verifiquen sense `--deep` i no ho veurien.
-- **SUPOSAT:** el mateix ordre val amb «Warp Launch Dev» (aquí, només ad hoc, per no tocar el clauer).
+- **SUPOSAT:** el mateix ordre val amb «Warp Launch Dev» (aquí, només ad hoc, per no tocar el clauer). A la ronda B (secció 16), l'app de prova signada amb «Warp Launch Dev»
+  passa `codesign --verify --deep --strict` amb el requisit del certificat després de cada instal·lació.
 
 ### 4. App sense notaritzar i amb certificat propi
 
@@ -927,6 +929,8 @@ sense Sparkle i les seves proves.
 - **PROVAT:** el zip fet com a `publica.sh:140` no porta quarantena en extreure'l (`xattr`), manté 8 enllaços simbòlics i passa
   `--strict --deep`.
 - **SUPOSAT:** una app sense quarantena i sense notaritzar s'obre sense avisos, com amb Homebrew (`docs/especificacio.md:62`). No s'ha obert.
+  **PROVAT amb l'app de prova a la ronda B** (secció 16): signada amb «Warp Launch Dev» i copiada amb `ditto`, 6 obertures des de `/Applications` sense cap avís, al Mac
+  de l'autor. En un usuari sense el certificat, és la ronda E.
 
 ### 5. De «Warp Launch Dev» a Developer ID
 
@@ -936,7 +940,7 @@ sense Sparkle i les seves proves.
 - **LLEGIT:** el Team ID nou és diferent del d'`Autoupdate` vell (cap), i llavors no hi ha substitució atòmica ni `gktool`: passa pel camí antic
   (`SUPlainInstaller.m:349-365,371-376,247-314`), amb un comentari que avisa d'avisos de Privacitat i seguretat.
 - **LLEGIT:** l'alternativa per Developer ID només és amb `SUVerifyUpdateBeforeExtraction` (`SUUpdateValidator.m:76-95`, `SUCodeSigningVerifier.m:323-363`), i necessita un Team ID vell.
-  No aplica.
+  No aplica. **PROVAT a B4** (secció 16): amb una altra clau, Sparkle la prova i la refusa («The team identifier could not be retrieved from the original app»).
 - **LLEGIT:** rotar la clau amb el mateix certificat passaria per `:345,351-358`. No s'ha provat.
 - **SUPOSAT:** un cop signada amb Developer ID, cal tornar a signar el framework amb la mateixa identitat, per la validació de biblioteques amb
   «hardened runtime» (`D/index.md:55`).
@@ -1065,6 +1069,7 @@ Per veure el permís d'Arxius i carpetes i l'ítem d'inici, caldrà una actualit
 ### 13. Riscos a macOS 26 i 27
 
 - **App Management** (LLEGIT): el missatge d'error és només per a actualitzadors externs (`SPUInstallerDriver.m:105-129`, `:108`); `SUPlainInstaller.m:349-352`. Amb el mateix Team ID no hauria d'aparèixer. **SUPOSAT** amb «Warp Launch Dev» (sense Team ID).
+  **PROVAT a la ronda B** (secció 16), amb l'app de prova a `/Applications` i al Mac de l'autor: cap diàleg en 3 instal·lacions.
 - **Arxius i carpetes** (LLEGIT del repo, `build-app.sh:43`): depèn de la identitat de la signatura. **SUPOSAT:** amb «Warp Launch Dev», es conserva en actualitzar. Amb Developer ID, es perd un cop (`docs/especificacio.md:57`, decisió 1).
 - **`SMAppService.mainApp`** (SUPOSAT): Sparkle substitueix a la mateixa ruta i l'ítem es manté. No provat.
 - **App d'un altre usuari o usuari sense administrador** (LLEGIT): `SUInstallerLauncher.m:340-375` comprova si es pot escriure a l'app i a la carpeta; si no, necessita autorització (`:161,173`), i la silenciosa queda ajornada (`:469-472`). `instal·la.sh:54-56` demana un compte d'administrador per instal·lar; un altre usuari sense permís no s'actualitzarà sol.
@@ -1125,6 +1130,9 @@ no s'ha obert, i Warp i Claude no s'han tocat. Disseny de la ronda: `docs/dissen
 - **La signatura amb certificat propi a `/Applications`:** és la ronda B.
 - **L'app de debò,** ni cap dels canvis de la 0.32.9 fora de les proves.
 
+La ronda B (secció 16) n'ha vist, amb l'app de prova: els clics reals, el clic a «Instal·la i reinicia» (l'ajornament, no), la inactivitat que baixa, la pantalla sense cap
+diàleg, la signatura amb certificat propi a `/Applications` i part dels canvis de la 0.32.9.
+
 **LLEGIT, per als canvis de la 0.32.9** (`docs/disseny.md`, secció 11, 2.1):
 
 - **Tornar a la finestra:** `checkForUpdates()` amb una actualització a la vista la porta al davant, i activa l'app si cal (`SP/Sparkle/SPUUpdater.m:697-699`, `SPUStandardUserDriver.m:466-492`).
@@ -1135,6 +1143,62 @@ no s'ha obert, i Warp i Claude no s'han tocat. Disseny de la ronda: `docs/dissen
   aquest valor és el de les comprovacions automàtiques (`SPUUpdaterSettings.m:314-317`). Amb `SUAllowsAutomaticUpdates` a fals, l'amagaria, però la baixada sola tampoc funcionaria (`:326-329`).
 - **Errors que arriben a `updater:didAbortWithError:`** (`SPUUpdater.m:801-805`): tots menys `SUInstallationAuthorizeLaterError`. Els de comprovar venen en català si Sparkle el porta («An error occurred in
   retrieving update information», `ca.lproj:20`); els de baixar, signar i instal·lar, en anglès (`Base.lproj/Sparkle.strings:62,71,77,170`; `SPUInstallerDriver.m:98-104`, que amaga el `SUValidationError` dins d'un `SUInstallationError`).
+
+### 16. Ronda B: «Warp Launch Dev», `/Applications` i clics reals (10/11/2026)
+
+**Què s'ha executat:** la mateixa app de prova, `cat.exemple.prova-sparkle`, compilada amb un clon del commit `e66104f` (codi de la 0.32.9) i Sparkle 2.10.1, **signada amb «Warp Launch Dev»**
+i copiada a **`/Applications/Prova Sparkle.app`**, contra un servidor local (`127.0.0.1:48917`) i amb una clau EdDSA d'un sol ús. Amb l'OK de l'autor. **No és l'app de debò:** la Warp Launch
+0.31.5 de l'autor, Warp i `restore_session = false` no han canviat, i Claude no s'ha tocat. **Sense canal d'ordres:** tots els clics, de l'autor, amb el ratolí. Disseny de la ronda:
+`docs/disseny.md`, secció 11, apartat 8. Hores locals (UTC+1).
+
+**Totals:** 6 obertures (5 previstes; B5 es va repetir amb l'OK de l'autor), 2 reinicis fets per Sparkle (B2 i B5), 1 instal·lació en sortir sense reobertura (el primer intent de B5) i
+6 còpies a `/Applications`, una per obertura.
+
+**Com s'ha mirat:** el registre de l'app de prova (una línia per canvi d'estat, i els segons sense teclat ni ratolí cada 5 s), el registre de peticions del servidor (només al segon intent de
+B5), el registre del sistema (Sparkle, `Autoupdate` i el model; en acabar la ronda, ja només hi quedaven les línies de Sparkle de B4 i B5), `plutil`, `codesign --verify --deep --strict` amb el requisit del
+certificat i `launchctl list` després de cada instal·lació, i un vigilant de diàlegs: cada segon, de les 10:23 a les 20:41, les finestres dels processos que mostren diàlegs de macOS
+(`CGWindowList`: només propietari, capa i mida). I l'autor, davant del Mac.
+
+- **PROVAT, cap diàleg de macOS de l'app de prova** (ni de Gestió d'apps ni de Gatekeeper) en tota la ronda. El vigilant només hi va veure Configuració del Sistema, oberta des d'abans de
+  començar, i una finestra de `coreautha` a les 17:02:22: una finestra de Touch ID que va demanar una altra app del Mac, no l'app de prova (registre de LocalAuthentication; cap entrada de
+  l'app de prova en tot el dia). L'autor, davant del Mac, no en va veure cap («Tot el procés correcte»).
+- **PROVAT, s'obre sense avisos:** sense quarantena (la còpia és amb `ditto`), sense notaritzar i amb un certificat que macOS no té per de confiança (`CSSMERR_TP_NOT_TRUSTED`, a «Certificat
+  propi»), 6 obertures amb `open`. Al Mac de l'autor; en un usuari sense el certificat, és la ronda E.
+- **PROVAT, B1 (A1 a `/Applications`):** oberta a les 10:23:11. Cinc «Comprova ara», tres a les 10:24 (:15, :22 i :27) i dues a les 10:50 (:46 i :52), totes «Tens l'última versió. Comprovat
+  avui a les 10:24.» (o «… a les 10:50.»). A l'app de prova, el resultat només es veu en tornar a obrir el menú: el clic el tanca, i la resposta arriba el mateix segon. A la Warp Launch de debò
+  no passa: l'ítem del menú obre la Configuració a «Actualitzacions» i comprova (`Sources/WarpLaunchUI/Actualitzacions.swift`, `mostraIComprova`; llegit).
+- **PROVAT, B2 (A2 i A3):** oberta a les 10:51:33. «Comprova ara» a les 10:51:43: baixa i queda «La 1.0.1 és a punt: s'aplicarà sola quan no facis servir l'app.» el mateix segon, sense cap
+  finestra. «Reinicia i actualitza» a les 10:52:04: l'app es tanca i torna sola com a 1.0.1 (binari i paquet) el mateix segon. `codesign` amb el requisit: bé. Registre:
+  `reobertura=demanada intent=cap fallades=0`. Sparkle: «OK: EdDSA signature is correct for update» abans d'extreure. Cap tasca de `launchd` de Sparkle després de sortir.
+- **PROVAT, B3 (A6, zip amb un bit canviat):** oberta a les 10:53:25. «Comprova ara» a les 10:53:34: «Baixant la 1.0.1…» i, el mateix segon, «No s'ha pogut baixar o preparar la 1.0.1.»
+  (text de la 0.32.9, vist per primer cop). Sparkle: «(Ed)DSA signature validation before unarchiving failed»; el paquet es queda a la 1.0.0. El motiu en anglès només és al registre del model.
+- **PROVAT, B4 (decisió 1: el mateix certificat, una altra clau):** la 1.0.2 porta una altra clau pública i el zip va signat amb aquesta. Oberta a les 10:54:20, i sense tocar-la fins al
+  vespre; «Comprova ara» a les 20:02:28 i, a les 20:02:29, «No s'ha pogut baixar o preparar la 1.0.2.». Refusada abans d'extreure; es queda a la 1.0.0. Registre del sistema: «EdDSA
+  signature does not match», l'alternativa de Developer ID refusada («The team identifier could not be retrieved from the original app», secció 5) i «Failed to unarchive file». El model:
+  «The update is improperly signed and could not be validated…».
+- **PROVAT, B5, primer intent:** oberta a les 20:35:01. «Comprova ara» a les 20:35:33 amb l'interruptor encara encès: la baixa sola (decisió 4) i queda a punt en 0,4 s. En apagar
+  l'interruptor (20:36:12), l'estat passa a «La 1.0.1 és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza».» (text de la 0.32.9, vist per primer cop). En sortir
+  (20:37:40), la 1.0.1 s'instal·la a `/Applications` i l'app no torna: signatura bé, cap diàleg, cap tasca de `launchd`. No servia per al camí de la finestra (la versió ja era baixada): es va repetir.
+- **PROVAT, B5, segon intent: el camí de la finestra** (de les 20:37:53 a les 20:40:28):
+  - Interruptor apagat; «Comprova ara» (20:38:20): «Hi ha la 1.0.1.», sense baixar res. Interruptor encès (20:38:27): continua «Hi ha la 1.0.1.», i cap GET del zip fins a les 20:39:28.
+  - «Actualitza ara»: l'appcast a les 20:39:00 i la finestra de Sparkle, amb la casella (l'interruptor era encès). **Desmarcar-la apaga l'interruptor** (20:39:19; després,
+    `SUAutomaticallyUpdate` 1 i `SUEnableAutomaticChecks` 0): la correcció de la 0.32.9, vista funcionar.
+  - «Instal·la l'actualització»: el zip a les 20:39:28, i «L'actualització a la 1.0.1 continua a la seva finestra.». **«Mostra la finestra» la porta al davant** (ho confirma l'autor).
+  - **«Instal·la i reinicia», premut per primer cop** (20:40:22): l'app es tanca i torna com a 1.0.1 en 0,25 s (registre del sistema). `reobertura=demanada intent=cap fallades=0`, signatura
+    bé, cap tasca de `launchd`.
+- **PROVAT, la inactivitat baixa en moure el ratolí** (la meitat d'A12 que faltava): a B1, 1, 6, 12 i 17 s sense tocar res, i 0 en moure el ratolí; durant els clics de B5, de 0 a 8 s.
+- **Vist, sense efecte:** `Autoupdate` escriu «bookmark data for update download is stale.. but still continuing» a cada baixada (B2, B4 i els dos intents de B5), i continua. «Ara no: hi ha
+  una finestra de l'app oberta» (B2, B5) és «Retén el reinici sol», que l'app de prova porta encès perquè no es reiniciï sola.
+- **Neteja (20:41):** servidor aturat; esborrades l'app, les preferències (també el fitxer buit que hi deixa `cfprefsd`, i el d'una prova del dia abans, `cat.exemple.ronda-c-prova`), les
+  memòries cau i la carpeta amb les claus d'un sol ús. Després, només lectura: cap app, preferència, memòria cau, procés ni tasca de l'app de prova, i el port lliure.
+
+**NO s'ha vist a la ronda B:**
+
+- **El reinici ajornat des de la finestra:** l'app de prova no té cap control per provocar-lo. El que en diu la 0.32.9 (l'estat i el botó gastat), i l'intent que es treu si l'app no surt,
+  continuen llegits i provats amb falsos.
+- **El reinici sol:** «Retén el reinici sol» va estar encès tota la ronda. És la ronda C (C2).
+- **Res amb Developer ID, ni un usuari sense el certificat.** Segons el guió, «s'actualitza sense cap diàleg» vol dir que el pla val, però només juntament amb la ronda E.
+- **L'app de debò:** ni la finestra de Sparkle amb `Activacio.swift`, ni el permís d'Arxius i carpetes, ni l'ítem d'inici (ronda C).
 
 ### Què impedeix o canvia el plantejament
 
