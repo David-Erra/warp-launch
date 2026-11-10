@@ -2206,7 +2206,7 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
 ## 11. Actualització automàtica amb Sparkle 2.10.1 (disseny del 09/11/2026)
 
 Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** cap còpia no porta encara l'adreça ni la clau, i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
-**Res d'això s'ha vist funcionar.** Cap app s'ha obert per a aquest disseny: la descàrrega, la instal·lació, la reobertura i l'efecte sobre els permisos de
+**Res d'això s'ha vist funcionar amb la Warp Launch de debò** (amb una app de prova, una part a les rondes A i B, apartat 8). Cap app s'ha obert per a aquest disseny: la descàrrega, la instal·lació, la reobertura i l'efecte sobre els permisos de
 macOS es comproven a les rondes de la secció 8, abans de publicar.
 
 Dins d'aquesta secció, les remissions («secció 5», «2.3», «decisió 1») són internes. Les decisions numerades 1 a 13 són les de la taula de sota; el codi les cita
@@ -2838,7 +2838,7 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 |---|---|---|---|
 | macOS deixa `Autoupdate` substituir una app amb certificat propi, sense Team ID | [P] a B, amb l'app de prova al Mac de l'autor; falta E | B, E | Decisió 11 |
 | Gatekeeper no bloqueja la versió nova sense notaritzar | [P] a B, sense quarantena i cap diàleg; falta E | B, E | Igual |
-| «Comprova ara» amb `checkForUpdatesInBackground` no fa nosa | [L] | A2 | `checkForUpdateInformation` i «Actualitza ara» |
+| «Comprova ara» amb `checkForUpdatesInBackground` no fa nosa | [P] a l'app de prova (A2, B2) | A2 | `checkForUpdateInformation` i «Actualitza ara» |
 | `latest` torna a l'anterior | [S] | F | Una versió superior; 1 dia de retard |
 | Permís d'Arxius i carpetes i ítem d'inici | [S] | C6, E | README, fins al Developer ID |
 | `.suppressed` i `openWindow` capturat | [S] | C4, C5 | `amagaEditorSiNoSHaFetServir` |

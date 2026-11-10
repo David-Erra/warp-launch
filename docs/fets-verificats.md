@@ -911,8 +911,8 @@ sense Sparkle i les seves proves.
   | Només l'app signada, framework tal com ve | codi 0 | codi 0 |
 
   **Conseqüència:** `build-app.sh:54` i `publica.sh:131` verifiquen sense `--deep` i no ho veurien.
-- **SUPOSAT:** el mateix ordre val amb «Warp Launch Dev» (aquí, només ad hoc, per no tocar el clauer). A la ronda B (secció 16), l'app de prova signada amb «Warp Launch Dev»
-  passa `codesign --verify --deep --strict` amb el requisit del certificat després de cada instal·lació.
+- **SUPOSAT:** el mateix ordre val amb «Warp Launch Dev» (aquí, només ad hoc, per no tocar el clauer). **PROVAT a la ronda B** (secció 16), només el cas bo: l'app de prova signada
+  amb «Warp Launch Dev» passa `codesign --verify --deep --strict` amb el requisit del certificat després de cada instal·lació. Els casos negatius, amb aquest certificat, no s'han provat.
 
 ### 4. App sense notaritzar i amb certificat propi
 
@@ -940,8 +940,9 @@ sense Sparkle i les seves proves.
 - **LLEGIT:** el Team ID nou és diferent del d'`Autoupdate` vell (cap), i llavors no hi ha substitució atòmica ni `gktool`: passa pel camí antic
   (`SUPlainInstaller.m:349-365,371-376,247-314`), amb un comentari que avisa d'avisos de Privacitat i seguretat.
 - **LLEGIT:** l'alternativa per Developer ID només és amb `SUVerifyUpdateBeforeExtraction` (`SUUpdateValidator.m:76-95`, `SUCodeSigningVerifier.m:323-363`), i necessita un Team ID vell.
-  No aplica. **PROVAT a B4** (secció 16): amb una altra clau, Sparkle la prova i la refusa («The team identifier could not be retrieved from the original app»).
-- **LLEGIT:** rotar la clau amb el mateix certificat passaria per `:345,351-358`. No s'ha provat.
+  No aplica. **PROVAT a B4** (secció 16): amb una altra clau, Sparkle intenta aquesta alternativa i la refusa («The team identifier could not be retrieved from the original app»).
+- **LLEGIT:** sense `SUVerifyUpdateBeforeExtraction`, rotar la clau amb el mateix certificat passaria per `:345,351-358`. **PROVAT a B4** (secció 16), amb l'ajust a `true`, com a la
+  Warp Launch (decisió 1): no hi arriba, i es refusa abans d'extreure.
 - **SUPOSAT:** un cop signada amb Developer ID, cal tornar a signar el framework amb la mateixa identitat, per la validació de biblioteques amb
   «hardened runtime» (`D/index.md:55`).
 
@@ -1155,9 +1156,10 @@ i copiada a **`/Applications/Prova Sparkle.app`**, contra un servidor local (`12
 6 còpies a `/Applications`, una per obertura.
 
 **Com s'ha mirat:** el registre de l'app de prova (una línia per canvi d'estat, i els segons sense teclat ni ratolí cada 5 s), el registre de peticions del servidor (només al segon intent de
-B5), el registre del sistema (Sparkle, `Autoupdate` i el model; en acabar la ronda, ja només hi quedaven les línies de Sparkle de B4 i B5), `plutil`, `codesign --verify --deep --strict` amb el requisit del
-certificat i `launchctl list` després de cada instal·lació, i un vigilant de diàlegs: cada segon, de les 10:23 a les 20:41, les finestres dels processos que mostren diàlegs de macOS
-(`CGWindowList`: només propietari, capa i mida). I l'autor, davant del Mac.
+B5), el registre del sistema (Sparkle, `Autoupdate` i el model; en acabar la ronda, ja només hi quedaven les línies de Sparkle de B4 i B5: les de B2 i B3 són les que es van llegir durant
+la ronda), `plutil`, `codesign --verify --deep --strict` amb el requisit del certificat i `launchctl list` després de cada instal·lació, i un vigilant de diàlegs: cada segon, de les 10:23
+a les 20:41, les finestres dels processos que mostren diàlegs de macOS (`CGWindowList`: només propietari, capa i mida). El vigilant no hi va registrar les finestres de Sparkle de B5, a la
+pantalla de les 20:39 a les 20:40: val per als diàlegs dels processos de macOS, no per a les finestres de l'app de prova. I l'autor, davant del Mac.
 
 - **PROVAT, cap diàleg de macOS de l'app de prova** (ni de Gestió d'apps ni de Gatekeeper) en tota la ronda. El vigilant només hi va veure Configuració del Sistema, oberta des d'abans de
   començar, i una finestra de `coreautha` a les 17:02:22: una finestra de Touch ID que va demanar una altra app del Mac, no l'app de prova (registre de LocalAuthentication; cap entrada de
@@ -1176,7 +1178,7 @@ certificat i `launchctl list` després de cada instal·lació, i un vigilant de 
   vespre; «Comprova ara» a les 20:02:28 i, a les 20:02:29, «No s'ha pogut baixar o preparar la 1.0.2.». Refusada abans d'extreure; es queda a la 1.0.0. Registre del sistema: «EdDSA
   signature does not match», l'alternativa de Developer ID refusada («The team identifier could not be retrieved from the original app», secció 5) i «Failed to unarchive file». El model:
   «The update is improperly signed and could not be validated…».
-- **PROVAT, B5, primer intent:** oberta a les 20:35:01. «Comprova ara» a les 20:35:33 amb l'interruptor encara encès: la baixa sola (decisió 4) i queda a punt en 0,4 s. En apagar
+- **PROVAT, B5, primer intent:** oberta a les 20:35:01. «Comprova ara» a les 20:35:33 amb l'interruptor encara encès: la baixa sola (decisió 4), i de «Baixant la 1.0.1…» a «a punt» passen 0,4 s. En apagar
   l'interruptor (20:36:12), l'estat passa a «La 1.0.1 és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza».» (text de la 0.32.9, vist per primer cop). En sortir
   (20:37:40), la 1.0.1 s'instal·la a `/Applications` i l'app no torna: signatura bé, cap diàleg, cap tasca de `launchd`. No servia per al camí de la finestra (la versió ja era baixada): es va repetir.
 - **PROVAT, B5, segon intent: el camí de la finestra** (de les 20:37:53 a les 20:40:28):
@@ -1187,7 +1189,7 @@ certificat i `launchctl list` després de cada instal·lació, i un vigilant de 
   - **«Instal·la i reinicia», premut per primer cop** (20:40:22): l'app es tanca i torna com a 1.0.1 en 0,25 s (registre del sistema). `reobertura=demanada intent=cap fallades=0`, signatura
     bé, cap tasca de `launchd`.
 - **PROVAT, la inactivitat baixa en moure el ratolí** (la meitat d'A12 que faltava): a B1, 1, 6, 12 i 17 s sense tocar res, i 0 en moure el ratolí; durant els clics de B5, de 0 a 8 s.
-- **Vist, sense efecte:** `Autoupdate` escriu «bookmark data for update download is stale.. but still continuing» a cada baixada (B2, B4 i els dos intents de B5), i continua. «Ara no: hi ha
+- **Vist, sense efecte:** `Autoupdate` escriu «bookmark data for update download is stale.. but still continuing» a les baixades de B2, B4 i els dos intents de B5 (la de B3 ja no és al registre), i continua. «Ara no: hi ha
   una finestra de l'app oberta» (B2, B5) és «Retén el reinici sol», que l'app de prova porta encès perquè no es reiniciï sola.
 - **Neteja (20:41):** servidor aturat; esborrades l'app, les preferències (també el fitxer buit que hi deixa `cfprefsd`, i el d'una prova del dia abans, `cat.exemple.ronda-c-prova`), les
   memòries cau i la carpeta amb les claus d'un sol ús. Després, només lectura: cap app, preferència, memòria cau, procés ni tasca de l'app de prova, i el port lliure.
