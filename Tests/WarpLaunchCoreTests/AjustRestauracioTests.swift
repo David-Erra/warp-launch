@@ -564,7 +564,7 @@ final class ArrencadaWarpDeProva: @unchecked Sendable {
         #expect(!lectura(panes: ["aa"], terminals: ["aa", "bb"]).finestresQuadrenAmbTerminals)
         #expect(!lectura(panes: ["aa", "bb"], terminals: ["aa"]).finestresQuadrenAmbTerminals)
         #expect(!lectura(panes: ["aa", "cc"], terminals: ["aa", "bb"]).finestresQuadrenAmbTerminals)
-        #expect(lectura(panes: ["aa"], terminals: ["aa", "bb"]).avisFinestresAntigues.contains("1 pestanya desades i 2 terminals vius"))
+        #expect(lectura(panes: ["aa"], terminals: ["aa", "bb"]).avisFinestresAntigues.contains("1 pestanya desada i 2 terminals vius"))
     }
 
     @Test func laFotoNoteLesSessionsPeroSiElsTitols() {

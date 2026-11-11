@@ -50,7 +50,7 @@ public struct LectorSessions: Sendable {
                 .filter { $0.pathExtension == "json" }
                 .sorted { $0.lastPathComponent < $1.lastPathComponent }
         } catch {
-            return ([], [], ["no puc llegir la carpeta de sessions de Claude: \(carpeta.path)"])
+            return ([], [], [t("no puc llegir la carpeta de sessions de Claude: \(carpeta.path)")])
         }
 
         var sessions: [SessioClaude] = []
@@ -59,7 +59,7 @@ public struct LectorSessions: Sendable {
         for fitxer in fitxers {
             guard let dades = try? Data(contentsOf: fitxer),
                   let s = try? JSONDecoder().decode(FitxerSessio.self, from: dades) else {
-                avisos.append("fitxer de sessió il·legible: \(fitxer.lastPathComponent)")
+                avisos.append(t("fitxer de sessió il·legible: \(fitxer.lastPathComponent)"))
                 continue
             }
             guard s.kind == "interactive" else {
@@ -71,11 +71,11 @@ public struct LectorSessions: Sendable {
                 continue
             }
             guard let proces = processos.proces(s.pid) else {
-                avisos.append("la sessió \(s.sessionId) apunta al pid \(s.pid), que ja no existeix")
+                avisos.append(t("la sessió \(s.sessionId) apunta al pid \(String(s.pid)), que ja no existeix"))
                 continue
             }
             guard proces.esClaude else {
-                avisos.append("el pid \(s.pid) de la sessió \(s.sessionId) ara és un altre procés (\(proces.executable))")
+                avisos.append(t("el pid \(String(s.pid)) de la sessió \(s.sessionId) ara és un altre procés (\(proces.executable))"))
                 continue
             }
             sessions.append(SessioClaude(

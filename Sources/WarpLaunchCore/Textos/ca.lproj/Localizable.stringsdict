@@ -474,5 +474,65 @@
 			<string>%lld bytes</string>
 		</dict>
 	</dict>
+	<!-- AjustRestauracio: per què no es pot tocar l'ajust de Warp -->
+	<key>«restore_session» hi surt %lld vegades, i n'hi hauria d'haver 1</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>«restore_session» hi surt %#@v@, i n'hi hauria d'haver 1</string>
+		<key>v</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld vegada</string>
+			<key>other</key>
+			<string>%lld vegades</string>
+		</dict>
+	</dict>
+	<key>«settings.toml» té %lld capçaleres [general], i n'hi hauria d'haver 1</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>«settings.toml» té %#@c@, i n'hi hauria d'haver 1</string>
+		<key>c</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld capçalera [general]</string>
+			<key>other</key>
+			<string>%lld capçaleres [general]</string>
+		</dict>
+	</dict>
+	<key>Warp no ha desat les finestres: n'hi ha %lld pestanyes desades i %lld terminals vius. Pot ser antic: canvia de finestra a Warp i fes «%@».</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp no ha desat les finestres: n'hi ha %#@p@ i %#@t@. Pot ser antic: canvia de finestra a Warp i fes «%@».</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya desada</string>
+			<key>other</key>
+			<string>%lld pestanyes desades</string>
+		</dict>
+		<key>t</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld terminal viu</string>
+			<key>other</key>
+			<string>%lld terminals vius</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

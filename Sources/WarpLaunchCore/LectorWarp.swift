@@ -32,11 +32,10 @@ public enum ErrorLectura: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .noHiHaBase(let ruta): "no trobo la base de Warp: \(ruta)"
-        case .sqlite(let missatge): "error de SQLite: \(missatge)"
+        case .noHiHaBase(let ruta): t("no trobo la base de Warp: \(ruta)")
+        case .sqlite(let missatge): t("error de SQLite: \(missatge)")
         case .macOSNoDeixaLlegir:
-            "macOS no deixa que Warp Launch llegeixi les dades de Warp; cal donar-li permís a Configuració del Sistema"
-                + " › Privacitat i seguretat"
+            t("macOS no deixa que Warp Launch llegeixi les dades de Warp; cal donar-li permís a Configuració del Sistema › Privacitat i seguretat")
         }
     }
 
@@ -47,7 +46,7 @@ public enum ErrorLectura: Error, Equatable, CustomStringConvertible {
 
     /// L'error de la darrera operació d'una connexió.
     static func de(_ db: OpaquePointer?) -> ErrorLectura {
-        guard let db else { return .sqlite("no s'ha pogut obrir") }
+        guard let db else { return .sqlite(t("no s'ha pogut obrir")) }
         return de(codi: sqlite3_errcode(db), missatge: String(cString: sqlite3_errmsg(db)))
     }
 }

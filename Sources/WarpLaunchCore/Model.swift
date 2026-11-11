@@ -33,17 +33,17 @@ public struct LecturaWarp: Codable, Sendable, Equatable {
     public var warpSenseBase: Bool? = nil
 
     /// Per què no es pot importar ni lligar res amb la restauració de sessió desactivada.
-    public static let senseFinestres = "Warp no desa les finestres mentre la restauració de sessió està desactivada "
-        + "(«general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen."
+    public static var senseFinestres: String {
+        t("Warp no desa les finestres mentre la restauració de sessió està desactivada («general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen.")
+    }
 
     /// Per què no es pot importar ni lligar res sense la base de Warp (`warpSenseBase`). L'app i el CLI (`llegeix`, `importa`
     /// i `obre`) diuen el mateix. No parla de la restauració de sessió: de sèrie és activada, i qui no ha obert mai Warp no
     /// l'ha desactivada. Amb Warp obert, potser encara arrenca (no s'ha vist quan crea la base): esperar només serveix si
     /// s'acaba d'obrir (decisió 4 d'en David, 08/11/2026). Amb Warp tancat, que s'obri.
     public static func senseBase(warpObert: Bool) -> String {
-        "Warp encara no ha desat cap finestra en aquest usuari: "
-            + (warpObert ? "si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons."
-                : "obre'l un cop i torna-ho a provar.")
+        warpObert ? t("Warp encara no ha desat cap finestra en aquest usuari: si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons.")
+            : t("Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar.")
     }
 
     /// Les sessions interactives de Claude vives, lligades o no a una pestanya de Warp.

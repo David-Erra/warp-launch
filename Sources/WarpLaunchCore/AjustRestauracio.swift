@@ -106,8 +106,7 @@ public struct AjustRestauracio: Sendable {
         case .senseCarpeta:
             guard !nou else { return .jaHiEra }
             // No es crea: seria la carpeta de Warp abans que Warp, i l'excepció de la regla 7 és només la línia.
-            throw Refusat(description: "Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta "
-                + "«\(ruta.deletingLastPathComponent().path)», i Warp Launch no la crea", warpMaiObert: true)
+            throw Refusat(description: t("Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta «\(ruta.deletingLastPathComponent().path)», i Warp Launch no la crea"), warpMaiObert: true)
         case .senseFitxer:
             guard !nou else { return .jaHiEra }
             return try crea(Data("[general]\n\(Self.liniaNova)\n".utf8))
@@ -139,12 +138,12 @@ public struct AjustRestauracio: Sendable {
     private func substitueix(_ dades: Data, llegit: Identitat, per resultat: Data) throws(Refusat) -> Escriptura {
         var fitxer = stat(), carpeta = stat()
         guard stat(ruta.path, &fitxer) == 0, stat(carpetaTemporal.path, &carpeta) == 0 else {
-            throw Refusat(description: "no es pot mirar on és «\(ruta.path)»")
+            throw Refusat(description: t("no es pot mirar on és «\(ruta.path)»"))
         }
         // `rename` no ho miraria: un fitxer protegit no es toca.
-        guard access(ruta.path, W_OK) == 0 else { throw Refusat(description: "«\(ruta.path)» és de només lectura") }
+        guard access(ruta.path, W_OK) == 0 else { throw Refusat(description: t("«\(ruta.path)» és de només lectura")) }
         guard fitxer.st_dev == carpeta.st_dev else {
-            throw Refusat(description: "la carpeta temporal no és al mateix volum que «\(ruta.path)»")
+            throw Refusat(description: t("la carpeta temporal no és al mateix volum que «\(ruta.path)»"))
         }
         let temporal = try prepara(resultat, permisos: Int(fitxer.st_mode & 0o7777))
         // Els atributs estesos de l'original, com `cp -p` a l'script. Si no es pot, no és motiu per aturar res.
@@ -161,7 +160,7 @@ public struct AjustRestauracio: Sendable {
         guard rename(temporal.path, ruta.path) == 0 else {
             let codi = String(cString: strerror(errno))
             try? FileManager.default.removeItem(at: temporal)
-            throw Refusat(description: "no s'ha pogut escriure «\(ruta.path)»: \(codi)")
+            throw Refusat(description: t("no s'ha pogut escriure «\(ruta.path)»: \(codi)"))
         }
         escrit.withLock { $0 = Escrit(identitat: nou, dades: resultat) }
         return .escrit
@@ -179,10 +178,10 @@ public struct AjustRestauracio: Sendable {
     private func crea(_ resultat: Data) throws(Refusat) -> Escriptura {
         var carpeta = stat(), temporals = stat()
         guard stat(ruta.deletingLastPathComponent().path, &carpeta) == 0, stat(carpetaTemporal.path, &temporals) == 0 else {
-            throw Refusat(description: "no es pot mirar on és «\(ruta.path)»")
+            throw Refusat(description: t("no es pot mirar on és «\(ruta.path)»"))
         }
         guard carpeta.st_dev == temporals.st_dev else {
-            throw Refusat(description: "la carpeta temporal no és al mateix volum que «\(ruta.path)»")
+            throw Refusat(description: t("la carpeta temporal no és al mateix volum que «\(ruta.path)»"))
         }
         guard potCrearElFitxer() else { return .quanSObriWarp }
         let temporal = try prepara(resultat, permisos: 0o644)
@@ -192,7 +191,7 @@ public struct AjustRestauracio: Sendable {
             let codi = errno
             try? FileManager.default.removeItem(at: temporal)
             guard codi != EEXIST else { return .mesTard }
-            throw Refusat(description: "no s'ha pogut crear «\(ruta.path)»: \(String(cString: strerror(codi)))")
+            throw Refusat(description: t("no s'ha pogut crear «\(ruta.path)»: \(String(cString: strerror(codi)))"))
         }
         escrit.withLock { $0 = Escrit(identitat: nou, dades: resultat) }
         return .escrit
@@ -205,7 +204,7 @@ public struct AjustRestauracio: Sendable {
         guard lstat(temporal.path, &info) == 0 else {
             let codi = String(cString: strerror(errno))
             try? FileManager.default.removeItem(at: temporal)
-            throw Refusat(description: "no es pot mirar el fitxer preparat: \(codi)")
+            throw Refusat(description: t("no es pot mirar el fitxer preparat: \(codi)"))
         }
         return Identitat(info)
     }
@@ -216,7 +215,7 @@ public struct AjustRestauracio: Sendable {
         do {
             try EscripturaAtomica.creaFitxerNou(resultat, a: temporal, permisos: permisos)
         } catch {
-            throw Refusat(description: "no s'ha pogut preparar el fitxer: \(error)")
+            throw Refusat(description: t("no s'ha pogut preparar el fitxer: \(String(describing: error))"))
         }
         return temporal
     }
@@ -269,33 +268,33 @@ public struct AjustRestauracio: Sendable {
         guard lstat(ruta.path, &info) == 0 else {
             let codi = errno
             guard codi == ENOENT else {
-                throw Refusat(description: "no es pot mirar «\(ruta.path)»: \(String(cString: strerror(codi)))")
+                throw Refusat(description: t("no es pot mirar «\(ruta.path)»: \(String(cString: strerror(codi)))"))
             }
             let carpeta = ruta.deletingLastPathComponent().path
             var infoCarpeta = stat()
             guard stat(carpeta, &infoCarpeta) == 0 else {
                 let codi = errno
                 guard codi == ENOENT else {
-                    throw Refusat(description: "no es pot mirar «\(carpeta)»: \(String(cString: strerror(codi)))")
+                    throw Refusat(description: t("no es pot mirar «\(carpeta)»: \(String(cString: strerror(codi)))"))
                 }
                 return .senseCarpeta
             }
-            guard infoCarpeta.st_mode & S_IFMT == S_IFDIR else { throw Refusat(description: "«\(carpeta)» no és una carpeta") }
+            guard infoCarpeta.st_mode & S_IFMT == S_IFDIR else { throw Refusat(description: t("«\(carpeta)» no és una carpeta")) }
             return .senseFitxer
         }
         // `rename` substituiria l'enllaç, no el fitxer.
-        guard info.st_mode & S_IFMT == S_IFREG else { throw Refusat(description: "«\(ruta.path)» no és un fitxer normal") }
+        guard info.st_mode & S_IFMT == S_IFREG else { throw Refusat(description: t("«\(ruta.path)» no és un fitxer normal")) }
         // `String(data:encoding:)` trauria la marca d'ordre de bytes (BOM) del començament, i en escriure el text es perdria:
         // el que s'escriu ha de ser el que s'ha llegit, amb només la línia canviada o afegida.
         guard let dades = try? Data(contentsOf: ruta), let text = String(validating: dades, as: UTF8.self) else {
-            throw Refusat(description: "no es pot llegir «\(ruta.path)»")
+            throw Refusat(description: t("no es pot llegir «\(ruta.path)»"))
         }
         // Després de llegir-lo, i no abans: si Warp l'ha buidat abans de la lectura o durant, la data ja és la d'ara.
         var despres = stat()
         guard lstat(ruta.path, &despres) == 0 else {
-            throw Refusat(description: "no es pot mirar «\(ruta.path)»: \(String(cString: strerror(errno)))")
+            throw Refusat(description: t("no es pot mirar «\(ruta.path)»: \(String(cString: strerror(errno)))"))
         }
-        guard despres.st_mode & S_IFMT == S_IFREG else { throw Refusat(description: "«\(ruta.path)» no és un fitxer normal") }
+        guard despres.st_mode & S_IFMT == S_IFREG else { throw Refusat(description: t("«\(ruta.path)» no és un fitxer normal")) }
         return .fitxer(dades: dades, text: text, identitat: Identitat(despres))
     }
 
@@ -323,17 +322,17 @@ public struct AjustRestauracio: Sendable {
             do {
                 afegida = .success(try afegeix(a: text))
             } catch {
-                afegida = .failure(Refusat(description: "«restore_session» no hi és, i no s'hi pot afegir: \(error)"))
+                afegida = .failure(Refusat(description: t("«restore_session» no hi és, i no s'hi pot afegir: \(error.description)")))
             }
             return Analisi(valor: Preferencies.restauracioDeSerie, lloc: .senseLinia(afegida))
         }
         // «\r\n» és un sol caràcter de Swift, i separar línies per «\n» no el veuria: una taula podria quedar amagada.
-        guard !text.unicodeScalars.contains("\r") else { throw Refusat(description: "«settings.toml» té salts de línia CRLF") }
-        guard text.hasSuffix("\n") else { throw Refusat(description: "«settings.toml» no acaba amb un salt de línia") }
+        guard !text.unicodeScalars.contains("\r") else { throw Refusat(description: t("«settings.toml» té salts de línia CRLF")) }
+        guard text.hasSuffix("\n") else { throw Refusat(description: t("«settings.toml» no acaba amb un salt de línia")) }
         let linies = text.split(separator: "\n", omittingEmptySubsequences: false)
         let aparicions = linies.filter { $0.contains("restore_session") }.count
         guard aparicions == 1 else {
-            throw Refusat(description: "«restore_session» hi surt \(aparicions) vegades, i n'hi hauria d'haver 1")
+            throw Refusat(description: t("«restore_session» hi surt \(aparicions) vegades, i n'hi hauria d'haver 1"))
         }
         var taula = ""
         for (numero, linia) in linies.enumerated() {
@@ -345,14 +344,14 @@ public struct AjustRestauracio: Sendable {
             guard linia.contains("restore_session") else { continue }
             guard taula == "[general]", let igual = sensePunta.firstIndex(of: "="),
                   sensePunta[..<igual].trimmingCharacters(in: .whitespaces) == "restore_session"
-            else { throw Refusat(description: "«restore_session» no és una línia de la taula [general]") }
+            else { throw Refusat(description: t("«restore_session» no és una línia de la taula [general]")) }
             switch sensePunta[sensePunta.index(after: igual)...].prefix(while: { $0 != "#" }).trimmingCharacters(in: .whitespaces) {
             case "true": return Analisi(valor: true, lloc: .linia(numero))
             case "false": return Analisi(valor: false, lloc: .linia(numero))
-            default: throw Refusat(description: "el valor de «restore_session» no és true ni false")
+            default: throw Refusat(description: t("el valor de «restore_session» no és true ni false"))
             }
         }
-        throw Refusat(description: "«restore_session» no és una línia de la taula [general]")
+        throw Refusat(description: t("«restore_session» no és una línia de la taula [general]"))
     }
 
     /// El text amb `restore_session = false` a la taula `[general]`, quan la línia no hi és. No és un lector de TOML: mira
@@ -368,15 +367,15 @@ public struct AjustRestauracio: Sendable {
     private static func afegeix(a text: String) throws(Refusat) -> String {
         let taulaNova = "[general]\n\(liniaNova)\n"
         guard !text.isEmpty else { return taulaNova }
-        guard !text.unicodeScalars.contains("\r") else { throw Refusat(description: "«settings.toml» té salts de línia CRLF") }
-        guard text.hasSuffix("\n") else { throw Refusat(description: "«settings.toml» no acaba amb un salt de línia") }
+        guard !text.unicodeScalars.contains("\r") else { throw Refusat(description: t("«settings.toml» té salts de línia CRLF")) }
+        guard text.hasSuffix("\n") else { throw Refusat(description: t("«settings.toml» no acaba amb un salt de línia")) }
         // Davant de la primera capçalera, no deixaria veure que és `[general]`.
         guard !text.unicodeScalars.contains("\u{FEFF}") else {
-            throw Refusat(description: "«settings.toml» té una marca d'ordre de bytes (BOM)")
+            throw Refusat(description: t("«settings.toml» té una marca d'ordre de bytes (BOM)"))
         }
         // Dins d'un text de diverses línies, una línia pot semblar una capçalera o una clau, i no ser-ho.
         guard !text.contains("\"\"\""), !text.contains("'''") else {
-            throw Refusat(description: "«settings.toml» té textos de diverses línies («\"\"\"» o «'''»)")
+            throw Refusat(description: t("«settings.toml» té textos de diverses línies («\"\"\"» o «'''»)"))
         }
         var linies = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         var general: [Int] = []
@@ -387,7 +386,7 @@ public struct AjustRestauracio: Sendable {
                 // `general = {…}`, `general.x = …` o `"general" = …`, a l'arrel, ja defineixen `general`. A qualsevol
                 // taula: no sempre se sap on comença una taula (una llista de diverses línies també pot començar amb «[»).
                 if clauDeGeneral(sensePunta) {
-                    throw Refusat(description: "a la línia \(numero + 1), «general» és una clau, no una taula [general]")
+                    throw Refusat(description: t("a la línia \(String(numero + 1)), «general» és una clau, no una taula [general]"))
                 }
                 continue
             }
@@ -402,13 +401,12 @@ public struct AjustRestauracio: Sendable {
             guard senseCometes == "general" || senseCometes.hasPrefix("general.") || clau.contains("\\") else { continue }
             guard !llista, clau == senseCometes, clau != "general", !clau.contains("\\") else {
                 // `[[general]]`, `["general"]` o `[general] # un comentari`, que `analitza` no veuria com a `[general]`.
-                throw Refusat(description: "a la línia \(numero + 1), la taula general té una forma que Warp Launch no sap "
-                    + "llegir (entre cometes, amb un comentari o com a llista de taules)")
+                throw Refusat(description: t("a la línia \(String(numero + 1)), la taula general té una forma que Warp Launch no sap llegir (entre cometes, amb un comentari o com a llista de taules)"))
             }
             primeraSubtaula = primeraSubtaula ?? numero
         }
         guard general.count <= 1 else {
-            throw Refusat(description: "«settings.toml» té \(general.count) capçaleres [general], i n'hi hauria d'haver 1")
+            throw Refusat(description: t("«settings.toml» té \(general.count) capçaleres [general], i n'hi hauria d'haver 1"))
         }
         if let capcalera = general.first {
             linies.insert(liniaNova, at: capcalera + 1)
@@ -463,13 +461,13 @@ extension LecturaWarp {
 
     /// L'avís quan Warp és tancat: no se sap de quan és, i no hi ha cap sessió viva d'on treure les opcions de Claude.
     /// Queden només terminal (D-P5a): les xifres del full ho diuen.
-    public static let avisFotoWarpTancat = "Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. "
-        + "Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre."
+    public static var avisFotoWarpTancat: String {
+        t("Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre.")
+    }
 
     /// L'avís quan la base no diu el mateix que els terminals vius (D19).
     public var avisFinestresAntigues: String {
         let pestanyes = finestres.flatMap(\.pestanyes).flatMap(\.panes).count
-        return "Warp no ha desat les finestres: n'hi ha \(Plural.compta(pestanyes, "pestanya", "pestanyes")) desades i "
-            + "\(Plural.compta(terminals.count, "terminal viu", "terminals vius")). Pot ser antic: canvia de finestra a Warp i fes «\(WarpLaunch.ordreActualitzaEstat)»."
+        return t("Warp no ha desat les finestres: n'hi ha \(pestanyes) pestanyes desades i \(terminals.count) terminals vius. Pot ser antic: canvia de finestra a Warp i fes «\(WarpLaunch.ordreActualitzaEstat)».")
     }
 }

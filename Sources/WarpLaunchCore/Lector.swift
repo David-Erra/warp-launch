@@ -96,7 +96,7 @@ public struct Lector: Sendable {
             if let altra = perPane[uuid] {
                 let nova = (sessio.iniciada ?? .distantPast) > (altra.iniciada ?? .distantPast) ? sessio : altra
                 let vella = nova == sessio ? altra : sessio
-                avisos.append("dues sessions al mateix pane \(uuid): es mostra la del pid \(nova.pid), no la del \(vella.pid)")
+                avisos.append(t("dues sessions al mateix pane \(uuid): es mostra la del pid \(String(nova.pid)), no la del \(String(vella.pid))"))
                 perPane[uuid] = nova
             } else {
                 perPane[uuid] = sessio

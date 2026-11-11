@@ -209,3 +209,41 @@
 "En aquest Mac només hi ha Warp Preview." = "This Mac only has Warp Preview.";
 "Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar." = "Warp Preview is open now, and Warp Stable isn't: open Warp Stable and try again.";
 "No s'ha trobat Warp en aquest Mac: cal Warp Stable." = "Warp wasn't found on this Mac: Warp Stable is required.";
+
+/* AjustRestauracio: per què no es pot tocar l'ajust de Warp */
+"Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta «%@», i Warp Launch no la crea" = "Warp has never been opened for this user: there's no “%@” folder, and Warp Launch doesn't create it";
+"no es pot mirar on és «%@»" = "can't check where “%@” is";
+"«%@» és de només lectura" = "“%@” is read-only";
+"la carpeta temporal no és al mateix volum que «%@»" = "the temporary folder isn't on the same volume as “%@”";
+"no s'ha pogut escriure «%@»: %@" = "couldn't write “%@”: %@";
+"no s'ha pogut crear «%@»: %@" = "couldn't create “%@”: %@";
+"no es pot mirar el fitxer preparat: %@" = "can't check the prepared file: %@";
+"no s'ha pogut preparar el fitxer: %@" = "couldn't prepare the file: %@";
+"no es pot mirar «%@»: %@" = "can't check “%@”: %@";
+"«%@» no és una carpeta" = "“%@” isn't a folder";
+"«%@» no és un fitxer normal" = "“%@” isn't a regular file";
+"no es pot llegir «%@»" = "can't read “%@”";
+"«restore_session» no hi és, i no s'hi pot afegir: %@" = "“restore_session” isn't there, and it can't be added: %@";
+"«settings.toml» té salts de línia CRLF" = "“settings.toml” has CRLF line breaks";
+"«settings.toml» no acaba amb un salt de línia" = "“settings.toml” doesn't end with a line break";
+"«restore_session» no és una línia de la taula [general]" = "“restore_session” isn't a line in the [general] table";
+"el valor de «restore_session» no és true ni false" = "the value of “restore_session” isn't true or false";
+"«settings.toml» té una marca d'ordre de bytes (BOM)" = "“settings.toml” has a byte order mark (BOM)";
+"«settings.toml» té textos de diverses línies («\"\"\"» o «'''»)" = "“settings.toml” has multi-line strings (“\"\"\"” or “'''”)";
+"a la línia %@, «general» és una clau, no una taula [general]" = "on line %@, “general” is a key, not a [general] table";
+"a la línia %@, la taula general té una forma que Warp Launch no sap llegir (entre cometes, amb un comentari o com a llista de taules)" = "on line %@, the general table has a form Warp Launch can't read (in quotes, with a comment or as an array of tables)";
+"Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre." = "Warp is closed: this is the snapshot from the last time it saved, which may be old. With no live sessions, it isn't known where Claude was open: when importing, no tab keeps its command.";
+
+/* LectorWarp, LectorSessions, Lector i LecturaWarp: la lectura de Warp i de Claude */
+"no trobo la base de Warp: %@" = "can't find Warp's database: %@";
+"error de SQLite: %@" = "SQLite error: %@";
+"macOS no deixa que Warp Launch llegeixi les dades de Warp; cal donar-li permís a Configuració del Sistema › Privacitat i seguretat" = "macOS doesn't let Warp Launch read Warp's data; give it permission in System Settings › Privacy & Security";
+"no s'ha pogut obrir" = "couldn't open it";
+"no puc llegir la carpeta de sessions de Claude: %@" = "can't read Claude's sessions folder: %@";
+"fitxer de sessió il·legible: %@" = "unreadable session file: %@";
+"la sessió %@ apunta al pid %@, que ja no existeix" = "session %@ points to pid %@, which no longer exists";
+"el pid %@ de la sessió %@ ara és un altre procés (%@)" = "pid %@ of session %@ is now another process (%@)";
+"dues sessions al mateix pane %@: es mostra la del pid %@, no la del %@" = "two sessions in the same pane %@: showing the one with pid %@, not the one with %@";
+"Warp no desa les finestres mentre la restauració de sessió està desactivada («general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen." = "Warp doesn't save its windows while session restore is turned off (“general.restore_session”): the app can't know which tabs there are or what they're called.";
+"Warp encara no ha desat cap finestra en aquest usuari: si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons." = "Warp hasn't saved any windows for this user yet: if Warp has just opened, try again in a few seconds.";
+"Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar." = "Warp hasn't saved any windows for this user yet: open it once and try again.";
