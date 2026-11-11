@@ -255,6 +255,59 @@ private func lectura(_ sessions: [SessioClaude]) -> LecturaWarp {
 private let hora = IniciProces(segons: 1_793_750_000, microsegons: 123_456)
 private let shell7 = ShellRecordat(pid: 7, inici: hora)
 
+/// `estat.json` tal com el llegeix la 0.33.0 (`git show v0.33.0:Sources/WarpLaunchCore/EstatApp.swift`): les seves estructures,
+/// copiades aquí tal com eren, i la seva lectura. No s'han de posar al dia: són la versió publicada, que s'actualitzarà sola.
+private enum Estat033 {
+    enum OrigenVincle: String, Codable { case importacio, llancament, marca, pane }
+
+    struct VincleEstat: Codable, Equatable {
+        var pane: String?
+        var sessio: String?
+        var carpetaSessio: String?
+        var origen: OrigenVincle
+        var vista: Date
+        var foraDesDe: Date?
+    }
+
+    struct Llancament: Codable, Equatable {
+        enum Estat: String, Codable { case pendent, confirmat, senseConfirmar, error }
+        var id: UUID
+        var fitxer: String
+        var mida: Int
+        var creat: Date
+        var finestra: UUID
+        var pestanyes: [UUID]
+        var estat: Estat
+        var esborrat: Bool
+        var segons: Double?
+    }
+
+    struct Fitxer: Codable {
+        var versio: Int
+        var generador: String?
+        var pestanyes: [String: VincleEstat]
+        var llancaments: [Llancament]
+    }
+
+    /// Com `EstatApp.llegeix` de la 0.33.0: primer la versió (com a molt, l'1), i després tot el fitxer.
+    static func llegeix(_ dades: Data) throws -> Fitxer {
+        struct NomesVersio: Decodable { var versio: Int }
+        let descodificador = JSONDecoder()
+        descodificador.dateDecodingStrategy = .iso8601
+        let versio = try descodificador.decode(NomesVersio.self, from: dades).versio
+        guard versio <= 1 else { throw CocoaError(.fileReadUnknown) }
+        return try descodificador.decode(Fitxer.self, from: dades)
+    }
+
+    /// Com `EstatApp.json` de la 0.33.0.
+    static func json(_ fitxer: Fitxer) throws -> Data {
+        let codificador = JSONEncoder()
+        codificador.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        codificador.dateEncodingStrategy = .iso8601
+        return try codificador.encode(fitxer) + Data("\n".utf8)
+    }
+}
+
 @Suite struct ShellDeLEstatTests {
     /// El camp nou és opcional i va dins de cada pestanya, sense canviar la versió (1). Sense shell, el JSON és el d'abans.
     @Test func elFormat() throws {
@@ -292,6 +345,37 @@ private let shell7 = ShellRecordat(pid: 7, inici: hora)
             }
 
             """)
+    }
+
+    /// Regla 11: la 0.33.0, ja publicada i que s'actualitzarà sola, llegeix el fitxer de la 0.34.0 sense cap error, amb tot el
+    /// que ja coneixia. Si el torna a desar, el shell es perd, i la 0.34.0 llegeix el resultat com un fitxer sense shell: la
+    /// pestanya de terminal torna a ser com abans (es tornaria a obrir).
+    @Test func la033LlegeixElFitxerDeLa034() throws {
+        var estat = estatInicial
+        estat.pestanyes[id(2)]?.shell = shell7
+        estat.pestanyes[id(9)] = VincleEstat(origen: .llancament, vista: t0 + 60, foraDesDe: t0 + 120,
+                                             shell: ShellRecordat(pid: 9, inici: hora))
+        estat.desa(Llancament(id: id(500), fitxer: "warp-launch-x.yaml", mida: 812, creat: t0, finestra: id(100),
+                              pestanyes: [id(1), id(2)], estat: .confirmat, esborrat: true, segons: 0.8))
+        let json = try estat.json()
+        #expect(String(decoding: json, as: UTF8.self).contains("\"shell\" : {"))
+
+        let vell = try Estat033.llegeix(json)
+        #expect(vell.versio == 1)
+        #expect(vell.pestanyes.count == 3)
+        #expect(vell.pestanyes[id(1).uuidString] == Estat033.VincleEstat(pane: pane("a"), sessio: "s1", carpetaSessio: "/x/t1",
+                                                                          origen: .importacio, vista: t0))
+        #expect(vell.pestanyes[id(2).uuidString] == Estat033.VincleEstat(pane: pane("b"), origen: .importacio, vista: t0))
+        #expect(vell.pestanyes[id(9).uuidString] == Estat033.VincleEstat(origen: .llancament, vista: t0 + 60,
+                                                                          foraDesDe: t0 + 120))
+        #expect(vell.llancaments.map(\.id) == [id(500)] && vell.llancaments.first?.estat == .confirmat)
+
+        // La 0.33.0 el torna a desar: el shell es perd, i res més.
+        let desatPerLa033 = try Estat033.json(vell)
+        #expect(!String(decoding: desatPerLa033, as: UTF8.self).contains("shell"))
+        var senseShell = estat
+        for clau in senseShell.pestanyes.keys { senseShell.pestanyes[clau]?.shell = nil }
+        #expect(try EstatApp.llegeix(desatPerLa033) == senseShell)
     }
 
     /// La lectura de cada 60 s (`amb`) no toca el shell, tampoc el d'una pestanya esborrada que torna amb el Desfés.
