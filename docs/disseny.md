@@ -2222,7 +2222,7 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
 - **Falta:** la clau de l'autor (creada l'11/11/2026; la còpia fora del Mac, per confirmar) i `Recursos/Actualitzacions.plist` (pas 11); pujar `main` i la recepta (pas 12; al tap,
   commit local `d9581af`); publicar (Porta 2); i la primera actualització real (Porta 3).
 - **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
-- **Decisió de l'autor (10/11/2026, de nit, durant la C): no fer més proves** («Anem al grà i deixa de fer proves inútils»). La C es queda sense C7 ni C10, i la D, la E i la F
+- **Decisió de l'autor (10/11/2026, de nit, durant la C): no fer més proves** («Anem al grà i deixa de fer proves inutils»). La C es queda sense C7 ni C10, i la D, la E i la F
   no es fan: es passa a activar. La decisió 11 ja no pot passar (la B va sortir neta i la E no es fa), ni la 12 (el repo de la ronda F).
 
 El codi s'aparta del que hi ha a sota en això:
@@ -2726,7 +2726,7 @@ Regles 1, 3 i 4: cada ronda, només amb l'OK de l'autor, que sabrà quantes cose
 
 **Feta el 10/11/2026, neta** (`docs/fets-verificats.md`, «Sparkle», secció 16). L'app de prova, signada amb «Warp Launch Dev» a `/Applications`, amb clics reals de l'autor: 6 obertures (B5,
 dues vegades) i 2 reinicis de Sparkle. **S'actualitza sense cap diàleg de macOS** (B2; i B5, pel camí de la finestra fins a «Instal·la i reinicia»), s'instal·la en sortir sense reobrir-se
-(primer intent de B5), i refusa abans d'extreure el zip amb un bit canviat (B3) i la versió amb una altra clau (B4). Segons la taula, el pla val, però només juntament amb la ronda E.
+(primer intent de B5), i refusa abans d'extreure el zip amb un bit canviat (B3) i la versió amb una altra clau (B4). Segons la taula, el pla val, però només juntament amb la ronda E, que no es fa (10/11/2026).
 **No ha cobert:** el reinici ajornat des de la finestra (l'app de prova no el pot provocar), el reinici sol (C2), res amb Developer ID, un usuari sense el certificat (E) ni l'app de debò.
 **La següent és la C.**
 

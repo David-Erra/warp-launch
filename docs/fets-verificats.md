@@ -839,7 +839,7 @@ Entorn: macOS 27.2 arm64, Swift 6.4.2 de les Command Line Tools, sense Xcode. **
 Les signatures de prova no han fet servir el clauer: una clau EdDSA d'un sol ús, generada amb CryptoKit i desada en un fitxer temporal.
 **En aquelles seccions no s'ha vist mai funcionar:** la descàrrega i la instal·lació reals, el tancament i la reobertura de l'app, els avisos, l'efecte sobre el permís
 d'Arxius i carpetes i sobre l'ítem d'inici, i signar amb «Warp Launch Dev». Les seccions 15 (ronda A) i 16 (ronda B, amb «Warp Launch Dev» a `/Applications`) n'han vist una part amb una app de prova,
-i la 17 (ronda C, en part), amb la Warp Launch de debò: el reinici sol, la reobertura silenciosa, el permís d'Arxius i carpetes i l'ítem d'inici. Totes, amb un servidor local i una clau d'un sol ús.
+i la 17 (ronda C, en part), amb versions de prova al lloc de la Warp Launch de debò: el reinici sol, la reobertura silenciosa, el permís d'Arxius i carpetes i l'ítem d'inici. Totes, amb un servidor local i una clau d'un sol ús.
 
 
 ### 1. Versió, paquet i binaryTarget
@@ -930,7 +930,7 @@ sense Sparkle i les seves proves.
   `--strict --deep`.
 - **SUPOSAT:** una app sense quarantena i sense notaritzar s'obre sense avisos, com amb Homebrew (`docs/especificacio.md:62`). No s'ha obert.
   **PROVAT amb l'app de prova a la ronda B** (secció 16): signada amb «Warp Launch Dev» i copiada amb `ditto`, 6 obertures des de `/Applications` sense cap avís, al Mac
-  de l'autor. En un usuari sense el certificat, és la ronda E.
+  de l'autor. En un usuari sense el certificat, era la ronda E, que no es fa (10/11/2026).
 
 ### 5. De «Warp Launch Dev» a Developer ID
 
@@ -1165,7 +1165,7 @@ pantalla de les 20:39 a les 20:40: val per als diàlegs dels processos de macOS,
   començar, i una finestra de `coreautha` a les 17:02:22: una finestra de Touch ID que va demanar una altra app del Mac, no l'app de prova (registre de LocalAuthentication; cap entrada de
   l'app de prova en tot el dia). L'autor, davant del Mac, no en va veure cap («Tot el procés correcte»).
 - **PROVAT, s'obre sense avisos:** sense quarantena (la còpia és amb `ditto`), sense notaritzar i amb un certificat que macOS no té per de confiança (`CSSMERR_TP_NOT_TRUSTED`, a «Certificat
-  propi»), 6 obertures amb `open`. Al Mac de l'autor; en un usuari sense el certificat, és la ronda E.
+  propi»), 6 obertures amb `open`. Al Mac de l'autor; en un usuari sense el certificat, era la ronda E, que no es fa (10/11/2026).
 - **PROVAT, B1 (A1 a `/Applications`):** oberta a les 10:23:11. Cinc «Comprova ara», tres a les 10:24 (:15, :22 i :27) i dues a les 10:50 (:46 i :52), totes «Tens l'última versió. Comprovat
   avui a les 10:24.» (o «… a les 10:50.»). A l'app de prova, el resultat només es veu en tornar a obrir el menú: el clic el tanca, i la resposta arriba el mateix segon. A la Warp Launch de debò
   no passa: l'ítem del menú obre la Configuració a «Actualitzacions» i comprova (`Sources/WarpLaunchUI/Actualitzacions.swift`, `mostraIComprova`; llegit).
@@ -1199,7 +1199,7 @@ pantalla de les 20:39 a les 20:40: val per als diàlegs dels processos de macOS,
 - **El reinici ajornat des de la finestra:** l'app de prova no té cap control per provocar-lo. El que en diu la 0.32.9 (l'estat i el botó gastat), i l'intent que es treu si l'app no surt,
   continuen llegits i provats amb falsos.
 - **El reinici sol:** «Retén el reinici sol» va estar encès tota la ronda. És la ronda C (C2).
-- **Res amb Developer ID, ni un usuari sense el certificat.** Segons el guió, «s'actualitza sense cap diàleg» vol dir que el pla val, però només juntament amb la ronda E.
+- **Res amb Developer ID, ni un usuari sense el certificat.** Segons el guió, «s'actualitza sense cap diàleg» vol dir que el pla val, però només juntament amb la ronda E, que no es fa (decisió de l'autor del 10/11/2026, secció 17).
 - **L'app de debò:** ni la finestra de Sparkle amb `Activacio.swift`, ni el permís d'Arxius i carpetes, ni l'ítem d'inici (ronda C).
 
 ### 17. Ronda C: la Warp Launch de debò, en part (10 i 11/11/2026)
@@ -1220,26 +1220,27 @@ model ni les de Sparkle de C1, C2 i C4:** són les que es van llegir durant la r
   correct for update» abans d'extreure.
   - **Amb l'editor obert no es reinicia.** L'autor no el va tancar: dos trams sense tocar res, de 8 min (21:47-21:55) i de 9 min (21:59-22:08), amb més de 300 s en marxa, i cap
     reinici. El vigilant de finestres veu l'editor al segon tram; al primer, no hi mirava. La línia «Ara no: …» no es va mirar: segons la política, el motiu és `finestraVisible`.
+    De 22:10 a 22:14, l'editor s'obre i es tanca unes quantes vegades, amb el Mac en ús; no consta per què.
   - **Amb l'editor tancat (22:14:01) i sense tocar res, s'aplica sola a les 22:17:07,** 186 s després de l'últim ús (120 s d'inactivitat i 60 s de quietud). La 0.31.91 arrenca 0,3 s
     després, sense cap finestra. Cap avís de Gatekeeper: el paquet no porta `com.apple.quarantine`, i `CoreServicesUIAgent` només el torna a obrir.
 - **PROVAT, C3:** la 0.31.91 que ha instal·lat Sparkle passa `codesign --verify --deep --strict` amb el requisit del certificat, i també `Autoupdate`, `Updater.app` i
   `Sparkle.framework`. El propietari no canvia, cap tasca de `launchd`, i `actualitzacio.json` sense intent i amb `fallades` 0.
 - **PROVAT, C4: la reobertura silenciosa.** Oberta amb TextEdit a les 22:21:00, «a punt» a les 22:21:01, editor tancat a les 22:21:11. S'aplica sola a les 22:23:08: el procés nou és
-  `UIElement` (sense Dock), sense cap finestra ni el full «Obre-ho tot», i TextEdit continua al davant fins al final (22:29:59). Warp Launch només hi va ser de 22:21:09 a 22:21:11,
-  en tancar l'editor, abans del reinici.
+  `UIElement` (sense Dock), sense cap finestra ni el full «Obre-ho tot», i TextEdit continua al davant fins al final (22:29:59), excepte 12 s de Warp a les 22:29:17, quan
+  l'autor va escriure el resultat. Warp Launch només hi va ser de 22:21:09 a 22:21:11, en tancar l'editor, abans del reinici.
 - **NO VIST, C5:** el doble clic al Finder amb l'app oberta en silenci després d'un reinici sol. L'autor en va sortir (23:00:13) i la va obrir des del Finder: una arrencada normal,
   amb l'editor i el Dock.
 - **PROVAT, C6, després de dues actualitzacions de Sparkle:** el diagnòstic diu «[ok] Warp database … has the 6 tables and 17 columns Warp Launch reads»: el permís d'Arxius i
-  carpetes es conserva. L'autor: cap pregunta de permisos de macOS per a Warp Launch, l'ítem d'inici encès i a Configuració del Sistema, i Warp Launch a Arxius i carpetes. El vigilant
-  hi va veure dues finestres de processos de macOS (UserNotificationCenter a les 22:40:28 i `coreautha` a les 22:49:48); no consta de qui eren, i al registre Warp Launch no hi fa
-  res en aquells moments.
+  carpetes es conserva, i al registre de `tccd` no hi ha cap «Prompting» per a Warp Launch. L'autor («C5 i C6 tot bé»): cap pregunta de permisos, l'ítem d'inici encès i a Configuració del Sistema, i
+  Warp Launch a Arxius i carpetes. Abans, entre la C4 i la C5, el vigilant va veure dues finestres de processos de macOS (UserNotificationCenter a les 22:40:28 i `coreautha` a les
+  22:49:48); no consta de qui eren, i al registre Warp Launch no hi fa res en aquells moments.
 - **NO FET, C7** (no reiniciar-se mentre es fa servir: un altre escriptori, el ratolí, un full), per decisió de l'autor: només el cobreixen les proves amb falsos. Del primer cicle,
-  només «Comprova ara» (23:18:08, a punt, EdDSA bé abans d'extreure). Després, l'app es va quedar oberta amb l'editor a la pantalla: cap reinici fins a les 01:03:49 (fi del
+  només «Comprova ara» (23:18:08: EdDSA bé abans d'extreure; la línia «a punt» del model ja no és al registre). Després, l'app es va quedar oberta amb l'editor a la pantalla: cap reinici fins a les 01:03:49 (fi del
   vigilant), amb 71 min seguits sense tocar res. **En sortir-ne, l'11/11 a les 11:04:13, la 0.31.91 s'instal·la**, com a A4 i B5.
 - **PROVAT, C8:** `restore_session = false` i el mateix procés de Warp. Terminals: 76 a les 21:39 i 75 a les 23:19; el que falta és una pestanya sense Claude, i cap pas de la ronda
   tanca terminals.
-- **PROVAT, C9:** l'app deixa 16 MB a `~/Library/Caches/cat.davide.warp-launch` (`Installation` i `PersistentDownloads` de Sparkle) i 56 KB a
-  `~/Library/HTTPStorages/cat.davide.warp-launch`; res més (cap carpeta `org.sparkle-project`). Són les dues que afegeix al `zap` el commit local `d9581af` del tap.
+- **PROVAT, C9:** l'app deixa 16 MB a `~/Library/Caches/cat.davide.warp-launch` (`org.sparkle-project.Sparkle/Installation` i `PersistentDownloads`) i 56 KB a
+  `~/Library/HTTPStorages/cat.davide.warp-launch`; cap `~/Library/Caches/org.sparkle-project*` a part. Són les dues que afegeix al `zap` el commit local `d9581af` del tap.
 - **NO FET, C10** (`--config`).
 - **PROVAT, el retorn (11/11, 11:04):** la 0.31.5, idèntica a la còpia de C0, amb la signatura bé, cap clau `SU*`, sense memòries cau ni `actualitzacio.json`, la configuració igual
   que la còpia, el servidor aturat i `restore_session = false`. Tornada a obrir, cap avís de permís.
