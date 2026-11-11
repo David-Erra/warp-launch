@@ -621,5 +621,38 @@
 			<string>%lld warnings</string>
 		</dict>
 	</dict>
+	<!-- VistaEditor i VistaInspector -->
+	<key>En llegir el fitxer s'han corregit %lld coses. Abans de desar se'n fa una còpia.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ when reading the file. A copy is made before saving.</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld thing was fixed</string>
+			<key>other</key>
+			<string>%lld things were fixed</string>
+		</dict>
+	</dict>
+	<key>Claude Code a %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Claude Code in %#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld tab</string>
+			<key>other</key>
+			<string>%lld tabs</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

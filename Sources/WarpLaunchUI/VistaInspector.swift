@@ -25,14 +25,14 @@ struct VistaInspector: View {
                     Section {
                         BlocClaude(editor: editor, unaSola: nil)
                     } header: {
-                        Text("Claude Code a \(pestanyes.count) pestanyes")
+                        Text(t("Claude Code a \(pestanyes.count) pestanyes"))
                     } footer: {
-                        Text("Cada canvi s'aplica a totes.")
+                        Text(t("Cada canvi s'aplica a totes."))
                             .foregroundStyle(.secondary)
                     }
                     if !editor.ordresSeleccionades.isEmpty {
                         Section {
-                            BotoCopia(text: editor.ordresSeleccionades, titol: "Copia les ordres")
+                            BotoCopia(text: editor.ordresSeleccionades, titol: t("Copia les ordres"))
                         }
                     }
                 }
@@ -67,22 +67,22 @@ private struct InspectorFinestra: View {
 
     var body: some View {
         Form {
-            Section("Finestra") {
-                CampText("Nom", valor: finestra.nom, indicacio: nil, buitTornaAlDAbans: true) { nom in
+            Section(t("Finestra")) {
+                CampText(t("Nom"), valor: finestra.nom, indicacio: nil, buitTornaAlDAbans: true) { nom in
                     editor.reanomenaFinestra(finestra.id, a: nom, agrupa: "nom")
                 } acaba: {
                     editor.acabaAgrupacio()
                 }
-                LabeledContent("Pestanyes", value: finestra.resum)
+                LabeledContent(t("Pestanyes"), value: finestra.resum)
                 ForEach(Array((editor.avisos.finestres[finestra.id] ?? []).enumerated()), id: \.offset) { _, avis in
                     FilaAvis(avis: avis)
                 }
             }
             Section {
                 // Sense drecera ni botó per defecte: abans d'obrir res, el full diu què s'obrirà i demana confirmació.
-                Button("Obre a Warp…") { editor.demanaObertura(finestra.id) }
+                Button(t("Obre a Warp…")) { editor.demanaObertura(finestra.id) }
                     .disabled(!editor.potObrir(finestra.id))
-                    .help("Mostra quines pestanyes s'obririen a Warp, i amb quina conversa; no obre res fins que ho confirmis")
+                    .help(t("Mostra quines pestanyes s'obririen a Warp, i amb quina conversa; no obre res fins que ho confirmis"))
             }
         }
         .formStyle(.grouped)
@@ -107,31 +107,34 @@ private struct InspectorPestanya: View {
         let avisos = editor.avisosInspector(pestanya.id)
         let id = pestanya.id
         Form {
-            Section("Pestanya") {
-                CampText("Nom", valor: pestanya.titol, indicacio: (pestanya.carpeta as NSString).lastPathComponent) { nom in
+            Section(t("Pestanya")) {
+                CampText(t("Nom"), valor: pestanya.titol, indicacio: (pestanya.carpeta as NSString).lastPathComponent) { nom in
                     editor.reanomenaPestanya(id, a: nom, agrupa: "nom")
                 } acaba: {
                     editor.acabaAgrupacio()
                 }
                 HStack(spacing: 8) {
-                    CampText("Carpeta", valor: Rutes.abreujada(pestanya.carpeta, inici: inici), indicacio: "~/GitHub/…",
+                    CampText(t("Carpeta"), valor: Rutes.abreujada(pestanya.carpeta, inici: inici), indicacio: "~/GitHub/…",
                              normalitza: { Rutes.abreujada(Rutes.desabreujada($0, inici: inici), inici: inici) }) { text in
                         editor.canviaCarpeta([id], a: Rutes.desabreujada(text, inici: inici), agrupa: "carpeta")
                     } acaba: {
                         editor.acabaAgrupacio()
                     }
-                    Button("Tria…") { triaCarpeta.wrappedValue = true }
-                        .help("Tria la carpeta al Finder")
+                    Button(t("Tria…")) { triaCarpeta.wrappedValue = true }
+                        .help(t("Tria la carpeta al Finder"))
                 }
                 ForEach(Array(avisos.carpeta.enumerated()), id: \.offset) { _, avis in
                     FilaAvis(avis: avis)
                 }
             }
-            Section("Claude Code") {
+            // Un nom propi: no es tradueix.
+            Section {
                 BlocClaude(editor: editor, unaSola: pestanya)
                 ForEach(Array(avisos.claude.enumerated()), id: \.offset) { _, avis in
                     FilaAvis(avis: avis)
                 }
+            } header: {
+                Text(verbatim: "Claude Code")
             }
             let nomesLectura = pestanya.claude.opcionsNomesLectura
             if !nomesLectura.isEmpty {
@@ -144,13 +147,13 @@ private struct InspectorPestanya: View {
                         }
                     }
                 } header: {
-                    Text("Altres opcions")
+                    Text(t("Altres opcions"))
                 } footer: {
-                    Text("L'editor no les canvia: es conserven tal com són.")
+                    Text(t("L'editor no les canvia: es conserven tal com són."))
                         .foregroundStyle(.secondary)
                 }
             }
-            Section("Ordre") {
+            Section(t("Ordre")) {
                 BlocOrdre(claude: pestanya.claude, repren: editor.conversaDe(pestanya))
             }
         }
@@ -161,8 +164,8 @@ private struct InspectorPestanya: View {
         // A la carpeta pare, o a la més propera que existeixi: amb una que no existeix, el diàleg s'obriria on vol el
         // sistema.
         .fileDialogDefaultDirectory(URL(filePath: editor.carpetaPerTriar(pestanya), directoryHint: .isDirectory))
-        .fileDialogMessage("Tria la carpeta de la pestanya")
-        .fileDialogConfirmationLabel("Tria")
+        .fileDialogMessage(t("Tria la carpeta de la pestanya"))
+        .fileDialogConfirmationLabel(t("Tria"))
     }
 }
 
@@ -175,40 +178,41 @@ private struct BlocClaude: View {
     let unaSola: Pestanya?
 
     var body: some View {
-        Toggle(unaSola == nil ? "Obre Claude Code" : "Obre Claude Code en aquesta pestanya",
+        Toggle(unaSola == nil ? t("Obre Claude Code") : t("Obre Claude Code en aquesta pestanya"),
                sources: fonts(.activat), isOn: \.self)
             // Caselles i no interruptors: només una casella mostra el guió de «Valors diversos» (NSSwitch no en té).
             .toggleStyle(.checkbox)
         Group {
-            tria(.model, "Model")
-            tria(.esforc, "Esforç")
-            Toggle("Ultracode", sources: fonts(.ultracode), isOn: \.self)
+            tria(.model, t("Model"))
+            tria(.esforc, t("Esforç"))
+            Toggle(ClaudePestanya.nomUltracode, sources: fonts(.ultracode), isOn: \.self)
                 .toggleStyle(.checkbox)
-                .help("Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode")
-            Toggle("Continua la conversa", sources: fonts(.continua), isOn: \.self)
+                .help(t("Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode"))
+            Toggle(t("Continua la conversa"), sources: fonts(.continua), isOn: \.self)
                 .toggleStyle(.checkbox)
-                .help("En obrir-la, la pestanya reprèn la conversa més recent de la seva carpeta en lloc de començar-ne una de nova")
+                .help(t("En obrir-la, la pestanya reprèn la conversa més recent de la seva carpeta en lloc de començar-ne una de nova"))
             if let pestanya = unaSola, pestanya.claude.activat, pestanya.claude.continua {
-                LabeledContent("Conversa", value: Self.conversa(editor.conversaDe(pestanya)))
-                    .help("La conversa més recent de la seva carpeta. Si no n'hi ha cap, se'n començarà una de nova")
+                LabeledContent(t("Conversa"), value: Self.conversa(editor.conversaDe(pestanya)))
+                    .help(t("La conversa més recent de la seva carpeta. Si no n'hi ha cap, se'n començarà una de nova"))
             }
             if let pestanya = unaSola {
-                CampText("Nom de la sessió", valor: pestanya.claude.nom ?? "", indicacio: "Cap",
+                CampText(t("Nom de la sessió"), valor: pestanya.claude.nom ?? "", indicacio: t("Cap"),
                          normalitza: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : $0 }) { nom in
                     editor.canviaNomSessio(pestanya.id, a: nom, agrupa: "nom de la sessió")
                 } acaba: {
                     editor.acabaAgrupacio()
                 }
-                .help("Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal")
+                .help(t("Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal"))
             }
-            Toggle("Salta els permisos", sources: fonts(.saltaPermisos), isOn: \.self)
+            Toggle(t("Salta els permisos"), sources: fonts(.saltaPermisos), isOn: \.self)
                 .toggleStyle(.checkbox)
-                .help("--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg")
-            tria(.modePermisos, "Mode de permisos")
+                .help(t("--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg"))
+            tria(.modePermisos, t("Mode de permisos"))
                 .disabled(editor.modeSenseEfecte)
-                .help(editor.modeSenseEfecte ? "Amb «Salta els permisos», Claude no fa cas del mode" : "--permission-mode")
+                .help(editor.modeSenseEfecte ? Text(t("Amb «Salta els permisos», Claude no fa cas del mode"))
+                                             : Text(verbatim: "--permission-mode"))
             if editor.modeSenseEfecte, editor.tria(.modePermisos) != .perDefecte {
-                Button("Treu el mode de permisos") { editor.tria(.modePermisos, a: .perDefecte) }
+                Button(t("Treu el mode de permisos")) { editor.tria(.modePermisos, a: .perDefecte) }
             }
         }
         .disabled(editor.claudeApagatATotes)
@@ -216,7 +220,7 @@ private struct BlocClaude: View {
 
     /// «reprèn 1b2c3d4e» (els 8 primers caràcters de l'id) o «nova».
     static func conversa(_ sessio: String?) -> String {
-        sessio.map { "reprèn \($0.prefix(8))" } ?? "nova"
+        sessio.map { t("reprèn \(String($0.prefix(8)))") } ?? t("nova")
     }
 
     private func tria(_ camp: Editor.CampTria, _ titol: String) -> some View {
@@ -244,14 +248,14 @@ struct BlocOrdre: View {
     var body: some View {
         switch OrdreClaude.text(de: claude, repren: repren) {
         case .success(nil):
-            Text("Només terminal: no s'hi obre Claude.")
+            Text(t("Només terminal: no s'hi obre Claude."))
                 .foregroundStyle(.secondary)
         case let .success(ordre?):
             Text(ordre)
                 .font(.body.monospaced())
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
-            BotoCopia(text: ordre, titol: "Copia l'ordre")
+            BotoCopia(text: ordre, titol: t("Copia l'ordre"))
         case let .failure(error):
             FilaAvis(avis: Avis(.ordreImpossible(error)))
         }

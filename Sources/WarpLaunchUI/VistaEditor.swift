@@ -28,11 +28,11 @@ public struct VistaEditor: View {
                 SenseConfiguracio(editor: editor, carpetaDeProva: carpetaDeProva)
             case let .error(missatge):
                 ContentUnavailableView {
-                    Label("No es pot obrir la configuració", systemImage: "exclamationmark.triangle")
+                    Label(t("No es pot obrir la configuració"), systemImage: "exclamationmark.triangle")
                 } description: {
-                    Text("\(missatge). No s'hi escriurà res fins que es pugui llegir.")
+                    Text(t("\(missatge). No s'hi escriurà res fins que es pugui llegir."))
                 } actions: {
-                    Button("Torna a carregar") { editor.carrega() }
+                    Button(t("Torna a carregar")) { editor.carrega() }
                 }
             case .oberta:
                 Disposicio(editor: editor, inici: inici, carpetaDeProva: carpetaDeProva)
@@ -54,18 +54,18 @@ private struct SenseConfiguracio: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label("Encara no hi ha cap configuració", systemImage: "macwindow.on.rectangle")
+            Label(t("Encara no hi ha cap configuració"), systemImage: "macwindow.on.rectangle")
         } description: {
-            Text("Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res.")
+            Text(t("Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res."))
             if let carpetaDeProva {
-                Label("Configuració de prova: \(carpetaDeProva)", systemImage: "testtube.2")
+                Label(t("Configuració de prova: \(carpetaDeProva)"), systemImage: "testtube.2")
             }
         } actions: {
-            Button("Importa de Warp…") { editor.demanaImportar() }
+            Button(t("Importa de Warp…")) { editor.demanaImportar() }
                 .buttonStyle(.borderedProminent)
-                .help("Llegeix Warp i mostra què se n'importaria, abans de crear res")
+                .help(t("Llegeix Warp i mostra què se n'importaria, abans de crear res"))
                 .disabled(!editor.potImportar)
-            Button("Comença en blanc") { editor.comencaEnBlanc() }
+            Button(t("Comença en blanc")) { editor.comencaEnBlanc() }
         }
     }
 }
@@ -106,18 +106,18 @@ private struct Disposicio: View {
                 .toolbar {
                     // L'acció principal de l'app, sobre la llista de la finestra que obriria. Només demana el full.
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Obre a Warp…", systemImage: "arrow.up.forward.app") {
+                        Button(t("Obre a Warp…"), systemImage: "arrow.up.forward.app") {
                             if let id = editor.finestra?.id { editor.demanaObertura(id) }
                         }
-                            .help("Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació")
+                            .help(t("Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació"))
                             .disabled(!editor.potObrir(editor.finestra?.id))
                     }
                     ToolbarSpacer(.fixed)
                     ToolbarItem(placement: .primaryAction) {
                         Button { editor.demanaPestanyaNova() } label: {
-                            Label("Nova pestanya…", systemImage: "plus")
+                            Label(t("Nova pestanya…"), systemImage: "plus")
                         }
-                        .help("Nova pestanya: en tries la carpeta (⌘T)")
+                        .help(t("Nova pestanya: en tries la carpeta (⌘T)"))
                         .disabled(!editor.potNovaPestanya)
                     }
                 }
@@ -126,8 +126,8 @@ private struct Disposicio: View {
                     if case let .success(url) = resultat { editor.afegeixPestanya(carpeta: url.path) }
                 }
                 .fileDialogDefaultDirectory(URL(filePath: editor.carpetaSuggerida, directoryHint: .isDirectory))
-                .fileDialogMessage("Tria la carpeta de la pestanya nova")
-                .fileDialogConfirmationLabel("Afegeix")
+                .fileDialogMessage(t("Tria la carpeta de la pestanya nova"))
+                .fileDialogConfirmationLabel(t("Afegeix"))
         }
         .navigationTitle(editor.titol)
         .navigationSubtitle(editor.subtitol)
@@ -145,10 +145,10 @@ private struct Disposicio: View {
                     ToolbarSpacer(.flexible)
                     ToolbarItem(placement: .primaryAction) {
                         Button { editor.mostraInspector.toggle() } label: {
-                            Label(editor.mostraInspector ? "Amaga l'inspector" : "Mostra l'inspector",
+                            Label(editor.mostraInspector ? t("Amaga l'inspector") : t("Mostra l'inspector"),
                                   systemImage: "sidebar.trailing")
                         }
-                        .help("Mostra o amaga l'inspector (⌥⌘I)")
+                        .help(t("Mostra o amaga l'inspector (⌥⌘I)"))
                     }
                 }
         }
@@ -178,12 +178,12 @@ private struct BarraLateral: View {
         List(selection: seleccio) {
             // Es queda mentre està seleccionada, encara que ja no hi hagi res per revisar («Res per revisar»).
             if editor.nombrePerRevisar > 0 || editor.perRevisar {
-                Label("Per revisar", systemImage: "exclamationmark.triangle")
+                Label(t("Per revisar"), systemImage: "exclamationmark.triangle")
                     .badge(editor.nombrePerRevisar)
-                    .help("Pestanyes amb avisos de totes les finestres")
+                    .help(t("Pestanyes amb avisos de totes les finestres"))
                     .tag(Editor.ElementLateral.perRevisar)
             }
-            Section("Finestres") {
+            Section(t("Finestres")) {
                 ForEach(editor.configuracio.finestres) { finestra in
                     FilaFinestra(editor: editor, finestra: finestra)
                         .modifier(DestiPestanyes(editor: editor, finestra: finestra.id, molla: molla.wrappedValue))
@@ -201,32 +201,32 @@ private struct BarraLateral: View {
         }
         .contextMenu(forSelectionType: Editor.ElementLateral.self) { seleccio in
             if seleccio.isEmpty {
-                Button("Nova finestra") { editor.afegeixFinestra() }
+                Button(t("Nova finestra")) { editor.afegeixFinestra() }
             } else if seleccio.count == 1, case let .finestra(id)? = seleccio.first {
-                Button("Canvia el nom") {
+                Button(t("Canvia el nom")) {
                     editor.lateral = .finestra(id)
                     editor.comencaNom(.finestra(id))
                 }
                 // Només demana el full de confirmació.
                 if editor.potObrir(id) {
-                    Button("Obre a Warp…") { editor.demanaObertura(id) }
+                    Button(t("Obre a Warp…")) { editor.demanaObertura(id) }
                     Divider()
                 }
-                Button("Duplica") { editor.duplicaFinestra(id) }
+                Button(t("Duplica")) { editor.duplicaFinestra(id) }
                 if editor.potMoureFinestra(id, amunt: true) {
-                    Button("Mou amunt") { editor.mouFinestra(id, amunt: true) }
+                    Button(t("Mou amunt")) { editor.mouFinestra(id, amunt: true) }
                 }
                 if editor.potMoureFinestra(id, amunt: false) {
-                    Button("Mou avall") { editor.mouFinestra(id, amunt: false) }
+                    Button(t("Mou avall")) { editor.mouFinestra(id, amunt: false) }
                 }
                 if editor.potEditar, PortaRetallsSistema.hiHaPestanyes {
-                    Button("Enganxa les pestanyes") {
+                    Button(t("Enganxa les pestanyes")) {
                         editor.lateral = .finestra(id)
                         PortaRetallsSistema.enganxa(a: editor)
                     }
                 }
                 Divider()
-                Button("Elimina", role: .destructive) { editor.eliminaFinestra(id) }
+                Button(t("Elimina"), role: .destructive) { editor.eliminaFinestra(id) }
             }
         }
         // Edició › Elimina, desactivat si no hi ha cap finestra triada (a «Per revisar» no faria res).
@@ -245,12 +245,12 @@ private struct BarraLateral: View {
         .overlay {
             if editor.configuracio.finestres.isEmpty {
                 // L'acció és a la llista, al costat («Nova finestra»): aquí només es diu.
-                ContentUnavailableView("Cap finestra", systemImage: "macwindow")
+                ContentUnavailableView(t("Cap finestra"), systemImage: "macwindow")
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let carpetaDeProva {
-                Label("Prova: \(carpetaDeProva)", systemImage: "testtube.2")
+                Label(t("Prova: \(carpetaDeProva)"), systemImage: "testtube.2")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -258,7 +258,7 @@ private struct BarraLateral: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .help("Configuració de prova (--config): \(carpetaDeProva)")
+                    .help(t("Configuració de prova (--config): \(carpetaDeProva)"))
             }
         }
     }
@@ -350,8 +350,8 @@ private struct LlistaPestanyes: View {
         if editor.perRevisar {
             let grups = editor.perRevisarPerFinestra
             if grups.isEmpty {
-                ContentUnavailableView("Res per revisar", systemImage: "checkmark.circle",
-                                       description: Text("Cap pestanya no té avisos."))
+                ContentUnavailableView(t("Res per revisar"), systemImage: "checkmark.circle",
+                                       description: Text(t("Cap pestanya no té avisos.")))
             } else {
                 List(selection: $editor.pestanyesSeleccionades) {
                     ForEach(grups) { grup in
@@ -367,14 +367,14 @@ private struct LlistaPestanyes: View {
         } else if let finestra = editor.finestra {
             if finestra.pestanyes.isEmpty {
                 ContentUnavailableView {
-                    Label("Finestra sense pestanyes", systemImage: "rectangle.dashed")
+                    Label(t("Finestra sense pestanyes"), systemImage: "rectangle.dashed")
                 } description: {
-                    Text("Afegeix-hi una pestanya: en tries la carpeta, i Claude hi tindrà les opcions de la plantilla.")
+                    Text(t("Afegeix-hi una pestanya: en tries la carpeta, i Claude hi tindrà les opcions de la plantilla."))
                 } actions: {
-                    Button("Nova pestanya…", action: novaPestanya)
+                    Button(t("Nova pestanya…"), action: novaPestanya)
                     // Copiar unes pestanyes, crear una finestra i omplir-la: aquí no hi ha cap llista que rebi ⌘V.
                     if editor.potEnganxar, PortaRetallsSistema.hiHaPestanyes {
-                        Button("Enganxa les pestanyes") { PortaRetallsSistema.enganxa(a: editor) }
+                        Button(t("Enganxa les pestanyes")) { PortaRetallsSistema.enganxa(a: editor) }
                     }
                 }
             } else {
@@ -401,14 +401,14 @@ private struct LlistaPestanyes: View {
             }
         } else if editor.configuracio.finestres.isEmpty {
             ContentUnavailableView {
-                Label("Cap finestra", systemImage: "macwindow")
+                Label(t("Cap finestra"), systemImage: "macwindow")
             } description: {
-                Text("Una finestra de Warp agrupa pestanyes. Afegeix-ne una per començar.")
+                Text(t("Una finestra de Warp agrupa pestanyes. Afegeix-ne una per començar."))
             } actions: {
-                Button("Nova finestra") { editor.afegeixFinestra() }
+                Button(t("Nova finestra")) { editor.afegeixFinestra() }
             }
         } else {
-            ContentUnavailableView("Tria una finestra", systemImage: "sidebar.leading")
+            ContentUnavailableView(t("Tria una finestra"), systemImage: "sidebar.leading")
         }
     }
 }
@@ -424,10 +424,10 @@ private struct OrdresLlista: ViewModifier {
             .contextMenu(forSelectionType: Pestanya.ID.self) { ids in
                 if ids.isEmpty {
                     if let novaPestanya, editor.potAfegirPestanya {
-                        Button("Nova pestanya…", action: novaPestanya)
+                        Button(t("Nova pestanya…"), action: novaPestanya)
                     }
                     if editor.potEnganxar, PortaRetallsSistema.hiHaPestanyes {
-                        Button("Enganxa") { PortaRetallsSistema.enganxa(a: editor) }
+                        Button(t("Enganxa")) { PortaRetallsSistema.enganxa(a: editor) }
                     }
                 } else {
                     menu(ids)
@@ -459,19 +459,19 @@ private struct OrdresLlista: ViewModifier {
         // Un clic dret sobre una fila que no era seleccionada: l'ordre hi actua, i queda seleccionada (no a «Mou a ▸»).
         let selecciona = { editor.pestanyesSeleccionades = ids }
         if ids.count == 1, let id = ids.first {
-            Button("Canvia el nom") {
+            Button(t("Canvia el nom")) {
                 selecciona()
                 editor.comencaNom(.pestanya(id))
             }
         }
-        Button("Duplica") {
+        Button(t("Duplica")) {
             selecciona()
             editor.duplicaPestanyes()
         }
         // Amagat si no hi ha cap altra finestra (o, a «Per revisar», si ja hi són totes).
         let destins = editor.finestresPerMoure(ids)
         if !destins.isEmpty {
-            Menu("Mou a") {
+            Menu(t("Mou a")) {
                 // Sense `selecciona()`: com en arrossegar-la, una fila no triada es mou sense canviar de finestra ni de
                 // selecció; si és dins de la selecció, l'editor la segueix (pas 7).
                 ForEach(destins) { desti in
@@ -479,31 +479,31 @@ private struct OrdresLlista: ViewModifier {
                 }
             }
         }
-        Button("Retalla") {
+        Button(t("Retalla")) {
             selecciona()
             PortaRetallsSistema.escriu(editor.retallaPestanyes())
         }
-        Button("Copia") {
+        Button(t("Copia")) {
             selecciona()
             PortaRetallsSistema.escriu(editor.copiaPestanyes())
         }
         // Només si n'hi ha alguna per copiar: una pestanya amb Claude però sense ordre (un error) no en té.
         let ordres = editor.ordres(ids)
         if !ordres.isEmpty {
-            Button(ids.count == 1 ? "Copia l'ordre" : "Copia les ordres") {
+            Button(ids.count == 1 ? t("Copia l'ordre") : t("Copia les ordres")) {
                 selecciona()
                 PortaRetallsSistema.copiaText(ordres)
             }
         }
         Divider()
         if pestanyes.contains(where: { !$0.claude.activat }) {
-            Button("Activa Claude") { editor.activaClaude(ids, true) }
+            Button(t("Activa Claude")) { editor.activaClaude(ids, true) }
         }
         if pestanyes.contains(where: \.claude.activat) {
-            Button("Desactiva Claude") { editor.activaClaude(ids, false) }
+            Button(t("Desactiva Claude")) { editor.activaClaude(ids, false) }
         }
         Divider()
-        Button("Elimina", role: .destructive) {
+        Button(t("Elimina"), role: .destructive) {
             selecciona()
             editor.eliminaPestanyes()
         }
@@ -632,7 +632,7 @@ private struct CampNom: View {
     @FocusState private var enfocat: Bool
 
     var body: some View {
-        TextField("Nom", text: $editor.textDelNom)
+        TextField(t("Nom"), text: $editor.textDelNom)
             .labelsHidden()
             .focused($enfocat)
             .onSubmit { editor.acabaNom(element, desant: true) }
@@ -656,10 +656,10 @@ private struct BanerDesat: View {
                 .symbolRenderingMode(.multicolor)
             Spacer()
             if error == .modificadaFora {
-                Button("Torna a carregar") { editor.carrega() }
-                    .help("Descarta els canvis d'aquí i llegeix el fitxer tal com és ara")
+                Button(t("Torna a carregar")) { editor.carrega() }
+                    .help(t("Descarta els canvis d'aquí i llegeix el fitxer tal com és ara"))
             } else {
-                Button("Torna-ho a provar") { editor.desaSiCal() }
+                Button(t("Torna-ho a provar")) { editor.desaSiCal() }
             }
         }
         .padding(.horizontal, 12)
@@ -669,7 +669,7 @@ private struct BanerDesat: View {
     }
 
     private var titol: String {
-        error == .modificadaFora ? "El fitxer ha canviat fora de l'app" : "No s'ha pogut desar: \(error.description)"
+        error == .modificadaFora ? t("El fitxer ha canviat fora de l'app") : t("No s'ha pogut desar: \(error.description)")
     }
 }
 
@@ -685,12 +685,11 @@ private struct BanerFormat: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Label("En llegir el fitxer s'han corregit "
-                  + Plural.compta(editor.avisosFormat.count, "cosa", "coses")
-                  + ". Abans de desar se'n fa una còpia.", systemImage: "exclamationmark.triangle.fill")
+            Label(t("En llegir el fitxer s'han corregit \(editor.avisosFormat.count) coses. Abans de desar se'n fa una còpia."),
+                  systemImage: "exclamationmark.triangle.fill")
                 .symbolRenderingMode(.multicolor)
             Spacer()
-            Button("Mostra-les") { mostra.wrappedValue = true }
+            Button(t("Mostra-les")) { mostra.wrappedValue = true }
                 .popover(isPresented: mostra.projectedValue) {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(editor.avisosFormat.enumerated()), id: \.offset) { _, avis in
@@ -701,7 +700,7 @@ private struct BanerFormat: View {
                     .padding(20)
                     .frame(maxWidth: 480, alignment: .leading)
                 }
-            Button("D'acord") { editor.descartaAvisosFormat() }
+            Button(t("D'acord")) { editor.descartaAvisosFormat() }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

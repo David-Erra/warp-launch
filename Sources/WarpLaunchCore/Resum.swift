@@ -127,6 +127,9 @@ public struct ArgumentsApp: Sendable, Equatable {
 }
 
 extension ClaudePestanya {
+    /// El nom del mode de Claude (`--effort ultracode`), que no es tradueix: la fila de la llista, l'inspector i la Configuració.
+    public static let nomUltracode = "Ultracode"
+
     /// Per a la fila de la llista (docs/disseny.md, «Disposició»): «Opus · Molt alt · Ultracode», «Claude» si no hi ha
     /// res més a dir, o «Només terminal».
     public var resum: String {
@@ -135,7 +138,7 @@ extension ClaudePestanya {
         var parts: [String] = []
         if let model = net.model { parts.append(Self.nomModel(model)) }
         if let esforc = net.esforc, !esforc.isEmpty { parts.append(Self.nomEsforc(esforc)) }
-        if net.ultracode { parts.append("Ultracode") }
+        if net.ultracode { parts.append(Self.nomUltracode) }
         return parts.isEmpty ? "Claude" : parts.joined(separator: " · ")
     }
 

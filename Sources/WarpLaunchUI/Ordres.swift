@@ -45,7 +45,7 @@ private struct ItemImportaWarp: View {
     let editor: Editor?
 
     var body: some View {
-        Button(editor?.estat == .oberta ? "Torna a importar-ho tot de Warp…" : "Importa de Warp…") {
+        Button(editor?.estat == .oberta ? t("Torna a importar-ho tot de Warp…") : t("Importa de Warp…")) {
             editor?.demanaImportar()
         }
         .disabled(editor?.potImportar != true)
@@ -65,46 +65,46 @@ public struct OrdresEditor: Commands {
 
     public var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button("Nova finestra") { editor?.afegeixFinestra() }
+            Button(t("Nova finestra")) { editor?.afegeixFinestra() }
                 .keyboardShortcut("n")
                 .disabled(editor?.ordresActives != true)
-            Button("Nova pestanya…") { editor?.demanaPestanyaNova() }
+            Button(t("Nova pestanya…")) { editor?.demanaPestanyaNova() }
                 .keyboardShortcut("t")
                 .disabled(editor?.potNovaPestanya != true)
             Divider()
-            Button(editor?.titolDuplica(columna) ?? "Duplica") { editor?.duplica(columna) }
+            Button(editor?.titolDuplica(columna) ?? t("Duplica")) { editor?.duplica(columna) }
                 .keyboardShortcut("d")
                 .disabled(editor?.objecte(columna) == nil)
             // Sense drecera al menú: Retorn és dels camps de text. A la llista i a la barra lateral, Retorn hi és
             // (`onKeyPress`).
-            Button("Canvia el nom") { editor?.canviaElNom(columna) }
+            Button(t("Canvia el nom")) { editor?.canviaElNom(columna) }
                 .disabled(editor?.potCanviarElNom(columna) != true)
             Divider()
             // Amb importar i lligar, que també llegeixen Warp amb les finestres. No depèn de l'editor (com al menú de la icona).
             ItemActualitzaWarp(ordre: actualitzaWarp)
             ItemImportaWarp(editor: editor)
             // Només desa a `estat.json`, i amb el full: no obre ni canvia res.
-            Button("Lliga amb Warp…") { editor?.demanaLligam() }
+            Button(t("Lliga amb Warp…")) { editor?.demanaLligam() }
                 .disabled(editor?.potLligar != true)
-            Button("Mostra el fitxer al Finder") {
+            Button(t("Mostra el fitxer al Finder")) {
                 if let fitxer = editor?.fitxerPerMostrar { Finder.mostra(fitxer) }
             }
             .disabled(editor?.fitxerPerMostrar == nil)
             Divider()
             // Fase 3.1: sempre amb confirmació (el full) i sense drecera (docs/disseny.md, «Ordres»).
-            Button("Obre a Warp…") { if let id = editor?.finestra?.id { editor?.demanaObertura(id) } }
+            Button(t("Obre a Warp…")) { if let id = editor?.finestra?.id { editor?.demanaObertura(id) } }
                 .disabled(editor?.potObrir(editor?.finestra?.id) != true)
-            Button("Obre-ho tot a Warp…") { editor?.demanaObreTot() }
+            Button(t("Obre-ho tot a Warp…")) { editor?.demanaObreTot() }
                 .disabled(editor?.potObrirTot != true)
         }
         // ⌘S no fa res: l'app desa sola, i no hi ha cap «Desa». El grup `.saveItem` no es toca: també porta «Tanca»
         // (⌘W) i «Tanca-ho tot» (⌥⌘W).
-        CommandMenu("Pestanya") {
-            Menu("Mou a") {
+        CommandMenu(t("Pestanya")) {
+            Menu(t("Mou a")) {
                 let ids = Set(editor?.pestanyes.map(\.id) ?? [])
                 let destins = editor?.finestresPerMoure(ids) ?? []
                 if destins.isEmpty {
-                    Button("Cap altra finestra") {}
+                    Button(t("Cap altra finestra")) {}
                         .disabled(true)
                 }
                 ForEach(destins) { desti in
@@ -113,13 +113,13 @@ public struct OrdresEditor: Commands {
             }
             .disabled(editor?.potMoureTriades != true)
             Divider()
-            Button("Activa Claude") { editor?.activaClaudeTriades(true) }
+            Button(t("Activa Claude")) { editor?.activaClaudeTriades(true) }
                 .disabled(editor?.potActivarClaude != true)
-            Button("Desactiva Claude") { editor?.activaClaudeTriades(false) }
+            Button(t("Desactiva Claude")) { editor?.activaClaudeTriades(false) }
                 .disabled(editor?.potDesactivarClaude != true)
             Divider()
             let ordres = editor?.ordresSeleccionades ?? ""
-            Button((editor?.pestanyes.count ?? 0) > 1 ? "Copia les ordres" : "Copia l'ordre") {
+            Button((editor?.pestanyes.count ?? 0) > 1 ? t("Copia les ordres") : t("Copia l'ordre")) {
                 PortaRetallsSistema.copiaText(ordres)
             }
             .disabled(ordres.isEmpty)
@@ -130,7 +130,7 @@ public struct OrdresEditor: Commands {
         // Abans del grup de la barra lateral (que també porta «Entra a pantalla completa»), al costat de «Mostra la
         // barra lateral». «Amaga» només si l'inspector és a la vista.
         CommandGroup(before: .sidebar) {
-            Button(editor?.estat == .oberta && editor?.mostraInspector == true ? "Amaga l'inspector" : "Mostra l'inspector") {
+            Button(editor?.estat == .oberta && editor?.mostraInspector == true ? t("Amaga l'inspector") : t("Mostra l'inspector")) {
                 editor?.mostraInspector.toggle()
             }
             .keyboardShortcut("i", modifiers: [.option, .command])
