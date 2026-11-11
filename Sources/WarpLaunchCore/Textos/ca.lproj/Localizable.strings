@@ -363,3 +363,32 @@
 "Aquesta còpia no és una versió publicada i no s'actualitza sola." = "Aquesta còpia no és una versió publicada i no s'actualitza sola.";
 "Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell.";
 "Aquesta versió de l'actualitzador no és compatible." = "Aquesta versió de l'actualitzador no és compatible.";
+
+/* WarpLaunchApp: el menú de la icona, l'alerta de sortir i la carpeta de la Configuració */
+"Amb una configuració de prova, l'app no s'obre sola." = "Amb una configuració de prova, l'app no s'obre sola.";
+"Cap: %@" = "Cap: %@";
+"No s'han pogut desar els canvis" = "No s'han pogut desar els canvis";
+"%@. Si surts ara, es perdran." = "%@. Si surts ara, es perdran.";
+"Cancel·la" = "Cancel·la";
+"Surt sense desar" = "Surt sense desar";
+"Mostra Warp Launch" = "Mostra Warp Launch";
+"Mostra l'editor" = "Mostra l'editor";
+"Finestres" = "Finestres";
+"Obre-ho tot a Warp…" = "Obre-ho tot a Warp…";
+"%@ — %@" = "%@ — %@";
+"Mostra a l'editor" = "Mostra a l'editor";
+"Configuració de prova: %@" = "Configuració de prova: %@";
+"Sense configuració: %@" = "Sense configuració: %@";
+"Configuració…" = "Configuració…";
+
+/* ArrencadaSessio (l'app fora d'Aplicacions) i ServeiActualitzacions: per què no s'obre en iniciar sessió, i els errors per a Sparkle */
+"Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a %@." = "Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a %@.";
+"no hi ha permís" = "no hi ha permís";
+"la versió publicada no té la forma esperada" = "la versió publicada no té la forma esperada";
+
+/* ArrencadaSessio: obrir-se en iniciar sessió */
+"No disponible" = "No disponible";
+"No s'ha pogut activar: %@" = "No s'ha pogut activar: %@";
+"No s'ha pogut desactivar: %@" = "No s'ha pogut desactivar: %@";
+"No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més.";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més." = "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més.";

@@ -2392,7 +2392,8 @@ private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
         var trobats = 0
         for fitxer in codi {
             let linies = fitxer.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-            for (n, linia) in linies.enumerated() where linia.contains(#"Button("Obre"#) {
+            // Amb el títol per traduir (`t`, fase F3 del multidioma) o, abans, escrit directament.
+            for (n, linia) in linies.enumerated() where linia.contains(#"Button(t("Obre"#) || linia.contains(#"Button("Obre"#) {
                 trobats += 1
                 let seguents = linies[n..<min(linies.count, n + 6)].joined(separator: "\n")
                 if fitxer.ruta.hasSuffix("/FullObertura.swift") {
@@ -2597,12 +2598,13 @@ private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
         let inici = try #require(app.range(of: "private struct MenuIcona"))
         let menuIcona = String(app[inici.lowerBound...])
 
-        /// Per cada acció `editor.demana…`, els títols literals dels `Button` que la criden.
+        /// Per cada acció `editor.demana…`, els títols literals dels `Button` que la criden: la clau de `t("…")` (fase F3 del
+        /// multidioma) o, abans, el text escrit directament.
         func titols(_ codi: String) throws -> [String: Set<String>] {
             let accio = try Regex(#"editor\??\.(demana[A-Za-z]+)\("#)
             var resultat: [String: Set<String>] = [:]
-            for tros in codi.components(separatedBy: "Button(").dropFirst() where tros.hasPrefix("\"") {
-                let titol = String(tros.dropFirst().prefix { $0 != "\"" })
+            for tros in codi.components(separatedBy: "Button(").dropFirst() where tros.hasPrefix("t(\"") || tros.hasPrefix("\"") {
+                let titol = String(tros.drop { $0 != "\"" }.dropFirst().prefix { $0 != "\"" })
                 for trobada in tros.matches(of: accio) {
                     resultat[String(try #require(trobada.output[1].substring)), default: []].insert(titol)
                 }

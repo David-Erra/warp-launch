@@ -21,9 +21,7 @@ enum ServeiArrencada {
 
     /// Els ítems d'inici apunten al fitxer de l'app: des de `build/` o `.build/`, una compilació nova el canviaria.
     static var motiuNoDisponible: String? {
-        Bundle.main.bundlePath.hasPrefix("/Applications/") ? nil
-            : "Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a "
-                + "\(Bundle.main.bundlePath)."
+        Bundle.main.bundlePath.hasPrefix("/Applications/") ? nil : ArrencadaSessio.motiuForaDAplicacions(Bundle.main.bundlePath)
     }
 
     /// macOS diu que l'ha obert com a element d'inici. Es llegeix a `applicationDidFinishLaunching`, amb l'esdeveniment

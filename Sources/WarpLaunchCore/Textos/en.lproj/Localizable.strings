@@ -362,3 +362,32 @@
 "Aquesta còpia no és una versió publicada i no s'actualitza sola." = "This copy isn't a published version and doesn't update itself.";
 "Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "Another user of this Mac installed this copy: they have to update it.";
 "Aquesta versió de l'actualitzador no és compatible." = "This version of the updater isn't compatible.";
+
+/* WarpLaunchApp: el menú de la icona, l'alerta de sortir i la carpeta de la Configuració */
+"Amb una configuració de prova, l'app no s'obre sola." = "With a test configuration, the app doesn't open at login.";
+"Cap: %@" = "None: %@";
+"No s'han pogut desar els canvis" = "Your changes couldn't be saved";
+"%@. Si surts ara, es perdran." = "%@. If you quit now, they'll be lost.";
+"Cancel·la" = "Cancel";
+"Surt sense desar" = "Quit Without Saving";
+"Mostra Warp Launch" = "Show Warp Launch";
+"Mostra l'editor" = "Show Editor";
+"Finestres" = "Windows";
+"Obre-ho tot a Warp…" = "Open All in Warp…";
+"%@ — %@" = "%@ — %@";
+"Mostra a l'editor" = "Show in Editor";
+"Configuració de prova: %@" = "Test configuration: %@";
+"Sense configuració: %@" = "No configuration: %@";
+"Configuració…" = "Settings…";
+
+/* ArrencadaSessio (l'app fora d'Aplicacions) i ServeiActualitzacions: per què no s'obre en iniciar sessió, i els errors per a Sparkle */
+"Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a %@." = "To open at login, the app must be in Applications (scripts/instal·la.sh --aplica). It's now in %@.";
+"no hi ha permís" = "there's no permission";
+"la versió publicada no té la forma esperada" = "the published version doesn't have the expected form";
+
+/* ArrencadaSessio: obrir-se en iniciar sessió */
+"No disponible" = "Not available";
+"No s'ha pogut activar: %@" = "Couldn't turn it on: %@";
+"No s'ha pogut desactivar: %@" = "Couldn't turn it off: %@";
+"No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "Couldn't remove Warp Launch from Login Items: %@. Nothing else was changed.";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més." = "macOS still has Warp Launch in Login Items: remove it in System Settings › General › Login Items, and try again. Nothing else was changed.";

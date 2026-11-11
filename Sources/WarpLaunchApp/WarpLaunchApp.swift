@@ -24,6 +24,8 @@ struct WarpLaunchApp: App {
                             carpetaDeProva: aplicacio.carpetaDeProva)
             }
             .background(AccesFinestra { aplicacio.activacio.adopta($0) })
+            // Les dates, els nombres i els plurals de SwiftUI, en la llengua dels textos (docs/disseny.md, secció 12).
+            .environment(\.locale, Idioma.locale)
         }
         .defaultSize(width: 900, height: 560)
         .restorationBehavior(.disabled)
@@ -47,12 +49,14 @@ struct WarpLaunchApp: App {
                                   actualitzacions: aplicacio.actualitzacions)
             }
             .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
+            .environment(\.locale, Idioma.locale)
         }
         // La mida de la pestanya que es veu: tan alta com el contingut, fins a 640 pt (`VistaConfiguracio.formulari`).
         .windowResizability(.contentSize)
 
         MenuBarExtra {
             MenuIcona(aplicacio: aplicacio)
+                .environment(\.locale, Idioma.locale)
         } label: {
             EtiquetaIcona(aplicacio: aplicacio)
         }
@@ -183,7 +187,7 @@ final class Aplicacio {
         if case .real = arguments.carpeta {
             arrencada = ArrencadaSessio(entorn: ServeiArrencada.entorn, motiuNoDisponible: ServeiArrencada.motiuNoDisponible)
         } else {
-            arrencada = ArrencadaSessio(entorn: nil, motiuNoDisponible: "Amb una configuració de prova, l'app no s'obre sola.")
+            arrencada = ArrencadaSessio(entorn: nil, motiuNoDisponible: t("Amb una configuració de prova, l'app no s'obre sola."))
         }
         self.arrencada = arrencada
         let desinstallacio = Desinstallacio(consentiment: consentiment, arrencada: arrencada, surt: { NSApp.terminate(nil) })
@@ -278,7 +282,7 @@ final class Aplicacio {
     var carpetaDescrita: String {
         switch arguments.carpeta {
         case let .real(carpeta), let .prova(carpeta): Rutes.abreujada(carpeta.path, inici: inici)
-        case let .incorrecta(motiu): "Cap: \(motiu)"
+        case let .incorrecta(motiu): t("Cap: \(motiu)")
         }
     }
 }
@@ -345,10 +349,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aplicacio.activacio.posaAlDavant()
         let alerta = NSAlert()
         alerta.alertStyle = .warning
-        alerta.messageText = "No s'han pogut desar els canvis"
-        alerta.informativeText = "\(aplicacio.editor.errorDesat?.description ?? ""). Si surts ara, es perdran."
-        alerta.addButton(withTitle: "Cancel·la")
-        let surt = alerta.addButton(withTitle: "Surt sense desar")
+        alerta.messageText = t("No s'han pogut desar els canvis")
+        alerta.informativeText = t("\(aplicacio.editor.errorDesat?.description ?? ""). Si surts ara, es perdran.")
+        alerta.addButton(withTitle: t("Cancel·la"))
+        let surt = alerta.addButton(withTitle: t("Surt sense desar"))
         surt.hasDestructiveAction = true
         guard alerta.runModal() == .alertSecondButtonReturn else {
             aplicacio.refresc?.repren()
@@ -423,7 +427,7 @@ private struct MenuIcona: View {
         } else {
             // D-P4: fins que no s'accepta, només la pantalla de consentiment i sortir.
             Section {
-                Button("Mostra Warp Launch") { mostraEditor() }
+                Button(t("Mostra Warp Launch")) { mostraEditor() }
             }
             Section {
                 Button(WarpLaunch.ordreSurt) { NSApp.terminate(nil) }
@@ -437,25 +441,25 @@ private struct MenuIcona: View {
         let editor = aplicacio.editor
 
         Section {
-            Button("Mostra l'editor") { mostraEditor() }
+            Button(t("Mostra l'editor")) { mostraEditor() }
         }
 
         if editor.estat == .oberta, !editor.configuracio.finestres.isEmpty {
-            Section("Finestres") {
+            Section(t("Finestres")) {
                 // El full de confirmació surt a l'editor: no obre res fins que s'hi confirma.
-                Button("Obre-ho tot a Warp…") {
+                Button(t("Obre-ho tot a Warp…")) {
                     mostraEditor()
                     editor.demanaObreTot()
                 }
                 .disabled(!editor.potObrirTot)
                 ForEach(editor.configuracio.finestres) { finestra in
-                    Menu("\(finestra.nom) — \(finestra.resum)") {
-                        Button("Mostra a l'editor") {
+                    Menu(t("\(finestra.nom) — \(finestra.resum)")) {
+                        Button(t("Mostra a l'editor")) {
                             editor.lateral = .finestra(finestra.id)
                             mostraEditor()
                         }
                         // El full de confirmació surt a l'editor: no obre res fins que s'hi confirma.
-                        Button("Obre a Warp…") {
+                        Button(t("Obre a Warp…")) {
                             editor.lateral = .finestra(finestra.id)
                             mostraEditor()
                             editor.demanaObertura(finestra.id)
@@ -495,15 +499,15 @@ private struct MenuIcona: View {
                 case .real:
                     EmptyView()
                 case let .prova(carpeta):
-                    Label("Configuració de prova: \(carpeta.path)", systemImage: "testtube.2")
+                    Label(t("Configuració de prova: \(carpeta.path)"), systemImage: "testtube.2")
                 case let .incorrecta(motiu):
-                    Label("Sense configuració: \(motiu)", systemImage: "exclamationmark.triangle")
+                    Label(t("Sense configuració: \(motiu)"), systemImage: "exclamationmark.triangle")
                 }
             }
         }
 
         Section {
-            Button("Configuració…") {
+            Button(t("Configuració…")) {
                 aplicacio.activacio.posaAlDavant()
                 openSettings()
             }

@@ -39,8 +39,13 @@ public final class ArrencadaSessio {
 
     public init(entorn: Entorn?, motiuNoDisponible: String?) {
         self.entorn = entorn
-        self.motiuNoDisponible = entorn == nil ? (motiuNoDisponible ?? "No disponible") : motiuNoDisponible
+        self.motiuNoDisponible = entorn == nil ? (motiuNoDisponible ?? t("No disponible")) : motiuNoDisponible
         actualitza()
+    }
+
+    /// Per què no es pot activar amb l'app fora d'Aplicacions (`ServeiArrencada`): els ítems d'inici apunten al fitxer de l'app.
+    public static func motiuForaDAplicacions(_ ruta: String) -> String {
+        t("Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a \(ruta).")
     }
 
     /// L'interruptor: registrada, encara que macOS no l'hagi aprovada (així es pot treure).
@@ -68,7 +73,8 @@ public final class ArrencadaSessio {
             error = nil
             Registre.obertura.notice("en iniciar sessió: \(activada ? "activada" : "desactivada")")
         } catch {
-            self.error = "No s'ha pogut \(activada ? "activar" : "desactivar"): \(error.localizedDescription)"
+            self.error = activada ? t("No s'ha pogut activar: \(error.localizedDescription)")
+                : t("No s'ha pogut desactivar: \(error.localizedDescription)")
         }
         actualitza()
     }
@@ -85,13 +91,14 @@ public final class ArrencadaSessio {
             try entorn.desactiva()
         } catch {
             actualitza()
-            return "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: \(error.localizedDescription). No s'ha "
-                + "canviat res més."
+            return t("No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: \(error.localizedDescription). No s'ha canviat res més.")
         }
         actualitza()
         guard !activada else {
-            return "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › "
-                + "Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més."
+            return t("""
+                macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › \
+                Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més.
+                """)
         }
         error = nil
         Registre.obertura.notice("en iniciar sessió: desactivada en deixar de fer servir l'app")

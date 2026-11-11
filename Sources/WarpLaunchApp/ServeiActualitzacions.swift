@@ -136,7 +136,7 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
     /// Sense el permís, res (val per a tots els camins).
     func updater(_ updater: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
         guard permis() else {
-            throw NSError(domain: WarpLaunch.identificador, code: 1, userInfo: [NSLocalizedDescriptionKey: "no hi ha permís"])
+            throw NSError(domain: WarpLaunch.identificador, code: 1, userInfo: [NSLocalizedDescriptionKey: t("no hi ha permís")])
         }
     }
 
@@ -145,7 +145,7 @@ final class ServeiActualitzacions: NSObject, SPUUpdaterDelegate, @preconcurrency
         let fitxer = item.fileURL?.absoluteString
         guard !item.isInformationOnlyUpdate, !item.isCriticalUpdate, !item.isMajorUpgrade, let fitxer,
               PoliticaActualitzacions.enclosureValid(feed: feed, enclosure: fitxer) else {
-            throw NSError(domain: WarpLaunch.identificador, code: 2, userInfo: [NSLocalizedDescriptionKey: "la versió publicada no té la forma esperada"])
+            throw NSError(domain: WarpLaunch.identificador, code: 2, userInfo: [NSLocalizedDescriptionKey: t("la versió publicada no té la forma esperada")])
         }
     }
 
