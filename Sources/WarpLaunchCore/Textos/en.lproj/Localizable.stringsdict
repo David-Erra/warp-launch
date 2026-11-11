@@ -533,5 +533,49 @@
 			<string>%lld live terminals</string>
 		</dict>
 	</dict>
+	<!-- Importador: els noms per defecte, les notes i el resum de la importació -->
+	<key>%@: pestanya dividida en %lld panes; només s'importa el principal, i es perd %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%@: tab split into %lld panes; only the main one is imported, and %#@s@</string>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude session is lost</string>
+			<key>other</key>
+			<string>%lld Claude sessions are lost</string>
+		</dict>
+	</dict>
+	<key>%lld finestres · %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ · %#@p@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld window</string>
+			<key>other</key>
+			<string>%lld windows</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld tab</string>
+			<key>other</key>
+			<string>%lld tabs</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

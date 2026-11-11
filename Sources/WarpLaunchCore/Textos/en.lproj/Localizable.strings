@@ -247,3 +247,96 @@
 "Warp no desa les finestres mentre la restauració de sessió està desactivada («general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen." = "Warp doesn't save its windows while session restore is turned off (“general.restore_session”): the app can't know which tabs there are or what they're called.";
 "Warp encara no ha desat cap finestra en aquest usuari: si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons." = "Warp hasn't saved any windows for this user yet: if Warp has just opened, try again in a few seconds.";
 "Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar." = "Warp hasn't saved any windows for this user yet: open it once and try again.";
+
+/* Configuracio: el fitxer de la configuració */
+"el fitxer no és JSON vàlid (línia %@, columna %@)" = "the file isn't valid JSON (line %@, column %@)";
+"el fitxer no és JSON vàlid" = "the file isn't valid JSON";
+"el fitxer: %@" = "the file: %@";
+"falta el camp «versio»" = "the “versio” field is missing";
+"el fitxer és de la versió %@ del format, i aquesta app només entén fins a la %@: cal una versió més nova de Warp Launch" = "the file is in version %@ of the format, and this app only understands up to version %@: a newer version of Warp Launch is needed";
+"versió del format desconeguda: %@" = "unknown format version: %@";
+"%@: clau desconeguda; es perdrà en desar (la còpia la conserva)" = "%@: unknown key; it will be lost when saving (the backup keeps it)";
+"%@: sense bloc «claude»; queda com a només terminal" = "%@: no “claude” block; it stays terminal only";
+"%@: id absent; se n'ha posat un de nou" = "%@: missing id; a new one was set";
+"%@: id invalid; se n'ha posat un de nou" = "%@: invalid id; a new one was set";
+"%@: id repetit; se n'ha posat un de nou" = "%@: repeated id; a new one was set";
+"falta la plantilla; es fan servir valors segurs (sense saltar permisos)" = "the template is missing; safe values are used (without skipping permissions)";
+"%@: la carpeta ha de ser una ruta absoluta (que comenci per / o ~/)" = "%@: the folder must be an absolute path (starting with / or ~/)";
+"el fitxer ha de ser text UTF-8" = "the file must be UTF-8 text";
+"ha de ser un objecte JSON" = "it must be a JSON object";
+"clau «%@» repetida" = "repeated key “%@”";
+"ha de ser un nombre enter" = "it must be an integer";
+"tipus incorrecte (s'esperava %@)" = "wrong type (expected %@)";
+"falta el valor (s'esperava %@)" = "missing value (expected %@)";
+"falta la clau" = "missing key";
+"text" = "text";
+"true o false" = "true or false";
+"nombre enter" = "an integer";
+"una llista" = "a list";
+"un objecte" = "an object";
+
+/* Validacio: els avisos de cada pestanya i finestra */
+"La carpeta ha de ser una ruta absoluta" = "The folder must be an absolute path";
+"Carpeta d'inici: probablement Warp l'ha perduda" = "Home folder: Warp has probably lost it";
+"La carpeta no existeix" = "The folder doesn't exist";
+"Claude és apagat en aquesta pestanya" = "Claude is turned off in this tab";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Claude (comprova-ho)" = "Warp says “%@” and Claude runs in “%@”: Claude's is used (check it)";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Warp (comprova-ho)" = "Warp says “%@” and Claude runs in “%@”: Warp's is used (check it)";
+"L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "This tab's last Claude ran in “%@”, not in this folder (check it)";
+"Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "Check that the model supports ultracode and that you have dynamic workflows turned on";
+"Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "Unknown effort “%@”: Claude ignores it and uses the default one";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude won't start: the permission mode “%@” doesn't exist (%@)";
+"Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "With “Skip permissions”, Claude ignores the “%@” mode";
+"Claude no arrencarà: els settings no són JSON vàlid" = "Claude won't start: the settings aren't valid JSON";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "Claude %@ doesn't know %@: it may not understand it (if it's from a newer version, the options table needs updating)";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions). Si %@ no n'és el valor, Claude el prendria pel primer missatge i l'enviaria a cada obertura" = "Claude %@ doesn't know %@: it may not understand it (if it's from a newer version, the options table needs updating). If %@ isn't its value, Claude would take it as the first message and send it every time it opens";
+"%@ és d'un sol ús: es tornaria a fer a cada obertura" = "%@ is single-use: it would be repeated every time it opens";
+"No es pot generar l'ordre: %@" = "Can't generate the command: %@";
+"Hi ha més d'una finestra amb el nom «%@»" = "There's more than one window named “%@”";
+
+/* Importador: els noms per defecte, les notes i el resum de la importació */
+"Finestra %@" = "Window %@";
+"Pestanya %@" = "Tab %@";
+"%@: la sessió es va obrir amb el missatge «%@»; no es desa (s'enviaria a cada obertura)" = "%@: the session was opened with the message “%@”; it isn't saved (it would be sent every time it opens)";
+"%@: la sessió es va obrir amb «%@» (una conversa concreta); es desa només que continua" = "%@: the session was opened with “%@” (a specific conversation); only “continue” is saved";
+"%@: Warp diu «%@», però Claude corre a «%@»; es fa servir la de Claude" = "%@: Warp says “%@”, but Claude runs in “%@”; Claude's is used";
+"%@: Warp diu «%@» i Claude «%@»; es fa servir la de Claude (comprova-ho)" = "%@: Warp says “%@” and Claude “%@”; Claude's is used (check it)";
+"%@: Warp diu «%@» i Claude «%@», que és la carpeta d'inici; es queda la de Warp (comprova-ho)" = "%@: Warp says “%@” and Claude “%@”, which is the home folder; Warp's is kept (check it)";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda la de Warp (comprova-ho)" = "%@: Warp says “%@” and Claude “%@”, which doesn't exist; Warp's is kept (check it)";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)" = "%@: Warp says “%@” and Claude “%@”, which doesn't exist; it stays in the home folder, without Claude and with its options (check it)";
+"%@: pestanya dividida en %lld panes; només s'importa el principal" = "%@: tab split into %lld panes; only the main one is imported";
+"la seva pestanya no és a la base de Warp" = "its tab isn't in Warp's database";
+"corre fora de Warp, o dins de tmux" = "it runs outside Warp, or inside tmux";
+"sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claude session “%@” in “%@”: it isn't imported (%@)";
+"sessió de Claude a «%@»: no s'importa (%@)" = "Claude session in “%@”: it isn't imported (%@)";
+"a la mateixa carpeta hi ha %@, que queda només terminal" = "the same folder has %@, which stays terminal only";
+"a la mateixa carpeta hi ha %@, que queden només terminal" = "the same folder has %@, which stay terminal only";
+"la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warp window %@ has no terminal tabs: it isn't imported";
+"0 amb Claude" = "0 with Claude";
+"%lld amb Claude, amb la seva ordre" = "%lld with Claude, with their command";
+"(%lld sense Claude obert)" = "(%lld without Claude open)";
+
+/* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
+"no s'ha pogut generar el JSON: %@" = "couldn't generate the JSON: %@";
+"el fitxer és només de lectura (%@)" = "the file is read-only (%@)";
+"«%@» és un enllaç a «%@», que no existeix" = "“%@” is a link to “%@”, which doesn't exist";
+"la configuració ha canviat fora de l'app; no s'ha desat res" = "the configuration changed outside the app; nothing was saved";
+"no s'ha pogut fer la còpia de seguretat, i no s'ha desat res: %@" = "couldn't make the backup, so nothing was saved: %@";
+"no s'ha pogut llegir la configuració: %@" = "couldn't read the configuration: %@";
+"no s'ha pogut desar la configuració: %@" = "couldn't save the configuration: %@";
+"la configuració generada no es podia tornar a llegir igual; no s'ha desat res" = "the generated configuration didn't read back the same; nothing was saved";
+"el JSON no es torna a llegir igual" = "the JSON doesn't read back the same";
+"«%@» és de la versió %@, més nova que aquesta app (%@)" = "“%@” is from version %@, newer than this app (%@)";
+"«%@» no es pot llegir: %@" = "“%@” can't be read: %@";
+"no s'ha pogut llegir «%@»: %@" = "couldn't read “%@”: %@";
+"no s'ha pogut desar «%@»: %@" = "couldn't save “%@”: %@";
+"no és JSON o no té «versio»" = "it isn't JSON or has no “versio”";
+"«%@» no és l'id d'una pestanya" = "“%@” isn't a tab id";
+"«acceptat» sense «acceptatEl»" = "“acceptat” without “acceptatEl”";
+"«retirat» sense «retiratEl»" = "“retirat” without “retiratEl”";
+"«acceptatEl» només va amb «acceptat», i «retiratEl», amb «retirat»" = "“acceptatEl” only goes with “acceptat”, and “retiratEl” with “retirat”";
+"«%@» no és cap consentiment conegut" = "“%@” isn't a known consent";
+
+/* EdicioConfiguracio: els noms de les finestres i les pestanyes noves */
+"%@ còpia" = "%@ copy";
+"Pestanya nova" = "New Tab";

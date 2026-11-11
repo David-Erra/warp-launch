@@ -23,9 +23,9 @@ public struct MagatzemEstat: Sendable {
         do {
             dades = try estat.json()
         } catch {
-            throw .escriptura("no s'ha pogut generar el JSON: \(error)")
+            throw .escriptura(t("no s'ha pogut generar el JSON: \(String(describing: error))"))
         }
-        guard (try? EstatApp.llegeix(dades)) == estat else { throw .escriptura("el JSON no es torna a llegir igual") }
+        guard (try? EstatApp.llegeix(dades)) == estat else { throw .escriptura(t("el JSON no es torna a llegir igual")) }
         do {
             try EscripturaAtomica.escriu(dades, a: fitxer)
         } catch {

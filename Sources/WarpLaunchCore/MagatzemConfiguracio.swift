@@ -67,7 +67,7 @@ public struct MagatzemConfiguracio: Sendable {
         do {
             dades = try perDesar.json()
         } catch {
-            throw .escriptura("no s'ha pogut generar el JSON: \(error)")
+            throw .escriptura(t("no s'ha pogut generar el JSON: \(String(describing: error))"))
         }
         // El que s'escriu s'ha de poder tornar a llegir igual.
         guard let rellegida = try? Configuracio.llegeix(dades, inici: inici).configuracio, rellegida == perDesar else {
@@ -80,7 +80,7 @@ public struct MagatzemConfiguracio: Sendable {
         var permisos = 0o644
         if actual != nil {
             guard fm.isWritableFile(atPath: desti.path) else {
-                throw .escriptura("el fitxer és només de lectura (\(desti.path))")
+                throw .escriptura(t("el fitxer és només de lectura (\(desti.path))"))
             }
             permisos = (try? fm.attributesOfItem(atPath: desti.path))?[.posixPermissions] as? Int ?? permisos
         }
@@ -134,7 +134,7 @@ public struct MagatzemConfiguracio: Sendable {
             return try Data(contentsOf: fitxer)
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             if let desti = try? FileManager.default.destinationOfSymbolicLink(atPath: fitxer.path) {
-                throw .lectura("«\(Self.nomFitxer)» és un enllaç a «\(desti)», que no existeix")
+                throw .lectura(t("«\(Self.nomFitxer)» és un enllaç a «\(desti)», que no existeix"))
             }
             return nil
         } catch {
@@ -266,11 +266,11 @@ public enum ErrorMagatzem: Error, Equatable, Sendable, CustomStringConvertible {
     public var description: String {
         switch self {
         case let .format(error): error.description
-        case .modificadaFora: "la configuració ha canviat fora de l'app; no s'ha desat res"
-        case let .copiaFallida(detall): "no s'ha pogut fer la còpia de seguretat, i no s'ha desat res: \(detall)"
-        case let .lectura(detall): "no s'ha pogut llegir la configuració: \(detall)"
-        case let .escriptura(detall): "no s'ha pogut desar la configuració: \(detall)"
-        case .verificacioFallida: "la configuració generada no es podia tornar a llegir igual; no s'ha desat res"
+        case .modificadaFora: t("la configuració ha canviat fora de l'app; no s'ha desat res")
+        case let .copiaFallida(detall): t("no s'ha pogut fer la còpia de seguretat, i no s'ha desat res: \(detall)")
+        case let .lectura(detall): t("no s'ha pogut llegir la configuració: \(detall)")
+        case let .escriptura(detall): t("no s'ha pogut desar la configuració: \(detall)")
+        case .verificacioFallida: t("la configuració generada no es podia tornar a llegir igual; no s'ha desat res")
         }
     }
 }

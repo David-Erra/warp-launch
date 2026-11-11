@@ -534,5 +534,49 @@
 			<string>%lld terminals vius</string>
 		</dict>
 	</dict>
+	<!-- Importador: els noms per defecte, les notes i el resum de la importació -->
+	<key>%@: pestanya dividida en %lld panes; només s'importa el principal, i es perd %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%@: pestanya dividida en %lld panes; només s'importa el principal, i es perd %#@s@ de Claude</string>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld sessió</string>
+			<key>other</key>
+			<string>%lld sessions</string>
+		</dict>
+	</dict>
+	<key>%lld finestres · %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ · %#@p@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -63,7 +63,7 @@ extension Configuracio {
     /// (dues sessions amb el mateix nom es confondrien). En torna l'id.
     public mutating func duplicaFinestra(_ id: Finestra.ID, nouId: () -> UUID) -> Finestra.ID? {
         guard let original = finestra(id) else { return nil }
-        let copia = Finestra(id: nouId(), nom: nomUnic("\(original.nom) còpia"),
+        let copia = Finestra(id: nouId(), nom: nomUnic(t("\(original.nom) còpia")),
                              pestanyes: original.pestanyes.map { $0.duplicada(id: nouId()) })
         afegeix(copia, despresDe: id)
         return copia.id
@@ -165,7 +165,7 @@ extension Pestanya {
         var claude = plantilla.perAPestanyaNova()
         if aInici { claude.activat = false }
         let nom = (estandard as NSString).lastPathComponent
-        return Pestanya(id: id, titol: aInici || nom.isEmpty || nom == "/" ? "Pestanya nova" : nom, carpeta: carpeta,
+        return Pestanya(id: id, titol: aInici || nom.isEmpty || nom == "/" ? t("Pestanya nova") : nom, carpeta: carpeta,
                         claude: claude)
     }
 

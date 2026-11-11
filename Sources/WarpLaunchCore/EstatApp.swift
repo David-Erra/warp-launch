@@ -180,10 +180,10 @@ extension EstatApp {
         public var description: String {
             switch self {
             case let .versioMesNova(versio):
-                "«\(EstatApp.nomFitxer)» és de la versió \(versio), més nova que aquesta app (\(EstatApp.versioActual))"
-            case let .format(motiu): "«\(EstatApp.nomFitxer)» no es pot llegir: \(motiu)"
-            case let .lectura(motiu): "no s'ha pogut llegir «\(EstatApp.nomFitxer)»: \(motiu)"
-            case let .escriptura(motiu): "no s'ha pogut desar «\(EstatApp.nomFitxer)»: \(motiu)"
+                t("«\(EstatApp.nomFitxer)» és de la versió \(String(versio)), més nova que aquesta app (\(String(EstatApp.versioActual)))")
+            case let .format(motiu): t("«\(EstatApp.nomFitxer)» no es pot llegir: \(motiu)")
+            case let .lectura(motiu): t("no s'ha pogut llegir «\(EstatApp.nomFitxer)»: \(motiu)")
+            case let .escriptura(motiu): t("no s'ha pogut desar «\(EstatApp.nomFitxer)»: \(motiu)")
             }
         }
     }
@@ -215,7 +215,7 @@ extension EstatApp {
         let descodificador = JSONDecoder()
         descodificador.dateDecodingStrategy = .iso8601
         guard let versio = try? descodificador.decode(NomesVersio.self, from: dades).versio else {
-            throw .format("no és JSON o no té «versio»")
+            throw .format(t("no és JSON o no té «versio»"))
         }
         guard versio <= versioActual else { throw .versioMesNova(versio) }
         let fitxer: Fitxer
@@ -226,7 +226,7 @@ extension EstatApp {
         }
         var pestanyes: [UUID: VincleEstat] = [:]
         for (clau, vincle) in fitxer.pestanyes {
-            guard let id = UUID(uuidString: clau) else { throw .format("«\(clau)» no és l'id d'una pestanya") }
+            guard let id = UUID(uuidString: clau) else { throw .format(t("«\(clau)» no és l'id d'una pestanya")) }
             pestanyes[id] = vincle
         }
         return EstatApp(versio: versio, pestanyes: pestanyes, llancaments: fitxer.llancaments)

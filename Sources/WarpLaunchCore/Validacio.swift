@@ -172,37 +172,35 @@ public struct Avis: Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch tipus {
-        case .carpetaNoAbsoluta: "La carpeta ha de ser una ruta absoluta"
-        case .carpetaInici: "Carpeta d'inici: probablement Warp l'ha perduda"
-        case .carpetaNoExisteix: "La carpeta no existeix"
-        case .claudeApagat: "Claude és apagat en aquesta pestanya"
+        case .carpetaNoAbsoluta: t("La carpeta ha de ser una ruta absoluta")
+        case .carpetaInici: t("Carpeta d'inici: probablement Warp l'ha perduda")
+        case .carpetaNoExisteix: t("La carpeta no existeix")
+        case .claudeApagat: t("Claude és apagat en aquesta pestanya")
         case let .carpetesDiferents(warp?, claude, actual):
-            "Warp diu «\(warp)» i Claude corre a «\(claude)»: es fa servir la de "
-                + (actual == claude ? "Claude" : "Warp") + " (comprova-ho)"
+            actual == claude ? t("Warp diu «\(warp)» i Claude corre a «\(claude)»: es fa servir la de Claude (comprova-ho)")
+                : t("Warp diu «\(warp)» i Claude corre a «\(claude)»: es fa servir la de Warp (comprova-ho)")
         case let .carpetesDiferents(nil, claude, _):
-            "L'últim Claude d'aquesta pestanya corria a «\(claude)», no a aquesta carpeta (comprova-ho)"
-        case .ultracode: "Comprova que el model admet ultracode i que tens els dynamic workflows activats"
+            t("L'últim Claude d'aquesta pestanya corria a «\(claude)», no a aquesta carpeta (comprova-ho)")
+        case .ultracode: t("Comprova que el model admet ultracode i que tens els dynamic workflows activats")
         case let .esforcDesconegut(esforc):
-            "Esforç «\(esforc)» desconegut: Claude el deixa córrer i fa servir el de per defecte"
+            t("Esforç «\(esforc)» desconegut: Claude el deixa córrer i fa servir el de per defecte")
         case let .modePermisosDesconegut(mode):
-            "Claude no arrencarà: el mode de permisos «\(mode)» no existeix ("
-                + ClaudePestanya.modesPermisos.joined(separator: ", ") + ")"
-        case let .saltaPermisosAmbMode(mode): "Amb «Salta els permisos», Claude no fa cas del mode «\(mode)»"
-        case .settingsNoJSON: "Claude no arrencarà: els settings no són JSON vàlid"
+            t("Claude no arrencarà: el mode de permisos «\(mode)» no existeix (\(ClaudePestanya.modesPermisos.joined(separator: ", ")))")
+        case let .saltaPermisosAmbMode(mode): t("Amb «Salta els permisos», Claude no fa cas del mode «\(mode)»")
+        case .settingsNoJSON: t("Claude no arrencarà: els settings no són JSON vàlid")
         case let .opcionsDesconegudes(opcions, textos):
-            "Claude \(TaulaOpcionsClaude.versio) no coneix " + llista(opcions)
-                + ": potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)"
-                + (textos.isEmpty ? "" : ". Si " + llista(textos)
-                    + " no n'és el valor, Claude el prendria pel primer missatge i l'enviaria a cada obertura")
-        case let .opcionsDUnSolUs(opcions): llista(opcions) + " és d'un sol ús: es tornaria a fer a cada obertura"
-        case let .ordreImpossible(error): "No es pot generar l'ordre: \(error)"
-        case let .nomRepetit(nom): "Hi ha més d'una finestra amb el nom «\(nom)»"
+            textos.isEmpty
+                ? t("Claude \(TaulaOpcionsClaude.versio) no coneix \(llista(opcions)): potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)")
+                : t("Claude \(TaulaOpcionsClaude.versio) no coneix \(llista(opcions)): potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions). Si \(llista(textos)) no n'és el valor, Claude el prendria pel primer missatge i l'enviaria a cada obertura")
+        case let .opcionsDUnSolUs(opcions): t("\(llista(opcions)) és d'un sol ús: es tornaria a fer a cada obertura")
+        case let .ordreImpossible(error): t("No es pot generar l'ordre: \(error.description)")
+        case let .nomRepetit(nom): t("Hi ha més d'una finestra amb el nom «\(nom)»")
         }
     }
 
     private func llista(_ opcions: [String]) -> String {
         var vistes = Set<String>()
-        return opcions.filter { vistes.insert($0).inserted }.map { "«\($0)»" }.joined(separator: ", ")
+        return opcions.filter { vistes.insert($0).inserted }.map { t("«\($0)»") }.joined(separator: ", ")
     }
 }
 

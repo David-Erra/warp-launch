@@ -97,7 +97,7 @@ public enum Importador {
                 notes.append(.finestraSensePestanyes(numero: f + 1))
                 continue
             }
-            let nom = unic(nomDeFinestra(pestanyes.map(\.carpeta), inici: inici) ?? "Finestra \(f + 1)", usats: &nomsUsats)
+            let nom = unic(nomDeFinestra(pestanyes.map(\.carpeta), inici: inici) ?? t("Finestra \(String(f + 1))"), usats: &nomsUsats)
             let finestra = Finestra(id: nouId(), nom: nom, pestanyes: pestanyes)
             for (p, nota) in notesFinestra {
                 notes.append(nota(Lloc(pestanya: pestanyes[p].id, text: "\(nom) › \(pestanyes[p].titol)")))
@@ -139,7 +139,7 @@ public enum Importador {
     static func titol(_ deWarp: String?, carpeta: String, inici: String, numero: Int) -> String {
         if let deWarp, !deWarp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return deWarp }
         let darrer = (carpeta as NSString).lastPathComponent
-        if carpeta == inici || darrer.isEmpty || darrer == "/" { return "Pestanya \(numero)" }
+        if carpeta == inici || darrer.isEmpty || darrer == "/" { return t("Pestanya \(String(numero))") }
         return darrer
     }
 
@@ -243,31 +243,34 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
     public var description: String {
         switch self {
         case let .primerMissatgeDescartat(lloc, missatge):
-            let curt = missatge.count > 60 ? missatge.prefix(59) + "…" : Substring(missatge)
-            return "\(lloc.text): la sessió es va obrir amb el missatge «\(curt)»; no es desa (s'enviaria a cada obertura)"
+            let curt = missatge.count > 60 ? String(missatge.prefix(59)) + "…" : missatge
+            return t("\(lloc.text): la sessió es va obrir amb el missatge «\(curt)»; no es desa (s'enviaria a cada obertura)")
         case let .sessioConcreta(lloc, opcio):
-            return "\(lloc.text): la sessió es va obrir amb «\(opcio)» (una conversa concreta); es desa només que continua"
+            return t("\(lloc.text): la sessió es va obrir amb «\(opcio)» (una conversa concreta); es desa només que continua")
         case let .carpetaDeLaSessio(lloc, pestanya, sessio):
-            return "\(lloc.text): Warp diu «\(pestanya)», però Claude corre a «\(sessio)»; es fa servir la de Claude"
+            return t("\(lloc.text): Warp diu «\(pestanya)», però Claude corre a «\(sessio)»; es fa servir la de Claude")
         case let .carpetesDiferents(lloc, pestanya, sessio):
-            return "\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)»; es fa servir la de Claude (comprova-ho)"
+            return t("\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)»; es fa servir la de Claude (comprova-ho)")
         case let .carpetaDeClaudeNoServeix(lloc, pestanya, sessio, sessioAInici):
-            let per = sessioAInici ? "és la carpeta d'inici" : "no existeix"
-            return "\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que \(per); es queda la de Warp (comprova-ho)"
+            return sessioAInici
+                ? t("\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que és la carpeta d'inici; es queda la de Warp (comprova-ho)")
+                : t("\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que no existeix; es queda la de Warp (comprova-ho)")
         case let .claudeSenseCarpeta(lloc, pestanya, sessio):
-            return "\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)"
+            return t("\(lloc.text): Warp diu «\(pestanya)» i Claude «\(sessio)», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)")
         case let .panesDescartats(lloc, panes, sessions):
-            let perdudes = sessions == 0 ? "" : ", i es perd \(Plural.compta(sessions, "sessió", "sessions")) de Claude"
-            return "\(lloc.text): pestanya dividida en \(panes) panes; només s'importa el principal\(perdudes)"
+            return sessions == 0 ? t("\(lloc.text): pestanya dividida en \(panes) panes; només s'importa el principal")
+                : t("\(lloc.text): pestanya dividida en \(panes) panes; només s'importa el principal, i es perd \(sessions) sessions de Claude")
         case let .sessioSensePestanya(carpeta, nom, dinsDeWarp, terminals):
-            let qui = nom.map { "«\($0)» " } ?? ""
-            let on = dinsDeWarp ? "la seva pestanya no és a la base de Warp" : "corre fora de Warp, o dins de tmux"
-            let mateixa = terminals.isEmpty ? "" : "; a la mateixa carpeta hi ha "
-                + terminals.map { "«\($0)»" }.joined(separator: ", ")
-                + (terminals.count == 1 ? ", que queda només terminal" : ", que queden només terminal")
-            return "sessió de Claude \(qui)a «\(carpeta)»: no s'importa (\(on))\(mateixa)"
+            let on = dinsDeWarp ? t("la seva pestanya no és a la base de Warp") : t("corre fora de Warp, o dins de tmux")
+            let principal = nom.map { t("sessió de Claude «\($0)» a «\(carpeta)»: no s'importa (\(on))") }
+                ?? t("sessió de Claude a «\(carpeta)»: no s'importa (\(on))")
+            guard !terminals.isEmpty else { return principal }
+            // El nombre de pestanyes no surt al text: decideix la concordança («queda», «queden»).
+            let llista = terminals.map { t("«\($0)»") }.joined(separator: ", ")
+            return principal + "; " + (terminals.count == 1 ? t("a la mateixa carpeta hi ha \(llista), que queda només terminal")
+                : t("a la mateixa carpeta hi ha \(llista), que queden només terminal"))
         case let .finestraSensePestanyes(numero):
-            return "la finestra \(numero) de Warp no té cap pestanya de terminal: no s'importa"
+            return t("la finestra \(String(numero)) de Warp no té cap pestanya de terminal: no s'importa")
         }
     }
 }
@@ -297,9 +300,8 @@ public struct ResumImportacio: Sendable, Equatable {
 
     /// «4 finestres · 30 pestanyes · 6 amb Claude, amb la seva ordre · 24 només terminal (18 sense Claude obert)» (D-P5a).
     public var descripcio: String {
-        let finestresIPestanyes = "\(Plural.compta(finestres, "finestra", "finestres")) · "
-            + Plural.compta(pestanyes, "pestanya", "pestanyes")
-        return finestresIPestanyes + (ambSessio == 0 ? " · 0 amb Claude" : " · \(ambSessio) amb Claude, amb la seva ordre")
-            + " · \(senseClaude) només terminal" + (senseClaudeObert > 0 ? " (\(senseClaudeObert) sense Claude obert)" : "")
+        let finestresIPestanyes = t("\(finestres) finestres · \(pestanyes) pestanyes")
+        return finestresIPestanyes + " · " + (ambSessio == 0 ? t("0 amb Claude") : t("\(ambSessio) amb Claude, amb la seva ordre"))
+            + " · " + t("\(senseClaude) només terminal") + (senseClaudeObert > 0 ? " " + t("(\(senseClaudeObert) sense Claude obert)") : "")
     }
 }

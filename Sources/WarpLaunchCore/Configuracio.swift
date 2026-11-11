@@ -166,13 +166,13 @@ public enum ErrorConfiguracio: Error, Equatable, Sendable, CustomStringConvertib
 
     public var description: String {
         switch self {
-        case let .jsonMalmes(linia?, columna?): "el fitxer no és JSON vàlid (línia \(linia), columna \(columna))"
-        case .jsonMalmes: "el fitxer no és JSON vàlid"
-        case let .formaIncorrecta(cami, detall): "\(cami.isEmpty ? "el fitxer" : cami): \(detall)"
-        case .senseVersio: "falta el camp «versio»"
+        case let .jsonMalmes(linia?, columna?): t("el fitxer no és JSON vàlid (línia \(String(linia)), columna \(String(columna)))")
+        case .jsonMalmes: t("el fitxer no és JSON vàlid")
+        case let .formaIncorrecta(cami, detall): cami.isEmpty ? t("el fitxer: \(detall)") : t("\(cami): \(detall)")
+        case .senseVersio: t("falta el camp «versio»")
         case let .versioMesNova(n):
-            "el fitxer és de la versió \(n) del format, i aquesta app només entén fins a la \(Configuracio.versioActual): cal una versió més nova de Warp Launch"
-        case let .versioDesconeguda(n): "versió del format desconeguda: \(n)"
+            t("el fitxer és de la versió \(String(n)) del format, i aquesta app només entén fins a la \(String(Configuracio.versioActual)): cal una versió més nova de Warp Launch")
+        case let .versioDesconeguda(n): t("versió del format desconeguda: \(String(n))")
         }
     }
 }
@@ -191,11 +191,13 @@ public enum AvisFormat: Equatable, Sendable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case let .clauDesconeguda(cami): "\(cami): clau desconeguda; es perdrà en desar (la còpia la conserva)"
-        case let .claudeSenseConfigurar(cami): "\(cami): sense bloc «claude»; queda com a només terminal"
-        case let .idNou(cami, motiu): "\(cami): id \(motiu.rawValue); se n'ha posat un de nou"
-        case .sensePlantilla: "falta la plantilla; es fan servir valors segurs (sense saltar permisos)"
-        case let .carpetaNoAbsoluta(cami): "\(cami): la carpeta ha de ser una ruta absoluta (que comenci per / o ~/)"
+        case let .clauDesconeguda(cami): t("\(cami): clau desconeguda; es perdrà en desar (la còpia la conserva)")
+        case let .claudeSenseConfigurar(cami): t("\(cami): sense bloc «claude»; queda com a només terminal")
+        case let .idNou(cami, .absent): t("\(cami): id absent; se n'ha posat un de nou")
+        case let .idNou(cami, .invalid): t("\(cami): id invalid; se n'ha posat un de nou")
+        case let .idNou(cami, .repetit): t("\(cami): id repetit; se n'ha posat un de nou")
+        case .sensePlantilla: t("falta la plantilla; es fan servir valors segurs (sense saltar permisos)")
+        case let .carpetaNoAbsoluta(cami): t("\(cami): la carpeta ha de ser una ruta absoluta (que comenci per / o ~/)")
         }
     }
 }
@@ -217,7 +219,7 @@ extension Configuracio {
         // Només UTF-8 (amb BOM o sense): és el que escriu l'app i el que permet dir la línia i la columna d'un error.
         let net = dades.starts(with: [0xEF, 0xBB, 0xBF]) ? dades.dropFirst(3) : dades
         guard !net.contains(0), String(data: net, encoding: .utf8) != nil else {
-            throw .formaIncorrecta(cami: "", detall: "el fitxer ha de ser text UTF-8")
+            throw .formaIncorrecta(cami: "", detall: t("el fitxer ha de ser text UTF-8"))
         }
         let arrel: Any
         do {
@@ -227,16 +229,16 @@ extension Configuracio {
             throw .jsonMalmes(linia: linia, columna: columna)
         }
         guard let objecte = arrel as? [String: Any] else {
-            throw .formaIncorrecta(cami: "", detall: "ha de ser un objecte JSON")
+            throw .formaIncorrecta(cami: "", detall: t("ha de ser un objecte JSON"))
         }
         // JSONSerialization i JSONDecoder es queden amb la primera aparició d'una clau repetida, i jq o Python amb
         // l'última: el fitxer és ambigu (per exemple, "saltaPermisos": true i més avall false).
         if let repetida = ClausRepetides.primera(Array(net)) {
-            throw .formaIncorrecta(cami: repetida.cami, detall: "clau «\(repetida.clau)» repetida")
+            throw .formaIncorrecta(cami: repetida.cami, detall: t("clau «\(repetida.clau)» repetida"))
         }
         guard let valorVersio = objecte["versio"] else { throw .senseVersio }
         guard let versio = enter(valorVersio) else {
-            throw .formaIncorrecta(cami: "versio", detall: "ha de ser un nombre enter")
+            throw .formaIncorrecta(cami: "versio", detall: t("ha de ser un nombre enter"))
         }
         if versio > versioActual { throw .versioMesNova(versio) }
         if versio < 1 { throw .versioDesconeguda(versio) }
@@ -365,11 +367,11 @@ extension Configuracio {
         }
         switch error {
         case let .typeMismatch(tipus, context):
-            return .formaIncorrecta(cami: cami(context.codingPath), detall: "tipus incorrecte (s'esperava \(nomDe(tipus)))")
+            return .formaIncorrecta(cami: cami(context.codingPath), detall: t("tipus incorrecte (s'esperava \(nomDe(tipus)))"))
         case let .valueNotFound(tipus, context):
-            return .formaIncorrecta(cami: cami(context.codingPath), detall: "falta el valor (s'esperava \(nomDe(tipus)))")
+            return .formaIncorrecta(cami: cami(context.codingPath), detall: t("falta el valor (s'esperava \(nomDe(tipus)))"))
         case let .keyNotFound(clau, context):
-            return .formaIncorrecta(cami: cami(context.codingPath + [clau]), detall: "falta la clau")
+            return .formaIncorrecta(cami: cami(context.codingPath + [clau]), detall: t("falta la clau"))
         case let .dataCorrupted(context):
             return .formaIncorrecta(cami: cami(context.codingPath), detall: context.debugDescription)
         @unknown default:
@@ -379,11 +381,11 @@ extension Configuracio {
 
     private static func nomDe(_ tipus: Any.Type) -> String {
         switch tipus {
-        case is String.Type: "text"
-        case is Bool.Type: "true o false"
-        case is Int.Type: "nombre enter"
-        case is [Any].Type, is [String].Type: "una llista"
-        default: "un objecte"
+        case is String.Type: t("text")
+        case is Bool.Type: t("true o false")
+        case is Int.Type: t("nombre enter")
+        case is [Any].Type, is [String].Type: t("una llista")
+        default: t("un objecte")
         }
     }
 

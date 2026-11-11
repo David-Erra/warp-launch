@@ -107,10 +107,10 @@ extension Preferencies {
         public var description: String {
             switch self {
             case let .versioMesNova(versio):
-                "«\(Preferencies.nomFitxer)» és de la versió \(versio), més nova que aquesta app (\(Preferencies.versioActual))"
-            case let .format(motiu): "«\(Preferencies.nomFitxer)» no es pot llegir: \(motiu)"
-            case let .lectura(motiu): "no s'ha pogut llegir «\(Preferencies.nomFitxer)»: \(motiu)"
-            case let .escriptura(motiu): "no s'ha pogut desar «\(Preferencies.nomFitxer)»: \(motiu)"
+                t("«\(Preferencies.nomFitxer)» és de la versió \(String(versio)), més nova que aquesta app (\(String(Preferencies.versioActual)))")
+            case let .format(motiu): t("«\(Preferencies.nomFitxer)» no es pot llegir: \(motiu)")
+            case let .lectura(motiu): t("no s'ha pogut llegir «\(Preferencies.nomFitxer)»: \(motiu)")
+            case let .escriptura(motiu): t("no s'ha pogut desar «\(Preferencies.nomFitxer)»: \(motiu)")
             }
         }
     }
@@ -138,7 +138,7 @@ extension Preferencies {
         let descodificador = JSONDecoder()
         descodificador.dateDecodingStrategy = .iso8601
         guard let versio = try? descodificador.decode(NomesVersio.self, from: dades).versio else {
-            throw .format("no és JSON o no té «versio»")
+            throw .format(t("no és JSON o no té «versio»"))
         }
         guard versio <= versioActual else { throw .versioMesNova(versio) }
         let fitxer: Fitxer
@@ -154,11 +154,11 @@ extension Preferencies {
         case let ("acceptat", data?, nil): consentiment = .acceptat(data)
         case ("migrat", nil, nil): consentiment = .migrat
         case let ("retirat", nil, data?): consentiment = .retirat(data)
-        case ("acceptat", nil, _): throw .format("«acceptat» sense «acceptatEl»")
-        case ("retirat", _, nil): throw .format("«retirat» sense «retiratEl»")
+        case ("acceptat", nil, _): throw .format(t("«acceptat» sense «acceptatEl»"))
+        case ("retirat", _, nil): throw .format(t("«retirat» sense «retiratEl»"))
         case ("senseTriar", _, _), ("acceptat", _, _), ("migrat", _, _), ("retirat", _, _):
-            throw .format("«acceptatEl» només va amb «acceptat», i «retiratEl», amb «retirat»")
-        default: throw .format("«\(r.consentiment)» no és cap consentiment conegut")
+            throw .format(t("«acceptatEl» només va amb «acceptat», i «retiratEl», amb «retirat»"))
+        default: throw .format(t("«\(r.consentiment)» no és cap consentiment conegut"))
         }
         return Preferencies(versio: versio, restauracio: consentiment, restauracioOriginal: r.valorOriginal)
     }
@@ -201,7 +201,7 @@ public struct MagatzemPreferencies: Sendable {
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             // Un enllaç trencat no és «no hi ha fitxer»: es desaria al damunt.
             if let desti = try? FileManager.default.destinationOfSymbolicLink(atPath: fitxer.path) {
-                throw .lectura("«\(Preferencies.nomFitxer)» és un enllaç a «\(desti)», que no existeix")
+                throw .lectura(t("«\(Preferencies.nomFitxer)» és un enllaç a «\(desti)», que no existeix"))
             }
             return Preferencies(restauracio: jaEsFeiaServir ? .migrat : .senseTriar)
         } catch {
@@ -225,9 +225,9 @@ public struct MagatzemPreferencies: Sendable {
         do {
             dades = try preferencies.json()
         } catch {
-            throw .escriptura("no s'ha pogut generar el JSON: \(error)")
+            throw .escriptura(t("no s'ha pogut generar el JSON: \(String(describing: error))"))
         }
-        guard (try? Preferencies.llegeix(dades)) == preferencies else { throw .escriptura("el JSON no es torna a llegir igual") }
+        guard (try? Preferencies.llegeix(dades)) == preferencies else { throw .escriptura(t("el JSON no es torna a llegir igual")) }
         do {
             try EscripturaAtomica.escriu(dades, a: fitxer)
         } catch {
