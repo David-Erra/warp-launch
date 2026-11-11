@@ -878,7 +878,7 @@ pestanya a pestanya, `configuracio mostra|ruta`, captures de pantalla automàtiq
 | El desat automàtic trepitja una edició a mà | Proves del canvi extern | Comparar bytes, bàner i còpies |
 | Una prova o el codi obre alguna cosa o llegeix l'estat real | Prova de guarda | Magatzem sense ruta per defecte; lector injectat |
 | Dues còpies de l'app (`build/` i `/Applications`) | `lsregister -dump` | Després d'instal·lar, obrir només la d'Aplicacions |
-| Una versió dolenta arriba sola a tots els Macs en un dia (des de la primera 0.32.x) | Rondes A, B i C (en part) abans de publicar; la D, la E i la F no es fan (10/11/2026); la Porta 3 | Secció 11, apartat 7: `latest` a l'anterior, revertir la recepta i publicar una correcció superior |
+| Una versió dolenta arriba sola a tots els Macs en un dia (des de la primera versió publicada amb Sparkle, la 0.33.0 o posterior) | Rondes A, B i C (en part) abans de publicar; la D, la E i la F no es fan (10/11/2026); la Porta 3 | Secció 11, apartat 7: `latest` a l'anterior, revertir la recepta i publicar una correcció superior |
 | Claude Code canvia les seves opcions (canvia gairebé cada dia) i la taula de la 2.1.318 queda antiga | Avís d'opció desconeguda a la importació | Tornar a llegir les definicions del binari i comparar-ho amb el `parseOptions` del binari (docs/fets-verificats.md) |
 
 ## 6. Respostes d'en David (03/11/2026)
@@ -2206,7 +2206,7 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
 
 ## 11. Actualització automàtica amb Sparkle 2.10.1 (disseny del 09/11/2026)
 
-Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** cap còpia no porta encara l'adreça ni la clau, i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
+Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** l'adreça i la clau són al repo des de la 0.33.0 (pas 11), però cap còpia publicada no les porta encara, i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
 **Vist funcionar només amb versions de prova,** un servidor local i una clau d'un sol ús: una app de prova a les rondes A i B, i la Warp Launch de debò, en part, a la C (apartat 8). Res amb
 l'adreça i la clau de debò.
 
@@ -2219,8 +2219,11 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
 - **Provat:** només amb falsos i carpetes temporals (`scripts/test.sh`), la compilació i el paquet (`otool`, `codesign --verify --deep --strict`).
 - **Rondes:** la A (09/11/2026) i la B (10/11/2026, neta), amb una app de prova; la C, en part (10/11/2026), amb la Warp Launch de debò; la D, la E i la F no es fan (apartat 8;
   `docs/fets-verificats.md`, «Sparkle», seccions 15 a 17). La resta del que depèn de Sparkle i de macOS continua llegit o suposat (etiquetes [L] i [S]).
-- **Falta:** la clau de l'autor (creada l'11/11/2026; la còpia fora del Mac, per confirmar) i `Recursos/Actualitzacions.plist` (pas 11); pujar `main` i la recepta (pas 12; al tap,
-  commit local `d9581af`); publicar (Porta 2); i la primera actualització real (Porta 3).
+- **Fet (11/11/2026): el pas 11, a la 0.33.0.** L'autor ha creat la clau l'11/11/2026, amb còpia fora del Mac (ho diu ell), i n'ha passat la part pública.
+  `Recursos/Actualitzacions.plist` porta `SUFeedURL` i `SUPublicEDKey`; la guarda 4 (apartat 10) en fixa tots dos valors. `build-app.sh release --amb-feed`, sense publicar [P]:
+  el paquet porta les dues claus iguals que el fitxer i passa `codesign --verify --deep --strict` amb el requisit, a l'app i a les tres peces de Sparkle; després s'ha esborrat,
+  perquè `instal·la.sh` no el copiï. Una compilació sense l'opció no porta cap de les dues [P].
+- **Falta:** pujar `main` i la recepta (pas 12; al tap, commit local `d9581af`); publicar (Porta 2); i la primera actualització real (Porta 3).
 - **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
 - **Decisió de l'autor (10/11/2026, de nit, durant la C): no fer més proves** («Anem al grà i deixa de fer proves inutils»). La C es queda sense C7 ni C10, i la D, la E i la F
   no es fan: es passa a activar. La decisió 11 ja no pot passar (la B va sortir neta i la E no es fa), ni la 12 (el repo de la ronda F).
@@ -2260,11 +2263,11 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
 
 #### Fer (ningú més no ho pot fer)
 
-1. **Crear la clau de signatura** al seu terminal, un sol cop, i fer-ne una còpia fora del Mac el mateix dia (secció 5). Passar la part pública.
+1. **Crear la clau de signatura** al seu terminal, un sol cop, i fer-ne una còpia fora del Mac el mateix dia (secció 5). Passar la part pública. **Fet l'11/11/2026,** amb la còpia (ho diu l'autor).
 2. **Comprovar que el certificat «Warp Launch Dev» té còpia** fora del Mac.
 3. **Donar l'OK de cada ronda de prova** (secció 8): sortir de l'app, mirar el que diu i acceptar els diàlegs de macOS. La ronda D és un reinici, i la fa ell. La ronda E es fa en un usuari de macOS nou. **Fet fins a la C; la D i la E no es fan (10/11/2026).**
 4. **OK per a la recepta de Homebrew** (afegir `auto_updates true`) **i per a cada publicació**.
-5. **Passar el seu Mac a la 0.32.x a mà**, i mirar la primera actualització real.
+5. **Passar el seu Mac a la primera versió publicada amb Sparkle (la 0.33.0 o posterior) a mà**, i mirar la primera actualització real.
 
 #### Decisions (09/11/2026: l'autor accepta totes les recomanacions)
 
@@ -2297,7 +2300,7 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
 | Appcast | Un `appcast.xml` d'un sol element, actiu de cada versió: `https://github.com/David-Erra/warp-launch/releases/latest/download/appcast.xml` |
 | Feed a l'app | Només amb `build-app.sh --amb-feed`, que només passa `publica.sh` (decisió 3) |
 | Codi | Un sol fitxer importa Sparkle: `Sources/WarpLaunchApp/ServeiActualitzacions.swift`. La lògica, sense Sparkle i amb proves |
-| Primera versió | 0.32.x. Es publica una sola 0.32.x, i només després de la Porta 1 |
+| Primera versió | 0.32.x. Es publica una sola 0.32.x, i només després de la Porta 1. **Al final, la 0.33.0 o posterior:** el pas 11 va pujar la versió, i no s'ha publicat cap 0.32.x |
 
 ### 2. Comportament
 
@@ -2642,7 +2645,7 @@ A un gestor de contrasenyes o a una imatge xifrada, **almenys una fora d'aquest 
 
 ### 6. Qui ja la té instal·lada
 
-Cap versió publicada porta Sparkle ni cap codi de xarxa [P: `grep`], de manera que **ni es pot avisar des de l'app**. «Per a tothom» val a partir de la primera 0.32.x.
+Cap versió publicada porta Sparkle ni cap codi de xarxa [P: `grep`], de manera que **ni es pot avisar des de l'app**. «Per a tothom» val a partir de la primera versió publicada amb Sparkle (la 0.33.0 o posterior).
 
 | Té | Via | Un sol cop |
 |---|---|---|
@@ -2787,10 +2790,10 @@ gh release create v3 appcast.xml …                                            
 | 9 | `chore:` `publica.sh` i `verifica-signatura.swift` | `ScriptPublicaTests`: `sign_update` i `verifica` falsos; el mode de prova no els crida; l'appcast porta versió, URL, mida i signatura; refusa clau diferent, sortida mal formada, mida diferent, sense feed, recepta sense `auto_updates`, `latest` per davant; si signar falla, cap `gh release create`. El `gh` fals rep el zip a `$4`; `laPublica` compara l'ordre exacta amb `--latest` | Cap |
 | 10 | `docs:` README i `CLAUDE.md` (secció 11) | | Cap |
 | — | **Porta 1: rondes A a F, amb l'OK.** El que surti es corregeix amb commits i versions 0.32.x. **Fetes la A, la B i la C en part; la D, la E i la F no es fan (10/11/2026)** | | |
-| 11 | `feat:` `Recursos/Actualitzacions.plist` amb la clau real i el feed (l'autor ha fet la secció 5) | Guarda inversa canviada: exactament dues claus, `SUFeedURL` exacte, `SUPublicEDKey` de 44 caràcters en base64 | 0.32.N |
+| 11 | `feat:` `Recursos/Actualitzacions.plist` amb la clau real i el feed (l'autor ha fet la secció 5). **Fet l'11/11/2026** | Guarda inversa canviada: exactament dues claus, `SUFeedURL` exacte, `SUPublicEDKey` exacta (32 bytes). També: `build-app.sh` només llegeix el fitxer a la branca de `--amb-feed`, no copia res més de `Recursos` que la seva llista, i cap altre script no l'esmenta | **0.33.0** |
 | 12 | Tap: `auto_updates true` i `zap` (amb l'OK) | `brew style`, `brew audit` | |
-| — | **Porta 2:** `publica.sh` en mode de prova, i `--aplica` (decisió 6). Es publica la 0.32.N | | |
-| — | **Porta 3, primera actualització real:** l'autor passa a la 0.32.N a mà; es publica una versió mínima; comprovar que s'actualitza sola amb el feed i la clau de debò. També amb Homebrew. Fins llavors, no s'anuncia | | |
+| — | **Porta 2:** `publica.sh` en mode de prova, i `--aplica` (decisió 6). Es publica la 0.33.0 (o la que hi hagi llavors) | | |
+| — | **Porta 3, primera actualització real:** l'autor passa a aquesta versió a mà; es publica una versió mínima; comprovar que s'actualitza sola amb el feed i la clau de debò. També amb Homebrew. Fins llavors, no s'anuncia | | |
 
 ### 10. Guardes noves (`GuardaTests`)
 
@@ -2801,7 +2804,7 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 | 1 | `import Sparkle`, `SPU[A-Z]` i `SU[A-Z]`, només al servei. Avui no n'hi ha cap a `Sources/` [P: `grep`] | 5 |
 | 2 | `Package.swift`: una sola `.package(url:` amb la URL i `exact: "2.10.1"`; `.product(name: "Sparkle"` només a `WarpLaunchApp`. `Tests/` no enllaça Sparkle | 5 |
 | 3 | `Recursos/Info.plist`: les quatre claus de la secció 4; `SUEnableSystemProfiling`, `SUFeedURL`, `SUPublicEDKey` i `SUEnableInstallerLauncherService` absents | 5 |
-| 4 | Fins al pas 11, `Recursos/Actualitzacions.plist` absent. Després, la forma exacta | 5 i 11 |
+| 4 | Fins al pas 11, `Recursos/Actualitzacions.plist` absent. Després (0.33.0), la forma exacta, amb l'adreça i la clau fixades (`lesAdrecesDeLActualitzacioSonLesDeDebo`) | 5 i 11 |
 | 5 | `build-app.sh`: el Merge només dins de la branca de `--amb-feed`, i `publica.sh` és l'únic que el passa | 5 i 9 |
 | 6 | Xarxa, a tot `Sources/`, sense excepcions: `URLSession`, `URLRequest`, `NSURLConnection`, `import Network`, `NWConnection`, `NWPathMonitor`, `CFNetwork`, `WKWebView`, `https?://` | 6 |
 | 7 | Prohibits al servei: `feedURLString`, `setFeedURL`, `sendsSystemProfile`, `allowedChannels`, `startUpdater()` | 6 |

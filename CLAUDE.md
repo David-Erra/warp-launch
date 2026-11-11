@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (10/11/2026, 0.32.9 al codi; publicada, 0.31.5)
+## Estat (11/11/2026, 0.33.0 al codi; publicada, 0.31.5)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
@@ -195,10 +195,12 @@ Els requisits són a `docs/especificacio.md`.
   - **0.32.9: el que va sortir de la ronda A.** «Mostra la finestra» (la finestra de baixada acabada no es pot tancar i l'app no té Dock), el reinici ajornat diu per què, l'intent es treu si l'app
     no surt, l'estat no promet el que no farà ni diu «comprovar» quan falla la baixada, i desmarcar la casella de Sparkle apaga l'interruptor. A la ronda B, amb l'app de prova, s'han vist
     «Mostra la finestra», els textos nous i la casella; el reinici ajornat i l'intent tret, no.
-  - **Falta, en aquest ordre:** la clau de signatura, que només crea l'autor (creada l'11/11/2026; la còpia fora del Mac, per confirmar), i
-    `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (pas 11; sense aquest fitxer, cap còpia s'actualitza); pujar `main` i la
-    recepta del tap amb `auto_updates true` i `zap` (pas 12, commit local `d9581af` del tap; sense, `publica.sh` refusa); publicar (l'autor); i la
-    primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia.
+  - **0.33.0 (11/11/2026, pas 11): l'adreça i la clau pública, al repo.** L'autor ha creat la clau EdDSA l'11/11/2026, amb còpia fora del Mac (ho diu ell).
+    `Recursos/Actualitzacions.plist` porta `SUFeedURL` i `SUPublicEDKey` (la part pública, que no és secreta); la guarda en fixa tots dos valors i que no n'hi hagi
+    cap més. `build-app.sh release --amb-feed` comprovat sense publicar: el paquet porta les dues claus iguals que el fitxer i passa `codesign --verify --deep --strict`
+    amb el requisit; després s'ha esborrat. Sense `--amb-feed`, el paquet no porta cap de les dues.
+  - **Falta, en aquest ordre:** pujar `main` i la recepta del tap amb `auto_updates true` i `zap` (pas 12, commit local `d9581af` del tap; sense, `publica.sh` refusa);
+    publicar (l'autor); i la primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia.
   - **Les còpies d'abans (0.31.5 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
     avisar-ne. Com a molt 7 instal·lacions (baixades dels zips, API de GitHub, 09/11/2026: 1 de la 0.31.5, 4 de la 0.31.4 i 2 de la 0.28.0).
   - **Com va:** l'únic `import Sparkle` és a `ServeiActualitzacions.swift`; la lògica, sense Sparkle i amb proves, a
@@ -286,7 +288,7 @@ scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-bana
 | `Tests/WarpLaunchCoreTests/` | Proves `swift-testing`, sempre amb dades fictícies; inclou la prova de guarda (`GuardaTests`) |
 | `Tests/WarpLaunchUITests/` | Proves del model de l'editor, amb carpetes temporals |
 | `Recursos/Info.plist` | Plantilla del bundle (`LSUIElement`; la versió surt de `VERSION`); `ca.lproj` per als menús en català |
-| `Recursos/Actualitzacions.plist` | **Encara no hi és (pas 11; una guarda ho comprova).** L'adreça de les actualitzacions i la clau pública: només les porta la còpia que es publica |
+| `Recursos/Actualitzacions.plist` | L'adreça de les actualitzacions i la clau pública (pas 11, 0.33.0; una guarda en fixa els valors): només les porta la còpia que es compila amb `--amb-feed`, la que es publica |
 | `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub i posa al dia la recepta de Homebrew), `verifica-signatura.swift` (comprova la signatura del zip amb la clau pública de l'app), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
 | `.claude/skills/mac-design/` | Normes de disseny d'app de Mac (adaptada de BAMA, MIT); `docs/disseny.md` hi mana |
 | `.claude/skills/app-icon/` | Com es fa la icona: dibuix amb codi (nano-banana, com a alternativa), Icon Composer i `actool` (adaptada de BAMA, MIT) |
@@ -321,7 +323,7 @@ desenes de sessions o les tanca totes de cop.
    - **No publiquis cap versió a GitHub** (`scripts/publica.sh --aplica`): l'executa només l'autor, al seu terminal (decisió 6 de
      Sparkle; regla 12). La instal·la qui faci la comanda del README, i també posa al dia la recepta de Homebrew del tap (la rep qui
      faci `brew upgrade`).
-   - **Des de la primera 0.32.x, publicar arriba sol a tots els Macs en un dia i no es desfà.** Es para com diu `docs/disseny.md`,
+   - **Des de la primera versió publicada amb Sparkle (la 0.33.0 o posterior), publicar arriba sol a tots els Macs en un dia i no es desfà.** Es para com diu `docs/disseny.md`,
      secció 11, apartat 7: `latest` torna a l'anterior, es reverteix la recepta i es publica una correcció amb una versió superior.
      Fins llavors (cap còpia no s'actualitza sola), es desfà en aquest ordre, perquè Homebrew no demani un zip que ja no hi és:
      `git revert <commit>` (el que diu l'script) en un clon del tap, i push; després, `gh release delete vX.Y.Z --repo

@@ -30,8 +30,8 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
      tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
      llegeixi les finestres de Warp. Si no acceptes («Surt de l’app Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
      propera vegada. Fins que acceptes, no llegeix ni obre res. Si ja la feies servir (hi ha `configuracio.json` o `estat.json` a
-     `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»). Des de la primera 0.32.x
-     publicada, aquesta pantalla també dirà que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README
+     `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»). Des de la primera versió
+     publicada amb actualitzacions automàtiques, aquesta pantalla també dirà que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README
      i per les notes de la versió.
    - **Permís per llegir les dades de Warp:** macOS no pregunta; la primera vegada, l'app no les pot llegir i surt un avís
      («Accés a les dades bloquejat», amb el botó «Gestiona»). Activa-ho a Configuració del Sistema › Privacitat i seguretat ›
@@ -46,7 +46,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
    desactivada, Warp es va obrir igualment, i encara no se sap per què).
 
 **Per actualitzar-la:** `brew upgrade --cask warp-launch`. Si l'app és oberta, Homebrew la tanca, hi posa la versió nova i
-la torna a obrir. Avui és l'única manera; quan es publiqui una 0.32.x, n'hi haurà prou de fer-ho una última vegada (vegeu
+la torna a obrir. Avui és l'única manera; quan es publiqui la primera versió amb actualitzacions automàtiques, n'hi haurà prou de fer-ho una última vegada (vegeu
 «Actualitzacions automàtiques»).
 **Per desinstal·lar-la:** vegeu «Desinstal·lar», a sota.
 
@@ -71,8 +71,8 @@ Amb l'eina de GitHub, `gh`:
    `--versio 0.28.0`), n'instal·la una de concreta. Al repo hi ha les versions des de la 0.28.0.
 3. Continua amb «Obre Warp Launch» (el pas 2 de dalt).
 
-**Per actualitzar-la:** surt de l'app i torna a fer la comanda anterior. Quan es publiqui una 0.32.x, n'hi haurà prou de fer-ho
-una última vegada (vegeu «Actualitzacions automàtiques»).
+**Per actualitzar-la:** surt de l'app i torna a fer la comanda anterior. Quan es publiqui la primera versió amb actualitzacions
+automàtiques, n'hi haurà prou de fer-ho una última vegada (vegeu «Actualitzacions automàtiques»).
 
 ### Des del codi
 
@@ -98,9 +98,9 @@ del tap). És la que instal·len `brew` i la comanda de «Sense Homebrew».
 Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui. Si la recepta no
 es pot escriure, la versió no s'esborra, i l'script diu què cal canviar a mà.
 
-**El d'ara (0.32.x) encara no es pot executar:** falta `Recursos/Actualitzacions.plist` (l'adreça i la clau pública), i la recepta
-encara no té `auto_updates true`. La 0.31.5 es va publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
-**Des de la primera 0.32.x, publicar ja no es desfà:** la versió arriba sola a tots els Macs en un dia. Com
+**El d'ara (0.33.0) encara no es pot executar:** la recepta encara no té `auto_updates true`. L'adreça i la clau pública ja hi són
+(`Recursos/Actualitzacions.plist`). La 0.31.5 es va publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
+**Des de la primera versió amb actualitzacions automàtiques, publicar ja no es desfà:** la versió arriba sola a tots els Macs en un dia. Com
 s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, apartat 7.
 
 ## Actualitzacions automàtiques
@@ -109,8 +109,8 @@ s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, a
 **Només s'han vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
 (rondes A i B de [`docs/disseny.md`](docs/disseny.md), secció 11) i amb Warp Launch (ronda C, en part). S'actualitza sola sense cap diàleg de macOS, torna sense
 cap finestra i conserva el permís d'Arxius i carpetes i l'inici de sessió. No s'ha provat en un altre usuari o un altre Mac, ni amb un reinici del Mac: l'autor ha
-decidit no fer més proves (10/11/2026). Abans de publicar-les, falta posar a l'app l'adreça i la clau de signatura de l'autor, i després, la primera actualització
-real. El que segueix diu com funcionaran.
+decidit no fer més proves (10/11/2026). L'adreça i la clau pública de l'autor ja són al repo (0.33.0); falta publicar-les, amb la recepta de Homebrew al dia, i després, la
+primera actualització real. El que segueix diu com funcionaran.
 
 - **Qui tingui la 0.31.5 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
   versions no porten res per actualitzar-se ni per avisar-ne. Des de llavors, és automàtic.

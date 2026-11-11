@@ -176,9 +176,9 @@ Per a en David, **una finestra de Warp és un grup de sessions** (pestanyes). No
 
 ## Pendents
 
-- **Actualització automàtica (Sparkle), abans d'anunciar-la:** la clau de signatura, amb una còpia fora del Mac; `Recursos/Actualitzacions.plist`; pujar `main`
-  i `auto_updates true` i `zap` a la recepta; publicar; i la primera actualització real, també amb Homebrew. Després, treure del README que encara no és publicada.
-  Les rondes de prova s'acaben a la C, en part (la D, la E i la F no es fan: fila del 10/11/2026). `docs/disseny.md`, secció 11.
+- **Actualització automàtica (Sparkle), abans d'anunciar-la:** pujar `main` i `auto_updates true` i `zap` a la recepta; publicar; i la primera actualització real, també amb Homebrew. Després, treure del README que encara no és publicada.
+  Les rondes de prova s'acaben a la C, en part (la D, la E i la F no es fan: fila del 10/11/2026). Fets: la clau de signatura (l'autor, 11/11/2026, amb còpia fora
+  del Mac) i `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (0.33.0). `docs/disseny.md`, secció 11.
 - **Revisar tot el que es va fer abans:**
   - el codi i les proves del prototip (des del 07/11/2026, fora del repo: a l'historial, al commit 114c97d);
   - els fets marcats «(prototip)» a `fets-verificats.md`;
