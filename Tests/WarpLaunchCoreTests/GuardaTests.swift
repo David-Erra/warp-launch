@@ -2567,9 +2567,23 @@ private let prohibidesArrossegar = [
         }
     }
 
-    /// Fins que l'autor no ha creat la clau (pas 11), cap còpia no pot portar l'adreça ni la clau pública.
-    @Test func lesAdrecesDeLActualitzacioEncaraNoHiSon() {
-        #expect(!FileManager.default.fileExists(atPath: arrel.appending(path: "Recursos/Actualitzacions.plist").path))
+    /// Pas 11: l'adreça i la part pública de la clau de l'autor (creada l'11/11/2026). Tots dos valors, fixats: canviar la clau ha de ser una
+    /// decisió conscient, perquè les còpies que ja corren només accepten les versions signades amb la d'ara (decisió 1 de Sparkle).
+    @Test func lesAdrecesDeLActualitzacioSonLesDeDebo() throws {
+        let fitxer = arrel.appending(path: "Recursos/Actualitzacions.plist")
+        #expect(FileManager.default.fileExists(atPath: fitxer.path))
+        var format = PropertyListSerialization.PropertyListFormat.binary
+        let plist = try #require(try PropertyListSerialization.propertyList(from: Data(contentsOf: fitxer), format: &format) as? [String: Any])
+        #expect(format == .xml)
+        #expect(Set(plist.keys) == ["SUFeedURL", "SUPublicEDKey"], "\(plist.keys.sorted())")
+        let feed = try #require(plist["SUFeedURL"] as? String)
+        #expect(feed == "https://github.com/David-Erra/warp-launch/releases/latest/download/appcast.xml")
+        let clau = try #require(plist["SUPublicEDKey"] as? String)
+        #expect(clau == "RZF1vMkHy4y3E2DFSG4TTrmgNQksjqYc9jLINsLC02s=")
+        // Una clau Ed25519 pública: 32 bytes.
+        #expect(Data(base64Encoded: clau)?.count == 32)
+        // La regla de l'app accepta el zip que `publica.sh` posa a l'appcast: si no, totes les còpies refusarien les versions noves.
+        #expect(PoliticaActualitzacions.enclosureValid(feed: feed, enclosure: "https://github.com/David-Erra/warp-launch/releases/download/v0.33.0/WarpLaunch-0.33.0.zip"))
     }
 
     /// Decisió 3 de Sparkle: només les còpies per publicar porten l'adreça.
@@ -2578,10 +2592,21 @@ private let prohibidesArrossegar = [
         #expect(script.components(separatedBy: "PlistBuddy").count == 2)
         let branca = try #require(script.range(of: #"if [[ "$AMB_FEED" -eq 1 ]]; then\#n    /usr/libexec/PlistBuddy -c "Merge $FEED" "$APP/Contents/Info.plist" > /dev/null\#nfi"#))
         #expect(!branca.isEmpty)
-        // Cap script no el passa, llevat de `publica.sh`, que és el que publica.
+        // Des del pas 11 el fitxer hi és: només el poden llegir la comprovació i el Merge de la branca, i el paquet no copia res més de
+        // `Recursos` que el que hi ha a la llista (una còpia de tota la carpeta hi portaria l'adreça).
+        #expect(script.components(separatedBy: "$FEED").count == 3)
+        #expect(script.contains(#"if [[ "$AMB_FEED" -eq 1 && ! -f "$FEED" ]]; then"#))
+        let linies = script.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.hasPrefix("#") }
+        #expect(linies.filter { $0.contains("Actualitzacions") } == [#"FEED="Recursos/Actualitzacions.plist""#])
+        let recursos = Set(linies.flatMap { $0.matches(of: #/Recursos(/[A-Za-z0-9._-]*)?/#).map { String($0.output.0) } })
+        #expect(recursos == ["Recursos/Actualitzacions.plist", "Recursos/Info.plist", "Recursos/ca.lproj", "Recursos/AppIcon.icon",
+                             "Recursos/Assets.car", "Recursos/AppIcon.icns"], "\(recursos.sorted())")
+        // Cap script no el passa, llevat de `publica.sh`, que és el que publica, ni llegeix el fitxer.
         let scripts = try FileManager.default.contentsOfDirectory(at: arrel.appending(path: "scripts"), includingPropertiesForKeys: nil)
-        for fitxer in scripts where !["build-app.sh", "publica.sh"].contains(fitxer.lastPathComponent) && fitxer.pathExtension == "sh" {
-            #expect(!(try String(contentsOf: fitxer, encoding: .utf8)).contains("--amb-feed"), "\(fitxer.lastPathComponent)")
+        for fitxer in scripts where !["build-app.sh", "publica.sh"].contains(fitxer.lastPathComponent) {
+            let text = (try? String(contentsOf: fitxer, encoding: .utf8)) ?? ""
+            #expect(!text.contains("--amb-feed"), "\(fitxer.lastPathComponent)")
+            #expect(!text.contains("Actualitzacions.plist"), "\(fitxer.lastPathComponent)")
         }
         let publica = try String(contentsOf: arrel.appending(path: "scripts/publica.sh"), encoding: .utf8)
         #expect(publica.contains("env -u GH_TOKEN -u GITHUB_TOKEN scripts/build-app.sh release --amb-feed\n"))
