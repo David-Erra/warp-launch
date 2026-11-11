@@ -2206,7 +2206,7 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
 
 ## 11. Actualització automàtica amb Sparkle 2.10.1 (disseny del 09/11/2026)
 
-Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** l'adreça i la clau són al repo des de la 0.33.0 (pas 11), però cap còpia publicada no les porta encara, i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
+Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), publicada amb la 0.33.0 (11/11/2026):** l'adreça i la clau són al repo des de la 0.33.0 (pas 11), i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
 **Vist funcionar només amb versions de prova,** un servidor local i una clau d'un sol ús: una app de prova a les rondes A i B, i la Warp Launch de debò, en part, a la C (apartat 8). Res amb
 l'adreça i la clau de debò.
 
@@ -2223,7 +2223,9 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
   `Recursos/Actualitzacions.plist` porta `SUFeedURL` i `SUPublicEDKey`; la guarda 4 (apartat 10) en fixa tots dos valors. `build-app.sh release --amb-feed`, sense publicar [P]:
   el paquet porta les dues claus iguals que el fitxer i passa `codesign --verify --deep --strict` amb el requisit, a l'app i a les tres peces de Sparkle; després s'ha esborrat,
   perquè `instal·la.sh` no el copiï. Una compilació sense l'opció no porta cap de les dues [P].
-- **Falta:** pujar `main` i la recepta (pas 12; al tap, commit local `d9581af`); publicar (Porta 2); i la primera actualització real (Porta 3).
+- **Fet (11/11/2026): el pas 12 i la Porta 2.** Pujats `main` i la recepta (tap, `d9581af`); l'autor ha publicat la 0.33.0 (recepta, `7600cdf`). Comprovat des de fora [P]: l'adreça de l'app dona la 0.33.0,
+  el zip quadra amb la mida de l'appcast i el sha256 de la recepta, la signatura amb la clau pública, i l'app de dins porta l'adreça i la clau i passa `codesign` (`docs/fets-verificats.md`, «Sparkle», 18).
+- **Falta:** la primera actualització real (Porta 3), amb la versió següent.
 - **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
 - **Decisió de l'autor (10/11/2026, de nit, durant la C): no fer més proves** («Anem al grà i deixa de fer proves inutils»). La C es queda sense C7 ni C10, i la D, la E i la F
   no es fan: es passa a activar. La decisió 11 ja no pot passar (la B va sortir neta i la E no es fa), ni la 12 (el repo de la ronda F).

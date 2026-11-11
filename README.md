@@ -4,9 +4,9 @@ App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestr
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
 **Estat (11/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
-obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.31.5 (09/11/2026), i
-s'instal·la amb Homebrew. El codi del repo és a la 0.33.0, amb actualització automàtica i l'adreça i la clau pública de l'autor: l'autor
-ha decidit activar-la, però encara **no s'ha publicat ni s'ha vist funcionar de debò** (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
+obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.33.0 (11/11/2026), la
+primera que s'actualitza sola, i s'instal·la amb Homebrew. La primera actualització automàtica de debò arribarà amb la versió següent (vegeu
+«Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
 
@@ -30,9 +30,8 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
      tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
      llegeixi les finestres de Warp. Si no acceptes («Surt de l’app Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
      propera vegada. Fins que acceptes, no llegeix ni obre res. Si ja la feies servir (hi ha `configuracio.json` o `estat.json` a
-     `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»). Des de la primera versió
-     publicada amb actualitzacions automàtiques, aquesta pantalla també dirà que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README
-     i per les notes de la versió.
+     `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»). Des de la 0.33.0, aquesta
+     pantalla també diu que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README i per les notes de la versió.
    - **Permís per llegir les dades de Warp:** macOS no pregunta; la primera vegada, l'app no les pot llegir i surt un avís
      («Accés a les dades bloquejat», amb el botó «Gestiona»). Activa-ho a Configuració del Sistema › Privacitat i seguretat ›
      Arxius i carpetes › Warp Launch.app › «Dades compartides per l'app Warp i les apps afiliades», i torna a obrir l'app.
@@ -46,7 +45,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
    desactivada, Warp es va obrir igualment, i encara no se sap per què).
 
 **Per actualitzar-la:** `brew upgrade --cask warp-launch`. Si l'app és oberta, Homebrew la tanca, hi posa la versió nova i
-la torna a obrir. Avui és l'única manera; quan es publiqui la primera versió amb actualitzacions automàtiques, n'hi haurà prou de fer-ho una última vegada (vegeu
+la torna a obrir. Des de la 0.33.0, l'app s'actualitza sola: si tens la 0.31.5 o una d'anterior, fes-ho una última vegada (vegeu
 «Actualitzacions automàtiques»).
 **Per desinstal·lar-la:** vegeu «Desinstal·lar», a sota.
 
@@ -71,8 +70,8 @@ Amb l'eina de GitHub, `gh`:
    `--versio 0.28.0`), n'instal·la una de concreta. Al repo hi ha les versions des de la 0.28.0.
 3. Continua amb «Obre Warp Launch» (el pas 2 de dalt).
 
-**Per actualitzar-la:** surt de l'app i torna a fer la comanda anterior. Quan es publiqui la primera versió amb actualitzacions
-automàtiques, n'hi haurà prou de fer-ho una última vegada (vegeu «Actualitzacions automàtiques»).
+**Per actualitzar-la:** surt de l'app i torna a fer la comanda anterior. Des de la 0.33.0, l'app s'actualitza sola: si tens la 0.31.5
+o una d'anterior, fes-ho una última vegada (vegeu «Actualitzacions automàtiques»).
 
 ### Des del codi
 
@@ -98,19 +97,19 @@ del tap). És la que instal·len `brew` i la comanda de «Sense Homebrew».
 Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui. Si la recepta no
 es pot escriure, la versió no s'esborra, i l'script diu què cal canviar a mà.
 
-**El d'ara (0.33.0) encara no es pot executar:** la recepta encara no té `auto_updates true`. L'adreça i la clau pública ja hi són
-(`Recursos/Actualitzacions.plist`). La 0.31.5 es va publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
-**Des de la primera versió amb actualitzacions automàtiques, publicar ja no es desfà:** la versió arriba sola a tots els Macs en un dia. Com
+**La 0.33.0 (11/11/2026) és la primera publicada així,** amb l'appcast signat i la recepta amb `auto_updates true`. La 0.31.5 es va
+publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
+**Des de la 0.33.0, publicar ja no es desfà:** la versió arriba sola, en un dia, a tots els Macs que tinguin la 0.33.0 o posterior. Com
 s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, apartat 7.
 
 ## Actualitzacions automàtiques
 
-**Encara no les porta cap còpia publicada.** El codi és al repo des de la 0.32.0, però l'última versió publicada és la 0.31.5.
-**Només s'han vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
+**Les porta la 0.33.0 (11/11/2026), la primera versió publicada amb actualitzacions automàtiques.** Comprovat des de fora el mateix dia:
+l'adreça que consulta l'app dona la 0.33.0, i la signatura del zip quadra amb la clau pública que porta l'app.
+**La primera actualització automàtica de debò arribarà amb la versió següent.** Fins ara, **només s'han vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
 (rondes A i B de [`docs/disseny.md`](docs/disseny.md), secció 11) i amb Warp Launch (ronda C, en part). S'actualitza sola sense cap diàleg de macOS, torna sense
 cap finestra i conserva el permís d'Arxius i carpetes i l'inici de sessió. No s'ha provat en un altre usuari o un altre Mac, ni amb un reinici del Mac: l'autor ha
-decidit no fer més proves (10/11/2026). L'adreça i la clau pública de l'autor ja són al repo (0.33.0); falta publicar-les, amb la recepta de Homebrew al dia, i després, la
-primera actualització real. El que segueix diu com funcionaran.
+decidit no fer més proves (10/11/2026). El que segueix diu com funcionen.
 
 - **Qui tingui la 0.31.5 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
   versions no porten res per actualitzar-se ni per avisar-ne. Des de llavors, és automàtic.
@@ -179,9 +178,10 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
   baixada amb el navegador, macOS no l'obriria. La recepta de Homebrew en comprova el sha256 i li treu la marca de baixada
   d'internet; la comanda de «Sense Homebrew» en comprova la signatura i també la hi treu. Compilada des del codi en un altre
   Mac, `build-app.sh` la signa ad hoc, i llavors, després de cada actualització, macOS pot tornar a demanar el permís d'Arxius i
-  carpetes i el de l'inici de sessió. Les actualitzacions automàtiques, quan es publiquin, només s'acceptaran si el zip porta la
-  signatura EdDSA de la clau de l'autor, comprovada abans d'extreure'l: amb el certificat sol no n'hi ha prou. Es dedueix, i
-  encara no s'ha provat, que macOS deixarà substituir l'app sense cap diàleg i n'hi mantindrà els permisos.
+  carpetes i el de l'inici de sessió. Des de la 0.33.0, les actualitzacions automàtiques només s'accepten si el zip porta la
+  signatura EdDSA de la clau de l'autor, comprovada abans d'extreure'l: amb el certificat sol no n'hi ha prou. Al Mac de l'autor,
+  amb versions de prova, macOS ha deixat substituir l'app sense cap diàleg i n'ha mantingut els permisos (rondes B i C); en un
+  altre Mac, encara no s'ha provat.
 
 ## Desenvolupament
 

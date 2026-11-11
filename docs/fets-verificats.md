@@ -1249,6 +1249,18 @@ model ni les de Sparkle de C1, C2 i C4:** són les que es van llegir durant la r
 reinici sol (C5), C7, C10, el reinici ajornat i l'intent que es treu (0.32.9), un reinici del Mac amb una versió a punt (D), un usuari sense el certificat (E), el fre (F) ni res amb
 l'adreça i la clau de debò.
 
+### 18. La 0.33.0, publicada (11/11/2026)
+
+L'autor la va publicar amb `scripts/publica.sh --aplica` al seu terminal (v0.33.0; recepta del tap, commit `7600cdf`). Comprovat després, des de fora i sense la clau privada:
+- **PROVAT:** `https://github.com/David-Erra/warp-launch/releases/latest/download/appcast.xml`, l'adreça que porta l'app, dona un appcast amb la 0.33.0 (versió i versió
+  curta), macOS 26.0, `arm64` i el zip de la v0.33.0, de 4.855.002 bytes; el zip baixat fa aquesta mida i té el sha256 de la recepta
+  (`cfeb0c1b…`). `gh api …/releases/latest`: v0.33.0, amb `appcast.xml` i `WarpLaunch-0.33.0.zip`.
+- **PROVAT:** `swift scripts/verifica-signatura.swift` amb la clau pública de `Recursos/Actualitzacions.plist` i la `sparkle:edSignature` de l'appcast: codi 0.
+- **PROVAT:** l'app de dins del zip és la 0.33.0 (`CFBundleShortVersionString` i `CFBundleVersion`), porta `SUFeedURL` i `SUPublicEDKey` iguals que el fitxer i passa
+  `codesign --verify --deep --strict` amb el requisit de «Warp Launch Dev».
+- **Recepta:** `version "0.33.0"`, el sha256 del zip i `auto_updates true`.
+- **No vist encara:** que una còpia 0.33.0 s'actualitzi sola a la versió següent.
+
 ### Què impedeix o canvia el plantejament
 
 1. **Qui té la 0.31.5 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.

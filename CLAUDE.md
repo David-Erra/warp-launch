@@ -17,13 +17,13 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (11/11/2026, 0.33.0 al codi; publicada, 0.31.5)
+## Estat (11/11/2026, 0.33.0 al codi i publicada)
 
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
   - **Homebrew:** el tap és `David-Erra/homebrew-tap`, públic (`Casks/warp-launch.rb`): `brew install --cask
-    david-erra/tap/warp-launch`. `publica.sh --aplica` en posa al dia la recepta: provat de debò una vegada, amb la 0.31.5
-    (09/11/2026, commit `cd8c304` del tap; l'script de la 0.32.x, amb la clau i l'appcast, encara no s'ha executat de debò).
+    david-erra/tap/warp-launch`. `publica.sh --aplica` en posa al dia la recepta: provat de debò amb la 0.31.5
+    (09/11/2026, commit `cd8c304` del tap) i, amb la clau i l'appcast, amb la 0.33.0 (11/11/2026, l'autor, commit `7600cdf` del tap).
     `docs/disseny.md`, secció 10, «Homebrew»; `docs/fets-verificats.md`, «Homebrew».
   - **Compte de GitHub:** les ordres de `gh` que escriuen (`publica.sh`, `gh release`) necessiten `GH_TOKEN` d'un compte
     que pugui escriure al repo i al tap, passat només a aquella ordre (`GH_TOKEN="$(gh auth token -u <compte>)"`). No canviïs el compte
@@ -179,7 +179,7 @@ Els requisits són a `docs/especificacio.md`.
     `demanaImportar` (el menú Arxiu i l'estat buit), `FullImportacio.potLlegir` (els dos botons del full; si en obrir-se no pot llegir, ho diu) i `Lligam.potLligar`
     (l'actualització que s'aplica). Importar tampoc amb el full d'obrir o de lligar a la vista, i amb el full d'importar obert no es comença cap obertura (el menú de
     la icona ho deixava), ni el full d'iniciar sessió el trepitja. Guarda: `lesLecturesAmbFinestresPassenPerLaSevaCondicio`. Només proves i codi llegit: no s'ha vist a l'app.
-- **Actualització automàtica amb Sparkle 2.10.1 (de la 0.32.0 a la 0.32.5, 09/11/2026): al codi, sense publicar.** Les 13 decisions
+- **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
   - **L'autor ha decidit activar-la (09/11/2026, després de publicar la 0.31.5).** Vol dir fer el que falta, en l'ordre de sota: no treu l'OK de cada ronda
@@ -199,8 +199,11 @@ Els requisits són a `docs/especificacio.md`.
     `Recursos/Actualitzacions.plist` porta `SUFeedURL` i `SUPublicEDKey` (la part pública, que no és secreta); la guarda en fixa tots dos valors i que no n'hi hagi
     cap més. `build-app.sh release --amb-feed` comprovat sense publicar: el paquet porta les dues claus iguals que el fitxer i passa `codesign --verify --deep --strict`
     amb el requisit; després s'ha esborrat. Sense `--amb-feed`, el paquet no porta cap de les dues.
-  - **Falta, en aquest ordre:** pujar `main` i la recepta del tap amb `auto_updates true` i `zap` (pas 12, commit local `d9581af` del tap; sense, `publica.sh` refusa);
-    publicar (l'autor); i la primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia.
+  - **Fet (11/11/2026): pas 12 i publicació.** Pujats `main` i la recepta del tap amb `auto_updates true` i `zap` (commit `d9581af` del tap). L'autor ha publicat la
+    0.33.0 (v0.33.0; recepta, commit `7600cdf`). Comprovat des de fora: l'adreça de l'app (`releases/latest/download/appcast.xml`) dona la 0.33.0; el zip fa la mida de
+    l'appcast i el sha256 de la recepta; la seva signatura quadra amb la clau pública (`scripts/verifica-signatura.swift`); l'app de dins porta l'adreça i la clau i passa
+    `codesign --verify --deep --strict` amb el requisit. La clau privada té còpia a 1Password (ho diu l'autor).
+  - **Falta:** la primera actualització real (una versió superior publicada, que les còpies 0.33.0 s'instal·lin soles), també amb Homebrew. Fins llavors, no s'anuncia.
   - **Les còpies d'abans (0.31.5 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
     avisar-ne. Com a molt 7 instal·lacions (baixades dels zips, API de GitHub, 09/11/2026: 1 de la 0.31.5, 4 de la 0.31.4 i 2 de la 0.28.0).
   - **Com va:** l'únic `import Sparkle` és a `ServeiActualitzacions.swift`; la lògica, sense Sparkle i amb proves, a
