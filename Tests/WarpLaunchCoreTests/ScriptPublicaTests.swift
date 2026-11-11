@@ -79,6 +79,9 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         var registreGh: URL { carpeta.appending(path: "gh.log") }
         var ordresGh: String { (try? String(contentsOf: registreGh, encoding: .utf8)) ?? "" }
         var fitxerRecepta: URL { carpeta.appending(path: "recepta.rb") }
+        /// Les versions que el `gh` fals ha creat: una carpeta per etiqueta, amb els fitxers pujats i `.prerelease`.
+        var publicades: URL { carpeta.appending(path: "publicades") }
+        var liniesGh: [String] { ordresGh.split(separator: "\n").map(String.init) }
         /// El sha de git de la recepta tal com és ara: el mateix que dona GitHub.
         var blobDeLaRecepta: String { get throws { try git("hash-object", "--no-filters", "--", fitxerRecepta.path) } }
         var zip: URL { repo.appending(path: "build/WarpLaunch-0.28.0.zip") }
@@ -167,9 +170,11 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             try Data(recepta().utf8).write(to: fitxerRecepta)
             try FileManager.default.createDirectory(at: fitxerActualitzacions.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data(actualitzacionsPlist().utf8).write(to: fitxerActualitzacions)
-            // `gh` fals: `release view` diu si ja hi és (GH_FALS_JA_HI_ES), `release list` diu l'última (GH_FALS_ANTERIOR). I `api`
-            // fa de GitHub per a la recepta: el GET torna el JSON de debò (el base64 amb salts de línia, i el sha de git del fitxer)
-            // i hi aplica el --jq, i el PUT només passa si el sha és el del fitxer d'ara. Les eines, amb la ruta sencera: unes
+            // `gh` fals: `release view` diu si ja hi és (GH_FALS_JA_HI_ES; `prerelease`, com a versió de prova), `release list` diu
+            // l'última (GH_FALS_ANTERIOR). Les versions creades es desen a GH_FALS_PUBLICADES/<etiqueta>, amb els fitxers pujats i
+            // `.prerelease`: `release view <etiqueta> --json isPrerelease,isDraft,assets`, `release download` i `release edit` hi treballen.
+            // I `api` fa de GitHub per a la recepta: el GET torna el JSON de debò (el base64 amb salts de línia, i el sha de git del
+            // fitxer) i hi aplica el --jq, i el PUT només passa si el sha és el del fitxer d'ara. Les eines, amb la ruta sencera: unes
             // proves en posen de falses al PATH, només per a l'script.
             try Self.executable(carpeta.appending(path: "bin/gh"), #"""
             #!/bin/bash
@@ -177,7 +182,19 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             case "$1 $2" in
                 "release view")
                     if [[ "${7:-}" == isDraft ]]; then [[ -n "${GH_FALS_ES_ESBORRANY:-}" ]] || exit 1; echo "$GH_FALS_ES_ESBORRANY"; exit 0; fi
-                    if [[ "$3" != --repo ]]; then [[ -n "${GH_FALS_JA_HI_ES:-}" ]] && exit 0 || exit 1; fi
+                    if [[ "${7:-}" == isPrerelease ]]; then
+                        [[ -n "${GH_FALS_JA_HI_ES:-}" ]] || exit 1
+                        if [[ "$GH_FALS_JA_HI_ES" == prerelease ]]; then echo true; else echo false; fi
+                        exit 0
+                    fi
+                    if [[ "${7:-}" == isPrerelease,isDraft,assets ]]; then
+                        DESTI="$GH_FALS_PUBLICADES/$3"
+                        [[ -d "$DESTI" ]] || exit 1
+                        /usr/bin/jq -n --argjson pre "$(cat "$DESTI/.prerelease")" --arg actius "$(ls "$DESTI" | tr '\n' ' ')" \
+                            '{isPrerelease: $pre, isDraft: false, assets: ($actius | split(" ") | map(select(. != "")) | map({name: .}))}' | /usr/bin/jq -r "$9"
+                        exit 0
+                    fi
+                    [[ "$3" == --repo ]] || exit 1
                     # Sense etiqueta, `gh` torna la marcada com a última.
                     if [[ "$6" == tagName,assets ]]; then
                         [[ -z "${GH_FALS_DESPRES_FALLA:-}" ]] || exit 1
@@ -187,6 +204,8 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                     fi
                     [[ -z "${GH_FALS_ULTIMA_FALLA:-}" ]] || exit 1
                     ULTIMA="${GH_FALS_ULTIMA:-${GH_FALS_ANTERIOR:-}}"
+                    # Després de crear-ne una, la que GitHub doni com a última, si la prova ho diu.
+                    if [[ -f "$GH_FALS_CREADA" && -n "${GH_FALS_DESPRES_ULTIMA:-}" ]]; then ULTIMA="$GH_FALS_DESPRES_ULTIMA"; fi
                     [[ -n "$ULTIMA" ]] || exit 1
                     /usr/bin/jq -n --arg tag "$ULTIMA" '{tagName: $tag}' | /usr/bin/jq -r "$8"
                     exit 0 ;;
@@ -195,6 +214,30 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                     [[ -z "${GH_FALS_RELEASE_FALLA:-}" ]] || exit 1
                     /usr/bin/shasum -a 256 "$4" | cut -c1-64 > "$GH_FALS_ZIP_PUJAT"
                     printf '%s' "$3" > "$GH_FALS_CREADA"
+                    /bin/mkdir -p "$GH_FALS_PUBLICADES/$3"
+                    /bin/cp "$4" "$5" "$GH_FALS_PUBLICADES/$3/"
+                    if [[ " $* " == *" --prerelease "* ]]; then echo true; else echo false; fi > "$GH_FALS_PUBLICADES/$3/.prerelease"
+                    exit 0 ;;
+                "release download")
+                    DESTI="$GH_FALS_PUBLICADES/$3"; CARPETA=""; PATRONS=()
+                    shift 3
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            --pattern) PATRONS+=("$2"); shift 2 ;;
+                            --dir) CARPETA="$2"; shift 2 ;;
+                            --repo) shift 2 ;;
+                            *) exit 1 ;;
+                        esac
+                    done
+                    [[ -d "$DESTI" && -n "$CARPETA" ]] || exit 1
+                    for PATRO in "${PATRONS[@]}"; do [[ ! -f "$DESTI/$PATRO" ]] || /bin/cp "$DESTI/$PATRO" "$CARPETA/"; done
+                    exit 0 ;;
+                "release edit")
+                    [[ -z "${GH_FALS_EDIT_FALLA:-}" ]] || exit 1
+                    DESTI="$GH_FALS_PUBLICADES/$3"
+                    [[ -d "$DESTI" ]] || exit 1
+                    if [[ " $* " == *" --prerelease=false "* ]]; then echo false > "$DESTI/.prerelease"; fi
+                    if [[ " $* " == *" --latest "* ]]; then printf '%s' "$3" > "$GH_FALS_CREADA"; fi
                     exit 0 ;;
             esac
             [[ "$1" == api ]] || exit 1
@@ -274,6 +317,10 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         }
 
         func executa(_ arguments: String..., entorn extra: [String: String] = [:]) throws -> (codi: Int32, sortida: String) {
+            try executa(arguments: arguments, entorn: extra)
+        }
+
+        func executa(arguments: [String], entorn extra: [String: String] = [:]) throws -> (codi: Int32, sortida: String) {
             try executaScript(repo.appending(path: "scripts/publica.sh"), arguments, entorn: entornDeProva.merging(extra) { _, nou in nou })
         }
 
@@ -283,7 +330,7 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
                 "WARP_LAUNCH_TAP": tapDeProva, "GH_FALS_TAP": tapDeProva, "GH_FALS_RECEPTA": fitxerRecepta.path,
                 "GIT_CONFIG_NOSYSTEM": "1", "TMPDIR": carpeta.path,
                 "GH_FALS_PUT": fitxerPut.path, "GH_FALS_ZIP_PUJAT": fitxerZipPujat.path, "GH_FALS_COMMIT": commitDelTap,
-                "GH_FALS_CREADA": carpeta.appending(path: "creada.txt").path,
+                "GH_FALS_CREADA": carpeta.appending(path: "creada.txt").path, "GH_FALS_PUBLICADES": publicades.path,
                 "WARP_LAUNCH_SIGN_UPDATE": carpeta.appending(path: "bin/sign-fals").path,
                 "WARP_LAUNCH_VERIFICA": carpeta.appending(path: "bin/verifica-fals").path,
                 "SIGN_FALS_REGISTRE": registreSign.path, "SIGN_FALS_TOKEN": fitxerTokenSign.path, "SIGN_FALS_SIGNATURA": signaturaDeProva,
@@ -304,15 +351,16 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             return String(sortida.prefix(64))
         }
 
-        /// Refusa abans de compilar, amb --aplica i sense: no compila res, ni publica res, ni escriu la recepta.
-        func comprovaRefus(conte text: String, entorn extra: [String: String] = [:], sourceLocation: SourceLocation = #_sourceLocation) throws {
-            for arguments: [String] in [[], ["--aplica"]] {
+        /// Refusa abans de compilar, amb --aplica i sense: no compila res, ni publica res, ni escriu la recepta. `mode`: `--beta`, per exemple.
+        func comprovaRefus(conte text: String, mode: [String] = [], entorn extra: [String: String] = [:], sourceLocation: SourceLocation = #_sourceLocation) throws {
+            for arguments: [String] in [mode, mode + ["--aplica"]] {
                 let (codi, sortida) = try executaScript(repo.appending(path: "scripts/publica.sh"), arguments, entorn: entornDeProva.merging(extra) { _, nou in nou })
                 #expect(codi == 1, "\(sortida)", sourceLocation: sourceLocation)
                 #expect(sortida.contains(text), "\(sortida)", sourceLocation: sourceLocation)
                 #expect(sortida.contains("No s'ha publicat res."), "\(sortida)", sourceLocation: sourceLocation)
                 #expect(!compilat, "no ha de compilar res", sourceLocation: sourceLocation)
                 #expect(!ordresGh.contains("release create"), sourceLocation: sourceLocation)
+                #expect(!ordresGh.contains("release edit"), sourceLocation: sourceLocation)
                 #expect(!ordresGh.contains("--method PUT"), sourceLocation: sourceLocation)
             }
         }
@@ -341,6 +389,20 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             if let text { try Data(text.utf8).write(to: fitxerActualitzacions) } else { try FileManager.default.removeItem(at: fitxerActualitzacions) }
             try commit("chore: l'adreça", afegeix: true)
             try git("push", "-q", "origin", "main")
+        }
+
+        /// Publica la 0.28.0 com a versió de prova, i en posa l'etiqueta a origin, com fa GitHub. Després, ni la compilació ni el zip
+        /// queden a `build/` (el que es promogui ha de sortir del que hi ha publicat), i els registres de `gh` i de les eines tornen a
+        /// començar. `zipPujat` continua dient el sha256 del zip pujat.
+        func publicaBeta() throws {
+            let (codi, sortida) = try executa("--beta", "--aplica", entorn: Self.requisitDeProva)
+            #expect(codi == 0, "\(sortida)")
+            try git("tag", "v0.28.0")
+            try git("push", "-q", "origin", "v0.28.0")
+            try git("tag", "-d", "v0.28.0")
+            for fitxer in [repo.appending(path: "build"), fitxerArgumentsCompilacio, registreGh, registreSign, registreVerifica] {
+                try FileManager.default.removeItem(at: fitxer)
+            }
         }
     }
 
@@ -1110,5 +1172,217 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(sortida.contains("Publicar ja no es desfà."), "\(sortida)")
         #expect(!sortida.contains("release delete"), "\(sortida)")
         #expect(!sortida.contains("Fet:"))
+    }
+
+    /// --beta i --promou no van junts, i --promou porta la versió.
+    @Test(arguments: [["--beta", "--promou", "0.28.0"], ["--promou", "0.28.0", "--beta"], ["--promou"], ["--beta", "--beta"], ["--beta", "--x"]])
+    func opcionsQueNoVanJuntes(arguments: [String]) throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa(arguments: arguments)
+        #expect(codi == 64, "\(sortida)")
+        #expect(sortida.contains("ús: scripts/publica.sh [--beta] [--aplica] | --promou <x.y.z> [--aplica]"), "\(sortida)")
+        #expect(b.ordresGh.isEmpty, "\(b.ordresGh)")
+    }
+
+    // --- Betes: versions de prova, com a pre-release de GitHub. Mai l'última, i sense tocar la recepta.
+
+    /// Una pre-release, amb el zip signat i l'appcast, mai `--latest` (`--latest=false`, explícit). La recepta, ni llegida ni escrita.
+    @Test func laBetaEsUnaPreReleaseSenseRecepta() throws {
+        let b = try Banc()
+        let abans = try Data(contentsOf: b.fitxerRecepta)
+        let commit = try b.git("rev-parse", "HEAD")
+        let (codi, sortida) = try b.executa("--beta", "--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_ULTIMA": "v0.27.0"]) { $1 })
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresGh.contains("release create v0.28.0 build/WarpLaunch-0.28.0.zip build/appcast.xml --repo exemple/prova --prerelease --latest=false"
+                                    + " --target \(commit) --title Warp Launch 0.28.0 --notes-file build/notes-0.28.0.md"), "\(b.ordresGh)")
+        #expect(!b.liniesGh.contains { $0.contains("--latest ") || $0.hasSuffix("--latest") }, "\(b.ordresGh)")
+        #expect(!b.ordresGh.contains("release edit"), "\(b.ordresGh)")
+        // L'última normal, per comparar-hi i per a les notes, sense les versions de prova.
+        #expect(b.ordresGh.contains("release list --repo exemple/prova --exclude-drafts --exclude-pre-releases"), "\(b.ordresGh)")
+        #expect(!b.ordresGh.contains("Casks/warp-launch.rb"), "\(b.ordresGh)")
+        #expect(try Data(contentsOf: b.fitxerRecepta) == abans)
+        // Signada i comprovada com sempre.
+        #expect(b.ordresSign == ["build/WarpLaunch-0.28.0.zip"])
+        #expect(b.ordresVerifica == ["\(clauPublicaDeProva) \(signaturaDeProva) build/WarpLaunch-0.28.0.zip"])
+        #expect(b.appcast.contains(#"sparkle:edSignature="\#(signaturaDeProva)""#), "\(b.appcast)")
+        #expect(sortida.contains("com a versió de prova (v0.28.0, pre-release)"), "\(sortida)")
+        #expect(sortida.contains("--promou 0.28.0"), "\(sortida)")
+        #expect(!sortida.contains("Publicar ja no es desfà"), "\(sortida)")
+    }
+
+    /// Les notes d'una beta diuen que és de prova i com s'instal·la, amb la seva versió. De Homebrew, res.
+    @Test func lesNotesDUnaBetaDiuenComSInstallaLa() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--beta", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        let notes = b.notes()
+        #expect(notes.hasPrefix("**Versió de prova**"), "\(notes)")
+        #expect(notes.contains(#"s="$(gh api -H 'Accept: application/vnd.github.raw' repos/exemple/prova/contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --versio 0.28.0 --aplica"#), "\(notes)")
+        #expect(notes.contains("Quan es publiqui una versió normal posterior, l'app s'hi actualitzarà sola"), "\(notes)")
+        #expect(notes.contains("Homebrew no la instal·la"), "\(notes)")
+        #expect(!notes.contains("brew install") && !notes.contains("brew upgrade"), "\(notes)")
+    }
+
+    /// En mode de prova, la beta no escriu res a GitHub ni a la recepta, i no signa.
+    @Test func laBetaEnModeDeProvaNoEscriuRes() throws {
+        let b = try Banc()
+        let abans = try Data(contentsOf: b.fitxerRecepta)
+        let (codi, sortida) = try b.executa("--beta", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(sortida.contains("Mode de prova: no s'ha publicat res."), "\(sortida)")
+        #expect(sortida.contains("publicaria Warp Launch 0.28.0 a exemple/prova com a v0.28.0"), "\(sortida)")
+        #expect(sortida.contains("com a versió de prova: una pre-release"), "\(sortida)")
+        #expect(sortida.contains("No tocaria la recepta de Homebrew"), "\(sortida)")
+        #expect(b.ordresSign.isEmpty && b.ordresVerifica.isEmpty)
+        #expect(b.appcast.isEmpty)
+        #expect(try Data(contentsOf: b.fitxerRecepta) == abans)
+        #expect(!FileManager.default.fileExists(atPath: b.publicades.path))
+        for ordre in b.liniesGh {
+            #expect(ordre.hasPrefix("release view ") || ordre.hasPrefix("release list "), "\(ordre)")
+        }
+    }
+
+    /// Una beta ha de ser posterior a l'última normal: si no, l'endemà les seves còpies hi tornarien soles.
+    @Test(arguments: ["v0.28.0", "v0.28.1", "v0.100.0", "v1.0.0"])
+    func unaBetaNoPosteriorALUltimaEsRefusa(etiqueta: String) throws {
+        let b = try Banc()
+        try b.comprovaRefus(conte: "no és anterior a la 0.28.0 de VERSION: una versió de prova ha de ser posterior a l'última normal",
+                            mode: ["--beta"], entorn: ["GH_FALS_ULTIMA": etiqueta])
+    }
+
+    /// Sense sufix: Sparkle llegeix 0.28.0-beta com la 0.28.0.
+    @Test func unaBetaAmbSufixEsRefusa() throws {
+        let b = try Banc(versio: "0.28.0-beta")
+        try b.comprovaRefus(conte: "Sparkle llegeix 0.35.0-beta com la 0.35.0", mode: ["--beta"])
+        #expect(b.ordresGh.isEmpty, "\(b.ordresGh)")
+    }
+
+    /// Una versió que ja hi és com a versió de prova no es torna a publicar. Sense --beta, l'script diu com es promou.
+    @Test func unaVersioDeProvaQueJaHiEsNoEsTornaAPublicar() throws {
+        let b = try Banc()
+        try b.comprovaRefus(conte: "la v0.28.0 ja és publicada a exemple/prova com a versió de prova. Per publicar-ne una altra, primer puja VERSION",
+                            mode: ["--beta"], entorn: ["GH_FALS_JA_HI_ES": "prerelease"])
+        try b.comprovaRefus(conte: "com a versió de prova. Per fer-la normal, sense compilar-la de nou: scripts/publica.sh --promou 0.28.0",
+                            entorn: ["GH_FALS_JA_HI_ES": "prerelease"])
+    }
+
+    /// Si GitHub la donés com a última, totes les còpies s'hi actualitzarien: ho diu, amb com tornar-ho enrere.
+    @Test func siGitHubDonaLaBetaComAUltimaAvisa() throws {
+        let b = try Banc()
+        let (codi, sortida) = try b.executa("--beta", "--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_ULTIMA": "v0.27.0", "GH_FALS_DESPRES_ULTIMA": "v0.28.0"]) { $1 })
+        #expect(codi == 2, "\(sortida)")
+        let anterior = try #require(sortida.range(of: "gh release edit v0.27.0 --latest --repo exemple/prova"), "\(sortida)")
+        let deProva = try #require(sortida.range(of: "gh release edit v0.28.0 --prerelease --repo exemple/prova"), "\(sortida)")
+        #expect(anterior.lowerBound < deProva.lowerBound, "\(sortida)")
+        #expect(!sortida.contains("Fet:"), "\(sortida)")
+    }
+
+    // --- --promou: la versió de prova passa a ser l'última, amb el mateix zip.
+
+    /// Passa la pre-release a l'última, amb les notes d'una versió normal, i escriu a la recepta el sha256 del zip publicat. No compila ni signa res.
+    @Test func promouLaVersioDeProva() throws {
+        let b = try Banc()
+        try b.publicaBeta()
+        let zipPublicat = b.zipPujat
+        let (codi, sortida) = try b.executa("--promou", "0.28.0", "--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresGh.contains("release edit v0.28.0 --repo exemple/prova --prerelease=false --latest --notes-file build/notes-0.28.0.md"), "\(b.ordresGh)")
+        #expect(!b.ordresGh.contains("release create"), "\(b.ordresGh)")
+        #expect(try String(contentsOf: b.publicades.appending(path: "v0.28.0/.prerelease"), encoding: .utf8) == "false\n")
+        // Ni compila ni signa: comprova, amb la clau pública, el zip que ha baixat.
+        #expect(!FileManager.default.fileExists(atPath: b.fitxerArgumentsCompilacio.path))
+        #expect(b.ordresSign.isEmpty)
+        #expect(b.ordresVerifica.count == 1)
+        let verificacio = try #require(b.ordresVerifica.first)
+        #expect(verificacio.hasPrefix("\(clauPublicaDeProva) \(signaturaDeProva) ") && verificacio.hasSuffix("/publicada/WarpLaunch-0.28.0.zip"), "\(verificacio)")
+        // La recepta, amb el zip publicat, després de passar-la a l'última.
+        let edicio = try #require(b.ordresGh.range(of: "release edit"))
+        let escriptura = try #require(b.ordresGh.range(of: "--method PUT"))
+        #expect(edicio.lowerBound < escriptura.lowerBound)
+        let contingut = try #require(Data(base64Encoded: b.campsPut["content"] ?? ""))
+        #expect(String(decoding: contingut, as: UTF8.self) == recepta(versio: "0.28.0", sha256: zipPublicat))
+        #expect(b.campsPut["message"] == "chore: warp-launch passa a la 0.28.0")
+        #expect(b.notes().contains("brew install --cask david-erra/tap/warp-launch"), "\(b.notes())")
+        #expect(!b.notes().contains("Versió de prova"), "\(b.notes())")
+        #expect(sortida.contains("Fet: Warp Launch 0.28.0 (v0.28.0) ja és l'última versió de exemple/prova, amb el zip que ja hi havia publicat"), "\(sortida)")
+        #expect(sortida.contains("Publicar ja no es desfà."), "\(sortida)")
+    }
+
+    /// En mode de prova, --promou comprova el que hi ha publicat i diu què faria, sense canviar res a GitHub ni a la recepta.
+    @Test func promouEnModeDeProvaNoEscriuRes() throws {
+        let b = try Banc()
+        try b.publicaBeta()
+        let abans = try Data(contentsOf: b.fitxerRecepta)
+        let (codi, sortida) = try b.executa("--promou", "v0.28.0", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(sortida.contains("Mode de prova: no s'ha publicat res."), "\(sortida)")
+        #expect(sortida.contains("passaria la v0.28.0 de exemple/prova (versió de prova"), "\(sortida)")
+        #expect(sortida.contains("version: 0.27.0 -> 0.28.0"), "\(sortida)")
+        #expect(sortida.contains("sha256: \(sha256Antic) -> \(b.zipPujat) (el del zip publicat)"), "\(sortida)")
+        #expect(try Data(contentsOf: b.fitxerRecepta) == abans)
+        #expect(try String(contentsOf: b.publicades.appending(path: "v0.28.0/.prerelease"), encoding: .utf8) == "true\n")
+        #expect(!FileManager.default.fileExists(atPath: b.fitxerArgumentsCompilacio.path))
+        #expect(b.ordresSign.isEmpty)
+        for ordre in b.liniesGh {
+            #expect(ordre.hasPrefix("release view ") || ordre.hasPrefix("release list ") || ordre.hasPrefix("release download ")
+                    || ordre == "api repos/\(tapDeProva)/contents/Casks/warp-launch.rb?ref=main --jq .encoding, .sha, .content", "\(ordre)")
+        }
+    }
+
+    /// Només es promou una versió de prova que hi sigui, sencera.
+    @Test func nomesEsPromouUnaVersioDeProva() throws {
+        let b = try Banc()
+        try b.comprovaRefus(conte: "no trobo la v0.28.0 a exemple/prova", mode: ["--promou", "0.28.0"])
+        let publicada = b.publicades.appending(path: "v0.28.0")
+        try FileManager.default.createDirectory(at: publicada, withIntermediateDirectories: true)
+        try Data("false\n".utf8).write(to: publicada.appending(path: ".prerelease"))
+        try Data().write(to: publicada.appending(path: "WarpLaunch-0.28.0.zip"))
+        try Data().write(to: publicada.appending(path: "appcast.xml"))
+        try b.comprovaRefus(conte: "no és una versió de prova (pre-release)", mode: ["--promou", "0.28.0"])
+        try Data("true\n".utf8).write(to: publicada.appending(path: ".prerelease"))
+        try FileManager.default.removeItem(at: publicada.appending(path: "appcast.xml"))
+        try b.comprovaRefus(conte: "no porta WarpLaunch-0.28.0.zip i appcast.xml", mode: ["--promou", "0.28.0"])
+        try b.comprovaRefus(conte: "no té la forma X.Y.Z", mode: ["--promou", "0.28"])
+    }
+
+    /// Si l'última normal ja hi va per davant, no es promou: l'app no s'hi actualitzaria.
+    @Test func noEsPromouPerSotaDeLUltima() throws {
+        let b = try Banc()
+        try b.publicaBeta()
+        try b.comprovaRefus(conte: "l'última versió de exemple/prova és la v0.29.0, que no és anterior a la 0.28.0: l'app no s'hi actualitzaria",
+                            mode: ["--promou", "0.28.0"], entorn: Banc.requisitDeProva.merging(["GH_FALS_ULTIMA": "v0.29.0"]) { $1 })
+    }
+
+    /// El zip publicat ha de ser el del seu appcast.xml, signat amb la clau que porten les apps: si no, no es promou res.
+    @Test(arguments: ["verifica", "mida"])
+    func unaVersioDeProvaQueNoQuadraNoEsPromou(cas: String) throws {
+        let b = try Banc()
+        try b.publicaBeta()
+        var entorn = Banc.requisitDeProva
+        if cas == "verifica" {
+            entorn["VERIFICA_FALS_CODI"] = "1"
+        } else {
+            let appcast = b.publicades.appending(path: "v0.28.0/appcast.xml")
+            try Data(try String(contentsOf: appcast, encoding: .utf8).replacing(#"length=""#, with: #"length="1"#).utf8).write(to: appcast)
+        }
+        for arguments in [["--promou", "0.28.0"], ["--promou", "0.28.0", "--aplica"]] {
+            let (codi, sortida) = try b.executa(arguments: arguments, entorn: entorn)
+            #expect(codi == 1, "\(sortida)")
+            #expect(sortida.contains(cas == "verifica" ? "no és la del seu zip amb la clau que porten les apps" : "no és el del seu zip"), "\(sortida)")
+            #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+            #expect(!b.ordresGh.contains("release edit"), "\(b.ordresGh)")
+            #expect(!b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+        }
+    }
+
+    /// Si GitHub no la deixa passar a l'última, la recepta no es toca.
+    @Test func siNoEsPotPromoureNoEscriuLaRecepta() throws {
+        let b = try Banc()
+        try b.publicaBeta()
+        let (codi, sortida) = try b.executa("--promou", "0.28.0", "--aplica", entorn: Banc.requisitDeProva.merging(["GH_FALS_EDIT_FALLA": "1"]) { $1 })
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains("continua essent una versió de prova, i la recepta de Homebrew no s'ha tocat"), "\(sortida)")
+        #expect(!b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+        #expect(!sortida.contains("Fet:"), "\(sortida)")
     }
 }
