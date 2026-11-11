@@ -404,6 +404,33 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(sortida.text.hasSuffix("\nResultat: 1 error, 1 avís.\n"))
     }
 
+    /// El mateix, en anglès (fase F2): els avisos, les xifres i el resultat, amb els plurals de l'anglès.
+    @Test func validaEnAngles() throws {
+        let e = try Escenari()
+        let carpeta = e.tmp.url("prova")
+        var claude = ClaudePestanya.habituals
+        claude.modePermisos = "yolo"
+        try MagatzemConfiguracio(carpeta: carpeta, inici: e.inici).desa(Configuracio(plantilla: .habituals, finestres: [
+            Finestra(id: uuid(1), nom: "A", pestanyes: [Pestanya(id: uuid(2), titol: "P", carpeta: e.inici + "/GitHub/projectes/a", claude: claude)]),
+        ]), sobre: nil)
+        let (codi, sortida) = Idioma.$deProva.withValue("en") { e.executa("configuracio", "valida", "--config", carpeta.path) }
+        #expect(codi == 2)
+        #expect(sortida.text.hasPrefix("Configuration: \(carpeta.path)/configuracio.json\n1 window · 1 tab · 1 with Claude · 0 terminal only\n"),
+                "\(sortida.text)")
+        #expect(sortida.text.contains("""
+            A · 1 tab · 1 with Claude
+               1  P · ~/GitHub/projectes/a · Claude
+                  ✗ Claude won't start: the permission mode “yolo” doesn't exist (acceptEdits, auto, bypassPermissions, manual, dontAsk, plan)
+                  ⚠ With “Skip permissions”, Claude ignores the “yolo” mode
+            """), "\(sortida.text)")
+        #expect(sortida.text.hasSuffix("\nResult: 1 error, 1 warning.\n"))
+        // Un error d'ús: el missatge i l'ajuda, en anglès.
+        let us = Idioma.$deProva.withValue("en") { e.executa("configuracio", "valida", "--json") }
+        #expect(us.codi == OrdreCLI.Codi.us)
+        #expect(us.sortida.errors.hasPrefix("warp-launch: unknown option for configuracio valida: “--json”\n\n\(WarpLaunch.nom) "))
+        #expect(us.sortida.errors.contains("\nUsage:\n"))
+    }
+
     @Test func validaSenseConfiguracioOAmbUnFitxerMalmes() throws {
         let e = try Escenari()
         // Per defecte, la real; aquí no n'hi ha.
@@ -521,6 +548,41 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect((objecte["obertes"] as? [Any])?.count == 1)
         #expect(((objecte["fitxer"] as? [String: Any])?["url"] as? String)?.hasPrefix("warp://launch/warp-launch-") == true)
         #expect(try instantania(e) == abans)
+    }
+
+    /// El pla d'`obrir`, en anglès (fase F2): les xifres amb els plurals, la conjunció i el punt decimal de l'anglès, on és oberta
+    /// cada pestanya i els avisos. El fitxer per a Warp no canvia: és el mateix en totes les llengües.
+    @Test func elPlaDObrirEnAngles() throws {
+        let e = try Escenari()
+        let carpeta = try ambConfiguracio(e)
+        let (codi, sortida) = Idioma.$deProva.withValue("en") { e.executa("obre", " feina ", "--config", carpeta.path) }
+        let (_, catala) = e.executa("obre", " feina ", "--config", carpeta.path)
+        #expect(codi == 2)
+        #expect(sortida.text.hasPrefix("""
+            Dry run: nothing was written or opened.
+            Window 1 of 2: “Feina” (\(carpeta.path)/configuracio.json)
+            Warp is open.
+            1 new Warp window will open with 2 tabs: 1 with Claude (1 resumes its conversation) and 1 terminal only · about 0.5 GB · already open: 1 · won't open: 1
+
+            Already open (1):
+               1  A · ~/GitHub/projectes/a · open in Warp (window 1 › A)
+
+            Won't open (1):
+               4  Perduda · ~/no-hi-es · ✗ the folder doesn't exist
+
+            Would open (2):
+               2  B2 · ~/GitHub/projectes/b · Claude, resumes 1b2c3d4e
+               3  Docs · ~/GitHub/projectes/a · terminal only
+
+            Warnings:
+              ⚠ B2: Claude will ask whether you trust the folder: the tab will wait for a key press
+              ⚠ Docs: it may already be open in Warp (window 1 › A): it's in the same folder
+
+            File for Warp: warp-launch-
+            """), "\(sortida.text)")
+        // Les pestanyes del fitxer per a Warp: igual que en català (l'id del llançament, a la marca i al nom, és un altre).
+        let fitxer = { (text: String) in text.components(separatedBy: "\nwindows:\n").dropFirst().first }
+        #expect(fitxer(sortida.text) != nil && fitxer(sortida.text) == fitxer(catala.text))
     }
 
     /// Una finestra on tot és obert (aquí, perquè la seva conversa és viva a Warp): codi 0, i cap fitxer.

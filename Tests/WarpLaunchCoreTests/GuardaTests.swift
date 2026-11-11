@@ -2124,22 +2124,142 @@ extension GuardaTests {
         }
     }
 
-    /// Cada `t("…")` del codi és al català. **Desactivada fins a la fase F2** (docs/disseny.md, secció 12): ara cap text no passa per
-    /// `t`, i la guarda només sap llegir els literals sense interpolació. Una interpolació (`t("\(n) finestres")`) fa la clau amb
-    /// l'especificador del tipus del valor (`%lld` per a un enter, `%@` per a un text), i el tipus no surt del codi font: la fase F2 ho
-    /// ha de resoldre (per exemple, amb una llista de les claus interpolades) abans d'activar-la.
-    @Test(.disabled("fase F2: les claus amb interpolació depenen del tipus dels valors")) func cadaTextDelCodiEsAlCatala() throws {
+    /// Cada `t("…")` del codi és al català (fase F2): la clau, com la fa el compilador, és al `.strings` o al `.stringsdict` del
+    /// català. Un text que no hi és sortiria en català en totes les llengües, sense dir res. Una interpolació fa la clau amb
+    /// l'especificador del tipus del valor (`%@` per a un text, `%lld` per a un `Int`…), que no surt del codi font: n'hi ha prou que
+    /// una de les combinacions hi sigui (`clausDeT`).
+    @Test func cadaTextDelCodiEsAlCatala() throws {
         let catala = try llegeixTextos(carpetaTextos.appending(path: "ca.lproj"))
         let clausCa = Set(catala.strings.keys).union(catala.plurals.keys)
-        let literal = try Regex(#"(^|[^A-Za-z0-9_.])t\("((?:[^"\\]|\\.)*)"\)"#)
-        let falten = try fitxers("Sources").flatMap { fitxer in
-            fitxer.text.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
-                .flatMap { $0.matches(of: literal).compactMap { $0.output[2].substring.map(String.init) } }
-                .filter { !$0.contains("\\") && !clausCa.contains($0) }
-                .map { "\(fitxer.ruta): «\($0)»" }
-        }
+        let codi = try fitxers("Sources")
+        let trobats = codi.flatMap { fitxer in clausDeT(fitxer.text).map { (fitxer.ruta, $0) } }
+        #expect(trobats.count > 100, "no s'han trobat els textos del codi: \(trobats.count)")
+        let falten = trobats.filter { _, t in !t.claus.contains(where: clausCa.contains) }
+            .map { ruta, t in "\(ruta):\(t.linia): «\(t.claus[0])»" }
         #expect(falten.isEmpty, "\(falten.joined(separator: "\n"))")
     }
+
+    /// La mostra de `clausDeT`: les interpolacions, el `%` amb valors i sense, els escapaments, els textos de diverses línies
+    /// (sense el sagnat del final), i el que no és cap crida a `t` (un comentari, `x.t(`, `abt(`).
+    @Test func laGuardaDelsTextosDelCodiFaLesClausComElCompilador() {
+        let mostra = #"""
+            let a = t("Obre a Warp…")
+            let b = t("Obre \(nom) a Warp, \(n) cops")
+            // t("en un comentari")
+            let c = x.t("no") + abt("tampoc")
+            let d = t("\(pct)% fet, \"cometes\" i \\ barra\nsalt") + t("100% fet")
+            let e = t("\(String(pid)) (\(f(x, "a")))")
+            let f = t("""
+                Primera línia,
+                  sagnada,
+                i \(nom).
+                """)
+            """#
+        let claus = clausDeT(mostra)
+        #expect(claus.map(\.linia) == [1, 2, 5, 5, 6, 7])
+        #expect(claus.map { $0.claus.count } == [1, 25, 5, 1, 25, 5])
+        #expect(claus[0].claus == ["Obre a Warp…"])
+        #expect(claus[1].claus.contains("Obre %@ a Warp, %lld cops") && claus[1].claus.contains("Obre %lld a Warp, %@ cops"))
+        #expect(claus[2].claus.contains("%lld%% fet, \"cometes\" i \\ barra\nsalt"))
+        #expect(claus[3].claus == ["100% fet"])
+        #expect(claus[4].claus.contains("%@ (%@)"))
+        #expect(claus[5].claus.contains("Primera línia,\n  sagnada,\ni %@."))
+    }
+}
+
+/// Els especificadors que pot fer el compilador per a cada interpolació d'un `String.LocalizationValue`: un text, un `Int`, un
+/// `UInt`, un `Int32` i un `Double`.
+private let especificadorsPossibles = ["%@", "%lld", "%llu", "%d", "%lf"]
+
+/// Les crides `t("…")` d'un fitxer: la línia i les claus que en pot fer el compilador, una per combinació de tipus de les
+/// interpolacions (`especificadorsPossibles`). Com el compilador: els escapaments es resolen, un text de diverses línies perd el
+/// sagnat del delimitador final, i, si hi ha cap interpolació, cada `%` es dobla. Les línies que comencen per `//` no compten.
+private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
+    let c = Array(text.unicodeScalars)
+    let interpolacio: Unicode.Scalar = "\u{E000}"
+    var resultat: [(linia: Int, claus: [String])] = []
+    var linia = 1
+    var i = 0
+    var iniciDeLinia = true
+    var comentari = false
+    func es(_ s: String, a j: Int) -> Bool {
+        let s = Array(s.unicodeScalars)
+        return j + s.count <= c.count && Array(c[j..<j + s.count]) == s
+    }
+    /// Salta una interpolació (`\(` ja llegit, `j` després del parèntesi): els parèntesis equilibrats i els textos de dins.
+    func saltaInterpolacio(_ inici: Int) -> Int {
+        var j = inici, profunditat = 1
+        while j < c.count, profunditat > 0 {
+            if c[j] == "(" { profunditat += 1 } else if c[j] == ")" { profunditat -= 1 } else if c[j] == "\"" {
+                j += 1
+                while j < c.count, c[j] != "\"" { j += c[j] == "\\" ? 2 : 1 }
+            }
+            j += 1
+        }
+        return j
+    }
+    while i < c.count {
+        if c[i] == "\n" { linia += 1; iniciDeLinia = true; comentari = false; i += 1; continue }
+        if comentari || c[i] == " " || c[i] == "\t" { i += 1; continue }
+        if iniciDeLinia && es("//", a: i) { comentari = true; i += 1; continue }
+        iniciDeLinia = false
+        let anterior = i > 0 ? c[i - 1] : " "
+        let identificador = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_.")).contains(anterior)
+        guard c[i] == "t", !identificador, es("(\"", a: i + 1) else { i += 1; continue }
+        let liniaDeLaCrida = linia
+        let multilinia = es("(\"\"\"", a: i + 1)
+        var j = i + (multilinia ? 5 : 3)
+        var cru: [Unicode.Scalar] = []
+        var tancat = false
+        while j < c.count {
+            if multilinia ? es("\"\"\"", a: j) : c[j] == "\"" { tancat = true; j += multilinia ? 3 : 1; break }
+            if c[j] == "\n" { linia += 1 }
+            if c[j] == "\\", j + 1 < c.count, c[j + 1] == "(" {
+                cru.append(interpolacio)
+                j = saltaInterpolacio(j + 2)
+                continue
+            }
+            if c[j] == "\\", j + 1 < c.count { cru += [c[j], c[j + 1]]; j += 2; continue }
+            cru.append(c[j])
+            j += 1
+        }
+        i = j
+        guard tancat, j < c.count, c[j] == ")" else { continue }
+        var text = String(String.UnicodeScalarView(cru))
+        if multilinia {
+            // Sense el salt del principi i el del final, i sense el sagnat del delimitador final.
+            var linies = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+            let sagnat = linies.removeLast()
+            if linies.first?.isEmpty == true { linies.removeFirst() }
+            text = linies.map { $0.hasPrefix(sagnat) ? String($0.dropFirst(sagnat.count)) : $0 }.joined(separator: "\n")
+            text = text.replacingOccurrences(of: "\\\n", with: "")
+        }
+        // Els escapaments.
+        var net = ""
+        var k = text.unicodeScalars.makeIterator()
+        while let s = k.next() {
+            guard s == "\\", let e = k.next() else { net.unicodeScalars.append(s); continue }
+            switch e {
+            case "n": net += "\n"
+            case "t": net += "\t"
+            case "0": net += "\0"
+            case "u":
+                var hex = ""
+                while let h = k.next(), h != "}" { if h != "{" { hex.unicodeScalars.append(h) } }
+                if let valor = UInt32(hex, radix: 16), let escalar = Unicode.Scalar(valor) { net.unicodeScalars.append(escalar) }
+            default: net.unicodeScalars.append(e)
+            }
+        }
+        let parts = net.split(separator: Character(interpolacio), omittingEmptySubsequences: false).map(String.init)
+        let ambValors = parts.count > 1
+        let trossos = parts.map { ambValors ? $0.replacingOccurrences(of: "%", with: "%%") : $0 }
+        var claus = [trossos[0]]
+        for tros in trossos.dropFirst() {
+            claus = claus.flatMap { clau in especificadorsPossibles.map { clau + $0 + tros } }
+        }
+        resultat.append((liniaDeLaCrida, claus))
+    }
+    return resultat
 }
 
 @Suite struct PaquetTests {
