@@ -2930,9 +2930,9 @@ proves: el `.xctest`). Si no el troba, `t` torna la clau, en català.
 `Info.plist`, sortirien sempre en anglès. Per això `Idioma` tria la llengua (`Bundle.preferredLocalizations(from:forPreferences:)`
 amb les `.lproj` del bundle) i llegeix dins de la `.lproj` triada, com a bundle propi, amb el `locale` d'aquella llengua a cada
 consulta: sense, els plurals i les xifres seguirien la regió del Mac («0 fenêtres» en lloc de «0 fenêtre»). Equivalències de
-macOS: pt-PT → pt-BR, zh-CN → zh-Hans, es-MX → es; zh-TW, no. Per ordre: `Idioma.$deProva` (un `@TaskLocal`, només a les
-proves), la variable `WARP_LAUNCH_IDIOMA` i `Locale.preferredLanguages` (el Mac, o l'app amb el selector). La del procés no
-canvia mentre corre, com els menús de macOS.
+macOS: pt-PT → pt-BR, zh-CN → zh-Hans, es-MX → es; zh-TW, no. Per ordre: `Idioma.$fixada` (un `@TaskLocal` de producció, per
+sobre de tot: el diagnòstic, en anglès), `Idioma.$deProva` (un altre, només a les proves), la variable `WARP_LAUNCH_IDIOMA` i
+`Locale.preferredLanguages` (el Mac, o l'app amb el selector). La del procés no canvia mentre corre, com els menús de macOS.
 
 **Les proves, en català.** `scripts/test.sh` exporta `WARP_LAUNCH_IDIOMA=ca`, i `IdiomaTests.lesProvesSonEnCatala` ho comprova:
 amb `swift test` sol, falla. Per provar una altra llengua: `Idioma.$deProva.withValue("en") { … }`.
@@ -2948,7 +2948,8 @@ coincideixen amb els del català (per posició, `%2$@` inclòs; una forma d'un p
 F2, també que cada `t("…")` del codi és al català (`cadaTextDelCodiEsAlCatala`): llegeix les crides com el compilador (els
 escapaments, els textos de diverses línies sense el sagnat del final, el `%` doblat si hi ha valors) i, com que el tipus d'una
 interpolació no surt del codi, n'hi ha prou que hi sigui una de les combinacions de `%@`, `%lld`, `%llu`, `%d` i `%lf`. Una mostra
-en comprova la lectura (`laGuardaDelsTextosDelCodiFaLesClausComElCompilador`).
+en comprova la lectura (`laGuardaDelsTextosDelCodiFaLesClausComElCompilador`). Des de F3, a la interfície (`WarpLaunchUI` i
+`WarpLaunchApp`) cap text no s'escriu directament (`capTextNoEsEscritDirectamentALaInterficie`, vegeu «F3»).
 
 **Fases:**
 
@@ -2956,7 +2957,7 @@ en comprova la lectura (`laGuardaDelsTextosDelCodiFaLesClausComElCompilador`).
 |---|---|---|
 | F1 | La infraestructura: `Idioma`, el bundle, les guardes, `test.sh`, `build-app.sh` i `Info.plist` | 0.34.1 |
 | F2 | Els textos del Core (`WarpLaunchCore`: el CLI, els avisos, els errors…) amb `t`, i la guarda de F1 activada | 0.34.2 |
-| F3 | Els de la UI i l'app (`Text`, `Button`, menús…) | |
+| F3 | Els de la UI i l'app (`Text`, `Button`, menús…), i el diagnòstic sencer en anglès | 0.34.3 |
 | F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | |
 | F5 | Les 8 llengües restants | |
 | F6 | Les amplades: una prova que mesura els textos amb `NSFont`, i una pseudolocalització | |
@@ -2994,7 +2995,8 @@ Amb el Mac en una llengua que no sigui el català, el CLI ja surt en anglès, i 
   `OrdreCLITests`, el pla d'`obre` i `configuracio valida`, amb un error d'ús.
 
 **Es queda en català o en anglès a propòsit:**
-- el diagnòstic (`Diagnostic.swift`, en anglès per a les issues de GitHub), amb `PoliticaActualitzacions.NoDisponible.diagnostic`;
+- el diagnòstic (`Diagnostic.swift`, en anglès per a les issues de GitHub), amb `PoliticaActualitzacions.NoDisponible.diagnostic` i
+  `Actualitzacions.textDiagnostic`; des de F3, també els motius que pren del Core (`Idioma.fixada`, vegeu «F3»);
 - `TaulaOpcionsClaude` i els noms d'opcions i de modes de Claude (`--settings`, `bypassPermissions`), també entre parèntesis al
   costat del nom traduït;
 - el registre (`Registre`, `os.Logger`) i els motius per al registre (`IntentActualitzacio.Lectura.ignorat`), i les
@@ -3004,14 +3006,74 @@ Amb el Mac en una llengua que no sigui el català, el CLI ja surt en anglès, i 
   el nom intern de la finestra del porta-retalls («Porta-retalls»);
 - al CLI, les ordres, les opcions i el que s'hi escriu (`llegeix`, `--config`, `<warp.sqlite>`), el prefix `warp-launch:` dels
   errors, i «pid» i «URL:» davant del valor;
-- els noms propis (Warp, Warp Launch, Claude Code, Opus…).
+- els noms propis (Warp, Warp Launch, Claude Code, Opus…): a la interfície, amb `Text(verbatim:)` («Claude Code» de l'inspector,
+  «Warp» del full d'obrir) o amb una constant (`ClaudePestanya.nomUltracode`, `Desinstallacio.nomAjustDeWarp`, l'ajust de Warp
+  «Restore windows, tabs, and panes on startup», que es diu com el diu Warp, entre les cometes de la llengua).
 
-Els noms per defecte es tradueixen («Finestra 3», «Pestanya 2», «Pestanya nova», «X còpia»): queden desats en la llengua amb què
-es creen.
+Els noms per defecte es tradueixen («Finestra 3», «Pestanya 2», «Pestanya nova», «Finestra nova», «X còpia»): queden desats en la
+llengua amb què es creen.
 
-**Per a F3 i F4:**
-- Les frases de la UI que componen textos del Core (`"Ara no: \(motiu.text)"` d'`Actualitzacions`, `"No s'ha pogut
-  desactivar…: \(darrer)…"` de `RefrescWarp`) s'han de passar senceres a `t`, amb el text del Core com a valor.
-- El diagnòstic diu «reason, in Catalan: «…»» al costat del motiu de l'ajust de Warp (`AjustRestauracio.Refusat`), que ara surt en
-  la llengua de l'app: F4 ha de decidir si el motiu va en anglès o si el text diu la llengua.
+**F3 (0.34.3): els textos de la interfície.** 374 claus noves (346 textos i 28 plurals) als dos `.lproj`, de 27 fitxers de
+`WarpLaunchUI` i `WarpLaunchApp` (i moltes que ja eren del Core, com «Obre a Warp…» o «%lld amb Claude (%@)»): el menú de la icona, l'alerta de sortir sense desar i els serveis (`WarpLaunchApp`,
+`ServeiActualitzacions`, `ArrencadaSessio`); el model de l'editor (`Editor`, `EditorInspector`, `EditorOrdres`, `EditorPlantilla`:
+el títol i el subtítol, l'inspector buit, les opcions, i tots els noms de Desfés); les vistes de l'editor i els menús
+(`VistaEditor`, `VistaInspector`, `Ordres`); la Configuració, les actualitzacions i el permís (`VistaConfiguracio`,
+`Actualitzacions`, `CopiaDiagnostic`, `Desinstallacio`, `ConsentimentRestauracio`, `VistaConsentiment`, `RefrescWarp`); i els fulls
+(`FullObertura`, `Obertura`, `ObreTot`, `FullLligam`, `Lligam`, `FullImportacio`, `VistaImportacio`, `EstatWarp`,
+`EstatSessions`). Amb el Mac en una llengua que no sigui el català, l'app ja surt sencera en anglès (fins a F5, les 8 llengües
+restants també).
+- **Com:** `Text(t("…"))`, `Button(t("…"))`, `Label(t("…"), systemImage:)`, `.help(t("…"))`, els noms de Desfés
+  (`canvia(t("…"))`) i els textos del model. Amb un `String`, SwiftUI no torna a traduir. Els termes de macOS, en anglès
+  («Settings…», «Login Items», «Move Up», «Move To», «Rename», «Multiple Values», «Quit Without Saving»); els menús que posa
+  macOS no es dupliquen.
+- **Frases senceres:** cap tros enganxat ni cap `Plural.compta` a la UI (ara només el fa servir el diagnòstic): «3 pestanyes ·
+  3 amb Claude · 2 avisos», «Ara no: \(motiu.text)» (el motiu del Core a dins), «No s'ha pogut desactivar…: \(darrer)…», els
+  tres errors de retirar el permís, «Substitueix el que hi ha ara (2 finestres i 4 pestanyes). Ara hi ha 3 pestanyes amb Claude
+  i en quedarà 1: …» (quatre plurals en una clau), «Última comprovació: fa 3 dies», «2 de 3 · finestres 1, 2 i 4 de Warp». Les
+  frases que s'afegeixen darrere d'una altra («motiu. Si no, tria…») són senceres totes dues. Les enumeracions, amb
+  `Idioma.llista`.
+- **Les dates i l'hora** de l'última comprovació, amb `Date.FormatStyle` en la llengua dels textos (en català, «dd/MM/yyyy» i
+  «HH:mm», com abans; en anglès, «MM/dd/yyyy» i «09:45 AM»). Les tres escenes porten `.environment(\.locale, Idioma.locale)`.
+- **Cap text en un `static let`** (`textPeuBase`, `textActualitzacions`, `titolConfirmacio`, `ErrorRetirada.haCanviat`, les notes de
+  `RefrescWarp`, `warpRestaurara`, `textFeinesEnSegonPla`, `motiuNoEsPotLlegir`): `static var` calculades.
+- **Un interruptor i el seu pas de Desfés** comparteixen la clau: «Salta els permisos» és «Skip permissions» als dos llocs (en
+  anglès, «Undo Skip permissions»).
+- **El català, igual que abans,** excepte el singular amb 1, que abans no hi era: «En llegir el fitxer s'ha corregit 1 cosa»,
+  «S'obrirà 1 finestra nova», «S'ha obert 1 finestra», «S'ha lligat 1 pestanya», «1 pestanya sense lligam potser ja és oberta a
+  Warp: si ho és, …» i «Warp ja té 1 pestanya que l'app no reconeix (potser l'ha restaurat Warp…). Si obres, quedarà repetida:
+  tanca-la…». Cap prova de la UI no ha canviat.
+- **El diagnòstic, sencer en anglès** (decisió de l'autor): `Diagnostic.executa` compon l'informe dins d'`Idioma.$fixada` en
+  anglès, i els motius del Core (els errors de `preferencies.json` i de `settings.toml`) hi surten en anglès, amb «(reason: …)» en
+  lloc de «reason, in Catalan: «…»». L'anonimitzador també treu les rutes entre “”. Han canviat quatre proves de
+  `DiagnosticTests`, que miraven el motiu en català o les rutes entre «» (`senseLaLiniaDiuElValorDeSerieIQueLAppLAfegeix`,
+  `siLAppNoPotLlegirElFitxerEsUnError` i les dues de `lInformeAnonimitzat…`); `laFormaDelsNoms` també mira les “”, i n'hi ha una
+  de nova (`elMotiuDelCoreSurtEnAngles`).
+- **La guarda nova** (`capTextNoEsEscritDirectamentALaInterficie`): cap literal amb lletres que no passi per `t("…")` al títol
+  (el primer argument, sense etiqueta) de les vistes de text (`Text`, `Button`, `Label`, `Section`, `Toggle`, `Picker`, `Menu`,
+  `LabeledContent`, `TextField`, `DisclosureGroup`, `ContentUnavailableView`, `CommandMenu`, `Tab`, `Window`…, i `CampText` i
+  `BotoCopia`), dels modificadors (`.help`, `.navigationTitle`, `.fileDialogMessage`, `.confirmationDialog`, `.alert`,
+  `.accessibilityLabel`, `.addButton`…), dels arguments `value:`, `titol:`, `withTitle:`, `message:`, `prompt:`, `title:` i
+  `description:`, ni del que s'assigna a `messageText` o `informativeText`. `Text(verbatim:)`, els comentaris, el que és dins d'un
+  text i els literals sense lletres (`"\(a)\n\(b)"`) no hi compten. Amb la seva mostra
+  (`laGuardaDelsTextosDeLaInterficieVeuElQueHaDeVeure`).
+- **Guardes adaptades** al codi nou, amb el mateix que protegeixen: `laMateixaOrdreEsDiuIgualAlsDosMenus` i
+  `elsBotonsDObrirNomesDemanenElFull` llegeixen el títol de `Button(t("…"))`; `Button(t("Accepta")) { consentiment.accepta() }`
+  (dues), `Button(t("Restaura Warp i surt"), role: .destructive)`, `case .pestanyesNoves: t("Pestanyes noves")` i el peu de la
+  plantilla, `LabeledContent(t("Versió")` i `Button(t("Mostra la finestra"))`. El motiu de l'app fora d'Aplicacions és a
+  `ArrencadaSessio.motiuForaDAplicacions`: `ServeiArrencada` no importa el Core i la línia de `register()` no es mou.
+- **Proves en anglès:** el subtítol amb plurals i els noms de Desfés (`elSubtitolIElNomDeDesfesEnAngles`), l'estat, el motiu
+  d'esperar, l'ítem del menú i la data de les actualitzacions (`elTextDEsperaEnAngles`) i la pantalla del permís
+  (`laPantallaDelPermisEnAngles`).
+
+**Per a F4 i F6:**
 - Els textos del Core que la UI compara o en què busca (`.contains`) han de ser les claus, no el text traduït: avui no n'hi ha cap.
+- Les amplades, en alemany (F6 les ha de mesurar). Els que poden no cabre, d'una sola línia i amb un control al costat:
+  - a la Configuració (520 pt): «Torna a deixar Warp com era» amb el botó «Restaura Warp i surt…», «macOS no l'obrirà sola fins
+    que la permetis a Ítems d’inici de sessió» amb «Mostra Ítems d’inici de sessió…», «Informe per a una issue a GitHub» amb el
+    menú «Copia el diagnòstic», «Estat» amb «Reinicia i actualitza», i «Mode de permisos» amb «Sense cap permís
+    (bypassPermissions)»;
+  - als fulls (560 i 600 pt): les capçaleres «Sense parella (3): s'obriran si n'obres la finestra» i «Ja obertes (3): no
+    s'obriran», el peu del full d'importar («Actualitza l'estat de Warp», «Cancel·la» i «Substitueix», a 560 pt) i el detall de
+    cada pestanya a la dreta («oberta a Warp, amb Claude (finestra 2 › Botiga)»);
+  - a l'inspector (280 pt): «Mode de permisos» amb «Sense cap permís (bypassPermissions)», la casella «Obre Claude Code en aquesta
+    pestanya», «Esforç» amb «Valors diversos» i «Treu el mode de permisos».
