@@ -2262,6 +2262,215 @@ private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
     return resultat
 }
 
+// MARK: - Textos de la interfície (docs/disseny.md, secció 12, fase F3)
+
+/// Les vistes i les crides que mostren text: el títol és el primer argument (sense etiqueta). Amb un `String` (`t("…")` o una
+/// variable), SwiftUI no torna a traduir; amb un literal, el buscaria al bundle de l'app, que no porta els textos.
+private let crideAmbText: Set<String> = [
+    "Text", "Button", "Label", "Section", "Toggle", "Picker", "Menu", "LabeledContent", "TextField", "SecureField",
+    "DisclosureGroup", "ContentUnavailableView", "CommandMenu", "Link", "Tab", "GroupBox", "Stepper", "ProgressView", "Window",
+    "WindowGroup", "MenuBarExtra", "CampText", "BotoCopia",
+]
+/// Els modificadors i els mètodes que mostren text (amb un punt al davant).
+private let modificadorsAmbText: Set<String> = [
+    "help", "navigationTitle", "navigationSubtitle", "fileDialogMessage", "fileDialogConfirmationLabel", "confirmationDialog",
+    "alert", "accessibilityLabel", "accessibilityHint", "accessibilityValue", "badge", "searchable", "addButton",
+]
+/// Els arguments amb etiqueta que també mostren text.
+private let etiquetesAmbText: Set<String> = ["value", "titol", "withTitle", "message", "prompt", "title", "description"]
+/// Els textos d'una alerta (`NSAlert`), que s'assignen.
+private let propietatsAmbText: Set<String> = ["messageText", "informativeText"]
+
+/// Els textos escrits directament a la interfície (fase F3): la línia i el principi de cada literal amb alguna lletra que no és
+/// dins de `t("…")`, al títol (el primer argument, sense etiqueta) o a un argument de `etiquetesAmbText` d'una crida de
+/// `crideAmbText` o d'un modificador de `modificadorsAmbText`, o que s'assigna a una propietat de `propietatsAmbText`. Una crida
+/// de `crideAmbText` dins d'una altra es mira a part (`Text(verbatim: "…")`, amb etiqueta, no hi compta). No compten les línies
+/// que comencen per `//`, el que és dins d'un text, ni un literal sense cap lletra fora dels valors i dels escapaments
+/// (`"\(a)\n\(b)"`, `""`): no és cap text per traduir.
+private func textsEscritsDirectament(_ font: String) -> [(linia: Int, text: String)] {
+    let c = Array(font.unicodeScalars)
+    let caracterDIdentificador = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+    func es(_ s: String, a j: Int) -> Bool {
+        let s = Array(s.unicodeScalars)
+        return j >= 0 && j + s.count <= c.count && Array(c[j..<j + s.count]) == s
+    }
+    func esDIdentificador(_ j: Int) -> Bool { j >= 0 && j < c.count && caracterDIdentificador.contains(c[j]) }
+    func linia(_ j: Int) -> Int { c[..<j].filter { $0 == "\n" }.count + 1 }
+    /// Just després del parèntesi (o el claudàtor o la clau) que tanca el que s'obre just abans de `j`.
+    func fiDelParentesi(_ j: Int) -> Int {
+        var k = j, profunditat = 1
+        while k < c.count {
+            if c[k] == "\"" { k = fiDelLiteral(k); continue }
+            if "([{".unicodeScalars.contains(c[k]) { profunditat += 1 }
+            if ")]}".unicodeScalars.contains(c[k]) {
+                profunditat -= 1
+                if profunditat == 0 { return k + 1 }
+            }
+            k += 1
+        }
+        return k
+    }
+    /// Just després de les cometes del final del literal que comença a `j`, amb les interpolacions (i els textos de dins).
+    func fiDelLiteral(_ j: Int) -> Int {
+        let multilinia = es("\"\"\"", a: j)
+        var k = j + (multilinia ? 3 : 1)
+        while k < c.count {
+            if multilinia ? es("\"\"\"", a: k) : c[k] == "\"" { return k + (multilinia ? 3 : 1) }
+            if c[k] == "\\", es("(", a: k + 1) { k = fiDelParentesi(k + 2); continue }
+            k += c[k] == "\\" ? 2 : 1
+        }
+        return k
+    }
+    /// Si el literal que comença a `j` té alguna lletra fora de les interpolacions i dels escapaments d'un caràcter (`\n`, `\"`).
+    func teLletres(_ j: Int) -> Bool {
+        let multilinia = es("\"\"\"", a: j)
+        let fi = fiDelLiteral(j) - (multilinia ? 3 : 1)
+        var k = j + (multilinia ? 3 : 1)
+        while k < fi {
+            if c[k] == "\\", es("(", a: k + 1) { k = fiDelParentesi(k + 2); continue }
+            if c[k] == "\\" { k += 2; continue }
+            if CharacterSet.letters.contains(c[k]) { return true }
+            k += 1
+        }
+        return false
+    }
+    /// L'identificador que comença a `j` (si el d'abans no n'és cap tros) i on acaba.
+    func identificador(_ j: Int) -> (nom: String, fi: Int)? {
+        guard !esDIdentificador(j - 1), j < c.count, CharacterSet.letters.union(CharacterSet(charactersIn: "_")).contains(c[j])
+        else { return nil }
+        var k = j, nom = ""
+        while esDIdentificador(k) { nom.unicodeScalars.append(c[k]); k += 1 }
+        return (nom, k)
+    }
+    /// Els arguments de la crida que s'obre just abans de `j`.
+    func arguments(_ j: Int) -> [Range<Int>] {
+        var resultat: [Range<Int>] = []
+        var inici = j, k = j, profunditat = 0
+        while k < c.count {
+            if c[k] == "\"" { k = fiDelLiteral(k); continue }
+            if "([{".unicodeScalars.contains(c[k]) {
+                profunditat += 1
+            } else if ")]}".unicodeScalars.contains(c[k]) {
+                if profunditat == 0 { return resultat + [inici..<k] }
+                profunditat -= 1
+            } else if c[k] == ",", profunditat == 0 {
+                resultat.append(inici..<k)
+                inici = k + 1
+            }
+            k += 1
+        }
+        return resultat
+    }
+    /// L'etiqueta d'un argument (`value: x` → `value`), o res (`x ? a : b` no en té).
+    func etiqueta(_ r: Range<Int>) -> String? {
+        var k = r.lowerBound
+        while k < r.upperBound, CharacterSet.whitespacesAndNewlines.contains(c[k]) { k += 1 }
+        guard let (nom, fi) = identificador(k) else { return nil }
+        k = fi
+        while k < r.upperBound, c[k] == " " { k += 1 }
+        return k < r.upperBound && c[k] == ":" && !es("::", a: k) ? nom : nil
+    }
+    /// Els literals amb lletres d'un argument, sense els de `t("…")` ni els de les crides de `crideAmbText` (es miren a part).
+    func literalsAmbText(_ r: Range<Int>) -> [Int] {
+        var trobats: [Int] = []
+        var k = r.lowerBound
+        while k < r.upperBound {
+            if c[k] == "\"" {
+                if teLletres(k) { trobats.append(k) }
+                k = fiDelLiteral(k)
+                continue
+            }
+            if let (nom, fi) = identificador(k), es("(", a: fi), (nom == "t" && !es(".", a: k - 1)) || crideAmbText.contains(nom) {
+                k = fiDelParentesi(fi + 1)
+                continue
+            }
+            k += 1
+        }
+        return trobats
+    }
+    func mostra(_ j: Int) -> String {
+        String(String.UnicodeScalarView(c[j..<min(c.count, j + 60)])).split(separator: "\n").first.map(String.init) ?? ""
+    }
+
+    var resultat: [(linia: Int, text: String)] = []
+    var k = 0
+    var iniciDeLinia = true
+    while k < c.count {
+        if c[k] == "\n" { iniciDeLinia = true; k += 1; continue }
+        if c[k] == " " || c[k] == "\t" { k += 1; continue }
+        if iniciDeLinia, es("//", a: k) {
+            while k < c.count, c[k] != "\n" { k += 1 }
+            continue
+        }
+        iniciDeLinia = false
+        if c[k] == "\"" { k = fiDelLiteral(k); continue }
+        guard let (nom, fi) = identificador(k) else { k += 1; continue }
+        if es("(", a: fi), es(".", a: k - 1) ? modificadorsAmbText.contains(nom) : crideAmbText.contains(nom) {
+            for (n, argument) in arguments(fi + 1).enumerated() {
+                let etiqueta = etiqueta(argument)
+                guard (n == 0 && etiqueta == nil) || etiqueta.map(etiquetesAmbText.contains) == true else { continue }
+                resultat += literalsAmbText(argument).map { (linia($0), mostra($0)) }
+            }
+        } else if propietatsAmbText.contains(nom) {
+            var j = fi
+            while es(" ", a: j) { j += 1 }
+            if es("=", a: j), !es("==", a: j) {
+                j += 1
+                while es(" ", a: j) { j += 1 }
+                if es("\"", a: j), teLletres(j) { resultat.append((linia(j), mostra(j))) }
+            }
+        }
+        k = fi
+    }
+    return resultat
+}
+
+extension GuardaTests {
+    /// Fase F3 del multidioma: a la interfície (`WarpLaunchUI` i `WarpLaunchApp`), cap text no s'escriu directament als títols de
+    /// les vistes, dels menús, de les ajudes ni de les alertes (`textsEscritsDirectament`). Passen per `t("…")`, que és al català
+    /// (`cadaTextDelCodiEsAlCatala`); el que no es tradueix (noms propis, rutes, valors), amb `Text(verbatim:)` o una variable.
+    @Test func capTextNoEsEscritDirectamentALaInterficie() throws {
+        let codi = try fitxers("Sources/WarpLaunchUI") + fitxers("Sources/WarpLaunchApp")
+        #expect(codi.count > 20, "no s'ha trobat el codi de la interfície")
+        let escrits = codi.flatMap { f in textsEscritsDirectament(f.text).map { "\(f.ruta):\($0.linia): \($0.text)" } }
+        #expect(escrits.isEmpty, "\(escrits.joined(separator: "\n"))")
+        // Que de debò les ha llegit: les crides amb un títol per traduir.
+        let traduides = codi.map { $0.text.components(separatedBy: #"(t(""#).count - 1 }.reduce(0, +)
+        #expect(traduides > 200, "\(traduides)")
+    }
+
+    /// La mostra de `textsEscritsDirectament`: el que ha de veure i el que no.
+    @Test func laGuardaDelsTextosDeLaInterficieVeuElQueHaDeVeure() {
+        let mostra = #"""
+            Text("Hola")
+            Button(t("Desa")) { desa() }
+            Label(x ? "Sí" : t("No"), systemImage: "checkmark")
+            .help("\(a)\n\(b)")
+            Text(verbatim: "Warp")
+            LabeledContent(t("Versió"), value: v ?? "desconeguda")
+            // Text("en un comentari")
+            Toggle(isOn: $x) { Text("Etiqueta") }
+            .help(c ? Text(t("Ajuda")) : Text(verbatim: "--permission-mode"))
+            alerta.messageText = "Error"
+            alerta.addButton(withTitle: "D'acord")
+            Menu("\(a) — \(b)")
+            let s = "Text(\"no\")"
+            BotoCopia(text: ordre, titol: "Copia")
+            Text("""
+                Diverses línies
+                """)
+            Section(t("Obre \(nom) a Warp, «\(f("x"))»"))
+            help("Sense punt no és cap modificador")
+            Text(editor.motiu ?? "")
+            .fileDialogMessage("Tria la carpeta")
+            Picker(titol, selection: $tria) { Text(opcio.text) }
+            """#
+        let escrits = textsEscritsDirectament(mostra)
+        #expect(escrits.map(\.linia) == [1, 3, 6, 8, 10, 11, 14, 15, 21], "\(escrits)")
+        #expect(escrits.first?.text == #""Hola")"#)
+    }
+}
+
 @Suite struct PaquetTests {
     private func infoPlist() throws -> [String: Any] {
         let dades = try Data(contentsOf: arrel.appending(path: "Recursos/Info.plist"))
