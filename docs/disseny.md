@@ -2900,3 +2900,66 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 | Altres usuaris amb sessió oberta | [S]; la E no es fa | E | README |
 | Homebrew i Sparkle alhora | Sense provar | Porta 3 | README |
 | Developer ID futur | [L] | Una ronda com la B | |
+
+## 12. Multidioma (0.35)
+
+La 1.0.0 surt en 10 llengües: ca, en, es, fr, de, it, pt-BR, ja, zh-Hans i ko. Per defecte, la del Mac; a la Configuració, un
+selector. La infraestructura (F1) és a la 0.34.1, sense cap canvi visible amb el Mac en català (en una altra llengua, els menús
+de macOS passen a l'anglès: vegeu «La llengua de reserva»).
+
+**Format.** `.lproj/Localizable.strings` i `Localizable.stringsdict` (plurals). `.xcstrings` no: compilar-lo demana
+`xcstringstool`, que és d'Xcode, i el projecte es compila amb les Command Line Tools.
+
+**On viuen.** Un sol recurs, `Sources/WarpLaunchCore/Textos/<llengua>.lproj/` (`resources: [.process("Textos")]`,
+`defaultLocalization: "en"`), per a la UI, l'app, el CLI i les proves. La clau és el text en català, i `ca.lproj` els té tots
+(clau = valor). SwiftPM en fa `WarpLaunch_WarpLaunchCore.bundle`, amb `Contents/Resources/<llengua>.lproj`.
+
+**`t(_:)`** (`Idioma.swift`, l'únic fitxer que coneix el bundle). Rep un `String.LocalizationValue`: `t("Obre a Warp…")`,
+`t("Obre \(nom) a Warp")` (clau «Obre %@ a Warp»), `t("\(n) finestres")` (clau «%lld finestres», amb el plural al
+`.stringsdict`). A SwiftUI, `Text(t("…"))`, que no torna a traduir.
+- Un enter s'escriu amb els milers de la llengua («1.000», «1,000»): un PID, un port o una versió s'interpolen com a text
+  (`\(String(pid))`). Un `Double` surt amb 6 decimals: s'ha de formatar abans. Amb valors, un `%` del text va a la clau com a
+  `%%`. Només s'hi poden interpolar textos, nombres i els tipus que accepta `LocalizationValue`.
+
+**La cerca del bundle.** No es fa servir l'accessor de SwiftPM (`module`): si no troba el bundle, atura el programa, i un binari
+copiat sol no el porta. `Idioma` el busca a `Bundle.main.resourceURL` (l'app: `Contents/Resources`, on el copia
+`build-app.sh`), al costat de l'executable (el CLI, també per un enllaç), a `Bundle.main.bundleURL` i al costat del codi (les
+proves: el `.xctest`). Si no el troba, `t` torna la clau, en català.
+
+**La tria de la llengua.** Un bundle que no és el principal seguiria la llengua del principal, i el CLI i les proves, sense
+`Info.plist`, sortirien sempre en anglès. Per això `Idioma` tria la llengua (`Bundle.preferredLocalizations(from:forPreferences:)`
+amb les `.lproj` del bundle) i llegeix dins de la `.lproj` triada, com a bundle propi, amb el `locale` d'aquella llengua a cada
+consulta: sense, els plurals i les xifres seguirien la regió del Mac («0 fenêtres» en lloc de «0 fenêtre»). Equivalències de
+macOS: pt-PT → pt-BR, zh-CN → zh-Hans, es-MX → es; zh-TW, no. Per ordre: `Idioma.$deProva` (un `@TaskLocal`, només a les
+proves), la variable `WARP_LAUNCH_IDIOMA` i `Locale.preferredLanguages` (el Mac, o l'app amb el selector). La del procés no
+canvia mentre corre, com els menús de macOS.
+
+**Les proves, en català.** `scripts/test.sh` exporta `WARP_LAUNCH_IDIOMA=ca`, i `IdiomaTests.lesProvesSonEnCatala` ho comprova:
+amb `swift test` sol, falla. Per provar una altra llengua: `Idioma.$deProva.withValue("en") { … }`.
+
+**La llengua de reserva: l'anglès** (decisió de l'autor). Si cap de les llengües preferides no té textos, `en`. A
+`Recursos/Info.plist`, `CFBundleDevelopmentRegion = en` (abans, `ca`: amb el Mac en alemany, els menús de macOS sortien en
+català). `CFBundleLocalizations` la posa `build-app.sh`, amb les `.lproj` dels textos i de `Recursos`.
+
+**Guardes (`GuardaTests`, per a qualsevol nombre de `.lproj`):** les carpetes són de les 10 llengües, amb ca i en i els dos
+fitxers; cada llengua té exactament les claus del català, també les del `.stringsdict`, sense claus repetides; els especificadors
+coincideixen amb els del català (per posició, `%2$@` inclòs; una forma d'un plural pot no dir el nombre); cada plural té `other`, i
+`one` fora de ja, zh-Hans i ko; cap valor buit; al català, valor = clau; i només `Idioma.swift` demana textos a un bundle. La de
+«cada `t("…")` del codi és al català» és escrita i desactivada (`cadaTextDelCodiEsAlCatala`): la clau d'una interpolació depèn
+del tipus del valor, i la fase F2 l'ha d'acabar.
+
+**Fases:**
+
+| Fase | Què | Versió |
+|---|---|---|
+| F1 | La infraestructura: `Idioma`, el bundle, les guardes, `test.sh`, `build-app.sh` i `Info.plist` | 0.34.1 |
+| F2 | Els textos del Core (`WarpLaunchCore`: el CLI, els avisos, el diagnòstic…) amb `t`, i la guarda de F1 activada | |
+| F3 | Els de la UI i l'app (`Text`, `Button`, menús…) | |
+| F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | |
+| F5 | Les 8 llengües restants | |
+| F6 | Les amplades: una prova que mesura els textos amb `NSFont`, i una pseudolocalització | |
+| F7 | La revisió visual de l'autor | 0.35 |
+
+**Per a F2 i F3:** la guarda de les claus demana que `en.lproj` tingui totes les del català des del primer text: cada clau nova
+hi va alhora. Fins a F4, qui no tingui el Mac en català veuria l'app barrejada, i des de F1 ja hi veu els menús de macOS en
+anglès. Una variable local que es digui `t` (`{ t in … }`) amaga la funció dins del seu bloc.
