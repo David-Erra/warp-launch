@@ -571,7 +571,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
                4  Perduda · ~/no-hi-es · ✗ the folder doesn't exist
 
             Would open (2):
-               2  B2 · ~/GitHub/projectes/b · Claude, resumes 1b2c3d4e
+               2  B2 · ~/GitHub/projectes/b · Claude, resuming 1b2c3d4e
                3  Docs · ~/GitHub/projectes/a · terminal only
 
             Warnings:

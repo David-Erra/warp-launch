@@ -80,4 +80,32 @@ import Testing
             #expect(Idioma.llista(["“A”", "“B”", "“C”"]) == "“A”, “B”, and “C”")
         }
     }
+
+    /// F4: l'anglès, revisat. Els termes de macOS són els de macOS 15 i posteriors («Login Items & Extensions», a Configuració
+    /// del Sistema; la llista, «login items»), l'app és «Settings», i un Claude que corre és una «Claude session». Els ítems de
+    /// menú, els botons i les capçaleres, amb majúscules a cada paraula; les etiquetes i els interruptors, només la primera.
+    @Test func elsTermesDeMacOSIElsDeLApp() {
+        Idioma.$deProva.withValue("en") {
+            #expect(t("Mostra Ítems d’inici de sessió…") == "Show Login Items & Extensions…")
+            #expect(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió")
+                == "macOS won't open it until you allow it in Login Items & Extensions")
+            #expect(t("""
+                Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas \
+                clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió.
+                """).hasSuffix("System Settings › General › Login Items & Extensions."))
+            #expect(t("No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: \("x"). No s'ha canviat res més.")
+                == "Couldn't remove Warp Launch from your login items: x. Nothing else was changed.")
+            #expect(t("Configuració…") == "Settings…")
+            #expect(t("tots els Claude s'engegaran alhora") == "all Claude sessions will start at once")
+            // Ítems de menú i botons.
+            #expect(["Actualitza l'estat de Warp", "Obre-ho tot a Warp…", "Torna a importar-ho tot de Warp…", "Mostra el fitxer al Finder",
+                     "Restaura Warp i surt…", "Comprova si hi ha actualitzacions…", "Comença en blanc"].map { t($0) }
+                == ["Refresh Warp Status", "Open All in Warp…", "Re-import Everything from Warp…", "Show File in Finder",
+                    "Restore Warp and Quit…", "Check for Updates…", "Start from Scratch"])
+            // Etiquetes i interruptors.
+            #expect(["Obre Warp Launch en iniciar sessió", "Actualitza automàticament", "Salta els permisos", "Mode de permisos",
+                     "Idioma de l'app"].map { t($0) }
+                == ["Open Warp Launch at login", "Update automatically", "Skip permissions", "Permission mode", "App language"])
+        }
+    }
 }
