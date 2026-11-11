@@ -1907,6 +1907,241 @@ private let prohibidesArrossegar = [
     }
 }
 
+// MARK: - Textos (docs/disseny.md, secció 12)
+
+/// Els textos: una carpeta `.lproj` per llengua, amb `Localizable.strings` i `Localizable.stringsdict`. Les guardes valen per a
+/// qualsevol nombre de carpetes: el català diu quines claus hi ha (clau = valor), i les altres llengües les han de tenir totes.
+private let carpetaTextos = arrel.appending(path: "Sources/WarpLaunchCore/Textos")
+/// Les deu llengües de la 1.0.0. Una carpeta amb un altre nom (`pt_BR`, `zh-Hant`) no la triaria ningú.
+private let llenguesPrevistes: Set<String> = ["ca", "en", "es", "fr", "de", "it", "pt-BR", "ja", "zh-Hans", "ko"]
+/// Les llengües on un plural no té singular: només hi cal `other`.
+private let llenguesSenseOne: Set<String> = ["ja", "zh-Hans", "ko"]
+/// Les claus que pot tenir una variable d'un plural (`NSStringPluralRuleType`).
+private let clausDeVariable: Set<String> = ["NSStringFormatSpecTypeKey", "NSStringFormatValueTypeKey", "zero", "one", "two", "few", "many", "other"]
+
+/// Els textos d'una llengua: el `.strings` (clau → valor), les claus que hi surten més d'un cop (el lector se'n queda una sense
+/// dir res) i el `.stringsdict` (clau → entrada). Un fitxer que no hi és compta com a buit.
+private struct TextosDeLlengua {
+    var strings: [String: String] = [:]
+    var repetides: [String] = []
+    var plurals: [String: [String: Any]] = [:]
+}
+
+private func llegeixTextos(_ carpeta: URL) throws -> TextosDeLlengua {
+    var textos = TextosDeLlengua()
+    let strings = carpeta.appending(path: "Localizable.strings")
+    if FileManager.default.fileExists(atPath: strings.path) {
+        let dades = try Data(contentsOf: strings)
+        textos.strings = try #require(try PropertyListSerialization.propertyList(from: dades, format: nil) as? [String: String])
+        let clau = try Regex(#"^\s*"((?:[^"\\]|\\.)*)"\s*="#)
+        let clausEscrites = String(decoding: dades, as: UTF8.self).split(separator: "\n")
+            .compactMap { $0.firstMatch(of: clau).map { String($0.output[1].substring ?? "") } }
+        textos.repetides = Dictionary(grouping: clausEscrites) { $0 }.filter { $0.value.count > 1 }.keys.sorted()
+    }
+    let plurals = carpeta.appending(path: "Localizable.stringsdict")
+    if FileManager.default.fileExists(atPath: plurals.path) {
+        let dades = try Data(contentsOf: plurals)
+        textos.plurals = try #require(try PropertyListSerialization.propertyList(from: dades, format: nil) as? [String: [String: Any]])
+    }
+    return textos
+}
+
+/// Els textos de totes les llengües del repo, per nom de carpeta (`ca`, `en`…).
+private func textosDelRepo() throws -> [String: TextosDeLlengua] {
+    let carpetes = try FileManager.default.contentsOfDirectory(at: carpetaTextos, includingPropertiesForKeys: nil)
+        .filter { $0.pathExtension == "lproj" }
+    return try Dictionary(uniqueKeysWithValues: carpetes.map { ($0.deletingPathExtension().lastPathComponent, try llegeixTextos($0)) })
+}
+
+/// Els especificadors de format d'un text, com a «posició:tipus»: `%@` i `%lld` en ordre, `%2$@` a la seva posició. `%%` no
+/// compta, ni un `%` amb un espai darrere («100% fet»). `%#@nom@` (un plural) compta amb el tipus de la variable (`tipus`).
+private func especificadors(_ text: String, tipus: [String: String] = [:]) throws -> Set<String> {
+    let especificador = try Regex(#"%%|%(?:([0-9]+)\$)?(?:#@([A-Za-z0-9_]+)@|[-+#0]*[0-9]*(?:\.[0-9]+)?((?:hh|h|ll|l|q|L|z|t|j)?[@dDiuUxXoOfFeEgGcCsSpaA]))"#)
+    var seguent = 0
+    var trobats: Set<String> = []
+    for trobat in text.matches(of: especificador) where trobat.output[0].substring != "%%" {
+        let posicio: Int
+        if let numero = trobat.output[1].substring.flatMap({ Int($0) }) {
+            posicio = numero
+        } else {
+            seguent += 1
+            posicio = seguent
+        }
+        let variable = trobat.output[2].substring.map(String.init)
+        trobats.insert("\(posicio):\(variable.map { tipus[$0] ?? "variable «\($0)» sense tipus" } ?? String(trobat.output[3].substring ?? ""))")
+    }
+    return trobats
+}
+
+/// Els problemes dels textos (`cadaLlenguaTeElsTextosDelCatala`): les claus que falten o que sobren respecte del català, les
+/// repetides, els especificadors que no són els del català, els plurals sense `other` (o sense `one`, fora de `llenguesSenseOne`),
+/// els valors buits i, al català, un valor que no és la clau.
+private func problemesDelsTextos(_ llengues: [String: TextosDeLlengua]) throws -> [String] {
+    guard let catala = llengues["ca"] else { return ["no hi ha el català (ca.lproj)"] }
+    var problemes: [String] = []
+    for (llengua, textos) in llengues.sorted(by: { $0.key < $1.key }) {
+        func problema(_ clau: String, _ text: String) { problemes.append("\(llengua): «\(clau)»: \(text)") }
+        problemes += textos.repetides.map { "\(llengua): «\($0)»: repetida al .strings" }
+        for clau in Set(catala.strings.keys).subtracting(textos.strings.keys).sorted() { problema(clau, "falta al .strings") }
+        for clau in Set(textos.strings.keys).subtracting(catala.strings.keys).sorted() { problema(clau, "no és al català") }
+        for clau in Set(catala.plurals.keys).subtracting(textos.plurals.keys).sorted() { problema(clau, "falta al .stringsdict") }
+        for clau in Set(textos.plurals.keys).subtracting(catala.plurals.keys).sorted() { problema(clau, "no és al català (.stringsdict)") }
+
+        for (clau, valor) in textos.strings.sorted(by: { $0.key < $1.key }) {
+            if valor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { problema(clau, "valor buit") }
+            if llengua == "ca" && valor != clau { problema(clau, "al català, el valor ha de ser la clau") }
+            if let original = catala.strings[clau], try especificadors(valor) != especificadors(original) {
+                problema(clau, "especificadors \(try especificadors(valor).sorted()) en lloc de \(try especificadors(original).sorted())")
+            }
+        }
+
+        for (clau, entrada) in textos.plurals.sorted(by: { $0.key < $1.key }) {
+            let original = catala.plurals[clau]
+            let variables = entrada.filter { $0.key != "NSStringLocalizedFormatKey" }.compactMapValues { $0 as? [String: Any] }
+            let variablesCa = (original ?? [:]).filter { $0.key != "NSStringLocalizedFormatKey" }.compactMapValues { $0 as? [String: Any] }
+            let tipus = variables.compactMapValues { $0["NSStringFormatValueTypeKey"] as? String }
+            let tipusCa = variablesCa.compactMapValues { $0["NSStringFormatValueTypeKey"] as? String }
+            guard let format = entrada["NSStringLocalizedFormatKey"] as? String,
+                  !format.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                problema(clau, "sense NSStringLocalizedFormatKey, o buit")
+                continue
+            }
+            if variables.count != entrada.count - 1 { problema(clau, "una clau de l'entrada no és cap variable") }
+            if original != nil && Set(variables.keys) != Set(variablesCa.keys) {
+                problema(clau, "variables \(variables.keys.sorted()) en lloc de \(variablesCa.keys.sorted())")
+            }
+            if let formatCa = original?["NSStringLocalizedFormatKey"] as? String,
+               try especificadors(format, tipus: tipus) != especificadors(formatCa, tipus: tipusCa) {
+                problema(clau, "especificadors \(try especificadors(format, tipus: tipus).sorted()) en lloc de "
+                    + "\(try especificadors(formatCa, tipus: tipusCa).sorted())")
+            }
+            for (nom, variable) in variables.sorted(by: { $0.key < $1.key }) {
+                let lloc = "\(clau)» › «\(nom)"
+                if variable["NSStringFormatSpecTypeKey"] as? String != "NSStringPluralRuleType" { problema(lloc, "no és un plural") }
+                if let tipusCa = tipusCa[nom], tipus[nom] != tipusCa { problema(lloc, "tipus «\(tipus[nom] ?? "")» en lloc de «\(tipusCa)»") }
+                for sobrant in Set(variable.keys).subtracting(clausDeVariable).sorted() { problema(lloc, "clau «\(sobrant)» desconeguda") }
+                let formes = variable.filter { !$0.key.hasPrefix("NSString") }
+                if formes["other"] == nil { problema(lloc, "sense «other»") }
+                if formes["one"] == nil && !llenguesSenseOne.contains(llengua) { problema(lloc, "sense «one»") }
+                // Una forma pot no dir el nombre («one window»), però no pot portar un especificador que el català no hi porta.
+                let permesos = try (variablesCa[nom] ?? [:]).filter { !$0.key.hasPrefix("NSString") }.values
+                    .compactMap { $0 as? String }.reduce(into: Set<String>()) { $0.formUnion(try especificadors($1)) }
+                for (forma, text) in formes.sorted(by: { $0.key < $1.key }) {
+                    guard let text = text as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        problema(lloc, "«\(forma)» buida")
+                        continue
+                    }
+                    let sobren = try especificadors(text).subtracting(permesos)
+                    if original != nil && !sobren.isEmpty { problema(lloc, "«\(forma)» porta \(sobren.sorted()), que el català no hi porta") }
+                }
+            }
+        }
+    }
+    return problemes
+}
+
+extension GuardaTests {
+    /// Les carpetes dels textos són de les deu llengües previstes, i hi ha el català (les claus) i l'anglès (la reserva).
+    @Test func elsTextosSonDeLesLlenguesPrevistes() throws {
+        let llengues = Set(try textosDelRepo().keys)
+        #expect(llengues.isSuperset(of: ["ca", "en"]), "\(llengues.sorted())")
+        #expect(llengues.isSubset(of: llenguesPrevistes), "\(llengues.subtracting(llenguesPrevistes).sorted())")
+        // Cada carpeta porta els dos fitxers, encara que el `.stringsdict` sigui buit: un que faltés passaria per una llengua sense plurals.
+        for llengua in llengues {
+            for fitxer in ["Localizable.strings", "Localizable.stringsdict"] {
+                #expect(FileManager.default.fileExists(atPath: carpetaTextos.appending(path: "\(llengua).lproj/\(fitxer)").path), "\(llengua): \(fitxer)")
+            }
+        }
+    }
+
+    /// Cada llengua té exactament les claus del català, també les del `.stringsdict`, amb els mateixos especificadors (un `%@` que
+    /// rep un `Int` atura l'app), cada plural té `other` (i `one`, fora del japonès, el xinès i el coreà), i cap valor no és buit.
+    @Test func cadaLlenguaTeElsTextosDelCatala() throws {
+        let llengues = try textosDelRepo()
+        #expect(try #require(llengues["ca"]).strings.count + (llengues["ca"]?.plurals.count ?? 0) > 0, "no s'han llegit els textos")
+        let problemes = try problemesDelsTextos(llengues)
+        #expect(problemes.isEmpty, "\(problemes.joined(separator: "\n"))")
+    }
+
+    /// La mostra: cada problema surt, i una traducció bona, amb els valors en un altre ordre o un plural sense nombre, no.
+    @Test func laGuardaDelsTextosDetectaElQueHaDeDetectar() throws {
+        #expect(try especificadors("%@ té %lld pestanyes") == ["1:@", "2:lld"])
+        #expect(try especificadors("%2$lld tabs in %1$@") == ["1:@", "2:lld"])
+        #expect(try especificadors("%lld%% fet, 100% fet") == ["1:lld"])
+        #expect(try especificadors("%#@finestres@ a %@", tipus: ["finestres": "lld"]) == ["1:lld", "2:@"])
+        #expect(try especificadors("%.1f MB") == ["1:f"])
+
+        func plural(_ formes: [String: String], tipus: String = "lld", format: String = "%#@n@") -> [String: Any] {
+            ["NSStringLocalizedFormatKey": format,
+             "n": formes.merging(["NSStringFormatSpecTypeKey": "NSStringPluralRuleType", "NSStringFormatValueTypeKey": tipus]) { a, _ in a }]
+        }
+        let catala = TextosDeLlengua(strings: ["Obre %@": "Obre %@", "Desa": "Desa"],
+                                     plurals: ["%lld finestres": plural(["one": "%lld finestra", "other": "%lld finestres"])])
+        let bo = TextosDeLlengua(strings: ["Obre %@": "Open %1$@", "Desa": "Save"],
+                                 plurals: ["%lld finestres": plural(["one": "one window", "other": "%lld windows"])])
+        let japones = TextosDeLlengua(strings: ["Obre %@": "%@ を開く", "Desa": "保存"],
+                                      plurals: ["%lld finestres": plural(["other": "ウィンドウ %lld 個"])])
+        #expect(try problemesDelsTextos(["ca": catala, "en": bo, "ja": japones]).isEmpty)
+
+        let dolent = TextosDeLlengua(strings: ["Obre %@": "Open %lld", "Sobra": "x"], repetides: ["Sobra"],
+                                     plurals: ["%lld finestres": plural(["one": "", "other": "%@ windows"])])
+        let senseOne = TextosDeLlengua(strings: ["Obre %@": "Abre %@", "Desa": " "],
+                                       plurals: ["%lld finestres": plural(["other": "%lld ventanas"], tipus: "ld")])
+        let catalaDolent = TextosDeLlengua(strings: ["Obre %@": "Obre %@", "Desa": "Desar"],
+                                           plurals: ["%lld finestres": plural(["one": "%lld finestra", "other": "%lld finestres"])])
+        #expect(try problemesDelsTextos(["ca": catalaDolent, "en": dolent, "es": senseOne]).sorted() == [
+            "ca: «Desa»: al català, el valor ha de ser la clau",
+            "en: «%lld finestres» › «n»: «one» buida",
+            "en: «%lld finestres» › «n»: «other» porta [\"1:@\"], que el català no hi porta",
+            "en: «Desa»: falta al .strings",
+            "en: «Obre %@»: especificadors [\"1:lld\"] en lloc de [\"1:@\"]",
+            "en: «Sobra»: no és al català",
+            "en: «Sobra»: repetida al .strings",
+            "es: «%lld finestres» › «n»: sense «one»",
+            "es: «%lld finestres» › «n»: tipus «ld» en lloc de «lld»",
+            "es: «%lld finestres»: especificadors [\"1:ld\"] en lloc de [\"1:lld\"]",
+            "es: «Desa»: valor buit",
+        ].sorted())
+        #expect(try problemesDelsTextos(["en": bo]) == ["no hi ha el català (ca.lproj)"])
+    }
+
+    /// Només `Idioma.swift` coneix el bundle dels textos i en demana cap text. `Bundle.module` atura el programa si no el troba, i
+    /// `String(localized:)` o `NSLocalizedString` en un altre lloc mirarien el bundle principal, que no porta els textos.
+    @Test func nomesIdiomaConeixElBundleDelsTextos() throws {
+        let codi = try fitxers("Sources")
+        let idioma = "Sources/WarpLaunchCore/Idioma.swift"
+        #expect(codi.contains { $0.ruta == idioma })
+        let localitzen = [#"Bundle\.module"#, #"String\(localized"#, #"NSLocalizedString"#, #"localizedString\(forKey"#,
+                          #"WarpLaunch_WarpLaunchCore"#, #"LocalizedStringResource"#]
+        let fora = try aparicions(de: localitzen, a: codi.filter { $0.ruta != idioma })
+        #expect(fora.isEmpty, "\(fora.joined(separator: "\n"))")
+        #expect(try aparicions(de: [#"Bundle\.module"#], a: codi).isEmpty)
+        #expect(try aparicions(de: [#"Bundle\.module"#], a: fitxers("Tests")).isEmpty)
+        // La mostra: cada expressió veu el que ha de veure.
+        for mostra in ["Bundle.module.url(forResource: x)", "String(localized: \"a\")", "NSLocalizedString(\"a\", comment: \"\")",
+                       "b.localizedString(forKey: k, value: nil, table: nil)", "\"WarpLaunch_WarpLaunchCore.bundle\"", "let r: LocalizedStringResource"] {
+            #expect(!(try aparicions(de: localitzen, a: [(ruta: "mostra", text: mostra)])).isEmpty, "\(mostra)")
+        }
+    }
+
+    /// Cada `t("…")` del codi és al català. **Desactivada fins a la fase F2** (docs/disseny.md, secció 12): ara cap text no passa per
+    /// `t`, i la guarda només sap llegir els literals sense interpolació. Una interpolació (`t("\(n) finestres")`) fa la clau amb
+    /// l'especificador del tipus del valor (`%lld` per a un enter, `%@` per a un text), i el tipus no surt del codi font: la fase F2 ho
+    /// ha de resoldre (per exemple, amb una llista de les claus interpolades) abans d'activar-la.
+    @Test(.disabled("fase F2: les claus amb interpolació depenen del tipus dels valors")) func cadaTextDelCodiEsAlCatala() throws {
+        let catala = try llegeixTextos(carpetaTextos.appending(path: "ca.lproj"))
+        let clausCa = Set(catala.strings.keys).union(catala.plurals.keys)
+        let literal = try Regex(#"(^|[^A-Za-z0-9_.])t\("((?:[^"\\]|\\.)*)"\)"#)
+        let falten = try fitxers("Sources").flatMap { fitxer in
+            fitxer.text.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .flatMap { $0.matches(of: literal).compactMap { $0.output[2].substring.map(String.init) } }
+                .filter { !$0.contains("\\") && !clausCa.contains($0) }
+                .map { "\(fitxer.ruta): «\($0)»" }
+        }
+        #expect(falten.isEmpty, "\(falten.joined(separator: "\n"))")
+    }
+}
+
 @Suite struct PaquetTests {
     private func infoPlist() throws -> [String: Any] {
         let dades = try Data(contentsOf: arrel.appending(path: "Recursos/Info.plist"))
