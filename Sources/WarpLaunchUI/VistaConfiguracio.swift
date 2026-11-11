@@ -18,9 +18,9 @@ public enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
 
     var titol: String {
         switch self {
-        case .general: "General"
-        case .pestanyesNoves: "Pestanyes noves"
-        case .actualitzacions: "Actualitzacions"
+        case .general: t("General")
+        case .pestanyesNoves: t("Pestanyes noves")
+        case .actualitzacions: t("Actualitzacions")
         }
     }
 
@@ -129,42 +129,41 @@ public struct VistaConfiguracio: View {
     @ViewBuilder
     private func seccionsPlantilla(_ plantilla: ClaudePestanya) -> some View {
         Section {
-            interruptor(.activat, "Obre Claude Code a les pestanyes noves")
+            interruptor(.activat, t("Obre Claude Code a les pestanyes noves"))
             Group {
-                tria(.model, "Model")
-                tria(.esforc, "Esforç")
-                interruptor(.ultracode, "Ultracode")
-                    .help("Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode")
-                interruptor(.continua, "Continua la conversa")
-                    .help("En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova")
-                interruptor(.saltaPermisos, "Salta els permisos")
-                    .help("--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg")
-                tria(.modePermisos, "Mode de permisos")
+                tria(.model, t("Model"))
+                tria(.esforc, t("Esforç"))
+                interruptor(.ultracode, ClaudePestanya.nomUltracode)
+                    .help(t("Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode"))
+                interruptor(.continua, t("Continua la conversa"))
+                    .help(t("En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova"))
+                interruptor(.saltaPermisos, t("Salta els permisos"))
+                    .help(t("--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg"))
+                tria(.modePermisos, t("Mode de permisos"))
                     .disabled(editor.modeSenseEfectePlantilla)
                     .help(editor.modeSenseEfectePlantilla
-                        ? "Amb «Salta els permisos», Claude no fa cas del mode" : "--permission-mode")
+                        ? Text(t("Amb «Salta els permisos», Claude no fa cas del mode")) : Text(verbatim: "--permission-mode"))
                 if editor.modeSenseEfectePlantilla, editor.triaPlantilla(.modePermisos) != .perDefecte {
-                    Button("Treu el mode de permisos") { editor.triaPlantilla(.modePermisos, a: .perDefecte) }
+                    Button(t("Treu el mode de permisos")) { editor.triaPlantilla(.modePermisos, a: .perDefecte) }
                 }
             }
             .disabled(!plantilla.activat)
             if let nom = editor.nomSessioPlantilla {
-                LabeledContent("Nom de la sessió") {
-                    Text("\(nom) (no s'aplica)")
+                LabeledContent(t("Nom de la sessió")) {
+                    Text(t("\(nom) (no s'aplica)"))
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
-                .help("Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom")
+                .help(t("Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom"))
             }
         } footer: {
-            Text(editor.motiuPlantillaNoEditable ?? "S'aplica a les pestanyes noves i a les que s'importen sense "
-                + "sessió de Claude. Les que ja hi són no canvien.")
+            Text(editor.motiuPlantillaNoEditable ?? t("S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien."))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .disabled(!editor.potCanviarPlantilla)
 
-        Section("Ordre") {
+        Section(t("Ordre")) {
             // La de les pestanyes noves: sense el nom fix de sessió.
             BlocOrdre(claude: plantilla.perAPestanyaNova())
             ForEach(Array(editor.avisosPlantilla.enumerated()), id: \.offset) { _, avis in
@@ -183,9 +182,9 @@ public struct VistaConfiguracio: View {
                     }
                 }
             } header: {
-                Text("Altres opcions")
+                Text(t("Altres opcions"))
             } footer: {
-                Text("La Configuració no les canvia: es conserven tal com són.")
+                Text(t("La Configuració no les canvia: es conserven tal com són."))
                     .foregroundStyle(.secondary)
             }
         }
@@ -194,17 +193,17 @@ public struct VistaConfiguracio: View {
     /// D3: en iniciar sessió, l'app s'obre sola i mostra el full de «Obre-ho tot»; no obre res sense el clic.
     private var seccioArrencada: some View {
         Section {
-            Toggle("Obre Warp Launch en iniciar sessió", isOn: Binding { arrencada.activada } set: { arrencada.posa($0) })
+            Toggle(t("Obre Warp Launch en iniciar sessió"), isOn: Binding { arrencada.activada } set: { arrencada.posa($0) })
                 .toggleStyle(.switch)
                 .controlSize(.mini)
                 .disabled(!arrencada.editable)
             if arrencada.estat == .perAprovar {
                 HStack {
-                    Label("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió",
+                    Label(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió"),
                           systemImage: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
                     Spacer()
-                    Button("Mostra Ítems d’inici de sessió…") { arrencada.obreAjustos() }
+                    Button(t("Mostra Ítems d’inici de sessió…")) { arrencada.obreAjustos() }
                 }
             }
             if let error = arrencada.error {
@@ -212,11 +211,13 @@ public struct VistaConfiguracio: View {
                     .symbolRenderingMode(.multicolor)
             }
         } header: {
-            Text("En iniciar sessió")
+            Text(t("En iniciar sessió"))
         } footer: {
             Text(arrencada.activada || arrencada.motiuNoDisponible == nil
-                ? "Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi "
-                    + "fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió."
+                ? t("""
+                    Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas \
+                    clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió.
+                    """)
                 : arrencada.motiuNoDisponible ?? "")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -224,28 +225,28 @@ public struct VistaConfiguracio: View {
     }
 
     private var seccioFitxer: some View {
-        Section("Fitxer") {
-            LabeledContent("Carpeta de la configuració") {
+        Section(t("Fitxer")) {
+            LabeledContent(t("Carpeta de la configuració")) {
                 Text(carpeta)
                     .textSelection(.enabled)
             }
             if let fitxer = editor.fitxerPerMostrar {
-                Button("Mostra al Finder") { Finder.mostra(fitxer) }
+                Button(t("Mostra al Finder")) { Finder.mostra(fitxer) }
             }
             if deProva {
-                Label("Configuració de prova (--config)", systemImage: "testtube.2")
+                Label(t("Configuració de prova (--config)"), systemImage: "testtube.2")
             }
             if let error = editor.errorDesat {
                 HStack {
-                    Label(error == .modificadaFora ? "El fitxer ha canviat fora de l'app"
-                            : "No s'ha pogut desar: \(error.description)",
+                    Label(error == .modificadaFora ? t("El fitxer ha canviat fora de l'app")
+                            : t("No s'ha pogut desar: \(error.description)"),
                           systemImage: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
                     Spacer()
                     if error == .modificadaFora {
-                        Button("Torna a carregar") { editor.carrega() }
+                        Button(t("Torna a carregar")) { editor.carrega() }
                     } else {
-                        Button("Torna-ho a provar") { editor.desaSiCal() }
+                        Button(t("Torna-ho a provar")) { editor.desaSiCal() }
                     }
                 }
             }
@@ -256,12 +257,12 @@ public struct VistaConfiguracio: View {
     /// el botó surten del model, amb proves.
     private var seccioActualitzacions: some View {
         Section {
-            LabeledContent("Versió", value: WarpLaunch.versio)
+            LabeledContent(t("Versió"), value: WarpLaunch.versio)
             if actualitzacions.disponible {
                 LabeledContent {
                     botoActualitzacions
                 } label: {
-                    Text("Estat")
+                    Text(t("Estat"))
                     Text(actualitzacions.text(avui: Date()))
                 }
                 if let avis = actualitzacions.textAvis {
@@ -270,15 +271,15 @@ public struct VistaConfiguracio: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if let error = actualitzacions.errorPreparant {
-                    Label("No s'ha pogut preparar l'actualització: \(error)", systemImage: "exclamationmark.triangle.fill")
+                    Label(t("No s'ha pogut preparar l'actualització: \(error)"), systemImage: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
                 }
-                Toggle("Actualitza automàticament", isOn: Binding { actualitzacions.automatiques } set: { actualitzacions.posaAutomatiques($0) })
+                Toggle(t("Actualitza automàticament"), isOn: Binding { actualitzacions.automatiques } set: { actualitzacions.posaAutomatiques($0) })
                     .toggleStyle(.switch)
                     .controlSize(.mini)
             }
         } header: {
-            Text("Actualitzacions")
+            Text(t("Actualitzacions"))
         } footer: {
             Text(actualitzacions.textPeu)
                 .foregroundStyle(.secondary)
@@ -292,15 +293,15 @@ public struct VistaConfiguracio: View {
         case .cap:
             EmptyView()
         case let .comprovaAra(actiu):
-            Button("Comprova ara") { actualitzacions.comprova(ara: ProcessInfo.processInfo.systemUptime) }
+            Button(t("Comprova ara")) { actualitzacions.comprova(ara: ProcessInfo.processInfo.systemUptime) }
                 .disabled(!actiu)
         case .actualitzaAra:
-            Button("Actualitza ara") { actualitzacions.actualitzaAra() }
+            Button(t("Actualitza ara")) { actualitzacions.actualitzaAra() }
         case let .reinicia(actiu):
-            Button("Reinicia i actualitza") { actualitzacions.reinicia(ara: ProcessInfo.processInfo.systemUptime) }
+            Button(t("Reinicia i actualitza")) { actualitzacions.reinicia(ara: ProcessInfo.processInfo.systemUptime) }
                 .disabled(!actiu)
         case .mostraFinestra:
-            Button("Mostra la finestra") { actualitzacions.mostraFinestra() }
+            Button(t("Mostra la finestra")) { actualitzacions.mostraFinestra() }
         }
     }
 
@@ -309,8 +310,8 @@ public struct VistaConfiguracio: View {
     private var seccioDiagnostic: some View {
         Section {
             LabeledContent {
-                Menu("Copia el diagnòstic") {
-                    Button("Copia el diagnòstic complet") { Task { await diagnostic.copia(anonimitzat: false) } }
+                Menu(t("Copia el diagnòstic")) {
+                    Button(t("Copia el diagnòstic complet")) { Task { await diagnostic.copia(anonimitzat: false) } }
                 } primaryAction: {
                     Task { await diagnostic.copia(anonimitzat: true) }
                 }
@@ -318,17 +319,19 @@ public struct VistaConfiguracio: View {
                 .fixedSize()
                 .disabled(diagnostic.calculant)
             } label: {
-                Text("Informe per a una issue a GitHub")
+                Text(t("Informe per a una issue a GitHub"))
                 if let copiat = diagnostic.copiat {
                     Text(copiat)
                 }
             }
         } header: {
-            Text("Diagnòstic")
+            Text(t("Diagnòstic"))
         } footer: {
-            Text("Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al "
-                + "porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de "
-                + "les carpetes; el complet, sí.")
+            Text(t("""
+                Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al \
+                porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de les \
+                carpetes; el complet, sí.
+                """))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -342,18 +345,18 @@ public struct VistaConfiguracio: View {
             LabeledContent {
                 // La confirmació, al botó i no a la `Section`: en un `Form`, el que es posa a una secció pot anar a cada fila,
                 // i amb la fila de l'error hi hauria dues confirmacions per a la mateixa variable (revisió de la 0.31.0).
-                Button("Restaura Warp i surt…", role: .destructive) { desinstallacio.demana() }
+                Button(t("Restaura Warp i surt…"), role: .destructive) { desinstallacio.demana() }
                     .disabled(!desinstallacio.disponible)
                     .confirmationDialog(Desinstallacio.titolConfirmacio, isPresented: $desinstallacio.confirmant,
                                         titleVisibility: .visible) {
-                        Button("Restaura Warp i surt", role: .destructive) { desinstallacio.confirma() }
-                        Button("Cancel·la", role: .cancel) {}
+                        Button(t("Restaura Warp i surt"), role: .destructive) { desinstallacio.confirma() }
+                        Button(t("Cancel·la"), role: .cancel) {}
                             .keyboardShortcut(.defaultAction)
                     } message: {
                         Text(desinstallacio.missatgeConfirmacio)
                     }
             } label: {
-                Text("Torna a deixar Warp com era")
+                Text(t("Torna a deixar Warp com era"))
                 if let text = desinstallacio.textAjust {
                     Text(text)
                 }
@@ -366,7 +369,7 @@ public struct VistaConfiguracio: View {
                     .textSelection(.enabled)
             }
         } header: {
-            Text("Deixar de fer servir Warp Launch")
+            Text(t("Deixar de fer servir Warp Launch"))
         } footer: {
             Text(desinstallacio.peu)
                 .foregroundStyle(.secondary)

@@ -654,5 +654,92 @@
 			<string>%lld tabs</string>
 		</dict>
 	</dict>
+	<!-- Actualitzacions i CopiaDiagnostic -->
+	<key>Reinicia i actualitza a la %@ (fa %lld dies)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Restart and Update to %@ (ready for %#@d@)</string>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>Última comprovació: fa %lld dies</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Last checked: %#@d@ ago</string>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day</string>
+			<key>other</key>
+			<string>%lld days</string>
+		</dict>
+	</dict>
+	<key>Copiat (anonimitzat): %lld bé, %lld avisos, %lld errors.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Copied (anonymized): %lld OK, %#@a@, %#@e@.</string>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld warning</string>
+			<key>other</key>
+			<string>%lld warnings</string>
+		</dict>
+		<key>e</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld error</string>
+			<key>other</key>
+			<string>%lld errors</string>
+		</dict>
+	</dict>
+	<key>Copiat (complet): %lld bé, %lld avisos, %lld errors.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Copied (full): %lld OK, %#@a@, %#@e@.</string>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld warning</string>
+			<key>other</key>
+			<string>%lld warnings</string>
+		</dict>
+		<key>e</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld error</string>
+			<key>other</key>
+			<string>%lld errors</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

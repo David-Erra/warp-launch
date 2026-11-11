@@ -38,8 +38,10 @@ public final class Desinstallacio {
         retirada = consentiment.retirada()
     }
 
-    /// El nom de l'ajust a la configuració de Warp, com el diu la pantalla del permís.
-    static let nomAjust = "«Restore windows, tabs, and panes on startup»"
+    /// El nom de l'ajust a la configuració de Warp, com el diu la pantalla del permís: el de Warp, en anglès, entre les cometes
+    /// de la llengua.
+    static let nomAjustDeWarp = "Restore windows, tabs, and panes on startup"
+    static var nomAjust: String { t("«\(nomAjustDeWarp)»") }
 
     public var disponible: Bool {
         if case .disponible = retirada { true } else { false }
@@ -81,7 +83,7 @@ public final class Desinstallacio {
         } catch {
             // Els ítems d'inici, en canvi, ja s'han tret: l'interruptor de dalt ho mostra.
             self.error = error.description + (eraALInici
-                ? " Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt." : "")
+                ? " " + t("Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt.") : "")
             actualitza()
             return
         }
@@ -93,11 +95,14 @@ public final class Desinstallacio {
     public var textAjust: String? {
         guard case let .disponible(retorn) = retirada else { return nil }
         return switch retorn {
-        case .original(true): "L'ajust de Warp \(Self.nomAjust) tornarà a estar activat, com el tenies abans de Warp Launch."
-        case .original(false): "L'ajust de Warp \(Self.nomAjust) es quedarà desactivat, com el tenies abans de Warp Launch."
-        case .deSerie: "No se sap com tenies l'ajust de Warp \(Self.nomAjust) abans de Warp Launch, perquè ja la feies "
-            + "servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp."
-        case .senseCanvis: "Warp Launch no ha canviat mai l'ajust de Warp \(Self.nomAjust): es queda com és."
+        case .original(true): t("L'ajust de Warp \(Self.nomAjust) tornarà a estar activat, com el tenies abans de Warp Launch.")
+        case .original(false): t("L'ajust de Warp \(Self.nomAjust) es quedarà desactivat, com el tenies abans de Warp Launch.")
+        case .deSerie:
+            t("""
+                No se sap com tenies l'ajust de Warp \(Self.nomAjust) abans de Warp Launch, perquè ja la feies servir abans que \
+                demanés permís: quedarà activat, com ve de sèrie a Warp.
+                """)
+        case .senseCanvis: t("Warp Launch no ha canviat mai l'ajust de Warp \(Self.nomAjust): es queda com és.")
         }
     }
 
@@ -105,23 +110,34 @@ public final class Desinstallacio {
     public var peu: String {
         switch retirada {
         case let .noDisponible(motiu): motiu
-        case .disponible: "Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de "
-            + "sessió si hi és, i surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la "
-            + "Paperera."
+        case .disponible:
+            t("""
+                Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de sessió si hi és, i \
+                surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la Paperera.
+                """)
         }
     }
 
-    public static let titolConfirmacio = "Vols deixar de fer servir Warp Launch?"
+    public static var titolConfirmacio: String { t("Vols deixar de fer servir Warp Launch?") }
 
     /// El missatge de la confirmació: què passarà, abans que passi.
     public var missatgeConfirmacio: String {
         guard case let .disponible(retorn) = retirada, let textAjust else { return peu }
         // Com la pantalla del permís: Settings Sync porta l'ajust als altres Macs (regla 7; revisió de la 0.31.0).
         let restaura = retorn.valor == true
-            ? " En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust "
-                + "també canviarà als teus altres Macs." : ""
-        let inici = arrencada.activada ? ", sortirà dels ítems d'inici de sessió" : ""
-        return "\(textAjust)\(restaura) Warp Launch deixarà de tenir permís per tocar l'ajust\(inici) i es tancarà. La "
-            + "configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís."
+            ? " " + t("""
+                En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust \
+                també canviarà als teus altres Macs.
+                """) : ""
+        let tancament = arrencada.activada
+            ? t("""
+                Warp Launch deixarà de tenir permís per tocar l'ajust, sortirà dels ítems d'inici de sessió i es tancarà. La \
+                configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís.
+                """)
+            : t("""
+                Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a \
+                obrir, et tornarà a demanar permís.
+                """)
+        return textAjust + restaura + " " + tancament
     }
 }

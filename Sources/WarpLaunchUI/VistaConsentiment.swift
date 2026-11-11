@@ -53,7 +53,7 @@ struct VistaConsentiment: View {
                     .font(.system(size: 36))
                     .foregroundStyle(.tint)
                     .accessibilityHidden(true)
-                Text("Has deixat de fer servir Warp Launch")
+                Text(t("Has deixat de fer servir Warp Launch"))
                     .font(.title2.bold())
             }
             Text(consentiment.textSortir)
@@ -75,35 +75,35 @@ struct VistaConsentiment: View {
                     .foregroundStyle(.tint)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Warp Launch ha de desactivar un ajust de Warp")
+                    Text(t("Warp Launch ha de desactivar un ajust de Warp"))
                         .font(.title2.bold())
-                    Text("Abans de començar, necessita el teu permís.")
+                    Text(t("Abans de començar, necessita el teu permís."))
                         .foregroundStyle(.secondary)
                 }
             }
 
-            apartat("Per què cal") {
-                Text("""
+            apartat(t("Per què cal")) {
+                Text(t("""
                     Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no \
                     les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides.
-                    """)
+                    """))
             }
 
-            apartat("Què canvia") {
+            apartat(t("Què canvia")) {
                 Label {
-                    Text("""
+                    Text(t("""
                         A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa \
                         al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als \
                         teus altres Macs.
-                        """)
+                        """))
                 } icon: {
                     Image(systemName: "switch.2")
                 }
                 Label {
-                    Text("""
+                    Text(t("""
                         Només quan li demanes que llegeixi les finestres de Warp (per exemple, en importar-les), Warp Launch \
                         l'activa uns segons perquè Warp les desi, i el torna a desactivar.
-                        """)
+                        """))
                 } icon: {
                     Image(systemName: "clock")
                 }
@@ -111,7 +111,7 @@ struct VistaConsentiment: View {
 
             // Amb una configuració de prova, l'app no s'actualitza.
             if carpetaDeProva == nil {
-                apartat("Actualitzacions") {
+                apartat(t("Actualitzacions")) {
                     Text(ConsentimentRestauracio.textActualitzacions)
                 }
             }
@@ -127,11 +127,11 @@ struct VistaConsentiment: View {
             }
 
             if let carpetaDeProva {
-                Label("Configuració de prova (\(carpetaDeProva)): l'app no tocarà aquest ajust.", systemImage: "testtube.2")
+                Label(t("Configuració de prova (\(carpetaDeProva)): l'app no tocarà aquest ajust."), systemImage: "testtube.2")
                     .foregroundStyle(.secondary)
             }
             if let error = consentiment.errorDesat {
-                Label("No s'ha pogut desar el permís: \(error).", systemImage: "exclamationmark.triangle.fill")
+                Label(t("No s'ha pogut desar el permís: \(error)."), systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
                     .textSelection(.enabled)
             }
@@ -152,7 +152,7 @@ struct VistaConsentiment: View {
         HStack {
             Spacer()
             Button(WarpLaunch.ordreSurt, action: surt)
-            Button("Accepta") { consentiment.accepta() }
+            Button(t("Accepta")) { consentiment.accepta() }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
                 .disabled(!consentiment.potAcceptar)

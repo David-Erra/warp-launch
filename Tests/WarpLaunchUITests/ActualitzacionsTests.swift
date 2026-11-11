@@ -416,6 +416,31 @@ private func aPunt(_ b: Banc, intent: IntentActualitzacio = IntentActualitzacio(
         #expect(b.blocs.count == 1 && m.aplicant && m.textEspera == nil)
     }
 
+    /// Multidioma (fase F3): en anglès, el motiu d'esperar és una frase sencera, amb el motiu del Core a dins; l'estat, l'ítem
+    /// del menú i la data de l'última comprovació, també en anglès.
+    @Test func elTextDEsperaEnAngles() throws {
+        let b = try Banc()
+        let m = b.model()
+        m.rep(.trobada("0.32.1"), ara: t)
+        m.actualitzaAra()
+        m.rep(.baixant("0.32.1"), ara: t)
+        b.models.fullObert = true
+        m.rep(.postposada("0.32.1", aplica: b.aplica), ara: t)
+        Idioma.$deProva.withValue("en") {
+            #expect(m.text(avui: t0) == "Version 0.32.1 will be installed when the app can restart.")
+            #expect(m.textEspera == "Not now: a sheet is open")
+            #expect(m.textMenu == "Update Waiting to Restart…")
+        }
+        let alDia = b.model()
+        alDia.comprova(ara: t)
+        alDia.rep(.alDia, ara: t + 2)
+        Idioma.$deProva.withValue("en") {
+            #expect(alDia.text(avui: t0).hasPrefix("You have the latest version. Checked today at "), "\(alDia.text(avui: t0))")
+            #expect(alDia.text(avui: t0).hasSuffix("AM.") || alDia.text(avui: t0).hasSuffix("PM."), "\(alDia.text(avui: t0))")
+            #expect(alDia.text(avui: t0 + 3 * 86_400).contains("Checked on "), "\(alDia.text(avui: t0 + 3 * 86_400))")
+        }
+    }
+
     /// Amb una fallada anterior, la línia diu el que passa ara.
     @Test func elReiniciAjornatManaSobreLaFallada() throws {
         let b = try Banc()

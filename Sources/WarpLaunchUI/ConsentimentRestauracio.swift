@@ -41,8 +41,9 @@ public final class ConsentimentRestauracio {
         public var description: String
 
         /// El que ha dit la confirmació ja no és el que es faria (`preferencies.json` ha canviat).
-        public static let haCanviat = ErrorRetirada(description: "Mentrestant, «\(Preferencies.nomFitxer)» ha canviat: torna-ho a "
-            + "provar.")
+        public static var haCanviat: ErrorRetirada {
+            ErrorRetirada(description: t("Mentrestant, «\(Preferencies.nomFitxer)» ha canviat: torna-ho a provar."))
+        }
     }
 
     public private(set) var estat: Estat
@@ -90,22 +91,27 @@ public final class ConsentimentRestauracio {
     public var potAcceptar: Bool { estat == .pendent }
 
     /// Decisió 7 de Sparkle: qui veu aquesta pantalla sap que l'app es connecta abans d'acceptar.
-    public static let textActualitzacions = "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració."
+    public static var textActualitzacions: String {
+        t("Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració.")
+    }
 
     /// Què passa si no s'accepta, per a la pantalla. Amb un `preferencies.json` que no es pot llegir, la propera vegada no
     /// es pregunta (torna a sortir l'error): diu on és el fitxer, que s'ha d'arreglar o esborrar (revisió de la 0.29.0).
     public var textSortir: String {
         if estat == .retirat {
             // Amb «migrat», no és el d'abans, sinó el de sèrie de Warp: el que ha dit la confirmació (revisió de la 0.31.0).
-            return "Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la "
-                + "tornes a obrir, te'l tornarà a demanar."
+            return t("""
+                Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la \
+                tornes a obrir, te'l tornarà a demanar.
+                """)
         }
         guard case let .error(motiu) = estat else {
-            return "Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a "
-                + "preguntar la propera vegada."
+            return t("Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar la propera vegada.")
         }
-        let on = magatzem.map { " (\($0.fitxer.path))" } ?? ""
-        return "\(motiu). Mentre no l'arreglis o l'esborris\(on), Warp Launch no es pot fer servir."
+        guard let on = magatzem?.fitxer.path else {
+            return t("\(motiu). Mentre no l'arreglis o l'esborris, Warp Launch no es pot fer servir.")
+        }
+        return t("\(motiu). Mentre no l'arreglis o l'esborris (\(on)), Warp Launch no es pot fer servir.")
     }
 
     /// Executa `accio` un sol cop, quan l'app pot continuar: ara mateix si ja es pot, o en acceptar.
@@ -152,18 +158,20 @@ public final class ConsentimentRestauracio {
     /// debò (D19, regla 7: l'app només pot canviar l'ajust amb la carpeta de debò).
     public func retirada() -> Retirada {
         switch estat {
-        case .noCal: return .noDisponible("Sense carpeta de configuració, Warp Launch no ha tocat Warp.")
-        case .retirat: return .noDisponible("Ja has deixat de fer servir Warp Launch.")
-        case .pendent, .error: return .noDisponible("Sense el teu permís, Warp Launch no ha tocat Warp.")
+        case .noCal: return .noDisponible(t("Sense carpeta de configuració, Warp Launch no ha tocat Warp."))
+        case .retirat: return .noDisponible(t("Ja has deixat de fer servir Warp Launch."))
+        case .pendent, .error: return .noDisponible(t("Sense el teu permís, Warp Launch no ha tocat Warp."))
         case .acceptat: break
         }
         guard let magatzem, refresc != nil else {
-            return .noDisponible("Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res "
-                + "per tornar com era. Només es pot fer amb la configuració de debò.")
+            return .noDisponible(t("""
+                Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res per tornar com era. \
+                Només es pot fer amb la configuració de debò.
+                """))
         }
         do {
             guard let retorn = try magatzem.carrega().retornEnRetirar else {
-                return .noDisponible("«\(Preferencies.nomFitxer)» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch.")
+                return .noDisponible(t("«\(Preferencies.nomFitxer)» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch."))
             }
             return .disponible(retorn)
         } catch {
@@ -184,8 +192,7 @@ public final class ConsentimentRestauracio {
             try refresc.retira(posant: retorn.valor)
         } catch {
             Registre.consentiment.error("retirar: l'ajust: \(String(describing: error), privacy: .public)")
-            throw ErrorRetirada(description: "No s'ha pogut tornar l'ajust de Warp com era: \(error). L'ajust i el permís no "
-                + "han canviat.")
+            throw ErrorRetirada(description: t("No s'ha pogut tornar l'ajust de Warp com era: \(String(describing: error)). L'ajust i el permís no han canviat."))
         }
         do {
             try magatzem.retira(ara: rellotge())
@@ -197,16 +204,22 @@ public final class ConsentimentRestauracio {
             // avís (no en surt fins als 5 minuts seguits), però tampoc no s'ha desactivat. Sense el fitxer i amb Warp tancat o
             // encara arrencant (ronda 5), o sense la carpeta de Warp (decisió 5), és el de sèrie fins que Warp sigui obert amb
             // algun terminal.
-            let ajust = switch (refresc.avis, refresc.pendent) {
-            case (nil, nil): "L'ajust de Warp torna a quedar desactivat, i el permís"
+            let motiu = error.description
+            let descripcio = switch (refresc.avis, refresc.pendent) {
+            case (nil, nil):
+                t("No s'ha pogut retirar el permís: \(motiu). L'ajust de Warp torna a quedar desactivat, i el permís no ha canviat.")
             case (nil, .quanSObriWarp?), (nil, .warpMaiObert?):
-                "L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà "
-                    + "quan Warp sigui obert amb alguna pestanya. El permís"
+                t("""
+                    No s'ha pogut retirar el permís: \(motiu). L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té \
+                    «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat.
+                    """)
             default:
-                "L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar "
-                    + "d'aquí a un minut. El permís"
+                t("""
+                    No s'ha pogut retirar el permís: \(motiu). L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a \
+                    desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat.
+                    """)
             }
-            throw ErrorRetirada(description: "No s'ha pogut retirar el permís: \(error.description). \(ajust) no ha canviat.")
+            throw ErrorRetirada(description: descripcio)
         }
         estat = .retirat
         Registre.consentiment.notice("retirat")

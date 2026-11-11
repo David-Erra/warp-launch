@@ -525,3 +525,117 @@
 "Lliga amb Warp…" = "Lliga amb Warp…";
 "Mostra el fitxer al Finder" = "Mostra el fitxer al Finder";
 "Cap altra finestra" = "Cap altra finestra";
+
+/* VistaConfiguracio: les pestanyes de la Configuració, la plantilla, en iniciar sessió, el fitxer, les actualitzacions, el diagnòstic i deixar de fer servir l'app */
+"General" = "General";
+"Pestanyes noves" = "Pestanyes noves";
+"Actualitzacions" = "Actualitzacions";
+"Obre Claude Code a les pestanyes noves" = "Obre Claude Code a les pestanyes noves";
+"En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova" = "En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova";
+"%@ (no s'aplica)" = "%@ (no s'aplica)";
+"Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom" = "Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom";
+"S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien." = "S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien.";
+"La Configuració no les canvia: es conserven tal com són." = "La Configuració no les canvia: es conserven tal com són.";
+"Obre Warp Launch en iniciar sessió" = "Obre Warp Launch en iniciar sessió";
+"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió" = "macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió";
+"Mostra Ítems d’inici de sessió…" = "Mostra Ítems d’inici de sessió…";
+"En iniciar sessió" = "En iniciar sessió";
+"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió." = "Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió.";
+"Fitxer" = "Fitxer";
+"Carpeta de la configuració" = "Carpeta de la configuració";
+"Mostra al Finder" = "Mostra al Finder";
+"Configuració de prova (--config)" = "Configuració de prova (--config)";
+"Versió" = "Versió";
+"Estat" = "Estat";
+"No s'ha pogut preparar l'actualització: %@" = "No s'ha pogut preparar l'actualització: %@";
+"Actualitza automàticament" = "Actualitza automàticament";
+"Comprova ara" = "Comprova ara";
+"Actualitza ara" = "Actualitza ara";
+"Reinicia i actualitza" = "Reinicia i actualitza";
+"Mostra la finestra" = "Mostra la finestra";
+"Copia el diagnòstic" = "Copia el diagnòstic";
+"Copia el diagnòstic complet" = "Copia el diagnòstic complet";
+"Informe per a una issue a GitHub" = "Informe per a una issue a GitHub";
+"Diagnòstic" = "Diagnòstic";
+"Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de les carpetes; el complet, sí." = "Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de les carpetes; el complet, sí.";
+"Restaura Warp i surt…" = "Restaura Warp i surt…";
+"Restaura Warp i surt" = "Restaura Warp i surt";
+"Torna a deixar Warp com era" = "Torna a deixar Warp com era";
+"Deixar de fer servir Warp Launch" = "Deixar de fer servir Warp Launch";
+
+/* Actualitzacions: l'estat, el peu, l'ítem del menú i el motiu d'esperar (amb el motiu de PoliticaActualitzacions a dins) */
+"la versió «%@» no té la forma que toca" = "la versió «%@» no té la forma que toca";
+"La %@ s'instal·larà quan l'app es pugui reiniciar." = "La %@ s'instal·larà quan l'app es pugui reiniciar.";
+"Encara no s'ha comprovat" = "Encara no s'ha comprovat";
+"Comprovant…" = "Comprovant…";
+"Hi ha la %@." = "Hi ha la %@.";
+"L'actualització a la %@ continua a la seva finestra." = "L'actualització a la %@ continua a la seva finestra.";
+"Baixant la %@…" = "Baixant la %@…";
+"La %@ és a punt: s'aplicarà sola quan no facis servir l'app." = "La %@ és a punt: s'aplicarà sola quan no facis servir l'app.";
+"La %@ és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»." = "La %@ és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza».";
+"S'està actualitzant…" = "S'està actualitzant…";
+"No s'ha pogut comprovar: %@." = "No s'ha pogut comprovar: %@.";
+"No s'ha pogut baixar o preparar la %@." = "No s'ha pogut baixar o preparar la %@.";
+"Ara no: %@" = "Ara no: %@";
+"La %@ no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la." = "La %@ no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la.";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen." = "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen.";
+"Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app." = "Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app.";
+"L'actualització espera per reiniciar…" = "L'actualització espera per reiniciar…";
+"Reinicia i actualitza a la %@" = "Reinicia i actualitza a la %@";
+"Mostra la finestra de l'actualització" = "Mostra la finestra de l'actualització";
+"Comprova si hi ha actualitzacions…" = "Comprova si hi ha actualitzacions…";
+"Última comprovació: fa menys d'1 min" = "Última comprovació: fa menys d'1 min";
+"Última comprovació: fa %lld min" = "Última comprovació: fa %lld min";
+"Última comprovació: fa %lld h" = "Última comprovació: fa %lld h";
+"Tens l'última versió. Comprovat el %@ a les %@." = "Tens l'última versió. Comprovat el %@ a les %@.";
+"Tens l'última versió. Comprovat avui a les %@." = "Tens l'última versió. Comprovat avui a les %@.";
+
+/* ConsentimentRestauracio i VistaConsentiment: la pantalla del permís i retirar-lo */
+"Mentrestant, «%@» ha canviat: torna-ho a provar." = "Mentrestant, «%@» ha canviat: torna-ho a provar.";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració." = "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració.";
+"Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la tornes a obrir, te'l tornarà a demanar." = "Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la tornes a obrir, te'l tornarà a demanar.";
+"Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar la propera vegada." = "Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar la propera vegada.";
+"%@. Mentre no l'arreglis o l'esborris, Warp Launch no es pot fer servir." = "%@. Mentre no l'arreglis o l'esborris, Warp Launch no es pot fer servir.";
+"%@. Mentre no l'arreglis o l'esborris (%@), Warp Launch no es pot fer servir." = "%@. Mentre no l'arreglis o l'esborris (%@), Warp Launch no es pot fer servir.";
+"Sense carpeta de configuració, Warp Launch no ha tocat Warp." = "Sense carpeta de configuració, Warp Launch no ha tocat Warp.";
+"Ja has deixat de fer servir Warp Launch." = "Ja has deixat de fer servir Warp Launch.";
+"Sense el teu permís, Warp Launch no ha tocat Warp." = "Sense el teu permís, Warp Launch no ha tocat Warp.";
+"Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res per tornar com era. Només es pot fer amb la configuració de debò." = "Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res per tornar com era. Només es pot fer amb la configuració de debò.";
+"«%@» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch." = "«%@» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch.";
+"No s'ha pogut tornar l'ajust de Warp com era: %@. L'ajust i el permís no han canviat." = "No s'ha pogut tornar l'ajust de Warp com era: %@. L'ajust i el permís no han canviat.";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp torna a quedar desactivat, i el permís no ha canviat." = "No s'ha pogut retirar el permís: %@. L'ajust de Warp torna a quedar desactivat, i el permís no ha canviat.";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat." = "No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat.";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat." = "No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat.";
+"Has deixat de fer servir Warp Launch" = "Has deixat de fer servir Warp Launch";
+"Warp Launch ha de desactivar un ajust de Warp" = "Warp Launch ha de desactivar un ajust de Warp";
+"Abans de començar, necessita el teu permís." = "Abans de començar, necessita el teu permís.";
+"Per què cal" = "Per què cal";
+"Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides." = "Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides.";
+"Què canvia" = "Què canvia";
+"A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als teus altres Macs." = "A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als teus altres Macs.";
+"Només quan li demanes que llegeixi les finestres de Warp (per exemple, en importar-les), Warp Launch l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "Només quan li demanes que llegeixi les finestres de Warp (per exemple, en importar-les), Warp Launch l'activa uns segons perquè Warp les desi, i el torna a desactivar.";
+"Configuració de prova (%@): l'app no tocarà aquest ajust." = "Configuració de prova (%@): l'app no tocarà aquest ajust.";
+"No s'ha pogut desar el permís: %@." = "No s'ha pogut desar el permís: %@.";
+"Accepta" = "Accepta";
+
+/* Desinstallacio: «Restaura Warp i surt…» i la seva confirmació */
+"Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt." = "Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt.";
+"L'ajust de Warp %@ tornarà a estar activat, com el tenies abans de Warp Launch." = "L'ajust de Warp %@ tornarà a estar activat, com el tenies abans de Warp Launch.";
+"L'ajust de Warp %@ es quedarà desactivat, com el tenies abans de Warp Launch." = "L'ajust de Warp %@ es quedarà desactivat, com el tenies abans de Warp Launch.";
+"No se sap com tenies l'ajust de Warp %@ abans de Warp Launch, perquè ja la feies servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp." = "No se sap com tenies l'ajust de Warp %@ abans de Warp Launch, perquè ja la feies servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp.";
+"Warp Launch no ha canviat mai l'ajust de Warp %@: es queda com és." = "Warp Launch no ha canviat mai l'ajust de Warp %@: es queda com és.";
+"Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de sessió si hi és, i surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la Paperera." = "Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de sessió si hi és, i surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la Paperera.";
+"Vols deixar de fer servir Warp Launch?" = "Vols deixar de fer servir Warp Launch?";
+"En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust també canviarà als teus altres Macs." = "En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust també canviarà als teus altres Macs.";
+"Warp Launch deixarà de tenir permís per tocar l'ajust, sortirà dels ítems d'inici de sessió i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launch deixarà de tenir permís per tocar l'ajust, sortirà dels ítems d'inici de sessió i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís.";
+"Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís.";
+
+/* RefrescWarp: per què no es pot tocar l'ajust de Warp, i les notes i els avisos del menú de la icona */
+"«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" = "«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)";
+"Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)" = "Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)";
+"Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, Warp Launch hi desactivarà la restauració de sessió en menys d'un minut." = "Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, Warp Launch hi desactivarà la restauració de sessió en menys d'un minut.";
+"Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la restauració de sessió en menys d'un minut." = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la restauració de sessió en menys d'un minut.";
+"El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot desactivar la restauració de sessió. Ho continua provant cada minut." = "El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot desactivar la restauració de sessió. Ho continua provant cada minut.";
+"No es pot mirar la restauració de sessió de Warp: %@" = "No es pot mirar la restauració de sessió de Warp: %@";
+"No es pot activar la restauració de sessió de Warp: %@" = "No es pot activar la restauració de sessió de Warp: %@";
+"No s'ha pogut desactivar la restauració de sessió de Warp: %@. Si Warp es tanca, restaurarà les finestres sense Claude." = "No s'ha pogut desactivar la restauració de sessió de Warp: %@. Si Warp es tanca, restaurarà les finestres sense Claude.";

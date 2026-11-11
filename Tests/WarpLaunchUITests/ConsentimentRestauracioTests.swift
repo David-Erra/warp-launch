@@ -77,6 +77,19 @@ private func consentiment(_ carpeta: Carpeta, _ ajust: AjustFals, _ demanats: Co
             == "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració.")
     }
 
+    /// Multidioma (fase F3): la pantalla del permís, en anglès. Els textos es calculen cada vegada (cap `static let`): el de
+    /// les actualitzacions també surt en la llengua del bloc.
+    @Test func laPantallaDelPermisEnAngles() throws {
+        let carpeta = try Carpeta()
+        let c = consentiment(carpeta, AjustFals(), Comptador())
+        Idioma.$deProva.withValue("en") {
+            #expect(c.textSortir == "Without this permission, Warp Launch can't be used. If you quit, nothing is saved, and it will "
+                + "ask you again next time.")
+            #expect(ConsentimentRestauracio.textActualitzacions
+                == "Once a day, the app checks GitHub for a new version and updates itself. You can turn this off in Settings.")
+        }
+    }
+
     /// Sense consentiment, no hi ha refresc, l'entorn de l'ajust ni es demana, i el que l'app fa cada minut, en obrir Warp
     /// i en sortir no crida mai `posa`. No es desa res: la propera vegada es torna a preguntar.
     @Test func senseConsentimentNoEsTocaLAjust() throws {

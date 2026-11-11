@@ -509,7 +509,7 @@ private let prohibidesArrossegar = [
         #expect(accepten.count == 2 && accepten.contains { $0.hasPrefix("\(rutaConsentiment):") }
             && accepten.contains { $0.hasPrefix("Sources/WarpLaunchUI/VistaConsentiment.swift:") }, "\(accepten)")
         let vista = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaConsentiment.swift" }).text
-        #expect(vista.contains(#"Button("Accepta") { consentiment.accepta() }"#))
+        #expect(vista.contains(#"Button(t("Accepta")) { consentiment.accepta() }"#))
         // Retirar-lo (`.retirat(`, 0.31.0) tampoc: només `MagatzemPreferencies.retira`.
         let preferencies = "Sources/WarpLaunchCore/Preferencies.swift"
         let consentiments = try aparicions(de: donenConsentiment, a: codi)
@@ -752,7 +752,7 @@ private let prohibidesArrossegar = [
         ])
         // I només el botó de la confirmació.
         #expect(try linies(rutaVistaConfiguracio, #"\.confirma\("#) == [
-            #"Button("Restaura Warp i surt", role: .destructive) { desinstallacio.confirma() }"#,
+            #"Button(t("Restaura Warp i surt"), role: .destructive) { desinstallacio.confirma() }"#,
         ])
         #expect(try text(rutaVistaConfiguracio).components(separatedBy: ".confirmationDialog(").count == 2)
         // Treure l'app dels ítems d'inici no l'hi pot afegir.
@@ -2283,7 +2283,7 @@ private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
     @Test func elPermisSAcceptaAmbRetornINoAmbEscapada() throws {
         let codi = try fitxers("Sources")
         let vista = try #require(codi.first { $0.ruta == "Sources/WarpLaunchUI/VistaConsentiment.swift" })
-        #expect(vista.text.contains(#"Button("Accepta") { consentiment.accepta() }"#
+        #expect(vista.text.contains(#"Button(t("Accepta")) { consentiment.accepta() }"#
             + "\n                .keyboardShortcut(.defaultAction)\n"))
         let dreceres = vista.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { $0.contains("keyboardShortcut") && !$0.hasPrefix("//") }
@@ -2312,8 +2312,8 @@ private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
         let vista = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/VistaConfiguracio.swift"), encoding: .utf8)
         let titols = vista.split(separator: "\n").filter { $0.contains(#""Pestanyes noves""#) }
             .map { $0.trimmingCharacters(in: .whitespaces) }
-        #expect(titols == [#"case .pestanyesNoves: "Pestanyes noves""#], "\(titols)")
-        #expect(vista.contains(#"Text(editor.motiuPlantillaNoEditable ?? "S'aplica a les pestanyes noves i a les que s'importen sense ""#))
+        #expect(titols == [#"case .pestanyesNoves: t("Pestanyes noves")"#], "\(titols)")
+        #expect(vista.contains(#"Text(editor.motiuPlantillaNoEditable ?? t("S'aplica a les pestanyes noves i a les que s'importen sense "#))
     }
 
     /// La fila d'una finestra decideix si accepta pestanyes en cada arrossegament, no quan es dibuixa: amb `isEnabled`,
@@ -2880,13 +2880,13 @@ private func clausDeT(_ text: String) -> [(linia: Int, claus: [String])] {
         // A la seva pestanya: a «General», passaria dels 640 pt.
         #expect(vista.contains("            case .actualitzacions:\n                seccioActualitzacions\n"))
         #expect(vista.components(separatedBy: "seccioActualitzacions").count == 3)
-        #expect(vista.components(separatedBy: #"LabeledContent("Versió""#).count == 2)
+        #expect(vista.components(separatedBy: #"LabeledContent(t("Versió")"#).count == 2)
         #expect(vista.contains("TabView(selection: $actualitzacions.pestanyaConfiguracio)"))
         let app = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchApp/WarpLaunchApp.swift"), encoding: .utf8)
         #expect(app.contains("CommandGroup(after: .appInfo) {\n                ItemActualitzacions(aplicacio: aplicacio)\n                    .disabled(!aplicacio.consentiment.potContinuar)"))
         #expect(app.components(separatedBy: "ItemActualitzacions(aplicacio: aplicacio)").count == 3)
         // La finestra de l'actualitzador no es pot tancar, i l'app no té Dock: sempre s'hi ha de poder tornar, i la línia ha de dir per què s'espera.
-        #expect(vista.contains(#"Button("Mostra la finestra") { actualitzacions.mostraFinestra() }"#))
+        #expect(vista.contains(#"Button(t("Mostra la finestra")) { actualitzacions.mostraFinestra() }"#))
         #expect(vista.contains("if let avis = actualitzacions.textAvis {"))
         #expect(app.contains("case .mostraFinestra:\n                actualitzacions.mostraFinestra()"))
         let permis = try String(contentsOf: arrel.appending(path: "Sources/WarpLaunchUI/VistaConsentiment.swift"), encoding: .utf8)

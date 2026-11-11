@@ -38,8 +38,8 @@ public final class CopiaDiagnostic {
 
     /// «Copiat (anonimitzat): 6 bé, 2 avisos, 0 errors.»
     static func text(_ informe: InformeDiagnostic) -> String {
-        "Copiat (\(informe.anonimitzat ? "anonimitzat" : "complet")): \(informe.compta(.be)) bé, "
-            + "\(Plural.compta(informe.compta(.avis), "avís", "avisos")), "
-            + "\(Plural.compta(informe.compta(.error), "error", "errors"))."
+        let (be, avisos, errors) = (informe.compta(.be), informe.compta(.avis), informe.compta(.error))
+        return informe.anonimitzat ? t("Copiat (anonimitzat): \(be) bé, \(avisos) avisos, \(errors) errors.")
+            : t("Copiat (complet): \(be) bé, \(avisos) avisos, \(errors) errors.")
     }
 }

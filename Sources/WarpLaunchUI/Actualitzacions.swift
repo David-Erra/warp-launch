@@ -406,7 +406,7 @@ public final class Actualitzacions {
         guard let bloc, let magatzem else { return false }
         // `actualitzacio.json` no la podria tornar a llegir: es perdrien les fallades, i ho tornaria a provar sense límit.
         guard P.Versio(versio) != nil else {
-            errorPreparant = "la versió «\(versio)» no té la forma que toca"
+            errorPreparant = t("la versió «\(versio)» no té la forma que toca")
             Registre.actualitzacions.error("versió no vàlida: \(versio, privacy: .public)")
             return false
         }
@@ -454,20 +454,21 @@ public final class Actualitzacions {
 
     /// El text de la fila «Estat». `avui`: l'hora de mirar-ho, per als textos.
     public func text(avui: Date) -> String {
-        if let postposat { return "La \(postposat.versio) s'instal·larà quan l'app es pugui reiniciar." }
+        if let postposat { return t("La \(postposat.versio) s'instal·larà quan l'app es pugui reiniciar.") }
         return switch estat {
         case let .inicial(ultima):
-            ultima.map { "Última comprovació: \(Self.fa($0, avui: avui))" } ?? "Encara no s'ha comprovat"
-        case .comprovant: "Comprovant…"
-        case let .alDia(quan): "Tens l'última versió. Comprovat \(Self.quan(quan, avui: avui))."
-        case let .trobada(versio): "Hi ha la \(versio)."
-        case let .baixant(versio): ambFinestra ? "L'actualització a la \(versio) continua a la seva finestra." : "Baixant la \(versio)…"
+            ultima.map { Self.ultimaComprovacio($0, avui: avui) } ?? t("Encara no s'ha comprovat")
+        case .comprovant: t("Comprovant…")
+        case let .alDia(quan): Self.alDia(quan, avui: avui)
+        case let .trobada(versio): t("Hi ha la \(versio).")
+        case let .baixant(versio):
+            ambFinestra ? t("L'actualització a la \(versio) continua a la seva finestra.") : t("Baixant la \(versio)…")
         case let .aPunt(versio):
-            aplicaraSola(versio) ? "La \(versio) és a punt: s'aplicarà sola quan no facis servir l'app."
-                : "La \(versio) és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»."
-        case .aplicant: "S'està actualitzant…"
-        case let .error(missatge, _): "No s'ha pogut comprovar: \(missatge)."
-        case let .errorBaixant(versio, _): "No s'ha pogut baixar o preparar la \(versio)."
+            aplicaraSola(versio) ? t("La \(versio) és a punt: s'aplicarà sola quan no facis servir l'app.")
+                : t("La \(versio) és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza».")
+        case .aplicant: t("S'està actualitzant…")
+        case let .error(missatge, _): t("No s'ha pogut comprovar: \(missatge).")
+        case let .errorBaixant(versio, _): t("No s'ha pogut baixar o preparar la \(versio).")
         case .noDisponible: ""
         }
     }
@@ -477,11 +478,12 @@ public final class Actualitzacions {
         automatiques && intents < P.maximIntents && !intent.bloquejaAutomatic(candidat: versio)
     }
 
-    /// El motiu de no reiniciar ara: amb una versió a punt, o amb un reinici ajornat des de la finestra.
+    /// El motiu de no reiniciar ara: amb una versió a punt, o amb un reinici ajornat des de la finestra. Una frase sencera, amb
+    /// el motiu del Core a dins.
     public var textEspera: String? {
-        if postposat != nil, let motiuDemanatAra { return "Ara no: \(motiuDemanatAra.text)" }
+        if postposat != nil, let motiuDemanatAra { return t("Ara no: \(motiuDemanatAra.text)") }
         guard case .aPunt = estat, let motiuAra else { return nil }
-        return "Ara no: \(motiuAra.text)"
+        return t("Ara no: \(motiuAra.text)")
     }
 
     /// La línia de sota l'estat. Un reinici ajornat mana: és el que l'usuari acaba de demanar i no ha passat.
@@ -492,17 +494,21 @@ public final class Actualitzacions {
     /// Una versió no s'ha pogut instal·lar sola, i encara no s'ha instal·lat.
     public var textFallada: String? {
         guard let fallada = intent.versioFallada, let actual = P.Versio(versioActual), let versio = P.Versio(fallada), actual < versio else { return nil }
-        return "La \(fallada) no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la."
+        return t("La \(fallada) no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la.")
     }
 
-    public static let textPeuBase = "Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. "
-        + "GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen."
+    public static var textPeuBase: String {
+        t("""
+            Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. GitHub \
+            veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen.
+            """)
+    }
 
     /// El peu de la secció. Sense servei, només el motiu.
     public var textPeu: String {
         if case let .noDisponible(motiu) = estat { return motiu }
         guard case .aPunt = estat, !automatiques else { return Self.textPeuBase }
-        return Self.textPeuBase + " Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app."
+        return Self.textPeuBase + " " + t("Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app.")
     }
 
     public var boto: Boto {
@@ -520,13 +526,13 @@ public final class Actualitzacions {
 
     /// L'ítem del menú: «Comprova…», o, si n'hi ha una a punt, reiniciar. Passats `diesAvis` dies a punt, també quants (decisió 5).
     public var textMenu: String {
-        if postposat != nil { return "L'actualització espera per reiniciar…" }
+        if postposat != nil { return t("L'actualització espera per reiniciar…") }
         return switch estat {
         case let .aPunt(versio):
-            "Reinicia i actualitza a la \(versio)" + (diesAvisAra.map { " (fa \($0) dies)" } ?? "")
-        case .aplicant: "S'està actualitzant…"
-        case .baixant where ambFinestra: "Mostra la finestra de l'actualització"
-        default: "Comprova si hi ha actualitzacions…"
+            diesAvisAra.map { t("Reinicia i actualitza a la \(versio) (fa \($0) dies)") } ?? t("Reinicia i actualitza a la \(versio)")
+        case .aplicant: t("S'està actualitzant…")
+        case .baixant where ambFinestra: t("Mostra la finestra de l'actualització")
+        default: t("Comprova si hi ha actualitzacions…")
         }
     }
 
@@ -562,21 +568,24 @@ public final class Actualitzacions {
         return dies >= P.diesAvis ? dies : nil
     }
 
-    private static func fa(_ quan: Date, avui: Date) -> String {
+    /// «Última comprovació: fa 2 h», amb els dies en plural.
+    private static func ultimaComprovacio(_ quan: Date, avui: Date) -> String {
         let segons = max(0, avui.timeIntervalSince(quan))
-        if segons < 60 { return "fa menys d'1 min" }
-        if segons < 3600 { return "fa \(Int(segons / 60)) min" }
-        if segons < 86_400 { return "fa \(Int(segons / 3600)) h" }
-        let dies = Int(segons / 86_400)
-        return dies == 1 ? "fa 1 dia" : "fa \(dies) dies"
+        if segons < 60 { return t("Última comprovació: fa menys d'1 min") }
+        if segons < 3600 { return t("Última comprovació: fa \(Int(segons / 60)) min") }
+        if segons < 86_400 { return t("Última comprovació: fa \(Int(segons / 3600)) h") }
+        return t("Última comprovació: fa \(Int(segons / 86_400)) dies")
     }
 
-    private static func quan(_ data: Date, avui: Date) -> String {
-        let hora = DateFormatter()
-        hora.dateFormat = "HH:mm"
-        guard !Calendar.current.isDate(data, inSameDayAs: avui) else { return "avui a les \(hora.string(from: data))" }
-        let dia = DateFormatter()
-        dia.dateFormat = "dd/MM/yyyy"
-        return "el \(dia.string(from: data)) a les \(hora.string(from: data))"
+    /// «Tens l'última versió. Comprovat avui a les 09:45.» La data i l'hora, en la forma de la llengua dels textos: en català,
+    /// «dd/MM/yyyy» i «HH:mm», com abans; en anglès, «MM/dd/yyyy» i «09:45 AM».
+    private static func alDia(_ data: Date, avui: Date) -> String {
+        let forma = Date.FormatStyle(locale: Idioma.locale)
+        let hora = data.formatted(forma.hour(.twoDigits(amPM: .abbreviated)).minute(.twoDigits))
+        guard Calendar.current.isDate(data, inSameDayAs: avui) else {
+            let dia = data.formatted(forma.day(.twoDigits).month(.twoDigits).year())
+            return t("Tens l'última versió. Comprovat el \(dia) a les \(hora).")
+        }
+        return t("Tens l'última versió. Comprovat avui a les \(hora).")
     }
 }

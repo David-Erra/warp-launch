@@ -76,15 +76,17 @@ public final class RefrescWarp {
 
     /// «Restaura Warp i surt…» no ha pogut posar l'ajust: `settings.toml` acabava de canviar, i no s'hi ha escrit res.
     public struct MesTard: Error, Equatable, CustomStringConvertible {
-        public var description: String { "«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" }
+        public var description: String { t("«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)") }
     }
 
     /// «Restaura Warp i surt…» no ha pogut posar l'ajust: Warp no té `settings.toml`, i Warp Launch només el crea amb Warp
     /// obert i amb algun terminal (ronda 5).
     public struct QuanSObriWarp: Error, Equatable, CustomStringConvertible {
         public var description: String {
-            "Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi "
-                + "pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)"
+            t("""
+                Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi \
+                pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)
+                """)
         }
     }
 
@@ -127,20 +129,32 @@ public final class RefrescWarp {
     /// Sense `settings.toml` i amb Warp tancat o encara arrencant (ronda 5). No diu que Warp restaurarà res: Warp pot ser
     /// tancat, i potser no té cap finestra desada. «Quan Warp sigui obert»: també és cert si ja ho és i encara no té cap
     /// pestanya, o encara arrenca. «En menys d'un minut»: la vigilància de cada minut.
-    public static let notaSenseFitxer = "Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, "
-        + "Warp Launch hi desactivarà la restauració de sessió en menys d'un minut."
+    public static var notaSenseFitxer: String {
+        t("""
+            Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, Warp Launch hi desactivarà la \
+            restauració de sessió en menys d'un minut.
+            """)
+    }
     /// Sense la carpeta de Warp (0.31.2), l'app no la crea (`AjustRestauracio`). No és que Warp hagi de restaurar res: no ha
     /// obert mai cap finestra. Per això és una nota, i no un avís (decisió 5 d'en David, 08/11/2026). Quan Warp creï la
     /// carpeta, la vigilància de cada minut hi crearà el fitxer, amb Warp obert i amb alguna pestanya (ronda 5,
     /// `notaSenseFitxer`). No diu «quan l'obris»: no s'ha vist si Warp la crea en obrir-se per primer cop.
-    public static let notaWarpMaiObert = "Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, "
-        + "ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la "
-        + "restauració de sessió en menys d'un minut."
+    public static var notaWarpMaiObert: String {
+        t("""
+            Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, ni cap finestra per restaurar. \
+            Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la restauració de sessió en menys \
+            d'un minut.
+            """)
+    }
     /// Si fa més de 5 minuts seguits que l'ajust no es pot desactivar perquè `settings.toml` no para de canviar (decisió 3).
     /// No diu qui l'escriu (pot ser Warp o un altre programa), ni que Warp restaurarà res: potser l'ajust ja era desactivat,
     /// i l'app no ho pot saber mentre el fitxer canvia. Desapareix quan es pot desactivar.
-    public static let avisNoParaDeCanviar = "El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot "
-        + "desactivar la restauració de sessió. Ho continua provant cada minut."
+    public static var avisNoParaDeCanviar: String {
+        t("""
+            El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot desactivar la restauració de sessió. Ho \
+            continua provant cada minut.
+            """)
+    }
     @ObservationIgnored private let entorn: Entorn
     /// S'observa: «Actualitza l'estat de Warp» es desactiva mentre dura (`refrescant`, `EstatWarp.llegint`).
     private var enCurs: Task<Resultat, Never>?
@@ -190,7 +204,7 @@ public final class RefrescWarp {
                 noEsPotPerqueAcabaDeCanviar()
             }
         } catch {
-            avis = "No es pot mirar la restauració de sessió de Warp: \(error)"
+            avis = t("No es pot mirar la restauració de sessió de Warp: \(String(describing: error))")
             Registre.refresc.error("\(String(describing: error), privacy: .public)")
         }
     }
@@ -287,7 +301,7 @@ public final class RefrescWarp {
                 return avisant(inicial, warpTancat: false)
             }
         } catch {
-            avis = "No es pot activar la restauració de sessió de Warp: \(error)"
+            avis = t("No es pot activar la restauració de sessió de Warp: \(String(describing: error))")
             Registre.refresc.error("\(String(describing: error), privacy: .public)")
             return avisant(inicial, warpTancat: false)
         }
@@ -352,7 +366,10 @@ public final class RefrescWarp {
         }
         pendent = nil
         if let darrer {
-            avis = "No s'ha pogut desactivar la restauració de sessió de Warp: \(darrer). Si Warp es tanca, restaurarà les finestres sense Claude."
+            avis = t("""
+                No s'ha pogut desactivar la restauració de sessió de Warp: \(String(describing: darrer)). Si Warp es tanca, \
+                restaurarà les finestres sense Claude.
+                """)
             Registre.refresc.error("\(String(describing: darrer), privacy: .public)")
         } else {
             avis = nil
