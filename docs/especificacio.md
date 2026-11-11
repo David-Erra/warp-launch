@@ -51,7 +51,7 @@ Per a en David, **una finestra de Warp és un grup de sessions** (pestanyes). No
 | 05/11/2026 | **Els agents engeguen les feines en bypass (en David):** «Cal afegir-ho a l'app que els agents engeguin amb `--permission-mode bypassPermissions`». Les pestanyes en bypass fan que les feines noves del seu agent el portin; les que ja existeixen es desperten sense, per no fer còpies (`docs/disseny.md`, «Les feines de l'agent»). |
 | 05/11/2026 | **Quina conversa es reprèn (D7, revisada):** sempre la més recent de la carpeta de la pestanya, amb `--resume <id>`, si no és viva ni la darrera d'una altra pestanya. Si no n'hi ha cap, la recordada; si tampoc, una de nova. Només compten les converses escrites al terminal (ni `claude -p`, ni Claude Desktop, ni les feines en segon pla) on Claude ha respost, i la més recent és la de l'últim missatge al terminal (0.22.2). Mai `--continue`, que no mira res d'això. Substitueix la decisió de sota |
 | 04/11/2026 | **L'ordre que es mostra (D15):** fora `--continue` a l'inspector, «Copia l'ordre», la Configuració i el CLI. L'inspector diu a part quina conversa es reprendrà («reprèn 1b2c3d4e» o «nova»), i «Copia l'ordre» hi posa `--resume <id>` si el sap |
-| 04/11/2026 | **Historial (D16):** les ordres que l'app fa escriure a Warp comencen amb un espai, perquè zsh no les desi (Warp obre zsh amb `HIST_IGNORE_SPACE`). Es comprova a la prova L2 |
+| 04/11/2026 | **Historial (D16):** les ordres que l'app fa escriure a Warp comencen amb un espai, perquè zsh no les desi (Warp obre zsh amb `HIST_IGNORE_SPACE`). Es comprova a la prova L2. **Desmentida a L1 (05/11/2026):** les ordres surten igualment a l'historial de zsh i a la taula `commands` de Warp (`docs/fets-verificats.md`). **L'autor ho accepta (11/11/2026):** no fa cap mal, i no se'n busca cap altra manera |
 | 04/11/2026 | **CLI (D17):** `warp-launch obre <finestra>` per defecte només mostra què obriria (mode de prova, regla 4). Amb una opció explícita, també obre la finestra; Claude no la fa servir mai sense l'OK d'en David. **05/11/2026:** amb l'app oberta, no fa res; si Warp és tancat, l'obre |
 | 04/11/2026 | **Lectura periòdica (D18):** mentre l'app és en marxa, cada 60 s mira quina conversa té cada pestanya i ho desa a `estat.json` si ha canviat |
 | 04/11/2026 | **Finestra ja oberta en part (D13):** abans diu quines pestanyes ja són obertes, i obre una finestra nova només amb les que falten |
@@ -67,7 +67,7 @@ Per a en David, **una finestra de Warp és un grup de sessions** (pestanyes). No
 | 09/11/2026 | **Els dos menús, amb els mateixos noms (en David, 09/11/2026, 0.32.6).** «Fes que en el menu de l'app i en el menu contextual la mateixa funcio es digui igual.» «Torna a llegir Warp» passa a dir-se «Actualitza l'estat de Warp», i és també al menú Arxiu i al full d'importació. «Obre la finestra a Warp…» passa a «Obre a Warp…». El menú de la icona i la pantalla del permís diuen «Sobre l’app Warp Launch» i «Surt de l’app Warp Launch», els textos que macOS posa al menú de l'app. «Torna a importar-ho tot de Warp…» no canvia: és una altra funció, substitueix la configuració. |
 | 03/11/2026 | **Elements gràfics:** la icona de l'app es genera amb nano-banana (API de Gemini), amb la skill `app-icon` de BAMA adaptada al repo (`.claude/skills/app-icon/`). La icona de la barra de menú i els botons de l'editor són SF Symbols. **06/11/2026:** la icona de l'app es dibuixa amb codi (`scripts/icona-dibuixa.swift`) |
 
-## Propostes tècniques (pendents de l'OK d'en David)
+## Propostes tècniques (acceptades i fetes; es conserven com a referència)
 
 - **App de barra de menú, amb una finestra d'edició.**
   - Si s'obre des d'Apps o del Finder, mostra l'editor. Si no, només sortiria la icona de la barra de menú i
@@ -176,7 +176,7 @@ Per a en David, **una finestra de Warp és un grup de sessions** (pestanyes). No
 
 ## Pendents
 
-- **Actualització automàtica (Sparkle), abans d'anunciar-la:** pujar `main` i `auto_updates true` i `zap` a la recepta; publicar; i la primera actualització real, també amb Homebrew. Després, treure del README que encara no és publicada.
+- **Actualització automàtica (Sparkle), abans d'anunciar-la:** la primera actualització real, també amb Homebrew (amb la 0.34). **Fet l'11/11/2026:** pujar `main` i `auto_updates true` i `zap` a la recepta, publicar la 0.33.0 (l'autor) i treure del README que no és publicada.
   Les rondes de prova s'acaben a la C, en part (la D, la E i la F no es fan: fila del 10/11/2026). Fets: la clau de signatura (l'autor, 11/11/2026, amb còpia fora
   del Mac) i `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (0.33.0). `docs/disseny.md`, secció 11.
 - **Revisar tot el que es va fer abans:**

@@ -1539,7 +1539,7 @@ el codi les cita pel número («decisió 3», «decisió 4»…). Les de la rond
 amb Warp obert), a la fila de després. Les set de la ronda 6 (08/11/2026, 0.31.4), a l'última: el codi les cita amb la data o
 amb la ronda («decisió 3 d'en David, 08/11/2026», «decisió 7 (ronda 6)»), i aquí, «ronda 6, decisió 3». Cada pas va tenir una
 revisió, amb correccions.
-**L'última versió de GitHub és la 0.31.5** (09/11/2026; què s'hi ha provat, a «0.31.5: les cinc decisions»). **La 0.31.4, també publicada, en David l'ha provada a l'app i en un usuari de macOS nou** (09/11/2026, ho ha dit ell).
+**Des de l'11/11/2026, l'última versió de GitHub és la 0.33.0** (la primera amb actualització automàtica, secció 11). **Abans, la 0.31.5** (09/11/2026; què s'hi ha provat, a «0.31.5: les cinc decisions»). **La 0.31.4, també publicada, en David l'ha provada a l'app i en un usuari de macOS nou** (09/11/2026, ho ha dit ell).
 «Per provar a l'app» i «Per provar en un usuari de macOS nou», al final, i els apartats «A l'app» de cada pas queden com a guia:
 no s'ha anotat punt per punt què s'hi ha vist. Tornar-hi és sempre amb l'OK d'en David (regla 4).
 
@@ -2142,7 +2142,7 @@ Decisió: `especificacio.md`, fila del 09/11/2026. El que s'ha llegit i provat d
     0.32.x hi afegeix abans i després (signar, `appcast.xml`, `--latest`, la comprovació final).
   - **Quan hi hagi notarització** (decisió 1 de la fila del 07/11/2026): treure de la recepta el pas de la quarantena, i les
     frases que l'expliquen al README d'aquí i al del tap.
-  - **Amb Sparkle** (decisió 6 de la mateixa fila; encara no és a la recepta: pas 12 de la secció 11, i `publica.sh` refusa sense): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
+  - **Amb Sparkle** (decisió 6 de la mateixa fila; a la recepta des de l'11/11/2026, commit `d9581af` del tap, pas 12 de la secció 11; `publica.sh` refusa sense): `auto_updates true` a la recepta. Així, `brew upgrade` només l'actualitza si la
     versió del paquet és més vella que la de la recepta, i no hi passa pel damunt quan Sparkle ja l'ha posada al dia (llegit a
     `cask/cask.rb` i `env_config.rb` de Homebrew).
   - **Sense provar:** obrir una app instal·lada amb Homebrew, i el pas de tancar-la i tornar-la a obrir en actualitzar.
@@ -2198,7 +2198,7 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
   `prototip/` surt del repo (és a l'historial, 114c97d).
 - De les versions del lot, són publicades la 0.31.4 i la 0.31.5 (09/11/2026), i s'instal·len també amb Homebrew.
 - De les vuit decisions del 07/11/2026, falten la signatura amb Developer ID (1), l'idioma (3; al llançament, anglès i català,
-  decisió 7 del 08/11/2026), publicar Sparkle (6: al codi des de la 0.32.0, secció 11, sense publicar) i l'excepció de la guarda per a la pàgina
+  decisió 7 del 08/11/2026), publicar Sparkle (6: al codi des de la 0.32.0 i publicat amb la 0.33.0 l'11/11/2026, secció 11) i l'excepció de la guarda per a la pàgina
   del permís (8). De les
   dotze de la fila del 08/11/2026, totes les que tocaven el codi són fetes (0.30.3, 0.31.0 i 0.31.1), menys l'idioma. De la
   ronda 4, la A és feta (0.31.2) i les quatre de B es queden com eren. La de la ronda 5, a la 0.31.3. De les set de la ronda 6, la
@@ -2266,10 +2266,10 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
 #### Fer (ningú més no ho pot fer)
 
 1. **Crear la clau de signatura** al seu terminal, un sol cop, i fer-ne una còpia fora del Mac el mateix dia (secció 5). Passar la part pública. **Fet l'11/11/2026,** amb la còpia (ho diu l'autor).
-2. **Comprovar que el certificat «Warp Launch Dev» té còpia** fora del Mac.
+2. **Comprovar que el certificat «Warp Launch Dev» té còpia** fora del Mac. **Fet l'11/11/2026:** l'ha exportat (ho diu l'autor).
 3. **Donar l'OK de cada ronda de prova** (secció 8): sortir de l'app, mirar el que diu i acceptar els diàlegs de macOS. La ronda D és un reinici, i la fa ell. La ronda E es fa en un usuari de macOS nou. **Fet fins a la C; la D i la E no es fan (10/11/2026).**
-4. **OK per a la recepta de Homebrew** (afegir `auto_updates true`) **i per a cada publicació**.
-5. **Passar el seu Mac a la primera versió publicada amb Sparkle (la 0.33.0 o posterior) a mà**, i mirar la primera actualització real.
+4. **OK per a la recepta de Homebrew** (afegir `auto_updates true`) **i per a cada publicació**. **La recepta, pujada l'11/11/2026; la 0.33.0, publicada per l'autor el mateix dia.**
+5. **Passar el seu Mac a la primera versió publicada amb Sparkle (la 0.33.0 o posterior) a mà**, i mirar la primera actualització real. **Fet l'11/11/2026 a les 16:29** (`instal·la.sh --github --aplica`, amb el seu OK): la 0.33.0, amb l'adreça i la signatura bona. La primera actualització real, amb la 0.34.
 
 #### Decisions (09/11/2026: l'autor accepta totes les recomanacions)
 
