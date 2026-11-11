@@ -49,3 +49,9 @@ extension ClaudePestanya {
     /// era la plantilla d'importar sense configuració; des de la 0.28.0 l'app ja no la té (D11, revisada el 07/11/2026). La mateixa a `WarpLaunchCoreTests/Fixtures.swift`.
     static let habituals = ClaudePestanya(esforc: "xhigh", ultracode: true, saltaPermisos: true)
 }
+
+/// Un booleà que una prova canvia després de passar-lo a un tancament `@MainActor` (que és `Sendable`).
+final class Bandera: @unchecked Sendable {
+    var valor: Bool
+    init(_ valor: Bool) { self.valor = valor }
+}

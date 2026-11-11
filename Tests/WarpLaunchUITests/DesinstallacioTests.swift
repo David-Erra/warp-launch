@@ -236,7 +236,7 @@ private final class Mon {
         let mon = try Mon(ajust: false)
         let c = mon.consentiment()
         c.accepta()
-        _ = await try #require(c.refresc).refresca()
+        _ = try await #require(c.refresc).refresca()
         #expect(mon.ajust.posats == [true, false])
         #expect(try mon.preferencies.restauracioOriginal == false)
 

@@ -154,7 +154,7 @@ extension Obertura {
             guard case let .success(fitxer)? = finestra.fitxer else { continue }
             tasques[n] = Task { @MainActor in
                 await executa(finestra, fitxer: fitxer, engegat: engegat, llegeix: { await compartida.llegeix() },
-                              ambAltres: finestres.count > 1, fase: { [weak self] in self?.avancaTot($0) })
+                              ambAltres: finestres.count > 1, fase: { self.avancaTot($0) })
             }
         }
         var resultats: [Int: ExecucioObertura.Resultat] = [:]

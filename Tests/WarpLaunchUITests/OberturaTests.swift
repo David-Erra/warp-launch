@@ -905,13 +905,13 @@ private final class ComptaLectures: @unchecked Sendable {
     @Test func ambUnaActualitzacioAplicantNoEsPotObrir() throws {
         let b = try Banc()
         #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
-        var aplicant = false
-        b.obertura.aplicantActualitzacio = { aplicant }
+        let aplicant = Bandera(false)
+        b.obertura.aplicantActualitzacio = { aplicant.valor }
         #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
-        aplicant = true
+        aplicant.valor = true
         #expect(!b.obertura.potObrir(id(100)))
         #expect(!b.obertura.potObrirTot)
-        aplicant = false
+        aplicant.valor = false
         #expect(b.obertura.potObrir(id(100)) && b.obertura.potObrirTot)
     }
 
@@ -933,8 +933,8 @@ private final class ComptaLectures: @unchecked Sendable {
         let b = try Banc()
         let warp = EstatWarp(lector: { abans })
         let ordre = OrdreActualitzaWarp(warp: warp, consentiment: b.consentiment, obertura: b.obertura)
-        var aplicant = false
-        b.obertura.aplicantActualitzacio = { aplicant }
+        let aplicant = Bandera(false)
+        b.obertura.aplicantActualitzacio = { aplicant.valor }
         #expect(ordre.potExecutar)
 
         for obrint: Obertura.Estat in [.preparant("Prova", UUID()), .preparantTot(UUID())] {
@@ -945,12 +945,12 @@ private final class ComptaLectures: @unchecked Sendable {
         }
 
         b.obertura.estat = .cap
-        aplicant = true
+        aplicant.valor = true
         #expect(!ordre.potExecutar, "aplicant")
         await ordre.executa()
         #expect(warp.estat == .senseLlegir, "si el clic arriba igualment, no fa res")
 
-        aplicant = false
+        aplicant.valor = false
         b.obertura.estat = .noEsPot("no")
         #expect(ordre.potExecutar)
         await ordre.executa()
@@ -962,8 +962,8 @@ private final class ComptaLectures: @unchecked Sendable {
     /// encara que només esperi el clic: «Obre» començaria a obrir amb la lectura a mig fer.
     @Test func importarNoEsPotMentreSObreNiSActualitza() async throws {
         let b = try Banc()
-        var aplicant = false
-        b.obertura.aplicantActualitzacio = { aplicant }
+        let aplicant = Bandera(false)
+        b.obertura.aplicantActualitzacio = { aplicant.valor }
         #expect(b.editor.potImportar)
 
         await b.obertura.demana(id(100))
@@ -977,12 +977,12 @@ private final class ComptaLectures: @unchecked Sendable {
         }
 
         b.obertura.estat = .cap
-        aplicant = true
+        aplicant.valor = true
         #expect(!b.editor.potImportar, "aplicant")
         b.editor.demanaImportar()
         #expect(!b.editor.demanaImportacio, "si el clic arriba igualment, no fa res")
 
-        aplicant = false
+        aplicant.valor = false
         #expect(b.editor.potImportar)
         b.editor.demanaImportar()
         #expect(b.editor.demanaImportacio)
@@ -997,13 +997,13 @@ private final class ComptaLectures: @unchecked Sendable {
         b.editor.carrega()
         #expect(b.editor.estat == .senseConfiguracio && b.editor.potImportar)
 
-        var aplicant = true
-        b.obertura.aplicantActualitzacio = { aplicant }
+        let aplicant = Bandera(true)
+        b.obertura.aplicantActualitzacio = { aplicant.valor }
         #expect(!b.editor.potImportar)
         b.editor.demanaImportar()
         #expect(!b.editor.demanaImportacio, "si el clic arriba igualment, no fa res")
 
-        aplicant = false
+        aplicant.valor = false
         b.editor.demanaImportar()
         #expect(b.editor.demanaImportacio)
     }
@@ -1018,8 +1018,8 @@ private final class ComptaLectures: @unchecked Sendable {
             return abans
         })
         let full = try #require(FullImportacio(editor: b.editor, warp: warp))
-        var aplicant = false
-        b.obertura.aplicantActualitzacio = { aplicant }
+        let aplicant = Bandera(false)
+        b.obertura.aplicantActualitzacio = { aplicant.valor }
         #expect(full.potLlegir)
 
         b.obertura.estat = .preparant("W", UUID())
@@ -1034,13 +1034,13 @@ private final class ComptaLectures: @unchecked Sendable {
         let previsualitzada = try #require(full.importacio)
         #expect(lectures.valor == 1)
 
-        aplicant = true
+        aplicant.valor = true
         #expect(!full.potLlegir)
         await full.llegeix()
         #expect(full.importacio == previsualitzada, "la previsualització es queda")
         #expect(lectures.valor == 1, "si el clic arriba igualment, no llegeix")
 
-        aplicant = false
+        aplicant.valor = false
         b.obertura.estat = .preparantTot(UUID())
         #expect(!full.potLlegir)
         await full.llegeix()
@@ -1056,16 +1056,16 @@ private final class ComptaLectures: @unchecked Sendable {
             llegides += 1
             return .success(abans)
         }, ambRefresc: { false })
-        var aplicant = false
-        b.obertura.aplicantActualitzacio = { aplicant }
+        let aplicant = Bandera(false)
+        b.obertura.aplicantActualitzacio = { aplicant.valor }
         #expect(lligam.potLligar)
 
-        aplicant = true
+        aplicant.valor = true
         #expect(!lligam.potLligar)
         await lligam.demana()
         #expect(lligam.estat == .cap && llegides == 0, "si el clic arriba igualment, no fa res")
 
-        aplicant = false
+        aplicant.valor = false
         #expect(lligam.potLligar)
         await lligam.demana()
         #expect(lligam.mostraFull && llegides == 1)
