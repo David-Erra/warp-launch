@@ -146,13 +146,15 @@ extension Editor {
             }
         }
 
-        /// El nom del pas de Desfés.
+        /// El nom del pas de Desfés: una ordre, com les del menú Edició («Desfés Activa «Salta els permisos»», «Undo Turn On Skip
+        /// Permissions»), i no l'etiqueta de l'interruptor («Salta els permisos», «Skip permissions»), que en anglès no porta
+        /// majúscules a cada paraula.
         public func accio(_ valor: Bool) -> String {
             switch self {
             case .activat: valor ? t("Activa Claude") : t("Desactiva Claude")
             case .ultracode: valor ? t("Activa l'ultracode") : t("Desactiva l'ultracode")
-            case .continua: valor ? t("Continua la conversa") : t("No continuïs la conversa")
-            case .saltaPermisos: valor ? t("Salta els permisos") : t("No saltis els permisos")
+            case .continua: valor ? t("Activa «Continua la conversa»") : t("Desactiva «Continua la conversa»")
+            case .saltaPermisos: valor ? t("Activa «Salta els permisos»") : t("Desactiva «Salta els permisos»")
             }
         }
     }

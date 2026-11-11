@@ -421,7 +421,7 @@
 "Activa Claude" = "Turn On Claude";
 "Desactiva Claude" = "Turn Off Claude";
 
-/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (un interruptor i el seu pas de Desfés tenen la mateixa clau) */
+/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (els d'un interruptor, «Activa «…»» i «Desactiva «…»»: al menú Edició són ordres, i l'interruptor és una etiqueta) */
 "Tria una pestanya per revisar-la" = "Choose a Tab to Review";
 "Cap finestra" = "No Windows";
 "Tria una finestra" = "Choose a Window";
@@ -434,9 +434,11 @@
 "Activa l'ultracode" = "Turn On Ultracode";
 "Desactiva l'ultracode" = "Turn Off Ultracode";
 "Continua la conversa" = "Continue conversation";
-"No continuïs la conversa" = "Don't continue conversation";
+"Activa «Continua la conversa»" = "Turn On Continue Conversation";
+"Desactiva «Continua la conversa»" = "Turn Off Continue Conversation";
 "Salta els permisos" = "Skip permissions";
-"No saltis els permisos" = "Don't skip permissions";
+"Activa «Salta els permisos»" = "Turn On Skip Permissions";
+"Desactiva «Salta els permisos»" = "Turn Off Skip Permissions";
 "Canvia el nom de la sessió" = "Change Session Name";
 
 /* EditorOrdres i EditorPlantilla: «Duplica», els avisos del menú de la icona i per què no es pot canviar la plantilla */

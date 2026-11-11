@@ -1712,8 +1712,29 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(editor.siNo(.ultracode) == .diversos)
 
         editor.posa(.continua, false)
-        #expect(editor.undoManager.undoActionName == "No continuïs la conversa")
+        #expect(editor.undoManager.undoActionName == "Desactiva «Continua la conversa»")
         #expect(editor.configuracio.pestanya(id(13))?.claude.continua == true, "només les triades")
+    }
+
+    /// Multidioma (F4): el pas de Desfés d'un interruptor és una ordre, com les del menú Edició, i en anglès porta majúscules a
+    /// cada paraula («Undo Turn On Skip Permissions»); l'etiqueta de l'interruptor, no («Skip permissions»). Per això no
+    /// comparteixen la clau.
+    @Test func elsNomsDeDesfesDelsInterruptorsSonOrdres() throws {
+        let tmp = try Temporal()
+        let editor = try editorAmbMostra(tmp)
+        #expect(Editor.CampSiNo.continua.accio(true) == "Activa «Continua la conversa»")
+        #expect(Editor.CampSiNo.saltaPermisos.accio(false) == "Desactiva «Salta els permisos»")
+        Idioma.$deProva.withValue("en") {
+            #expect(Editor.CampSiNo.allCases.flatMap { [$0.accio(true), $0.accio(false)] } == [
+                "Turn On Claude", "Turn Off Claude", "Turn On Ultracode", "Turn Off Ultracode",
+                "Turn On Continue Conversation", "Turn Off Continue Conversation",
+                "Turn On Skip Permissions", "Turn Off Skip Permissions",
+            ])
+            #expect(t("Continua la conversa") == "Continue conversation" && t("Salta els permisos") == "Skip permissions")
+            editor.pestanyesSeleccionades = [id(11), id(12)]
+            editor.posa(.saltaPermisos, false)
+            #expect(editor.undoManager.undoActionName == "Turn Off Skip Permissions")
+        }
     }
 
     @Test func queQuedaDesactivat() throws {
@@ -1725,7 +1746,7 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(!editor.claudeApagatATotes)
         editor.posa(.saltaPermisos, false)
         #expect(!editor.modeSenseEfecte)
-        #expect(editor.undoManager.undoActionName == "No saltis els permisos")
+        #expect(editor.undoManager.undoActionName == "Desactiva «Salta els permisos»")
         editor.pestanyesSeleccionades = [id(12), id(13)]
         #expect(!editor.modeSenseEfecte, "valors diversos: el mode es pot canviar")
         editor.posa(.activat, false)
@@ -2851,7 +2872,7 @@ private func editorAmbQuatre(_ tmp: Temporal) throws -> Editor {
 @MainActor
 @Suite struct PlantillaDesferTests {
     private func noSalta(_ editor: Editor) {
-        editor.canviaPlantilla(nom: "No saltis els permisos") { $0.saltaPermisos = false }
+        editor.canviaPlantilla(nom: "Desactiva «Salta els permisos»") { $0.saltaPermisos = false }
     }
 
     @Test func laPlantillaVaAlSeuDesfer() throws {
@@ -2859,13 +2880,13 @@ private func editorAmbQuatre(_ tmp: Temporal) throws -> Editor {
         let editor = try editorAmbMostra(tmp)
         noSalta(editor)
         #expect(!editor.configuracio.plantilla.saltaPermisos)
-        #expect(editor.desferPlantilla.undoActionName == "No saltis els permisos")
+        #expect(editor.desferPlantilla.undoActionName == "Desactiva «Salta els permisos»")
         #expect(!editor.undoManager.canUndo, "res al Desfés de l'editor")
         #expect(editor.desaSiCal())
         #expect(try !#require(try tmp.magatzem.carrega()).configuracio.plantilla.saltaPermisos)
         editor.desferPlantilla.undo()
         #expect(editor.configuracio.plantilla.saltaPermisos)
-        #expect(editor.desferPlantilla.redoActionName == "No saltis els permisos")
+        #expect(editor.desferPlantilla.redoActionName == "Desactiva «Salta els permisos»")
         editor.desferPlantilla.redo()
         #expect(!editor.configuracio.plantilla.saltaPermisos)
         #expect(editor.canvisSenseDesar)
@@ -3007,7 +3028,7 @@ private func editorAmbQuatre(_ tmp: Temporal) throws -> Editor {
         #expect(editor.configuracio.plantilla.esforc == "max")
         #expect(editor.desferPlantilla.undoActionName == "Canvia l'esforç")
         editor.posaPlantilla(.saltaPermisos, false)
-        #expect(editor.desferPlantilla.undoActionName == "No saltis els permisos")
+        #expect(editor.desferPlantilla.undoActionName == "Desactiva «Salta els permisos»")
         #expect(!editor.modeSenseEfectePlantilla)
         editor.triaPlantilla(.modePermisos, a: .valor("plan"))
         editor.triaPlantilla(.model, a: .diversos)
