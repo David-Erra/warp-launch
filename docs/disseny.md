@@ -2944,16 +2944,18 @@ català). `CFBundleLocalizations` la posa `build-app.sh`, amb les `.lproj` dels 
 **Guardes (`GuardaTests`, per a qualsevol nombre de `.lproj`):** les carpetes són de les 10 llengües, amb ca i en i els dos
 fitxers; cada llengua té exactament les claus del català, també les del `.stringsdict`, sense claus repetides; els especificadors
 coincideixen amb els del català (per posició, `%2$@` inclòs; una forma d'un plural pot no dir el nombre); cada plural té `other`, i
-`one` fora de ja, zh-Hans i ko; cap valor buit; al català, valor = clau; i només `Idioma.swift` demana textos a un bundle. La de
-«cada `t("…")` del codi és al català» és escrita i desactivada (`cadaTextDelCodiEsAlCatala`): la clau d'una interpolació depèn
-del tipus del valor, i la fase F2 l'ha d'acabar.
+`one` fora de ja, zh-Hans i ko; cap valor buit; al català, valor = clau; i només `Idioma.swift` demana textos a un bundle. Des de
+F2, també que cada `t("…")` del codi és al català (`cadaTextDelCodiEsAlCatala`): llegeix les crides com el compilador (els
+escapaments, els textos de diverses línies sense el sagnat del final, el `%` doblat si hi ha valors) i, com que el tipus d'una
+interpolació no surt del codi, n'hi ha prou que hi sigui una de les combinacions de `%@`, `%lld`, `%llu`, `%d` i `%lf`. Una mostra
+en comprova la lectura (`laGuardaDelsTextosDelCodiFaLesClausComElCompilador`).
 
 **Fases:**
 
 | Fase | Què | Versió |
 |---|---|---|
 | F1 | La infraestructura: `Idioma`, el bundle, les guardes, `test.sh`, `build-app.sh` i `Info.plist` | 0.34.1 |
-| F2 | Els textos del Core (`WarpLaunchCore`: el CLI, els avisos, el diagnòstic…) amb `t`, i la guarda de F1 activada | |
+| F2 | Els textos del Core (`WarpLaunchCore`: el CLI, els avisos, els errors…) amb `t`, i la guarda de F1 activada | 0.34.2 |
 | F3 | Els de la UI i l'app (`Text`, `Button`, menús…) | |
 | F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | |
 | F5 | Les 8 llengües restants | |
@@ -2963,3 +2965,53 @@ del tipus del valor, i la fase F2 l'ha d'acabar.
 **Per a F2 i F3:** la guarda de les claus demana que `en.lproj` tingui totes les del català des del primer text: cada clau nova
 hi va alhora. Fins a F4, qui no tingui el Mac en català veuria l'app barrejada, i des de F1 ja hi veu els menús de macOS en
 anglès. Una variable local que es digui `t` (`{ t in … }`) amaga la funció dins del seu bloc.
+
+**F2 (0.34.2): els textos del Core.** 341 claus noves (313 textos i 28 plurals) als dos `.lproj`, de 27 fitxers de
+`WarpLaunchCore`: el CLI (`OrdreCLI`, `Informe`, `InformeObertura`, l'ajuda inclosa), el pla i el resultat d'obrir (`PlaObertura`,
+`ExecucioObertura`, `LaunchConfigWarp`, `FitxersLaunchWarp`, `OrdreClaude`, `YAMLWarp`, `AppWarp`), la lectura i l'ajust de Warp
+(`AjustRestauracio`, `LectorWarp`, `LectorSessions`, `Lector`, `LecturaWarp`), la configuració (`Configuracio`, `Validacio`,
+`Importador`, els magatzems, `EstatApp`, `Preferencies`, `EdicioConfiguracio`), les actualitzacions (`PoliticaActualitzacions`) i
+els noms de les ordres que també surten als textos (`WarpLaunch.ordreActualitzaEstat`, `ordreSobre`, `ordreSurt`). Els textos
+del Core que només fa servir la UI, també (els motius de les actualitzacions, els noms dels esforços i dels modes de permisos).
+Amb el Mac en una llengua que no sigui el català, el CLI ja surt en anglès, i l'app, barrejada fins a F3.
+- **Frases senceres.** Cap tros enganxat amb `+`: cada variant és un text sencer (amb Claude o sense, `partiria` o no), i els
+  `Plural.compta` i els `== 1 ?` del Core són plurals del `.stringsdict`, amb una variable per a cada xifra que fa canviar les
+  paraules (en català o en anglès); les altres xifres, `%lld` sense plural. Una de sola es queda amb `== 1 ?`: la nota de la
+  importació «a la mateixa carpeta hi ha «A», que queda / «A», «B», que queden només terminal», on el nombre no surt al text.
+  `Plural.compta` es queda per a la UI (F3) i el diagnòstic.
+- **Les cometes, les llistes i els decimals segueixen la llengua.** Un valor entre cometes que es compon a part és `t("«\(x)»")`
+  («“%@”» en anglès); una enumeració, `Idioma.llista` (`ListFormatter`: «A, B i C», «A, B, and C»); els GB, amb el separador
+  decimal de la llengua (`String(format:locale:)`). Un pid, un número de finestra, de pestanya o de línia i una versió, com a text.
+- **Cap text en un `static let`:** es calcularia un sol cop, en la llengua del primer que el demana (a les proves, potser una altra
+  que la del bloc de `Idioma.$deProva`). Els que en tenien un són `static var` calculades (`LecturaWarp.senseFinestres`,
+  `WarpPreview.noCompatible`, `ExecucioObertura.finestraBuida`…).
+- **El català, igual que abans,** excepte el singular quan la xifra és 1, que abans sortia en plural: «Warp: 1 finestra, 1
+  pestanya de terminal» i «Finestra 2 · 1 pestanya» (`llegeix`), «1 recuperada de l'historial, 1 que ja no existeix»,
+  «1 pestanya desada» (`avisFinestresAntigues`), «a 1 de 1 pestanya» (la finestra nova que no es reconeix) i «fa 1 byte». Tres
+  proves han canviat per això (`LectorTests.carpetaQueJaNoExisteix`, `FotoFinestresTests.noQuadraSiLaBaseEsAntiga` i
+  `OberturaTests.laMarcaAbansQueLaFinestra`). L'ajuda del CLI surt idèntica.
+- **Proves en anglès:** `TextosEnAnglesTests` (un error, un avís amb plural, un pid, l'ajuda, `Idioma.llista`) i, a
+  `OrdreCLITests`, el pla d'`obre` i `configuracio valida`, amb un error d'ús.
+
+**Es queda en català o en anglès a propòsit:**
+- el diagnòstic (`Diagnostic.swift`, en anglès per a les issues de GitHub), amb `PoliticaActualitzacions.NoDisponible.diagnostic`;
+- `TaulaOpcionsClaude` i els noms d'opcions i de modes de Claude (`--settings`, `bypassPermissions`), també entre parèntesis al
+  costat del nom traduït;
+- el registre (`Registre`, `os.Logger`) i els motius per al registre (`IntentActualitzacio.Lectura.ignorat`), i les
+  `precondition`;
+- el que s'escriu en fitxers o el que llegeixen Warp o Claude: la marca `# warp-launch: temporal`, `entorn-claude.sh`, el YAML, les
+  claus i els valors del JSON (també el del CLI amb `--json`: `"prova"`, `"repren"`), les variables d'entorn, el SQL i les rutes;
+  el nom intern de la finestra del porta-retalls («Porta-retalls»);
+- al CLI, les ordres, les opcions i el que s'hi escriu (`llegeix`, `--config`, `<warp.sqlite>`), el prefix `warp-launch:` dels
+  errors, i «pid» i «URL:» davant del valor;
+- els noms propis (Warp, Warp Launch, Claude Code, Opus…).
+
+Els noms per defecte es tradueixen («Finestra 3», «Pestanya 2», «Pestanya nova», «X còpia»): queden desats en la llengua amb què
+es creen.
+
+**Per a F3 i F4:**
+- Les frases de la UI que componen textos del Core (`"Ara no: \(motiu.text)"` d'`Actualitzacions`, `"No s'ha pogut
+  desactivar…: \(darrer)…"` de `RefrescWarp`) s'han de passar senceres a `t`, amb el text del Core com a valor.
+- El diagnòstic diu «reason, in Catalan: «…»» al costat del motiu de l'ajust de Warp (`AjustRestauracio.Refusat`), que ara surt en
+  la llengua de l'app: F4 ha de decidir si el motiu va en anglès o si el text diu la llengua.
+- Els textos del Core que la UI compara o en què busca (`.contains`) han de ser les claus, no el text traduït: avui no n'hi ha cap.
