@@ -222,6 +222,10 @@ corregeix-lo i deixa'n constància.
     hereten l'UUID del pane on es va engegar el dimoni.
   - Per lligar una sessió amb el seu pane, cal filtrar `kind == interactive` amb ascendent
     `stable terminal-server`.
+- **L'hora d'inici d'un shell (11/11/2026, comprovat en aquest Mac en implementar la 0.34.0):** `p_starttime` del
+  `kinfo_proc` (`sysctl` `KERN_PROC_PID`) coincideix amb el `lstart` de `ps`. Amb el pid, identifica el shell d'una pestanya
+  de terminal, que no porta ni la marca ni el pane: quan el procés acaba, el pid es pot reutilitzar, però el nou té una altra
+  hora. No canvia amb `exec` (llegit a la documentació de `proc`, no provat).
 - **Probablement es manté després de reiniciar el Mac** (03/11/2026, indicis):
   - La majoria dels panes tenien blocks anteriors a l'última arrencada del Mac, lligats al seu UUID.
   - Falta confirmar-ho amb un reinici, que ha de fer en David.

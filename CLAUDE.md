@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (11/11/2026, 0.33.0 al codi i publicada)
+## Estat (11/11/2026, 0.34.0 al codi; publicada, 0.33.0)
 
 - **Fins a la 1.0.0 (decisió de l'autor, 11/11/2026; el detall, al seu pla privat, fora del repo):** 0.34, el nucli fiable (les pestanyes només de terminal
   es reconeixen i no es dupliquen; reinici, L2 i L5 amb l'OK; en publicar-la, la primera actualització automàtica real); 0.35, multidioma en 10 llengües (ca, en, es, fr, de, it, pt-BR, ja,
@@ -184,6 +184,11 @@ Els requisits són a `docs/especificacio.md`.
     `demanaImportar` (el menú Arxiu i l'estat buit), `FullImportacio.potLlegir` (els dos botons del full; si en obrir-se no pot llegir, ho diu) i `Lligam.potLligar`
     (l'actualització que s'aplica). Importar tampoc amb el full d'obrir o de lligar a la vista, i amb el full d'importar obert no es comença cap obertura (el menú de
     la icona ho deixava), ni el full d'iniciar sessió el trepitja. Guarda: `lesLecturesAmbFinestresPassenPerLaSevaCondicio`. Només proves i codi llegit: no s'ha vist a l'app.
+- **0.34.0 (11/11/2026): les pestanyes només de terminal es reconeixen pel seu shell** (aprovat per en David l'11/11/2026). En confirmar un
+  llançament, `ConfirmacioObertura.shells` desa a `estat.json` el pid i l'hora d'inici del shell de cada pestanya de terminal (`VincleEstat.shell`,
+  opcional; la versió del fitxer continua a 1, i la 0.33.0 el llegeix: `EstatAppTests`), només si no hi ha cap dubte. Mentre el shell sigui viu
+  (mateix pid i mateixa hora), el pla la dona per oberta (`OnOberta.shellViu`) i no la torna a obrir. Amb la restauració activada mana la base.
+  «Lliga» no en desa cap. Només proves amb dades fictícies: falta la prova real (`/tmp/warp-launch-prova034`, 2 pestanyes de terminal, amb l'OK).
 - **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
