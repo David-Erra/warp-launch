@@ -27,11 +27,11 @@ struct VistaImportacio: View {
             HStack {
                 if full.importacio != nil {
                     Button(WarpLaunch.ordreActualitzaEstat) { Task { await full.llegeix() } }
-                        .help("\(WarpLaunch.ordreActualitzaEstat), per si hi has obert o tancat res")
+                        .help(t("\(WarpLaunch.ordreActualitzaEstat), per si hi has obert o tancat res"))
                         .disabled(!full.potLlegir)
                 }
                 Spacer()
-                Button("Cancel·la", role: .cancel) { tanca() }
+                Button(t("Cancel·la"), role: .cancel) { tanca() }
                     .keyboardShortcut(.cancelAction)
                 Button(full.boto) {
                     if full.confirma() { tanca() }
@@ -52,15 +52,15 @@ struct VistaImportacio: View {
             Section(full.titol) {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Llegint Warp…")
+                    Text(t("Llegint Warp…"))
                 }
             }
         case let .error(motiu):
             Section(full.titol) {
-                Label("No s'ha pogut llegir Warp: \(motiu)", systemImage: "exclamationmark.triangle.fill")
+                Label(t("No s'ha pogut llegir Warp: \(motiu)"), systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
                     .textSelection(.enabled)
-                Button("Torna-ho a provar") { Task { await full.llegeix() } }
+                Button(t("Torna-ho a provar")) { Task { await full.llegeix() } }
                     .disabled(!full.potLlegir)
             }
         case let .senseFinestres(motiu):
@@ -77,12 +77,12 @@ struct VistaImportacio: View {
                     Label(text, systemImage: "exclamationmark.triangle")
                 }
                 if full.plantillaHaCanviat {
-                    Label("La plantilla ha canviat a la Configuració: prem «\(WarpLaunch.ordreActualitzaEstat)» per importar amb la nova",
+                    Label(t("La plantilla ha canviat a la Configuració: prem «\(WarpLaunch.ordreActualitzaEstat)» per importar amb la nova"),
                           systemImage: "arrow.clockwise")
                 }
             }
             if !full.avisosLectura.isEmpty {
-                Section("Avisos de la lectura") {
+                Section(t("Avisos de la lectura")) {
                     ForEach(Array(full.avisosLectura.enumerated()), id: \.offset) { _, avis in
                         Label(avis, systemImage: "exclamationmark.triangle")
                             .textSelection(.enabled)
@@ -90,7 +90,7 @@ struct VistaImportacio: View {
                 }
             }
             if let ordre = full.ordrePlantilla {
-                Section("Pestanyes que no tenien Claude obert") {
+                Section(t("Pestanyes que no tenien Claude obert")) {
                     // Queden només terminal (D-P5a): es diu abans de l'ordre.
                     if let nota = full.notaSenseClaudeObert {
                         Text(nota)
@@ -102,13 +102,13 @@ struct VistaImportacio: View {
                         .textSelection(.enabled)
                 }
             }
-            Section("Finestres") {
+            Section(t("Finestres")) {
                 ForEach(importacio.configuracio.finestres) { finestra in
                     LabeledContent(finestra.nom, value: finestra.resum)
                 }
             }
             if !importacio.notes.isEmpty {
-                Section("Notes") {
+                Section(t("Notes")) {
                     ForEach(Array(importacio.notes.enumerated()), id: \.offset) { _, nota in
                         Text(nota.description)
                             .textSelection(.enabled)

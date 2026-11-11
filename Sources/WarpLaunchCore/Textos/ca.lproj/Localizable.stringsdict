@@ -742,5 +742,405 @@
 			<string>%lld errors</string>
 		</dict>
 	</dict>
+	<!-- ObreTot i FullObertura: «Obre-ho tot» i els botons d'obrir -->
+	<key>S'obriran %lld finestres noves de Warp amb %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ de Warp amb %#@p@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>S'obrirà %lld finestra nova</string>
+			<key>other</key>
+			<string>S'obriran %lld finestres noves</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>S'obriran %lld finestres noves de Warp amb %lld pestanyes: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ de Warp amb %#@p@: %@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>S'obrirà %lld finestra nova</string>
+			<key>other</key>
+			<string>S'obriran %lld finestres noves</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>S'han obert %lld finestres a Warp, amb %lld pestanyes, %lld amb Claude.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ a Warp, amb %#@p@, %lld amb Claude.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>S'ha obert %lld finestra</string>
+			<key>other</key>
+			<string>S'han obert %lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>S'han obert bé %lld de %lld finestres a Warp.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>S'han obert bé %lld de %#@f@ a Warp.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+	</dict>
+	<key>Obrint %lld finestres a Warp…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Obrint %#@f@ a Warp…</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+	</dict>
+	<key>%lld avisos</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@a@</string>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld avís</string>
+			<key>other</key>
+			<string>%lld avisos</string>
+		</dict>
+	</dict>
+	<key>Obre %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Obre %#@p@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>Obre %lld finestres</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Obre %#@f@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense lligam potser ja són obertes a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya sense lligam potser ja és oberta a Warp: si ho és, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.</string>
+			<key>other</key>
+			<string>%lld pestanyes sense lligam potser ja són obertes a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.</string>
+		</dict>
+	</dict>
+	<key>Warp ja té %lld pestanyes que l'app no reconeix (potser les ha restaurat Warp, sense Claude). Si obres, quedaran repetides: tanca-les abans si no les vols.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp ja té %#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya que l'app no reconeix (potser l'ha restaurat Warp, sense Claude). Si obres, quedarà repetida: tanca-la abans si no la vols.</string>
+			<key>other</key>
+			<string>%lld pestanyes que l'app no reconeix (potser les ha restaurat Warp, sense Claude). Si obres, quedaran repetides: tanca-les abans si no les vols.</string>
+		</dict>
+	</dict>
+	<!-- FullLligam -->
+	<key>S'han lligat %lld pestanyes amb Warp.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ amb Warp.</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>S'ha lligat %lld pestanya</string>
+			<key>other</key>
+			<string>S'han lligat %lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense lligam: %lld amb parella a Warp</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ sense lligam: %lld amb parella a Warp</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense lligam: %lld amb parella a Warp, %lld sense</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ sense lligam: %lld amb parella a Warp, %lld sense</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>%lld amb Claude obert: se'n recordarà la conversa</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld amb Claude obert: se'n recordarà la conversa</string>
+			<key>other</key>
+			<string>%lld amb Claude obert: se'n recordarà la conversa</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes de Warp no són de cap pestanya de la configuració</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ de cap pestanya de la configuració</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya de Warp no és</string>
+			<key>other</key>
+			<string>%lld pestanyes de Warp no són</string>
+		</dict>
+	</dict>
+	<key>Lliga %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Lliga %#@p@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<!-- FullImportacio -->
+	<key>%lld salten els permisos (--dangerously-skip-permissions)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ els permisos (--dangerously-skip-permissions)</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld salta</string>
+			<key>other</key>
+			<string>%lld salten</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sortiran a «Per revisar»</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ a «Per revisar»</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya sortirà</string>
+			<key>other</key>
+			<string>%lld pestanyes sortiran</string>
+		</dict>
+	</dict>
+	<key>Substitueix el que hi ha ara (%lld finestres i %lld pestanyes). Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Substitueix el que hi ha ara (%#@f@ i %#@p@). Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>Substitueix el que hi ha ara (%lld finestres i %lld pestanyes). Ara hi ha %lld pestanyes amb Claude i en quedaran %lld: les altres seran només terminal. Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Substitueix el que hi ha ara (%#@f@ i %#@p@). Ara hi ha %#@a@ amb Claude i en %#@d@: les altres seran només terminal. Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>quedarà %lld</string>
+			<key>other</key>
+			<string>quedaran %lld</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

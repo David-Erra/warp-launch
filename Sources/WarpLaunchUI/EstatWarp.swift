@@ -40,10 +40,10 @@ public final class EstatWarp {
 
     public var descripcio: String {
         switch estat {
-        case .senseLlegir: "Warp: encara no s'ha llegit"
-        case .llegint: "Warp: llegint…"
+        case .senseLlegir: t("Warp: encara no s'ha llegit")
+        case .llegint: t("Warp: llegint…")
         case let .llegit(resum): resum.descripcio
-        case let .error(missatge): "Warp: no s'ha pogut llegir (\(missatge))"
+        case let .error(missatge): t("Warp: no s'ha pogut llegir (\(missatge))")
         }
     }
 
@@ -135,9 +135,10 @@ enum MotiuSenseFinestres: Equatable {
         case let .senseWarp(preview): preview.text
         case let .senseBase(warpObert): LecturaWarp.senseBase(warpObert: warpObert)
         case .deProva:
-            LecturaWarp.senseFinestres + " Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot "
-                + "demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i "
-                + "el torna a desactivar."
+            LecturaWarp.senseFinestres + " " + t("""
+                Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb \
+                la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar.
+                """)
         case .restauracioDesactivada: LecturaWarp.senseFinestres
         }
     }

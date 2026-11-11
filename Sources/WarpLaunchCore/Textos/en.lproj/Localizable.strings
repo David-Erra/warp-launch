@@ -638,3 +638,111 @@
 "No es pot mirar la restauració de sessió de Warp: %@" = "Can't check Warp's session restore: %@";
 "No es pot activar la restauració de sessió de Warp: %@" = "Can't turn on Warp's session restore: %@";
 "No s'ha pogut desactivar la restauració de sessió de Warp: %@. Si Warp es tanca, restaurarà les finestres sense Claude." = "Couldn't turn off Warp's session restore: %@. If Warp quits, it will restore the windows without Claude.";
+
+/* Obertura, ObreTot i Lligam: per què no s'obre o no es lliga, i el resultat d'«Obre-ho tot» */
+"No s'ha pogut obrir Warp: %@" = "Couldn't open Warp: %@";
+"La finestra ja no és a la configuració, o no té pestanyes" = "The window is no longer in the configuration, or has no tabs";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp is closed, and when it opens it will restore these tabs, without Claude. Open it and try again.";
+"Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp is closed: the app will open it first. Warp will also restore its previous windows, without Claude.";
+"Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp is closed: the app will open it first. When it starts, Warp also opens an empty window, which you can close.";
+"Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Quitting Warp can leave Claude's background jobs half done, and reopening the tabs doesn't resume them.";
+"No s'ha pogut desar la configuració: %@" = "Couldn't save the configuration: %@";
+"No s'ha pogut desar la configuració" = "Couldn't save the configuration";
+"No s'ha pogut llegir Warp: %@" = "Couldn't read Warp: %@";
+"tots els Claude s'engegaran alhora" = "all the Claudes will start at once";
+"«%@»: %@" = "“%@”: %@";
+"«%@»: no s'ha pogut obrir." = "“%@”: couldn't be opened.";
+"Cap finestra de la configuració no té pestanyes" = "No window in the configuration has tabs";
+"Les pestanyes amb Claude que obre l'app es lliguen soles." = "Tabs with Claude that the app opens are linked automatically.";
+
+/* FullObertura: el full d'«Obre a Warp…» i d'«Obre-ho tot a Warp…» */
+"Obre «%@» a Warp" = "Open “%@” in Warp";
+"Llegint Warp i les sessions de Claude…" = "Reading Warp and the Claude sessions…";
+"No es pot obrir" = "Can't Open";
+"No s'ha obert cap pestanya." = "No tab was opened.";
+"Obre-ho tot a Warp" = "Open All in Warp";
+"Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir" = "Warp changed while the sheet was open: review it before opening";
+"Totes les marcades s'obren alhora. Si una no s'obre, les altres continuen, i al final es diu què ha passat." = "All the checked ones open at once. If one doesn't open, the others continue, and at the end it says what happened.";
+"%@ › %@" = "%@ › %@";
+"Totes les pestanyes ja són obertes" = "All the tabs are already open";
+"Comprovant que Warp no ha canviat…" = "Checking that Warp hasn't changed…";
+"Obrint Warp…" = "Opening Warp…";
+"Esperant les finestres noves i els seus Claude (fins a 30 s)…" = "Waiting for the new windows and their Claudes (up to 30 s)…";
+"No hi ha cap pestanya per obrir" = "There are no tabs to open";
+"S'obriran (%lld)" = "Will open (%lld)";
+"Avisos" = "Warnings";
+"Ja obertes (%lld): no s'obriran" = "Already open (%lld): won't open";
+"No es poden obrir (%lld)" = "Can't open (%lld)";
+"Detalls" = "Details";
+"versió desconeguda" = "unknown version";
+"Fitxer temporal" = "Temporary file";
+"L'app escriu aquest fitxer a la carpeta de launch configurations de Warp, li demana que l'obri, i l'esborra en quant veu que Warp l'ha obert (o als 30 s)." = "The app writes this file to Warp's launch configurations folder, asks Warp to open it, and deletes it as soon as it sees that Warp has opened it (or after 30 s).";
+"Obrint a Warp…" = "Opening in Warp…";
+"Esperant la finestra nova (fins a 30 s)…" = "Waiting for the new window (up to 30 s)…";
+"Esperant que arrenqui Claude a cada pestanya (fins a 30 s)…" = "Waiting for Claude to start in each tab (up to 30 s)…";
+"Obre Warp, escriu el fitxer temporal i li demana que obri la finestra" = "Opens Warp, writes the temporary file and asks Warp to open the window";
+"Escriu el fitxer temporal i demana a Warp que obri la finestra" = "Writes the temporary file and asks Warp to open the window";
+"Escriu un fitxer temporal per finestra i demana a Warp que les obri totes alhora" = "Writes one temporary file per window and asks Warp to open them all at once";
+
+/* FullLligam: el full de «Lliga amb Warp…» */
+"Lliga amb Warp" = "Link with Warp";
+"No es pot lligar amb Warp" = "Can't Link with Warp";
+"No s'ha desat res." = "Nothing was saved.";
+"«Obre a Warp…» ja no tornarà a obrir les que són obertes, i l'app en recordarà la conversa de Claude." = "“Open in Warp…” will no longer reopen the ones that are open, and the app will remember their Claude conversation.";
+"Per a cada pestanya de la configuració, la pestanya de Warp on ja és oberta. Les lligades no es tornaran a obrir mentre siguin obertes, i l'app en recordarà la conversa de Claude. No canvia la configuració, ni obre o tanca res de Warp." = "For each tab in the configuration, the Warp tab where it's already open. Linked tabs won't be opened again while they're open, and the app will remember their Claude conversation. It doesn't change the configuration, or open or close anything in Warp.";
+"Totes les pestanyes ja estan lligades amb Warp" = "All the tabs are already linked with Warp";
+"Cap pestanya sense lligam no té parella a Warp" = "No unlinked tab has a match in Warp";
+"Per finestra" = "By Window";
+"Comprova-les (%lld)" = "Check Them (%lld)";
+"Desmarca les que no siguin la mateixa pestanya: quedaran sense lligar, i s'obriran si n'obres la finestra." = "Uncheck the ones that aren't the same tab: they'll stay unlinked, and will open if you open their window.";
+"Sense parella (%lld): s'obriran si n'obres la finestra" = "No match (%lld): they'll open if you open their window";
+"Les altres (%lld)" = "The Others (%lld)";
+"Ja lligades: %lld" = "Already linked: %lld";
+"%lld per la conversa de Claude" = "%lld by the Claude conversation";
+"%lld pel títol i la carpeta" = "%lld by title and folder";
+"%lld només pel títol" = "%lld by title only";
+"%lld només per la carpeta" = "%lld by folder only";
+"Ja lligades: %lld (no canvien)" = "Already linked: %lld (unchanged)";
+"%lld de %lld" = "%lld of %lld";
+"%lld de %lld · finestra %@ de Warp" = "%lld of %lld · Warp window %@";
+"%lld de %lld · finestres %@ de Warp" = "%lld of %lld · Warp windows %@";
+"%@: hi corre la seva conversa de Claude" = "%@: its Claude conversation is running there";
+"%@, a %@: el títol coincideix, la carpeta no" = "%@, in %@: the title matches, the folder doesn't";
+"%@, a %@: la carpeta coincideix, el títol no" = "%@, in %@: the folder matches, the title doesn't";
+"Desa els lligams a «estat.json». No canvia la configuració ni toca Warp" = "Saves the links to “estat.json”. It doesn't change the configuration or touch Warp";
+
+/* FullImportacio i VistaImportacio: el full d'importar */
+"ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. Torna-ho a provar quan acabi." = "right now a window is opening in Warp, or Warp Launch is updating. Try again when it's done.";
+"Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes." = "Here, choose “Start from Scratch” and add the tabs.";
+"La configuració no canvia." = "The configuration doesn't change.";
+"Si no, tria «Comença en blanc» i afegeix-hi les pestanyes." = "Otherwise, choose “Start from Scratch” and add the tabs.";
+"No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes." = "There's nothing to import: choose “Start from Scratch” and add the tabs.";
+"No hi ha res per importar, i la configuració no canvia." = "There's nothing to import, and the configuration doesn't change.";
+"Importa de Warp" = "Import from Warp";
+"Torna a importar-ho tot de Warp" = "Re-import Everything from Warp";
+"Crea" = "Create";
+"Substitueix" = "Replace";
+"%lld amb Claude, amb l'ordre de la seva sessió" = "%lld with Claude, with their session's command";
+"%lld sense Claude obert" = "%lld without Claude open";
+"%lld a la carpeta d'inici" = "%lld in the home folder";
+"%lld amb una carpeta que ja no existeix" = "%lld with a folder that no longer exists";
+"%lld més" = "%lld more";
+"%lld només terminal: %@" = "%lld terminal only: %@";
+"Queda només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "It stays terminal only. To open Claude in it, check “Open Claude Code in this tab” in the inspector: it will open with this command.";
+"Queden només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "They stay terminal only. To open Claude in them, check “Open Claude Code in this tab” in the inspector: it will open with this command.";
+"Es desarà la configuració a %@. No s'obre res de Warp ni de Claude." = "The configuration will be saved to %@. Nothing in Warp or Claude is opened.";
+"Es desarà la configuració. No s'obre res de Warp ni de Claude." = "The configuration will be saved. Nothing in Warp or Claude is opened.";
+"%@, per si hi has obert o tancat res" = "%@, in case you've opened or closed anything";
+"Llegint Warp…" = "Reading Warp…";
+"La plantilla ha canviat a la Configuració: prem «%@» per importar amb la nova" = "The template changed in Settings: press “%@” to import with the new one";
+"Avisos de la lectura" = "Reading Warnings";
+"Pestanyes que no tenien Claude obert" = "Tabs That Didn't Have Claude Open";
+"Notes" = "Notes";
+
+/* EstatWarp i EstatSessions: la línia de Warp al menú de la icona i per què no es pot obrir */
+"Warp: encara no s'ha llegit" = "Warp: not read yet";
+"Warp: llegint…" = "Warp: reading…";
+"Warp: no s'ha pogut llegir (%@)" = "Warp: couldn't read it (%@)";
+"Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "With a test configuration (--config), the app doesn't touch this setting and can't ask Warp to save them. With the real configuration, it can: it turns the setting on for a few seconds so that Warp saves them, and then turns it off again.";
+"«estat.json» no es pot fer servir: %@" = "“estat.json” can't be used: %@";
+"«estat.json» encara no s'ha llegit" = "“estat.json” hasn't been read yet";

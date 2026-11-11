@@ -106,8 +106,8 @@ public final class EstatSessions {
     /// Per què no es pot obrir res ara (fase 3.1): sense `estat.json` no se sabria què ja és obert, ni es podria
     /// recordar el llançament.
     public var motiuNoEsPotObrir: String? {
-        if let bloqueig { return "«estat.json» no es pot fer servir: \(bloqueig)" }
-        guard magatzem != nil, carregat else { return "«estat.json» encara no s'ha llegit" }
+        if let bloqueig { return t("«estat.json» no es pot fer servir: \(bloqueig)") }
+        guard magatzem != nil, carregat else { return t("«estat.json» encara no s'ha llegit") }
         return nil
     }
 

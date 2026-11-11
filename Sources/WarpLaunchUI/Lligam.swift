@@ -71,7 +71,7 @@ public final class Lligam {
                 if case .senseWarp = motiu {
                     estat = .error(motiu.text)
                 } else {
-                    estat = .error(motiu.text + " Les pestanyes amb Claude que obre l'app es lliguen soles.")
+                    estat = .error(motiu.text + " " + t("Les pestanyes amb Claude que obre l'app es lliguen soles."))
                 }
                 return
             }

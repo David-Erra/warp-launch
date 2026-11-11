@@ -53,22 +53,25 @@ extension Obertura {
         /// terminal · unes 5 GB».
         public var text: String {
             let finestres = aObrir
-            guard !finestres.isEmpty else { return "No s'obrirà res." }
+            guard !finestres.isEmpty else { return t("No s'obrirà res.") }
             let x = finestres.map(\.pla.xifres)
             let pestanyes = x.map(\.pestanyes).reduce(0, +)
             let ambClaude = x.map(\.ambClaude).reduce(0, +)
             let reprenen = x.map(\.reprenen).reduce(0, +)
             let terminal = x.map(\.terminal).reduce(0, +)
-            var text = "S'obriran \(Plural.compta(finestres.count, "finestra nova", "finestres noves")) de Warp amb "
-                + "\(Plural.compta(pestanyes, "pestanya", "pestanyes"))"
             var parts: [String] = []
-            if ambClaude > 0 { parts.append("\(ambClaude) amb Claude (\(reprenen) reprenen la seva conversa)") }
-            if terminal > 0 { parts.append("\(terminal) només terminal") }
-            if !parts.isEmpty { text += ": " + parts.joined(separator: " i ") }
             if ambClaude > 0 {
-                text += " · unes \(Int((Double(ambClaude) * PlaObertura.memoriaPerSessioGB).rounded())) GB"
+                let detall = t("\(reprenen) reprenen la seva conversa")
+                parts.append(t("\(ambClaude) amb Claude (\(detall))"))
             }
-            if ambClaude > 10 { text += " · tots els Claude s'engegaran alhora" }
+            if terminal > 0 { parts.append(t("\(terminal) només terminal")) }
+            var text = parts.isEmpty ? t("S'obriran \(finestres.count) finestres noves de Warp amb \(pestanyes) pestanyes")
+                : t("S'obriran \(finestres.count) finestres noves de Warp amb \(pestanyes) pestanyes: \(Idioma.llista(parts))")
+            if ambClaude > 0 {
+                let gb = String(Int((Double(ambClaude) * PlaObertura.memoriaPerSessioGB).rounded()))
+                text += " · " + t("unes \(gb) GB")
+            }
+            if ambClaude > 10 { text += " · " + t("tots els Claude s'engegaran alhora") }
             return text
         }
     }
@@ -134,7 +137,7 @@ extension Obertura {
             }
             guard var nova = await comprovaTot(vista) else { return }
             guard !nova.warpTancat else {
-                estat = .noEsPot("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar.")
+                estat = .noEsPot(t("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar."))
                 return
             }
             // Com ha arrencat Warp: l'app pot haver creat `settings.toml` mentre l'esperava (ronda 5), i ja seria tard.
@@ -176,17 +179,16 @@ extension Obertura {
                 // La finestra buida de Warp es diu un sol cop, al final.
                 linies.append(fet.text.replacingOccurrences(of: " " + ExecucioObertura.finestraBuida, with: ""))
             case let .noEsPot(motiu)?:
-                linies.append("«\(finestra.pla.finestra.nom)»: \(motiu)")
+                linies.append(t("«\(finestra.pla.finestra.nom)»: \(motiu)"))
             case nil:
-                linies.append("«\(finestra.pla.finestra.nom)»: no s'ha pogut obrir.")
+                linies.append(t("«\(finestra.pla.finestra.nom)»: no s'ha pogut obrir."))
             }
         }
         let pestanyes = finestres.map(\.pla.aObrir.count).reduce(0, +)
         let ambClaude = finestres.map(\.pla.xifres.ambClaude).reduce(0, +)
         var text = correctes == finestres.count
-            ? "S'han obert \(Plural.compta(finestres.count, "finestra", "finestres")) a Warp, amb "
-                + "\(Plural.compta(pestanyes, "pestanya", "pestanyes")), \(ambClaude) amb Claude."
-            : "S'han obert bé \(correctes) de \(Plural.compta(finestres.count, "finestra", "finestres")) a Warp."
+            ? t("S'han obert \(finestres.count) finestres a Warp, amb \(pestanyes) pestanyes, \(ambClaude) amb Claude.")
+            : t("S'han obert bé \(correctes) de \(finestres.count) finestres a Warp.")
         if !linies.isEmpty { text += "\n" + linies.joined(separator: "\n") }
         if engegat, !proposta.warpDesaFinestres {
             text += "\n" + ExecucioObertura.finestraBuida
@@ -239,7 +241,7 @@ extension Obertura {
         var finestres = calcula(triades)
         let marcades = triades ?? Set(finestres.filter(PropostaTot.esPotObrir).map(\.pla.finestra.id))
         if triades == nil { finestres = calcula(marcades) }
-        guard !finestres.isEmpty else { return .failure(Motiu(text: "Cap finestra de la configuració no té pestanyes")) }
+        guard !finestres.isEmpty else { return .failure(Motiu(text: t("Cap finestra de la configuració no té pestanyes"))) }
         let warpTancat = lectura.warpObert != true
         // Warp és tancat i restaura la sessió: les «obertes» a Warp són les que restaurarà, no les d'ara.
         if warpTancat, lectura.warpDesaFinestres != false,

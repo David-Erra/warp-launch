@@ -248,7 +248,7 @@ public final class Obertura {
             }
             guard var nova = await comprova(vista) else { return }
             guard !nova.warpTancat else {
-                estat = .noEsPot("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar.")
+                estat = .noEsPot(t("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar."))
                 return
             }
             // Com ha arrencat Warp: l'app pot haver creat `settings.toml` mentre l'esperava (ronda 5), i ja seria tard.
@@ -281,10 +281,10 @@ public final class Obertura {
             }
         }
         let arrencat = await esperaWarp()
-        if let errorEngegant { return "No s'ha pogut obrir Warp: \(errorEngegant)" }
+        if let errorEngegant { return t("No s'ha pogut obrir Warp: \(errorEngegant)") }
         guard arrencat else {
             Registre.obertura.notice("Warp no ha arrencat")
-            return "Warp no ha arrencat en \(Int(Self.tempsMaximWarp)) s: mira'l i torna-ho a provar."
+            return t("Warp no ha arrencat en \(Int(Self.tempsMaximWarp)) s: mira'l i torna-ho a provar.")
         }
         return nil
     }
@@ -470,7 +470,7 @@ public final class Obertura {
         case let .failure(motiu): return .failure(motiu)
         }
         guard let finestra = editor.configuracio.finestres.first(where: { $0.id == id }), !finestra.pestanyes.isEmpty
-        else { return .failure(Motiu(text: "La finestra ja no és a la configuració, o no té pestanyes")) }
+        else { return .failure(Motiu(text: t("La finestra ja no és a la configuració, o no té pestanyes"))) }
         let proposta = planifica(finestra, lectura: lectura, llancament: llancament)
         // Warp és tancat i restaura la sessió: les «obertes» són les que restaurarà, no les d'ara.
         if lectura.warpObert != true, lectura.warpDesaFinestres != false, proposta.pla.aObrir.isEmpty {
@@ -479,35 +479,37 @@ public final class Obertura {
         return .success(proposta)
     }
 
-    static let warpRestaurara = "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar."
+    static var warpRestaurara: String {
+        t("Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar.")
+    }
 
     /// Què diuen els fulls d'«Obre a Warp…» i «Obre-ho tot…» amb Warp tancat: si Warp, en arrencar, restaurarà les seves
     /// finestres (`Proposta.warpDesaFinestres`, `warpRestauraEnArrencar`), o si n'obrirà una de buida. Sense `settings.toml`,
     /// diu que les restaurarà, i no demana d'obrir Warp primer, perquè no ho evitaria (decisió 1 d'en David, 08/11/2026).
     static func textWarpTancat(restaura: Bool) -> String {
-        "Warp és tancat: l'app l'obrirà abans. "
-            + (restaura ? "Warp també restaurarà les finestres d'abans, sense Claude."
-                : "En arrencar, Warp obre també una finestra buida, que pots tancar.")
+        restaura ? t("Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude.")
+            : t("Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.")
     }
 
     /// Què poden perdre les feines en segon pla de Claude, als dos fulls (decisió d'en David del 09/11/2026; fet observat una
     /// vegada, per això «pot»). Reobrir una pestanya no reprèn la feina que hi corria.
-    static let textFeinesEnSegonPla = "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les "
-        + "pestanyes no les fa continuar."
+    static var textFeinesEnSegonPla: String {
+        t("Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar.")
+    }
 
     /// Desa la configuració i llegeix Warp (la lectura posa al dia els lligams, `EstatWarp.enLlegir`). Amb Warp Preview
     /// (`LecturaWarp.warpPreview`, D-P12), o sense cap Warp (0.31.1), no es pot obrir res: ho diu el full.
     func llegeixPerObrir() async -> Result<LecturaWarp, Motiu> {
         editor.acabaNom(desant: true)
         guard editor.desaSiCal() else {
-            return .failure(Motiu(text: "No s'ha pogut desar la configuració"
-                + (editor.errorDesat.map { ": \($0.description)" } ?? "")))
+            return .failure(Motiu(text: editor.errorDesat.map { t("No s'ha pogut desar la configuració: \($0.description)") }
+                ?? t("No s'ha pogut desar la configuració")))
         }
         if let motiu = sessions.motiuNoEsPotObrir { return .failure(Motiu(text: motiu)) }
         let lectura: LecturaWarp
         switch await entorn.llegeix() {
         case let .success(llegida): lectura = llegida
-        case let .failure(error): return .failure(Motiu(text: "No s'ha pogut llegir Warp: \(error)"))
+        case let .failure(error): return .failure(Motiu(text: t("No s'ha pogut llegir Warp: \(String(describing: error))")))
         }
         if let motiu = sessions.motiuNoEsPotObrir { return .failure(Motiu(text: motiu)) }
         enLlegir(lectura)

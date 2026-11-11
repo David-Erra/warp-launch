@@ -49,8 +49,9 @@ public final class FullImportacio {
     public var potLlegir: Bool { editor.obertura?.impedeixRefresc != true }
 
     /// Per què el full no ha pogut llegir Warp en obrir-se (`potLlegir`).
-    static let motiuNoEsPotLlegir = "ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. "
-        + "Torna-ho a provar quan acabi."
+    static var motiuNoEsPotLlegir: String {
+        t("ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. Torna-ho a provar quan acabi.")
+    }
 
     /// Torna a llegir Warp (en obrir el full, amb «Actualitza l'estat de Warp» i amb «Torna-ho a provar»). Si ara no es pot
     /// (`potLlegir`), el que el full ja mostra es queda; només en obrir-se, sense res per mostrar, diu per què.
@@ -65,7 +66,7 @@ public final class FullImportacio {
         case let .success(lectura):
             if let motiu = MotiuSenseFinestres(lectura, ambRefresc: warp.refresc != nil) {
                 // Importar substituiria la configuració per res.
-                estat = .senseFinestres(motiu.text + queFer(motiu))
+                estat = .senseFinestres(motiu.text + " " + queFer(motiu))
                 return
             }
             avisosLectura = lectura.avisos
@@ -80,13 +81,13 @@ public final class FullImportacio {
     /// Warp…»). Amb una carpeta de prova, el motiu ja diu per què aquí no se'n poden llegir.
     private func queFer(_ motiu: MotiuSenseFinestres) -> String {
         switch (motiu, mode) {
-        case (.deProva, .crea): " Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes."
-        case (.deProva, .substitueix): " La configuració no canvia."
+        case (.deProva, .crea): t("Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes.")
+        case (.deProva, .substitueix): t("La configuració no canvia.")
         // El motiu ja diu què fer per poder importar (amb Warp Preview obert, obrir Warp Stable): aquí, l'altra opció.
-        case (.senseBase, .crea), (.senseWarp(.obert), .crea): " Si no, tria «Comença en blanc» i afegeix-hi les pestanyes."
-        case (.senseBase, .substitueix), (.senseWarp(.obert), .substitueix): " La configuració no canvia."
-        case (_, .crea): " No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes."
-        case (_, .substitueix): " No hi ha res per importar, i la configuració no canvia."
+        case (.senseBase, .crea), (.senseWarp(.obert), .crea): t("Si no, tria «Comença en blanc» i afegeix-hi les pestanyes.")
+        case (.senseBase, .substitueix), (.senseWarp(.obert), .substitueix): t("La configuració no canvia.")
+        case (_, .crea): t("No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes.")
+        case (_, .substitueix): t("No hi ha res per importar, i la configuració no canvia.")
         }
     }
 
@@ -124,11 +125,11 @@ public final class FullImportacio {
     // MARK: - Textos del full
 
     public var titol: String {
-        mode == .crea ? "Importa de Warp" : "Torna a importar-ho tot de Warp"
+        mode == .crea ? t("Importa de Warp") : t("Torna a importar-ho tot de Warp")
     }
 
     public var boto: String {
-        mode == .crea ? "Crea" : "Substitueix"
+        mode == .crea ? t("Crea") : t("Substitueix")
     }
 
     /// Les xifres, una per línia: finestres i pestanyes, amb Claude, sense, i quantes salten els permisos. Les pestanyes
@@ -137,23 +138,22 @@ public final class FullImportacio {
         guard let importacio else { return [] }
         let resum = importacio.resum
         let ambClaude = resum.ambSessio
-        var linies = [
-            "\(Plural.compta(resum.finestres, "finestra", "finestres")) · \(Plural.compta(resum.pestanyes, "pestanya", "pestanyes"))",
-        ]
-        linies.append(ambClaude == 0 ? "0 amb Claude" : "\(ambClaude) amb Claude, amb l'ordre de la seva sessió")
+        var linies = [t("\(resum.finestres) finestres · \(resum.pestanyes) pestanyes")]
+        linies.append(ambClaude == 0 ? t("0 amb Claude") : t("\(ambClaude) amb Claude, amb l'ordre de la seva sessió"))
         if resum.senseClaude > 0 {
             let aInici = importacio.compta(.carpetaInici)
             let perdudes = importacio.compta(.carpetaNoExisteix)
             let altres = resum.senseClaude - resum.senseClaudeObert - aInici - perdudes
             var motius: [String] = []
-            if resum.senseClaudeObert > 0 { motius.append("\(resum.senseClaudeObert) sense Claude obert") }
-            if aInici > 0 { motius.append("\(aInici) a la carpeta d'inici") }
-            if perdudes > 0 { motius.append("\(perdudes) amb una carpeta que ja no existeix") }
-            if altres > 0, !motius.isEmpty { motius.append("\(altres) més") }
-            linies.append("\(resum.senseClaude) només terminal" + (motius.isEmpty ? "" : ": " + Self.enumera(motius)))
+            if resum.senseClaudeObert > 0 { motius.append(t("\(resum.senseClaudeObert) sense Claude obert")) }
+            if aInici > 0 { motius.append(t("\(aInici) a la carpeta d'inici")) }
+            if perdudes > 0 { motius.append(t("\(perdudes) amb una carpeta que ja no existeix")) }
+            if altres > 0, !motius.isEmpty { motius.append(t("\(altres) més")) }
+            linies.append(motius.isEmpty ? t("\(resum.senseClaude) només terminal")
+                : t("\(resum.senseClaude) només terminal: \(Idioma.llista(motius))"))
         }
         if resum.saltenPermisos > 0 {
-            linies.append(Plural.compta(resum.saltenPermisos, "salta", "salten") + " els permisos (--dangerously-skip-permissions)")
+            linies.append(t("\(resum.saltenPermisos) salten els permisos (--dangerously-skip-permissions)"))
         }
         return linies
     }
@@ -173,14 +173,16 @@ public final class FullImportacio {
     public var notaSenseClaudeObert: String? {
         guard let importacio, importacio.resum.senseClaudeObert > 0 else { return nil }
         let n = importacio.resum.senseClaudeObert
-        return (n == 1 ? "Queda" : "Queden") + " només terminal. Per obrir-hi Claude, marca «Obre Claude Code en "
-            + "aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre."
+        // El nombre no surt al text: dues frases senceres.
+        return n == 1
+            ? t("Queda només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre.")
+            : t("Queden només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre.")
     }
 
     /// «6 pestanyes sortiran a «Per revisar»», o `nil` si no n'hi ha cap.
     public var textPerRevisar: String? {
         let n = perRevisar
-        return n == 0 ? nil : Plural.compta(n, "pestanya sortirà", "pestanyes sortiran") + " a «Per revisar»"
+        return n == 0 ? nil : t("\(n) pestanyes sortiran a «Per revisar»")
     }
 
     /// Pestanyes que sortiran a «Per revisar».
@@ -196,27 +198,30 @@ public final class FullImportacio {
     public var explicacio: String {
         switch mode {
         case .crea:
-            "Es desarà la configuració\(editor.rutaFitxer.map { " a \($0)" } ?? ""). No s'obre res de Warp ni de Claude."
+            editor.rutaFitxer.map { t("Es desarà la configuració a \($0). No s'obre res de Warp ni de Claude.") }
+                ?? t("Es desarà la configuració. No s'obre res de Warp ni de Claude.")
         case .substitueix:
-            "Substitueix el que hi ha ara (\(Plural.compta(editor.configuracio.finestres.count, "finestra", "finestres"))"
-                + " i \(Plural.compta(editor.configuracio.finestres.flatMap(\.pestanyes).count, "pestanya", "pestanyes"))). "
-                + perdenClaude + "Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia."
+            textSubstitueix
         }
     }
 
-    /// Quantes pestanyes es queden sense Claude en substituir (decisió d'en David del 09/11/2026), o res si no se'n perd cap.
-    private var perdenClaude: String {
-        guard let importacio else { return "" }
+    /// «Substitueix el que hi ha ara (2 finestres i 4 pestanyes). …», i quantes pestanyes es queden sense Claude en substituir
+    /// (decisió d'en David del 09/11/2026), si se'n perd cap: dues frases senceres, amb els plurals.
+    private var textSubstitueix: String {
+        let finestres = editor.configuracio.finestres.count
+        let pestanyes = editor.configuracio.finestres.flatMap(\.pestanyes).count
         let ara = editor.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat).count
-        let despres = importacio.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat).count
-        guard despres < ara else { return "" }
-        return "Ara hi ha \(Plural.compta(ara, "pestanya", "pestanyes")) amb Claude i en "
-            + (despres == 1 ? "quedarà 1" : "quedaran \(despres)") + ": les altres seran només terminal. "
-    }
-
-    /// «a», «a i b», «a, b i c».
-    private static func enumera(_ parts: [String]) -> String {
-        guard parts.count > 1 else { return parts.first ?? "" }
-        return parts.dropLast().joined(separator: ", ") + " i " + parts.last!
+        let despres = importacio?.configuracio.finestres.flatMap(\.pestanyes).filter(\.claude.activat).count ?? ara
+        guard despres < ara else {
+            return t("""
+                Substitueix el que hi ha ara (\(finestres) finestres i \(pestanyes) pestanyes). Abans de desar se'n fa una \
+                còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.
+                """)
+        }
+        return t("""
+            Substitueix el que hi ha ara (\(finestres) finestres i \(pestanyes) pestanyes). Ara hi ha \(ara) pestanyes amb \
+            Claude i en quedaran \(despres): les altres seran només terminal. Abans de desar se'n fa una còpia, i es pot \
+            desfer amb ⌘Z. La plantilla no canvia.
+            """)
     }
 }

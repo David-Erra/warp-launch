@@ -42,18 +42,18 @@ struct FullObertura: View {
         case .cap:
             EmptyView()
         case let .preparant(nom, _):
-            Section("Obre «\(nom)» a Warp") {
+            Section(t("Obre «\(nom)» a Warp")) {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Llegint Warp i les sessions de Claude…")
+                    Text(t("Llegint Warp i les sessions de Claude…"))
                 }
             }
         case let .noEsPot(motiu):
-            Section("No es pot obrir") {
+            Section(t("No es pot obrir")) {
                 Label(motiu, systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
                     .textSelection(.enabled)
-                Text("No s'ha obert cap pestanya.")
+                Text(t("No s'ha obert cap pestanya."))
                     .foregroundStyle(.secondary)
             }
         case let .confirmant(proposta):
@@ -61,10 +61,10 @@ struct FullObertura: View {
         case let .obrint(proposta, fase):
             seccions(proposta, fase: fase)
         case .preparantTot:
-            Section("Obre-ho tot a Warp") {
+            Section(t("Obre-ho tot a Warp")) {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Llegint Warp i les sessions de Claude…")
+                    Text(t("Llegint Warp i les sessions de Claude…"))
                 }
             }
         case let .confirmantTot(proposta):
@@ -79,9 +79,9 @@ struct FullObertura: View {
     @ViewBuilder
     private func seccionsTot(_ p: Obertura.PropostaTot, fase: Obertura.Fase?) -> some View {
         let finestres = p.aObrir
-        Section("Obre-ho tot a Warp") {
+        Section(t("Obre-ho tot a Warp")) {
             if p.haCanviat {
-                Label("Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir", systemImage: "arrow.clockwise")
+                Label(t("Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir"), systemImage: "arrow.clockwise")
             }
             Text(p.text)
             if p.warpTancat, !finestres.isEmpty {
@@ -91,18 +91,15 @@ struct FullObertura: View {
                 Label(Obertura.textFeinesEnSegonPla, systemImage: "exclamationmark.triangle")
             }
             if p.terminalsDesconeguts > 0, !finestres.isEmpty {
-                Label("Warp ja té " + Plural.compta(p.terminalsDesconeguts, "pestanya que l'app no reconeix",
-                                                     "pestanyes que l'app no reconeix")
-                        + " (potser les ha restaurat Warp, sense Claude). Si obres, quedaran repetides: tanca-les abans si no les vols.",
-                      systemImage: "exclamationmark.triangle.fill")
+                Label(t("""
+                    Warp ja té \(p.terminalsDesconeguts) pestanyes que l'app no reconeix (potser les ha restaurat Warp, sense \
+                    Claude). Si obres, quedaran repetides: tanca-les abans si no les vols.
+                    """), systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
             }
             let potser = finestres.map(\.pla.potserObertes).reduce(0, +)
             if potser > 0 {
-                Label(Plural.compta(potser, "pestanya sense lligam potser ja és oberta",
-                                    "pestanyes sense lligam potser ja són obertes")
-                        + " a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.",
-                      systemImage: "link")
+                Label(Self.textPotserObertes(potser), systemImage: "link")
             }
             if let fase {
                 HStack(spacing: 8) {
@@ -116,18 +113,18 @@ struct FullObertura: View {
                 filaTot(proposta, triada: p.triades.contains(proposta.pla.finestra.id), bloquejada: fase != nil)
             }
         } header: {
-            Text("Finestres")
+            Text(t("Finestres"))
         } footer: {
-            Text("Totes les marcades s'obren alhora. Si una no s'obre, les altres continuen, i al final es diu què ha passat.")
+            Text(t("Totes les marcades s'obren alhora. Si una no s'obre, les altres continuen, i al final es diu què ha passat."))
                 .foregroundStyle(.secondary)
         }
         let avisos = p.finestres.filter { p.triades.contains($0.pla.finestra.id) }
             .flatMap { proposta in proposta.pla.avisos.map { (proposta.pla.finestra.nom, $0) } }
         if !avisos.isEmpty {
             Section {
-                DisclosureGroup(Plural.compta(avisos.count, "avís", "avisos")) {
+                DisclosureGroup(t("\(avisos.count) avisos")) {
                     ForEach(Array(avisos.enumerated()), id: \.offset) { _, avis in
-                        Label("\(avis.0) › \(avis.1.description)",
+                        Label(t("\(avis.0) › \(avis.1.description)"),
                               systemImage: avis.1.esInfo ? "info.circle" : "exclamationmark.triangle")
                             .textSelection(.enabled)
                     }
@@ -143,11 +140,11 @@ struct FullObertura: View {
                                     set: { obertura.tria(pla.finestra.id, $0) })) {
             Text(pla.finestra.nom)
             if pla.aObrir.isEmpty {
-                Text(pla.excloses.isEmpty ? "Totes les pestanyes ja són obertes" : pla.xifres.text)
+                Text(pla.excloses.isEmpty ? t("Totes les pestanyes ja són obertes") : pla.xifres.text)
             } else if let motiu = pla.motiuEspera {
                 Text(motiu)
             } else if case let .failure(error)? = p.fitxer {
-                Text("No es pot generar el fitxer per a Warp: \(error.description)")
+                Text(t("No es pot generar el fitxer per a Warp: \(error.description)"))
             } else {
                 Text(pla.xifres.text)
             }
@@ -157,22 +154,22 @@ struct FullObertura: View {
 
     private func textTot(_ fase: Obertura.Fase, finestres: Int) -> String {
         switch fase {
-        case .comprovant: "Comprovant que Warp no ha canviat…"
-        case .engegant: "Obrint Warp…"
-        case .obrint: "Obrint \(Plural.compta(finestres, "finestra", "finestres")) a Warp…"
-        case .esperant, .esperantClaude: "Esperant les finestres noves i els seus Claude (fins a 30 s)…"
+        case .comprovant: t("Comprovant que Warp no ha canviat…")
+        case .engegant: t("Obrint Warp…")
+        case .obrint: t("Obrint \(finestres) finestres a Warp…")
+        case .esperant, .esperantClaude: t("Esperant les finestres noves i els seus Claude (fins a 30 s)…")
         }
     }
 
     @ViewBuilder
     private func seccions(_ p: Obertura.Proposta, fase: Obertura.Fase?) -> some View {
         let pla = p.pla
-        Section("Obre «\(pla.finestra.nom)» a Warp") {
+        Section(t("Obre «\(pla.finestra.nom)» a Warp")) {
             if p.haCanviat {
-                Label("Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir", systemImage: "arrow.clockwise")
+                Label(t("Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir"), systemImage: "arrow.clockwise")
             }
             if pla.aObrir.isEmpty {
-                Label(pla.excloses.isEmpty ? "Totes les pestanyes ja són obertes" : "No hi ha cap pestanya per obrir",
+                Label(pla.excloses.isEmpty ? t("Totes les pestanyes ja són obertes") : t("No hi ha cap pestanya per obrir"),
                       systemImage: pla.excloses.isEmpty ? "checkmark.circle" : "exclamationmark.triangle")
             }
             Text(pla.xifres.text)
@@ -183,16 +180,13 @@ struct FullObertura: View {
                 Label(Obertura.textFeinesEnSegonPla, systemImage: "exclamationmark.triangle")
             }
             if pla.potserObertes > 0 {
-                Label(Plural.compta(pla.potserObertes, "pestanya sense lligam potser ja és oberta",
-                                    "pestanyes sense lligam potser ja són obertes")
-                        + " a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.",
-                      systemImage: "link")
+                Label(Self.textPotserObertes(pla.potserObertes), systemImage: "link")
             }
             if let motiu = pla.motiuEspera {
                 Label(motiu, systemImage: "clock")
             }
             if case let .failure(error)? = p.fitxer {
-                Label("No es pot generar el fitxer per a Warp: \(error.description)", systemImage: "exclamationmark.triangle.fill")
+                Label(t("No es pot generar el fitxer per a Warp: \(error.description)"), systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
             }
             if let fase {
@@ -203,14 +197,14 @@ struct FullObertura: View {
             }
         }
         if !pla.aObrir.isEmpty {
-            Section("S'obriran (\(pla.aObrir.count))") {
+            Section(t("S'obriran (\(pla.aObrir.count))")) {
                 ForEach(pla.aObrir, id: \.pestanya.id) { p in
                     fila(p.pestanya, p.conversa.descripcio)
                 }
             }
         }
         if !pla.avisos.isEmpty {
-            Section("Avisos") {
+            Section(t("Avisos")) {
                 ForEach(Array(pla.avisos.enumerated()), id: \.offset) { _, avis in
                     Label(avis.description, systemImage: avis.esInfo ? "info.circle" : "exclamationmark.triangle")
                         .textSelection(.enabled)
@@ -218,14 +212,14 @@ struct FullObertura: View {
             }
         }
         if !pla.obertes.isEmpty {
-            Section("Ja obertes (\(pla.obertes.count)): no s'obriran") {
+            Section(t("Ja obertes (\(pla.obertes.count)): no s'obriran")) {
                 ForEach(pla.obertes, id: \.pestanya.id) { o in
                     fila(o.pestanya, o.on.description)
                 }
             }
         }
         if !pla.excloses.isEmpty {
-            Section("No es poden obrir (\(pla.excloses.count))") {
+            Section(t("No es poden obrir (\(pla.excloses.count))")) {
                 ForEach(pla.excloses, id: \.pestanya.id) { e in
                     fila(e.pestanya, e.motiu.description, avis: true)
                 }
@@ -233,20 +227,32 @@ struct FullObertura: View {
         }
         if case let .success(fitxer)? = p.fitxer {
             Section {
-                DisclosureGroup("Detalls") {
-                    LabeledContent("Warp", value: p.versioWarp ?? "versió desconeguda")
-                    LabeledContent("Fitxer temporal", value: fitxer.nomFitxer)
+                DisclosureGroup(t("Detalls")) {
+                    // Un nom propi: no es tradueix.
+                    LabeledContent {
+                        Text(p.versioWarp ?? t("versió desconeguda"))
+                    } label: {
+                        Text(verbatim: "Warp")
+                    }
+                    LabeledContent(t("Fitxer temporal"), value: fitxer.nomFitxer)
                     Text(fitxer.text)
                         .font(.callout.monospaced())
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } footer: {
-                Text("L'app escriu aquest fitxer a la carpeta de launch configurations de Warp, li demana que l'obri, "
-                    + "i l'esborra en quant veu que Warp l'ha obert (o als 30 s).")
+                Text(t("""
+                    L'app escriu aquest fitxer a la carpeta de launch configurations de Warp, li demana que l'obri, i l'esborra \
+                    en quant veu que Warp l'ha obert (o als 30 s).
+                    """))
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    /// Les pestanyes sense lligam que potser ja són obertes, als dos fulls.
+    private static func textPotserObertes(_ n: Int) -> String {
+        t("\(n) pestanyes sense lligam potser ja són obertes a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.")
     }
 
     private func fila(_ pestanya: Pestanya, _ detall: String, avis: Bool = false) -> some View {
@@ -265,11 +271,11 @@ struct FullObertura: View {
 
     private func text(_ fase: Obertura.Fase) -> String {
         switch fase {
-        case .comprovant: "Comprovant que Warp no ha canviat…"
-        case .engegant: "Obrint Warp…"
-        case .obrint: "Obrint a Warp…"
-        case .esperant: "Esperant la finestra nova (fins a 30 s)…"
-        case .esperantClaude: "Esperant que arrenqui Claude a cada pestanya (fins a 30 s)…"
+        case .comprovant: t("Comprovant que Warp no ha canviat…")
+        case .engegant: t("Obrint Warp…")
+        case .obrint: t("Obrint a Warp…")
+        case .esperant: t("Esperant la finestra nova (fins a 30 s)…")
+        case .esperantClaude: t("Esperant que arrenqui Claude a cada pestanya (fins a 30 s)…")
         }
     }
 
@@ -279,34 +285,34 @@ struct FullObertura: View {
     private var botons: some View {
         switch obertura.estat {
         case let .confirmant(proposta) where !proposta.pla.aObrir.isEmpty:
-            Button("Cancel·la", role: .cancel) { obertura.cancela() }
+            Button(t("Cancel·la"), role: .cancel) { obertura.cancela() }
                 .keyboardShortcut(.cancelAction)
             // Sense drecera i sense ser el botó per defecte: Retorn no obre res.
-            Button("Obre \(Plural.compta(proposta.pla.aObrir.count, "pestanya", "pestanyes"))") {
+            Button(t("Obre \(proposta.pla.aObrir.count) pestanyes")) {
                 Task { await obertura.confirmaIObre() }
             }
             .disabled(proposta.pla.motiuEspera != nil
                 || proposta.fitxer.map { if case .success = $0 { false } else { true } } ?? true)
-            .help(proposta.warpTancat ? "Obre Warp, escriu el fitxer temporal i li demana que obri la finestra"
-                                      : "Escriu el fitxer temporal i demana a Warp que obri la finestra")
+            .help(proposta.warpTancat ? t("Obre Warp, escriu el fitxer temporal i li demana que obri la finestra")
+                                      : t("Escriu el fitxer temporal i demana a Warp que obri la finestra"))
         case let .confirmantTot(proposta) where proposta.finestres.contains(where: Obertura.PropostaTot.esPotObrir):
             let finestres = proposta.aObrir
-            Button("Cancel·la", role: .cancel) { obertura.cancela() }
+            Button(t("Cancel·la"), role: .cancel) { obertura.cancela() }
                 .keyboardShortcut(.cancelAction)
             // Sense drecera i sense ser el botó per defecte: Retorn no obre res.
-            Button("Obre \(Plural.compta(finestres.count, "finestra", "finestres"))") {
+            Button(t("Obre \(finestres.count) finestres")) {
                 Task { await obertura.confirmaIObreTot() }
             }
             .disabled(finestres.isEmpty)
-            .help("Escriu un fitxer temporal per finestra i demana a Warp que les obri totes alhora")
+            .help(t("Escriu un fitxer temporal per finestra i demana a Warp que les obri totes alhora"))
         case .obrint, .obrintTot:
-            Button("Cancel·la", role: .cancel) {}
+            Button(t("Cancel·la"), role: .cancel) {}
                 .disabled(true)
         case .preparant, .preparantTot:
-            Button("Cancel·la", role: .cancel) { obertura.cancela() }
+            Button(t("Cancel·la"), role: .cancel) { obertura.cancela() }
                 .keyboardShortcut(.cancelAction)
         default:
-            Button("D'acord") { obertura.cancela() }
+            Button(t("D'acord")) { obertura.cancela() }
                 .keyboardShortcut(.defaultAction)
         }
     }
@@ -323,7 +329,7 @@ struct BanerObertura: View {
                 .symbolRenderingMode(.multicolor)
                 .textSelection(.enabled)
             Spacer()
-            Button("D'acord", action: descarta)
+            Button(t("D'acord"), action: descarta)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
