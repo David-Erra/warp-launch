@@ -429,7 +429,8 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         try b.git("push", "-q", "origin", "main")
         let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva.merging(["GH_FALS_ANTERIOR": "v0.27.0"]) { $1 })
         #expect(codi == 0, "\(sortida)")
-        #expect(sortida.contains("Avís: aquesta versió canvia l'actualitzador: passa les rondes A i C"), "\(sortida)")
+        #expect(sortida.contains("Avís: aquesta versió canvia l'actualitzador (Sparkle, ServeiActualitzacions.swift o build-app.sh)"), "\(sortida)")
+        #expect(!sortida.contains("rondes"), "\(sortida)")
     }
 
     /// Sense canvis de l'actualitzador, cap avís.

@@ -299,7 +299,7 @@ APPCAST
 # Sense res per comparar, tot és nou.
 CANVIS="$(if [[ -n "$BASE" ]]; then git diff --name-only "$BASE..$COMMIT"; fi)"
 if [[ -z "$BASE" ]] || grep -qFx -e Package.resolved -e Sources/WarpLaunchApp/ServeiActualitzacions.swift -e scripts/build-app.sh <<< "$CANVIS"; then
-    echo "Avís: aquesta versió canvia l'actualitzador: passa les rondes A i C (docs/disseny.md) abans de publicar."
+    echo "Avís: aquesta versió canvia l'actualitzador (Sparkle, ServeiActualitzacions.swift o build-app.sh). Si l'espatlla, les còpies que la rebin no s'arreglaran soles: com s'atura, docs/disseny.md, secció 11, apartat 7."
 fi
 
 if [[ "$APLICA" -eq 0 ]]; then

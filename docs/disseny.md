@@ -2580,7 +2580,7 @@ No toca el clauer, comprova amb una eina independent de Sparkle i ho fa **amb la
 2. **Compilar** amb `scripts/build-app.sh release --amb-feed` (`:125`).
 3. **Comprovacions:** framework present; `CFBundleVersion` = `VERSION` (si no, tothom es tornaria a actualitzar cada dia); `SUFeedURL` i `SUPublicEDKey` iguals que a `Recursos/Actualitzacions.plist`; `codesign --verify --deep --strict -R=…` (`:131`) i un bucle amb el mateix `-R` sobre `Versions/B/Autoupdate`, `Versions/B/Updater.app` i el framework, perquè `--deep` no mira qui signa a dins [P: codi 0 amb el framework ad hoc; codi 3 amb `-R`].
 4. **Mode de prova:** no toca el clauer. `build/appcast-prova-$VERSIO.xml`, amb `SENSE-SIGNAR`, i diu què publicaria.
-5. **Avís:** si `git diff --name-only $BASE..$COMMIT` toca `Package.resolved`, `ServeiActualitzacions.swift` o `build-app.sh`: «Aquesta versió canvia l'actualitzador: passa les rondes A i C.» No bloqueja.
+5. **Avís:** si `git diff --name-only $BASE..$COMMIT` toca `Package.resolved`, `ServeiActualitzacions.swift` o `build-app.sh`: «Aquesta versió canvia l'actualitzador (…). Si l'espatlla, les còpies que la rebin no s'arreglaran soles: com s'atura, …» No bloqueja (des de l'11/11/2026, només informa: vegeu la regla de l'apartat 7).
 6. **Amb `--aplica`, abans de `gh release create`** (`env -u GH_TOKEN -u GITHUB_TOKEN`; eines amb `WARP_LAUNCH_SIGN_UPDATE` i `WARP_LAUNCH_VERIFICA`, per a les proves):
    - `sign_update "$ZIP"`, sortida exacta `sparkle:edSignature="<88>" length="<N>"`, amb `N` = la mida del zip [P].
    - `verifica-signatura.swift` amb `SUPublicEDKey` del paquet compilat. Si no passa: «la clau d'aquest clauer no és la que porten les apps». No es publica res.
@@ -2675,7 +2675,7 @@ Va a `docs/disseny.md`. El fre no s'ha comprovat: la ronda F no es fa (decisió 
 | Torna enrere a mà | No puja sol mentre `latest` sigui l'anterior |
 | La versió dolenta trenca l'arrencada o Sparkle | Cap camí automàtic: `brew` o l'ordre del README |
 
-**Regla:** qualsevol canvi de Sparkle o de `ServeiActualitzacions` passa per les rondes A i C abans de publicar.
+**Regla (revisada per l'autor l'11/11/2026):** un canvi de Sparkle, de `ServeiActualitzacions` o de `build-app.sh` no demana cap ronda de proves (decisió del 10/11/2026: no se'n fan més). `publica.sh` ho avisa només com a informació: si una versió trenca l'actualitzador, les còpies que la rebin no es poden arreglar soles (última fila de la taula). Abans, la regla demanava les rondes A i C.
 
 **Homebrew i Sparkle alhora:** amb una versió a punt i `brew upgrade`, `uninstall quit:` tanca l'app i `Autoupdate` canvia el paquet mentre Homebrew el mou. **Sense provar.** No es perd res. Una línia al README: si ho fas amb Homebrew, tanca l'app abans, i no facis servir `--greedy`, que reinstal·la.
 
