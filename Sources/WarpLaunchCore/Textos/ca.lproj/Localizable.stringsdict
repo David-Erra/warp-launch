@@ -4,6 +4,7 @@
      «%lld finestres»), i cada plural té `one` i `other` (GuardaTests). -->
 <plist version="1.0">
 <dict>
+	<!-- Fase F1: la prova de la infraestructura (IdiomaTests) -->
 	<key>%lld finestres</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -18,6 +19,311 @@
 			<string>%lld finestra</string>
 			<key>other</key>
 			<string>%lld finestres</string>
+		</dict>
+	</dict>
+	<!-- OrdreCLI: errors d'ús -->
+	<key>no hi ha cap finestra número %@; n'hi ha %lld:</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>no hi ha cap finestra número %@; n'hi ha %#@n@:</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld</string>
+			<key>other</key>
+			<string>%lld</string>
+		</dict>
+	</dict>
+	<key>no hi ha cap finestra «%@»; n'hi ha %lld:</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>no hi ha cap finestra «%@»; n'hi ha %#@n@:</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld</string>
+			<key>other</key>
+			<string>%lld</string>
+		</dict>
+	</dict>
+	<!-- OrdreCLI: importa i configuracio valida -->
+	<key>%lld pestanyes salten els permisos (--dangerously-skip-permissions).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ els permisos (--dangerously-skip-permissions).</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya salta</string>
+			<key>other</key>
+			<string>%lld pestanyes salten</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes no s'obririen com diu la configuració (✗).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ com diu la configuració (✗).</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya no s'obriria</string>
+			<key>other</key>
+			<string>%lld pestanyes no s'obririen</string>
+		</dict>
+	</dict>
+	<key>%lld finestres · %lld pestanyes · %lld amb Claude · %lld només terminal</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ · %#@p@ · %lld amb Claude · %lld només terminal</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>Resultat: %lld errors, %lld avisos.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Resultat: %#@e@, %#@a@.</string>
+		<key>e</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld error</string>
+			<key>other</key>
+			<string>%lld errors</string>
+		</dict>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld avís</string>
+			<key>other</key>
+			<string>%lld avisos</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense ordre (vegeu els errors)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ sense ordre (vegeu els errors)</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<!-- Informe: warp-launch llegeix -->
+	<key>Warp: %lld finestres, %lld pestanyes de terminal, %lld amb Claude. Sessions de Claude fora de cap pestanya: %lld.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@f@, %#@p@, %lld amb Claude. Sessions de Claude fora de cap pestanya: %lld.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya de terminal</string>
+			<key>other</key>
+			<string>%lld pestanyes de terminal</string>
+		</dict>
+	</dict>
+	<key>Carpetes: %lld recuperades de l'historial, %lld que ja no existeixen, %lld a la carpeta d'inici (~).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Carpetes: %#@h@ de l'historial, %#@n@, %lld a la carpeta d'inici (~).</string>
+		<key>h</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld recuperada</string>
+			<key>other</key>
+			<string>%lld recuperades</string>
+		</dict>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld que ja no existeix</string>
+			<key>other</key>
+			<string>%lld que ja no existeixen</string>
+		</dict>
+	</dict>
+	<key>Warp: %lld terminals vius, %lld amb Claude. Sessions de Claude fora de Warp: %lld.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@t@, %lld amb Claude. Sessions de Claude fora de Warp: %lld.</string>
+		<key>t</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld terminal viu</string>
+			<key>other</key>
+			<string>%lld terminals vius</string>
+		</dict>
+	</dict>
+	<key>Finestra %@ · %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Finestra %@ · %#@p@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<!-- Resum: les xifres, els arguments de l'app i les opcions de Claude -->
+	<key>Warp: %lld terminals · %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@t@ · %#@s@</string>
+		<key>t</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld terminal</string>
+			<key>other</key>
+			<string>%lld terminals</string>
+		</dict>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld sessió de Claude</string>
+			<key>other</key>
+			<string>%lld sessions de Claude</string>
+		</dict>
+	</dict>
+	<key>Warp: %lld finestres · %lld pestanyes · %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@f@ · %#@p@ · %#@s@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld finestra</string>
+			<key>other</key>
+			<string>%lld finestres</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld sessió de Claude</string>
+			<key>other</key>
+			<string>%lld sessions de Claude</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes · %lld amb Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ · %lld amb Claude</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
 		</dict>
 	</dict>
 </dict>

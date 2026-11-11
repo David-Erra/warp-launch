@@ -39,11 +39,9 @@ public struct ResumWarp: Sendable, Equatable {
     /// «Warp: 4 finestres · 30 pestanyes · 6 sessions de Claude», o «Warp: 6 terminals · 6 sessions de Claude».
     public var descripcio: String {
         if let terminals {
-            return "Warp: \(Plural.compta(terminals, "terminal", "terminals"))"
-                + " · \(Plural.compta(sessionsClaude, "sessió de Claude", "sessions de Claude"))"
+            return t("Warp: \(terminals) terminals · \(sessionsClaude) sessions de Claude")
         }
-        return "Warp: \(Plural.compta(finestres, "finestra", "finestres")) · \(Plural.compta(pestanyes, "pestanya", "pestanyes"))"
-            + " · \(Plural.compta(sessionsClaude, "sessió de Claude", "sessions de Claude"))"
+        return t("Warp: \(finestres) finestres · \(pestanyes) pestanyes · \(sessionsClaude) sessions de Claude")
     }
 }
 
@@ -53,7 +51,7 @@ extension Finestra {
 
     /// «12 pestanyes · 8 amb Claude».
     public var resum: String {
-        "\(Plural.compta(pestanyes.count, "pestanya", "pestanyes")) · \(ambClaude) amb Claude"
+        t("\(pestanyes.count) pestanyes · \(ambClaude) amb Claude")
     }
 }
 
@@ -107,20 +105,20 @@ public struct ArgumentsApp: Sendable, Equatable {
                 _ = resta.popFirst()
                 continue
             } else {
-                return .incorrecta("argument desconegut «\(argument)»; per provar l'app: --config <carpeta>")
+                return .incorrecta(t("argument desconegut «\(argument)»; per provar l'app: --config <carpeta>"))
             }
-            if valor != nil { return .incorrecta("«--config» hi és més d'un cop") }
+            if valor != nil { return .incorrecta(t("«--config» hi és més d'un cop")) }
             valor = trobat
         }
         guard let valor else { return .real(real) }
-        guard !valor.isEmpty else { return .incorrecta("falta la carpeta després de «--config»") }
+        guard !valor.isEmpty else { return .incorrecta(t("falta la carpeta després de «--config»")) }
         let ruta: String
         if valor.hasPrefix("/") {
             ruta = valor
         } else if valor == "~" || valor.hasPrefix("~/") {
             ruta = inici + valor.dropFirst()
         } else {
-            return .incorrecta("la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «\(valor)»")
+            return .incorrecta(t("la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «\(valor)»"))
         }
         let url = URL(filePath: ruta, directoryHint: .isDirectory).standardizedFileURL
         // Si és la real, ho ha de dir: no és cap prova.
@@ -132,7 +130,7 @@ extension ClaudePestanya {
     /// Per a la fila de la llista (docs/disseny.md, «Disposició»): «Opus · Molt alt · Ultracode», «Claude» si no hi ha
     /// res més a dir, o «Només terminal».
     public var resum: String {
-        guard activat else { return "Només terminal" }
+        guard activat else { return t("Només terminal") }
         let net = normalitzada()
         var parts: [String] = []
         if let model = net.model { parts.append(Self.nomModel(model)) }
@@ -144,11 +142,11 @@ extension ClaudePestanya {
     /// «Baix», «Mitjà», «Alt», «Molt alt», «Màxim»; un esforç desconegut, tal com està escrit.
     public static func nomEsforc(_ esforc: String) -> String {
         switch esforc {
-        case "low": "Baix"
-        case "medium": "Mitjà"
-        case "high": "Alt"
-        case "xhigh": "Molt alt"
-        case "max": "Màxim"
+        case "low": t("Baix")
+        case "medium": t("Mitjà")
+        case "high": t("Alt")
+        case "xhigh": t("Molt alt")
+        case "max": t("Màxim")
         default: esforc
         }
     }
@@ -160,12 +158,12 @@ extension ClaudePestanya {
     /// El nom d'un mode de permisos, amb el de Claude entre parèntesis (és el que es veu a Claude).
     public static func nomMode(_ mode: String) -> String {
         let nom: String? = switch mode {
-        case "acceptEdits": "Accepta les edicions"
-        case "auto": "Automàtic"
-        case "bypassPermissions": "Sense cap permís"
-        case "manual": "Manual"
-        case "dontAsk": "No preguntis"
-        case "plan": "Planifica"
+        case "acceptEdits": t("Accepta les edicions")
+        case "auto": t("Automàtic")
+        case "bypassPermissions": t("Sense cap permís")
+        case "manual": t("Manual")
+        case "dontAsk": t("No preguntis")
+        case "plan": t("Planifica")
         default: nil
         }
         return nom.map { "\($0) (\(mode))" } ?? mode
@@ -178,8 +176,8 @@ extension ClaudePestanya {
         let (settings, controlRemot, altres) = (net.settings, net.controlRemot, net.altres)
         var opcions: [(nom: String, valor: String)] = []
         if let settings { opcions.append(("--settings", settings)) }
-        if let controlRemot { opcions.append(("--remote-control", controlRemot.isEmpty ? "sense nom" : controlRemot)) }
-        if !altres.isEmpty { opcions.append(("Altres", altres.joined(separator: " "))) }
+        if let controlRemot { opcions.append(("--remote-control", controlRemot.isEmpty ? t("sense nom") : controlRemot)) }
+        if !altres.isEmpty { opcions.append((t("Altres"), altres.joined(separator: " "))) }
         return opcions
     }
 

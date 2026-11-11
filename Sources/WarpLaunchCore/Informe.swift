@@ -10,37 +10,36 @@ public enum Informe {
         let panes = pestanyes.flatMap(\.panes)
         let ambClaude = panes.filter { $0.claude != nil }.count
         let desaFinestres = lectura.warpDesaFinestres != false
+        let historial = panes.filter { $0.origenCarpeta == .historial }.count
+        let noExisteixen = panes.filter { !$0.carpetaExisteix }.count
+        let aInici = panes.filter { $0.carpeta == iniciCanonic }.count
+        let foraDeWarp = lectura.sessionsSensePestanya.filter { !$0.dinsDeWarp }.count
         var linies = desaFinestres ? [
-            "Warp: \(lectura.finestres.count) finestres, \(pestanyes.count) pestanyes de terminal, "
-                + "\(ambClaude) amb Claude. Sessions de Claude fora de cap pestanya: \(lectura.sessionsSensePestanya.count).",
-            "Carpetes: \(panes.filter { $0.origenCarpeta == .historial }.count) recuperades de l'historial, "
-                + "\(panes.filter { !$0.carpetaExisteix }.count) que ja no existeixen, "
-                + "\(panes.filter { $0.carpeta == iniciCanonic }.count) a la carpeta d'inici (~).",
+            t("Warp: \(lectura.finestres.count) finestres, \(pestanyes.count) pestanyes de terminal, \(ambClaude) amb Claude. Sessions de Claude fora de cap pestanya: \(lectura.sessionsSensePestanya.count)."),
+            t("Carpetes: \(historial) recuperades de l'historial, \(noExisteixen) que ja no existeixen, \(aInici) a la carpeta d'inici (~)."),
         ] : [
-            "Warp: \(Plural.compta(lectura.terminals.count, "terminal viu", "terminals vius")), "
-                + "\(lectura.terminals.filter(\.claude).count) amb Claude. "
-                + "Sessions de Claude fora de Warp: \(lectura.sessionsSensePestanya.filter { !$0.dinsDeWarp }.count).",
-            "La restauració de sessió és desactivada: Warp no desa les finestres, i l'app llegeix els processos.",
+            t("Warp: \(lectura.terminals.count) terminals vius, \(lectura.terminals.filter(\.claude).count) amb Claude. Sessions de Claude fora de Warp: \(foraDeWarp)."),
+            t("La restauració de sessió és desactivada: Warp no desa les finestres, i l'app llegeix els processos."),
         ]
         switch lectura.warpObert {
-        case true?: linies.append("Warp és obert.")
-        case false?: linies.append(desaFinestres ? "Warp és tancat: són les finestres que restaurarà en obrir-se."
-                                                 : "Warp és tancat.")
+        case true?: linies.append(t("Warp és obert."))
+        case false?: linies.append(desaFinestres ? t("Warp és tancat: són les finestres que restaurarà en obrir-se.")
+                                                 : t("Warp és tancat."))
         case nil: break
         }
         if let preview = lectura.warpPreview { linies.append("⚠ \(preview.text)") }
         if !lectura.sessionsNoInteractives.isEmpty {
             let tipus = Set(lectura.sessionsNoInteractives.map(\.tipus)).sorted().joined(separator: ", ")
-            linies.append("Sessions de Claude en segon pla: \(lectura.sessionsNoInteractives.count) (\(tipus)).")
+            linies.append(t("Sessions de Claude en segon pla: \(lectura.sessionsNoInteractives.count) (\(tipus))."))
         }
 
         if !desaFinestres, !lectura.terminals.isEmpty {
             linies.append("")
-            linies.append("Terminals:")
+            linies.append(t("Terminals:"))
             for terminal in lectura.terminals {
-                let detalls = [terminal.claude ? "Claude" : "sense Claude",
-                               terminal.marca.map { "pestanya \($0.uuidString.prefix(8).lowercased())" },
-                               terminal.pane.map { "pane \($0.prefix(8))" }].compactMap { $0 }
+                let detalls = [terminal.claude ? "Claude" : t("sense Claude"),
+                               terminal.marca.map { t("pestanya \($0.uuidString.prefix(8).lowercased())") },
+                               terminal.pane.map { t("pane \(String($0.prefix(8)))") }].compactMap { $0 }
                 linies.append("  · \(terminal.carpeta.map(carpeta) ?? "?") · pid \(terminal.pid) · "
                     + detalls.joined(separator: " · "))
             }
@@ -48,16 +47,16 @@ public enum Informe {
 
         for finestra in lectura.finestres {
             linies.append("")
-            linies.append("Finestra \(finestra.numero) · \(finestra.pestanyes.count) pestanyes")
+            linies.append(t("Finestra \(String(finestra.numero)) · \(finestra.pestanyes.count) pestanyes"))
             for pestanya in finestra.pestanyes {
                 let activa = pestanya.posicio == finestra.pestanyaActiva ? "*" : " "
                 let numero = String(pestanya.posicio + 1).leftPadding(3)
-                let titol = pestanya.titol.flatMap { $0.isEmpty ? nil : $0 } ?? "(sense títol)"
+                let titol = pestanya.titol.flatMap { $0.isEmpty ? nil : $0 } ?? t("(sense títol)")
                 for (n, pane) in pestanya.panes.enumerated() {
-                    let marques = [pane.origenCarpeta == .historial ? "historial" : nil,
-                                   pane.carpetaExisteix ? nil : "no existeix"].compactMap { $0 }
+                    let marques = [pane.origenCarpeta == .historial ? t("historial") : nil,
+                                   pane.carpetaExisteix ? nil : t("no existeix")].compactMap { $0 }
                     let notes = marques.isEmpty ? "" : " (" + marques.joined(separator: ", ") + ")"
-                    let capcalera = n == 0 ? "\(numero)\(activa) \(titol)" : "     └ pane \(n + 1)"
+                    let capcalera = n == 0 ? "\(numero)\(activa) \(titol)" : "     └ " + t("pane \(String(n + 1))")
                     linies.append("\(capcalera) · \(carpeta(pane.carpeta))\(notes)")
                     if let claude = pane.claude {
                         linies.append("       \(ordre(claude.ordre))  [\(descripcio(claude))]")
@@ -68,16 +67,16 @@ public enum Informe {
 
         if !lectura.sessionsSensePestanya.isEmpty {
             linies.append("")
-            linies.append(desaFinestres ? "Sessions de Claude que no són a cap pestanya de Warp:" : "Sessions de Claude:")
+            linies.append(desaFinestres ? t("Sessions de Claude que no són a cap pestanya de Warp:") : t("Sessions de Claude:"))
             for sessio in lectura.sessionsSensePestanya {
-                let motiu = !sessio.dinsDeWarp ? "fora de Warp" : desaFinestres ? "pestanya no trobada a la base de Warp" : "a Warp"
+                let motiu = !sessio.dinsDeWarp ? t("fora de Warp") : desaFinestres ? t("pestanya no trobada a la base de Warp") : t("a Warp")
                 linies.append("  · \(ordre(sessio.ordre)) · \(carpeta(sessio.carpeta))  [\(descripcio(sessio)) · \(motiu)]")
             }
         }
 
         if !lectura.avisos.isEmpty {
             linies.append("")
-            linies.append("Avisos:")
+            linies.append(t("Avisos:"))
             linies.append(contentsOf: lectura.avisos.map { "  · \($0)" })
         }
         return linies.joined(separator: "\n")
@@ -85,7 +84,7 @@ public enum Informe {
 
     /// `nom · pid · estat`, i la marca de la pestanya que la va obrir (els 8 primers caràcters), si en té.
     private static func descripcio(_ sessio: SessioClaude) -> String {
-        let marca = sessio.marca.map { "pestanya \($0.uuidString.prefix(8).lowercased())" }
+        let marca = sessio.marca.map { t("pestanya \($0.uuidString.prefix(8).lowercased())") }
         return [sessio.nom, "pid \(sessio.pid)", sessio.estat, marca].compactMap { $0 }.joined(separator: " · ")
     }
 

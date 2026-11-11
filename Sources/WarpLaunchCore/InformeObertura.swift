@@ -4,7 +4,7 @@ import Foundation
 /// l'URL exactes. No escriu res.
 enum InformeObertura {
     /// La capçalera del mode de prova. La primera línia de la sortida.
-    static let modeDeProva = "Mode de prova: no s'ha escrit ni obert res."
+    static var modeDeProva: String { t("Mode de prova: no s'ha escrit ni obert res.") }
 
     struct Dades {
         var pla: Pla
@@ -27,16 +27,16 @@ enum InformeObertura {
     static func text(_ d: Dades) -> String {
         var linies = [d.capcalera]
         let pla = d.pla
-        linies.append("Finestra \(d.numero) de \(d.finestres): «\(pla.finestra.nom)» (\(d.configuracio.path))")
+        linies.append(t("Finestra \(String(d.numero)) de \(String(d.finestres)): «\(pla.finestra.nom)» (\(d.configuracio.path))"))
         // D-P12: amb Warp Preview, o sense cap Warp (0.31.1), no s'obriria res, tampoc Warp Stable: el text ja diu què hi
         // ha obert o què falta.
         if let preview = d.warpPreview {
-            linies.append("✗ \(preview.text) No s'obriria res.")
+            linies.append("✗ \(preview.text) " + t("No s'obriria res."))
         } else {
             switch d.warpObert {
-            case true?: linies.append("Warp és obert.")
-            case false?: linies.append("Warp és tancat: primer s'obriria Warp.")
-            case nil: linies.append("No se sap si Warp és obert.")
+            case true?: linies.append(t("Warp és obert."))
+            case false?: linies.append(t("Warp és tancat: primer s'obriria Warp."))
+            case nil: linies.append(t("No se sap si Warp és obert."))
             }
         }
         linies.append(pla.xifres.text)
@@ -50,31 +50,31 @@ enum InformeObertura {
         }
         if !pla.obertes.isEmpty {
             linies.append("")
-            linies.append("Ja obertes (\(pla.obertes.count)):")
+            linies.append(t("Ja obertes (\(pla.obertes.count)):"))
             linies += pla.obertes.map { fila($0.pestanya, $0.on.description) }
         }
         if !pla.excloses.isEmpty {
             linies.append("")
-            linies.append("No s'obriran (\(pla.excloses.count)):")
+            linies.append(t("No s'obriran (\(pla.excloses.count)):"))
             linies += pla.excloses.map { fila($0.pestanya, "✗ \($0.motiu)") }
         }
         if !pla.aObrir.isEmpty {
             linies.append("")
-            linies.append("S'obririen (\(pla.aObrir.count)):")
+            linies.append(t("S'obririen (\(pla.aObrir.count)):"))
             linies += pla.aObrir.map { fila($0.pestanya, $0.conversa.descripcio) }
         }
         if !pla.avisos.isEmpty {
             linies.append("")
-            linies.append("Avisos:")
+            linies.append(t("Avisos:"))
             linies += pla.avisos.map { "  \($0.esInfo ? "·" : "⚠") \($0)" }
         }
         if let error = d.errorFitxer {
             linies.append("")
-            linies.append("✗ No es pot generar el fitxer per a Warp: \(error)")
+            linies.append("✗ " + t("No es pot generar el fitxer per a Warp: \(error)"))
         }
         if let fitxer = d.fitxer {
             linies.append("")
-            linies.append("Fitxer per a Warp: \(fitxer.nomFitxer) (en obrir de debò, l'id serà un altre)")
+            linies.append(t("Fitxer per a Warp: \(fitxer.nomFitxer) (en obrir de debò, l'id serà un altre)"))
             linies.append("URL: \(fitxer.url)")
             linies.append("")
             linies.append(fitxer.text.hasSuffix("\n") ? String(fitxer.text.dropLast()) : fitxer.text)

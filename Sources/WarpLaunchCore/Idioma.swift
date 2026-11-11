@@ -35,6 +35,13 @@ public enum Idioma {
     /// El `locale` de la llengua dels textos: els plurals i les xifres la segueixen a ella, no la regió del Mac.
     public static var locale: Locale { Locale(identifier: efectiva) }
 
+    /// Una enumeració, amb la conjunció i les comes de la llengua dels textos: «A i B», «A, B i C» (en anglès, «A, B, and C»).
+    public static func llista(_ elements: [String]) -> String {
+        let formatador = ListFormatter()
+        formatador.locale = locale
+        return formatador.string(from: elements) ?? elements.joined(separator: ", ")
+    }
+
     /// Els textos del paquet, o res si el bundle no es troba (un binari copiat sol).
     static let textos: Textos? = Textos.delPrimer(candidats(principal: .main, codi: Bundle(for: Marca.self)))
 

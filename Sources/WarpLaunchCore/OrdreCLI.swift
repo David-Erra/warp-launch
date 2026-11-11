@@ -91,45 +91,58 @@ public enum OrdreCLI {
         public static let us: Int32 = 64
     }
 
+    /// L'ajuda, en la llengua de l'app. Les ordres i les opcions (`llegeix`, `--json`) no es tradueixen; cada ordre és un text,
+    /// amb l'ús a la primera línia i la descripció a les altres, sagnada.
     public static var ajuda: String {
-        """
-        \(WarpLaunch.nom) \(WarpLaunch.versio)
-
-        Ús:
-          warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <carpeta>]
-              Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya.
-          warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]
-              La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.
-              Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,
-              tenen les opcions de la plantilla de ~/.config/warp-launch.
-              --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:
-              la configuració real només es crea des de l'app.
-          warp-launch configuracio valida [--config <carpeta>]
-              Errors i avisos de la configuració (per defecte, la de ~/.config/warp-launch).
-          warp-launch obre <nom o número de finestra> [--json] [--config <carpeta>] [--warp <warp.sqlite>]
-                  [--sessions <carpeta>]
-              Mode de prova: què passaria si s'obrís la finestra a Warp (quines pestanyes ja són obertes, quines
-              s'obririen i com, i el fitxer i l'URL exactes). No escriu ni obre res, tampoc estat.json.
-          warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]
-              Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna
-              amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta.
-          warp-launch diagnostica [--json] [--anonimitza]
-              Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els
-              fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les
-              versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada
-              comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.
-              --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma).
-          warp-launch --versio
-
-        Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de
-        les transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,
-        també l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,
-        excepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).
-        Codis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot
-        obert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna
-        comprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no
-        s'obriria; 64 ús incorrecte.
-        """
+        let ordres = [
+            t("""
+                warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <carpeta>]
+                    Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya.
+                """),
+            t("""
+                warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]
+                    La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.
+                    Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,
+                    tenen les opcions de la plantilla de ~/.config/warp-launch.
+                    --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:
+                    la configuració real només es crea des de l'app.
+                """),
+            t("""
+                warp-launch configuracio valida [--config <carpeta>]
+                    Errors i avisos de la configuració (per defecte, la de ~/.config/warp-launch).
+                """),
+            t("""
+                warp-launch obre <nom o número de finestra> [--json] [--config <carpeta>] [--warp <warp.sqlite>]
+                        [--sessions <carpeta>]
+                    Mode de prova: què passaria si s'obrís la finestra a Warp (quines pestanyes ja són obertes, quines
+                    s'obririen i com, i el fitxer i l'URL exactes). No escriu ni obre res, tampoc estat.json.
+                """),
+            t("""
+                warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]
+                    Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna
+                    amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta.
+                """),
+            t("""
+                warp-launch diagnostica [--json] [--anonimitza]
+                    Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els
+                    fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les
+                    versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada
+                    comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.
+                    --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma).
+                """),
+            "warp-launch --versio",
+        ]
+        let us = ordres.flatMap { $0.split(separator: "\n", omittingEmptySubsequences: false).map { "  " + $0 } }
+        return "\(WarpLaunch.nom) \(WarpLaunch.versio)\n\n" + t("Ús:") + "\n" + us.joined(separator: "\n") + "\n\n" + t("""
+            Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de
+            les transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,
+            també l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,
+            excepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).
+            Codis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot
+            obert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna
+            comprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no
+            s'obriria; 64 ús incorrecte.
+            """)
     }
 
     public static func executa(_ args: [String], entorn: EntornCLI, sortida: inout Sortida) -> Int32 {
@@ -147,14 +160,14 @@ public enum OrdreCLI {
             case "importa":
                 return try importa(resta, entorn: entorn, sortida: &sortida)
             case "configuracio":
-                guard resta.popFirst() == "valida" else { throw .us("ordre: «configuracio valida»") }
+                guard resta.popFirst() == "valida" else { throw .us(t("ordre: «configuracio valida»")) }
                 return try valida(resta, entorn: entorn, sortida: &sortida)
             case "obre":
                 return try obre(resta, entorn: entorn, sortida: &sortida)
             case "diagnostica":
                 return try diagnostica(resta, entorn: entorn, sortida: &sortida)
             case let desconegut?:
-                throw .us("ordre desconeguda «\(desconegut)»")
+                throw .us(t("ordre desconeguda «\(desconegut)»"))
             }
         } catch {
             switch error {
@@ -189,21 +202,21 @@ public enum OrdreCLI {
         var resta = args
         while let arg = resta.popFirst() {
             let nom = arg.hasPrefix("--config=") ? "--config" : arg
-            guard admeses.contains(nom) else { throw .us("opció desconeguda per a \(ordre): «\(arg)»") }
+            guard admeses.contains(nom) else { throw .us(t("opció desconeguda per a \(ordre): «\(arg)»")) }
             switch nom {
             case "--json": o.json = true
             case "--desa": o.desa = true
             case "--anonimitza": o.anonimitza = true
             case "--warp":
-                guard let ruta = resta.popFirst() else { throw .us("falta la ruta després de --warp") }
+                guard let ruta = resta.popFirst() else { throw .us(t("falta la ruta després de --warp")) }
                 lector.rutaWarp = URL(filePath: ruta)
                 // Una base triada a mà es llegeix sigui quin sigui l'ajust de Warp.
                 lector.rutaAjustos = nil
             case "--sessions":
-                guard let ruta = resta.popFirst() else { throw .us("falta la carpeta després de --sessions") }
+                guard let ruta = resta.popFirst() else { throw .us(t("falta la carpeta després de --sessions")) }
                 lector.carpetaSessions = URL(filePath: ruta)
             default:  // --config
-                guard o.config == nil else { throw .us("«--config» hi és més d'un cop") }
+                guard o.config == nil else { throw .us(t("«--config» hi és més d'un cop")) }
                 let valor = arg == "--config" ? resta.popFirst() ?? "" : String(arg.dropFirst("--config=".count))
                 o.config = try carpeta(valor, inici: inici)
             }
@@ -213,14 +226,14 @@ public enum OrdreCLI {
 
     /// Una carpeta de `--config`: absoluta, o `~/…`.
     private static func carpeta(_ valor: String, inici: String) throws(ErrorCLI) -> URL {
-        guard !valor.isEmpty else { throw .us("falta la carpeta després de «--config»") }
+        guard !valor.isEmpty else { throw .us(t("falta la carpeta després de «--config»")) }
         let ruta: String
         if valor.hasPrefix("/") {
             ruta = valor
         } else if valor == "~" || valor.hasPrefix("~/") {
             ruta = inici + valor.dropFirst()
         } else {
-            throw .us("la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «\(valor)»")
+            throw .us(t("la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «\(valor)»"))
         }
         // Sense `standardizedFileURL`, que canviaria `/private/var/…` per `/var/…`: la ruta es mostra tal com s'ha escrit.
         return URL(filePath: ruta, directoryHint: .isDirectory)
@@ -236,7 +249,7 @@ public enum OrdreCLI {
             let codificador = JSONEncoder()
             codificador.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             codificador.dateEncodingStrategy = .iso8601
-            guard let dades = try? codificador.encode(lectura) else { throw .fallida("no s'ha pogut generar el JSON") }
+            guard let dades = try? codificador.encode(lectura) else { throw .fallida(t("no s'ha pogut generar el JSON")) }
             sortida.escriu(String(decoding: dades, as: UTF8.self))
         } else {
             sortida.escriu(Informe.text(lectura, inici: lector.inici))
@@ -250,20 +263,17 @@ public enum OrdreCLI {
         let o = try opcions(args, ordre: "importa", admeses: ["--json", "--warp", "--sessions", "--desa", "--config"],
                             lector: &lector, inici: entorn.inici)
         if o.desa, o.config == nil {
-            throw .us("«--desa» necessita «--config <carpeta>»: la configuració real només es crea des de l'app")
+            throw .us(t("«--desa» necessita «--config <carpeta>»: la configuració real només es crea des de l'app"))
         }
-        if o.config != nil, !o.desa { throw .us("«--config» només serveix amb «--desa»") }
+        if o.config != nil, !o.desa { throw .us(t("«--config» només serveix amb «--desa»")) }
         if let config = o.config, esLaReal(config, real: entorn.carpetaReal) {
-            throw .us("«--config» no pot ser la configuració real (\(entorn.carpetaReal.path)), ni ser-hi a dins, ni "
-                + "passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app")
+            throw .us(t("«--config» no pot ser la configuració real (\(entorn.carpetaReal.path)), ni ser-hi a dins, ni passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app"))
         }
 
         let lectura = try llegeixWarp(lector, entorn: entorn)
         // El CLI no toca mai l'ajust (D19 només és de l'app): no és que Warp no tingui res obert.
         if lectura.warpDesaFinestres == false {
-            throw .fallida(LecturaWarp.senseFinestres + " «warp-launch importa» no toca aquest ajust i no pot demanar a Warp "
-                + "que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el "
-                + "torna a desactivar.")
+            throw .fallida(LecturaWarp.senseFinestres + " " + t("«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar."))
         }
         let inici = Rutes.canonica(entorn.inici)
         let plantilla = plantillaPerImportar(entorn, inici: inici)
@@ -278,7 +288,7 @@ public enum OrdreCLI {
             let existeix: Bool
             do { existeix = try magatzem.carrega() != nil } catch { existeix = true }
             if existeix || FileManager.default.fileExists(atPath: magatzem.fitxer.path) {
-                throw .fallida("ja hi ha una configuració a \(magatzem.fitxer.path); tria una carpeta buida")
+                throw .fallida(t("ja hi ha una configuració a \(magatzem.fitxer.path); tria una carpeta buida"))
             }
             do {
                 try magatzem.desa(configuracio, sobre: nil)
@@ -292,34 +302,34 @@ public enum OrdreCLI {
         let codi = avisos.compta(.error) == 0 ? Codi.correcte : Codi.configuracioAmbErrors
         if o.json {
             guard let dades = try? configuracio.normalitzada(inici: inici).json() else {
-                throw .fallida("no s'ha pogut generar el JSON")
+                throw .fallida(t("no s'ha pogut generar el JSON"))
             }
             sortida.text += String(decoding: dades, as: UTF8.self)
             return codi
         }
-        sortida.escriu(desada.map { "Importació de Warp, desada a \($0.path)" }
-            ?? "Importació de Warp (vista prèvia: no s'ha desat res)")
+        sortida.escriu(desada.map { t("Importació de Warp, desada a \($0.path)") }
+            ?? t("Importació de Warp (vista prèvia: no s'ha desat res)"))
         sortida.escriu(importacio.resum.descripcio)
-        sortida.escriu("\(Plural.compta(importacio.resum.saltenPermisos, "pestanya salta", "pestanyes salten")) els permisos (--dangerously-skip-permissions).")
+        sortida.escriu(t("\(importacio.resum.saltenPermisos) pestanyes salten els permisos (--dangerously-skip-permissions)."))
         sortida.escriu(plantilla.origen)
         if importacio.resum.senseClaudeObert > 0 {
-            sortida.escriu("Les pestanyes que no tenien Claude obert queden només terminal.")
+            sortida.escriu(t("Les pestanyes que no tenien Claude obert queden només terminal."))
         }
         sortida.text += InformeConfiguracio.text(configuracio, avisos: avisos, origens: importacio.origens, inici: inici)
         if !importacio.notes.isEmpty {
             sortida.escriu("")
-            sortida.escriu("Notes de la importació:")
+            sortida.escriu(t("Notes de la importació:"))
             for nota in importacio.notes { sortida.escriu("  · \(nota)") }
         }
         if !lectura.avisos.isEmpty {
             sortida.escriu("")
-            sortida.escriu("Avisos de la lectura:")
+            sortida.escriu(t("Avisos de la lectura:"))
             for avis in lectura.avisos { sortida.escriu("  · \(avis)") }
         }
         let ambErrors = avisos.pestanyes.values.filter { $0.contains { $0.gravetat == .error } }.count
         if ambErrors > 0 {
             sortida.escriu("")
-            sortida.escriu("\(Plural.compta(ambErrors, "pestanya no s'obriria", "pestanyes no s'obririen")) com diu la configuració (✗).")
+            sortida.escriu(t("\(ambErrors) pestanyes no s'obririen com diu la configuració (✗)."))
         }
         return codi
     }
@@ -330,14 +340,13 @@ public enum OrdreCLI {
     /// terminal (D-P5a), i la prenen si s'hi activa. Només llegeix.
     private static func plantillaPerImportar(_ entorn: EntornCLI, inici: String) -> (valor: ClaudePestanya, origen: String) {
         let magatzem = MagatzemConfiguracio(carpeta: entorn.carpetaReal, inici: inici)
-        let segura = "Plantilla: la segura, sense saltar els permisos"
         do {
             guard let carregada = try magatzem.carrega() else {
-                return (.perOmissio, segura + " (encara no hi ha cap configuració).")
+                return (.perOmissio, t("Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració)."))
             }
-            return (carregada.configuracio.plantilla, "Plantilla: la de \(magatzem.fitxer.path).")
+            return (carregada.configuracio.plantilla, t("Plantilla: la de \(magatzem.fitxer.path)."))
         } catch {
-            return (.perOmissio, segura + " (no s'ha pogut llegir \(magatzem.fitxer.path): \(error)).")
+            return (.perOmissio, t("Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir \(magatzem.fitxer.path): \(String(describing: error)))."))
         }
     }
 
@@ -354,26 +363,23 @@ public enum OrdreCLI {
         } catch {
             throw .fallida("\(magatzem.fitxer.path): \(error)")
         }
-        guard let carregada = llegida else { throw .fallida("no hi ha cap configuració a \(magatzem.fitxer.path)") }
+        guard let carregada = llegida else { throw .fallida(t("no hi ha cap configuració a \(magatzem.fitxer.path)")) }
 
         let configuracio = carregada.configuracio
         let avisos = Validacio.avisos(configuracio, inici: inici, carpetaExisteix: entorn.carpetaExisteix)
         let pestanyes = configuracio.finestres.flatMap(\.pestanyes)
         let ambClaude = pestanyes.filter(\.claude.activat).count
-        sortida.escriu("Configuració: \(magatzem.fitxer.path)")
-        sortida.escriu("\(Plural.compta(configuracio.finestres.count, "finestra", "finestres")) · "
-            + "\(Plural.compta(pestanyes.count, "pestanya", "pestanyes")) · \(ambClaude) amb Claude · "
-            + "\(pestanyes.count - ambClaude) només terminal")
+        sortida.escriu(t("Configuració: \(magatzem.fitxer.path)"))
+        sortida.escriu(t("\(configuracio.finestres.count) finestres · \(pestanyes.count) pestanyes · \(ambClaude) amb Claude · \(pestanyes.count - ambClaude) només terminal"))
         if !carregada.avisos.isEmpty {
             sortida.escriu("")
-            sortida.escriu("Avisos del fitxer:")
+            sortida.escriu(t("Avisos del fitxer:"))
             for avis in carregada.avisos { sortida.escriu("  · \(avis)") }
         }
         sortida.text += InformeConfiguracio.text(configuracio, avisos: avisos, origens: nil, inici: inici)
         let errors = avisos.compta(.error)
         sortida.escriu("")
-        sortida.escriu("Resultat: \(Plural.compta(errors, "error", "errors")), "
-            + "\(Plural.compta(avisos.compta(.avis), "avís", "avisos")).")
+        sortida.escriu(t("Resultat: \(errors) errors, \(avisos.compta(.avis)) avisos."))
         return errors == 0 ? Codi.correcte : Codi.configuracioAmbErrors
     }
 
@@ -389,7 +395,7 @@ public enum OrdreCLI {
                                                           confianca: entorn.confianca, sistema: entorn.sistema),
                                          anonimitza: o.anonimitza)
         if o.json {
-            guard let dades = try? informe.json() else { throw .fallida("no s'ha pogut generar el JSON") }
+            guard let dades = try? informe.json() else { throw .fallida(t("no s'ha pogut generar el JSON")) }
             sortida.escriu(String(decoding: dades, as: UTF8.self))
         } else {
             sortida.text += informe.text
@@ -418,7 +424,7 @@ public enum OrdreCLI {
         throws(ErrorCLI) -> PlaCLI {
         var resta = args
         guard let nom = resta.popFirst(), !nom.hasPrefix("-") else {
-            throw .us("falta la finestra: «warp-launch obre <nom o número de finestra>»")
+            throw .us(t("falta la finestra: «warp-launch obre <nom o número de finestra>»"))
         }
         var lector = entorn.lector
         let o = try opcions(resta, ordre: admeses.contains("--json") ? "obre" : "obre --obre", admeses: admeses,
@@ -433,18 +439,18 @@ public enum OrdreCLI {
             throw .fallida("\(magatzem.fitxer.path): \(error)")
         }
         guard let configuracio = llegida?.configuracio else {
-            throw .fallida("no hi ha cap configuració a \(magatzem.fitxer.path)")
+            throw .fallida(t("no hi ha cap configuració a \(magatzem.fitxer.path)"))
         }
         let (numero, finestra) = try triaFinestra(nom, de: configuracio)
         // En tornar a calcular, ha de ser la mateixa finestra.
-        if let id, finestra.id != id { throw .fallida("la configuració ha canviat mentre s'obria Warp: torna-ho a provar") }
+        if let id, finestra.id != id { throw .fallida(t("la configuració ha canviat mentre s'obria Warp: torna-ho a provar")) }
 
         let fitxerEstat = carpeta.appending(path: EstatApp.nomFitxer)
         let desat: EstatApp
         do {
             desat = try EstatApp.llegeix(fitxer: fitxerEstat)
         } catch {
-            throw .fallida("\(fitxerEstat.path): \(error); l'app no obriria res")
+            throw .fallida(t("\(fitxerEstat.path): \(String(describing: error)); l'app no obriria res"))
         }
         let lectura = try llegeixWarp(lector, entorn: entorn)
         let ara = entorn.ara()
@@ -467,7 +473,7 @@ public enum OrdreCLI {
     private static func obre(_ args: ArraySlice<String>, entorn: EntornCLI,
                              sortida: inout Sortida) throws(ErrorCLI) -> Int32 {
         if args.contains("--obre") {
-            throw .us("«--obre» només funciona amb la comanda «warp-launch» de debò")
+            throw .us(t("«--obre» només funciona amb la comanda «warp-launch» de debò"))
         }
         let p = try planifica(args, entorn: entorn)
         var fitxer: FitxerLaunch?
@@ -485,7 +491,7 @@ public enum OrdreCLI {
                                           warpPreview: p.lectura.warpPreview, fitxer: fitxer, errorFitxer: errorFitxer,
                                           inici: p.inici)
         if p.o.json {
-            guard let json = try? InformeObertura.json(dades) else { throw .fallida("no s'ha pogut generar el JSON") }
+            guard let json = try? InformeObertura.json(dades) else { throw .fallida(t("no s'ha pogut generar el JSON")) }
             sortida.escriu(String(decoding: json, as: UTF8.self))
         } else {
             sortida.text += InformeObertura.text(dades)
@@ -526,34 +532,32 @@ public enum OrdreCLI {
         var p = try planifica(args, entorn: entorn, admeses: ["--config"])
         // L'app escriu `estat.json` cada minut: si tots dos l'escrivissin alhora, se'n podria perdre un canvi (D17).
         if obridor.appOberta() {
-            throw .fallida("l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. "
-                + "No s'ha obert res.")
+            throw .fallida(t("l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. No s'ha obert res."))
         }
         // D-P12: amb Warp Preview, o sense cap Warp (0.31.1), ni s'obre Warp ni s'escriu res.
-        if let preview = p.lectura.warpPreview { throw .fallida("\(preview.text) No s'ha obert res.") }
+        if let preview = p.lectura.warpPreview { throw .fallida(preview.text + " " + t("No s'ha obert res.")) }
         let id = p.pla.finestra.id
         func dades(_ p: PlaCLI, fitxer: FitxerLaunch?) -> InformeObertura.Dades {
             InformeObertura.Dades(pla: p.pla, numero: p.numero, finestres: p.configuracio.finestres.count,
                                   configuracio: p.fitxerConfiguracio, warpObert: p.lectura.warpObert,
                                   warpPreview: p.lectura.warpPreview, fitxer: fitxer, errorFitxer: nil, inici: p.inici,
-                                  capcalera: "S'obre a Warp (--obre).")
+                                  capcalera: t("S'obre a Warp (--obre)."))
         }
         guard p.pla.motiuEspera == nil else {
             sortida.text += InformeObertura.text(dades(p, fitxer: nil))
-            throw .fallida("no s'ha obert res: \(p.pla.motiuEspera ?? "")")
+            throw .fallida(t("no s'ha obert res: \(p.pla.motiuEspera ?? "")"))
         }
         let warpTancat = p.lectura.warpObert != true
         if p.pla.aObrir.isEmpty {
             // Warp és tancat i restaura la sessió: les «obertes» a Warp són les que restaurarà, no les d'ara.
             if warpTancat, p.lectura.warpDesaFinestres != false, p.pla.obertes.contains(where: { $0.on.esAWarp }) {
-                throw .fallida("Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho "
-                    + "a provar. No s'ha obert res.")
+                throw .fallida(t("Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar. No s'ha obert res."))
             }
             sortida.text += InformeObertura.text(dades(p, fitxer: nil))
             let x = p.pla.xifres
             sortida.escriu(p.pla.excloses.isEmpty
-                ? "Totes les pestanyes ja són obertes: no s'ha obert res."
-                : "No hi ha cap pestanya per obrir (\(x.jaObertes) ja obertes, \(x.excloses) no s'obriran): no s'ha obert res.")
+                ? t("Totes les pestanyes ja són obertes: no s'ha obert res.")
+                : t("No hi ha cap pestanya per obrir (\(x.jaObertes) ja obertes, \(x.excloses) no s'obriran): no s'ha obert res."))
             return p.pla.excloses.isEmpty ? Codi.correcte : Codi.configuracioAmbErrors
         }
         /// Mostra ara el que hi ha a la sortida, abans d'una espera llarga.
@@ -564,15 +568,15 @@ public enum OrdreCLI {
         }
         /// El final dels errors: si s'ha obert Warp, no és cert que no s'hagi obert res.
         func res(_ p: PlaCLI) -> String {
-            guard warpTancat else { return "No s'ha obert res." }
-            return "S'ha obert Warp, però cap finestra de la configuració."
-                + (p.lectura.warpDesaFinestres == false ? " En arrencar, Warp ha obert una finestra buida: la pots tancar." : "")
+            guard warpTancat else { return t("No s'ha obert res.") }
+            return t("S'ha obert Warp, però cap finestra de la configuració.")
+                + (p.lectura.warpDesaFinestres == false ? " " + t("En arrencar, Warp ha obert una finestra buida: la pots tancar.") : "")
         }
 
         // Warp és tancat: l'obre, n'espera l'arrencada i torna a calcular. Si el que s'obriria ha canviat, no obre res.
         let llancament = entorn.nouId()
         if warpTancat {
-            sortida.escriu("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(Int(ExecucioObertura.tempsMaximWarp)) s).")
+            sortida.escriu(t("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(Int(ExecucioObertura.tempsMaximWarp)) s)."))
             mostra()
             var errorEngegant: String?
             Task { @MainActor in
@@ -585,18 +589,18 @@ public enum OrdreCLI {
             let lector = p.lector
             let arrencat = await ExecucioObertura.esperaWarp(llegeix: { try? lector.llegeix() }, espera: obridor.espera,
                                                             rellotge: entorn.ara, fallat: { errorEngegant != nil })
-            if let errorEngegant { throw .fallida("no s'ha pogut obrir Warp: \(errorEngegant)") }
+            if let errorEngegant { throw .fallida(t("no s'ha pogut obrir Warp: \(errorEngegant)")) }
             guard arrencat else {
-                throw .fallida("Warp no ha arrencat en \(Int(ExecucioObertura.tempsMaximWarp)) s: mira'l i torna-ho a provar.")
+                throw .fallida(t("Warp no ha arrencat en \(Int(ExecucioObertura.tempsMaximWarp)) s: mira'l i torna-ho a provar."))
             }
             let abans = p.pla.aObrir
             p = try planifica(args, entorn: entorn, finestra: id, admeses: ["--config"])
             guard p.lectura.warpObert == true else {
-                throw .fallida("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar.")
+                throw .fallida(t("Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar."))
             }
             guard p.pla.aObrir == abans, p.pla.motiuEspera == nil else {
                 sortida.text += InformeObertura.text(dades(p, fitxer: nil))
-                throw .fallida("en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar. \(res(p))")
+                throw .fallida(t("en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar.") + " " + res(p))
             }
         }
         let fitxer: FitxerLaunch
@@ -647,7 +651,7 @@ public enum OrdreCLI {
                     _ = desa(nou)
                 }
             },
-            enErrorEsborrant: { _, error in sortida2.append("No s'ha pogut esborrar el fitxer temporal: \(error)") })
+            enErrorEsborrant: { _, error in sortida2.append(t("No s'ha pogut esborrar el fitxer temporal: \(String(describing: error))")) })
         let peticio = ExecucioObertura.Peticio(
             pla: p.pla, fitxer: fitxer,
             panesAbans: Set(p.lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid)),
@@ -671,7 +675,7 @@ public enum OrdreCLI {
         let llista = finestres.enumerated().map { "  \($0 + 1). \($1.nom)" }.joined(separator: "\n")
         if let n = Int(valor), valor.allSatisfy(\.isASCII) {
             guard finestres.indices.contains(n - 1) else {
-                throw .us("no hi ha cap finestra número \(n); n'hi ha \(finestres.count):\n\(llista)")
+                throw .us(t("no hi ha cap finestra número \(String(n)); n'hi ha \(finestres.count):") + "\n" + llista)
             }
             return (n, finestres[n - 1])
         }
@@ -679,10 +683,10 @@ public enum OrdreCLI {
         let trobades = finestres.enumerated().filter { Validacio.clauDeNom($1.nom) == clau }
         switch trobades.count {
         case 1: return (trobades[0].offset + 1, trobades[0].element)
-        case 0: throw .us("no hi ha cap finestra «\(valor)»; n'hi ha \(finestres.count):\n\(llista)")
+        case 0: throw .us(t("no hi ha cap finestra «\(valor)»; n'hi ha \(finestres.count):") + "\n" + llista)
         default:
             let numeros = trobades.map { String($0.offset + 1) }.joined(separator: ", ")
-            throw .us("hi ha més d'una finestra «\(valor)» (\(numeros)): tria-la pel número")
+            throw .us(t("hi ha més d'una finestra «\(valor)» (\(numeros)): tria-la pel número"))
         }
     }
 
@@ -694,7 +698,7 @@ public enum OrdreCLI {
             // 0.31.1: on no s'ha instal·lat mai Warp Stable, tampoc no hi ha la base. Es diu per què (cap Warp, o només
             // Warp Preview), com ho diria la lectura, i no només que no es troba la base.
             if let motiu = lector.senseWarpStable() {
-                throw .fallida("\(motiu.text) Tampoc no hi ha la base de Warp (\(ruta)).")
+                throw .fallida(motiu.text + " " + t("Tampoc no hi ha la base de Warp (\(ruta))."))
             }
             // Amb Warp Stable, Warp encara no hi ha desat res: el text de l'app (`LecturaWarp.senseBase`). Una base triada
             // a mà que no hi és, l'error de sempre: no és que Warp no hi hagi desat res. Amb Warp Preview obert i Warp Stable
@@ -756,12 +760,12 @@ enum InformeConfiguracio {
 
         if !ordres.isEmpty || senseOrdre > 0 {
             linies.append("")
-            linies.append("Ordres de Claude:")
+            linies.append(t("Ordres de Claude:"))
             for (ordre, quantes) in ordres.sorted(by: { ($1.value, $0.key) < ($0.value, $1.key) }) {
                 linies.append(String(repeating: " ", count: max(0, 4 - String(quantes).count)) + "\(quantes)  \(ordre)")
             }
             if senseOrdre > 0 {
-                linies.append("  \(Plural.compta(senseOrdre, "pestanya", "pestanyes")) sense ordre (vegeu els errors)")
+                linies.append("  " + t("\(senseOrdre) pestanyes sense ordre (vegeu els errors)"))
             }
         }
         return linies.map { $0 + "\n" }.joined()
@@ -770,9 +774,9 @@ enum InformeConfiguracio {
     private static func marca(_ avis: Avis) -> String { avis.gravetat == .error ? "✗" : "⚠" }
 
     private static func origen(_ pestanya: Pestanya, _ origen: OrigenClaude?) -> String {
-        guard pestanya.claude.activat else { return "sense Claude" }
+        guard pestanya.claude.activat else { return t("sense Claude") }
         switch origen {
-        case .sessio?: return "Claude, de la seva ordre"
+        case .sessio?: return t("Claude, de la seva ordre")
         default: return "Claude"
         }
     }

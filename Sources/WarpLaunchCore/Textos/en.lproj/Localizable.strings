@@ -1,4 +1,123 @@
 /* Textos de Warp Launch en anglès (docs/disseny.md, secció 12). La clau és el text en català. L'anglès també és la llengua
    de reserva: la que surt si cap de les llengües preferides no té textos. Els plurals són a Localizable.stringsdict. */
 
+/* Fase F1: la prova de la infraestructura (IdiomaTests); a F3, el menú */
 "Obre a Warp…" = "Open in Warp…";
+
+/* OrdreCLI: l'ajuda del CLI (les ordres i les opcions no es tradueixen) */
+"Ús:" = "Usage:";
+"warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <carpeta>]\n    Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya." = "warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <folder>]\n    Windows and tabs open in Warp, and the Claude session of each tab.";
+"warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]\n    La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.\n    Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,\n    tenen les opcions de la plantilla de ~/.config/warp-launch.\n    --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:\n    la configuració real només es crea des de l'app." = "warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <folder>] [--desa --config <folder>]\n    The configuration that Warp would give now, with the warnings. Without --desa, it writes nothing.\n    Tabs where Claude isn't running stay terminal only, as in the app; if Claude is turned on in them,\n    they get the options of the template in ~/.config/warp-launch.\n    --desa saves it to <folder>, which can't contain any configuration or be ~/.config/warp-launch:\n    the real configuration is only created from the app.";
+"warp-launch configuracio valida [--config <carpeta>]\n    Errors i avisos de la configuració (per defecte, la de ~/.config/warp-launch)." = "warp-launch configuracio valida [--config <folder>]\n    Errors and warnings in the configuration (by default, the one in ~/.config/warp-launch).";
+"warp-launch obre <nom o número de finestra> [--json] [--config <carpeta>] [--warp <warp.sqlite>]\n        [--sessions <carpeta>]\n    Mode de prova: què passaria si s'obrís la finestra a Warp (quines pestanyes ja són obertes, quines\n    s'obririen i com, i el fitxer i l'URL exactes). No escriu ni obre res, tampoc estat.json." = "warp-launch obre <window name or number> [--json] [--config <folder>] [--warp <warp.sqlite>]\n        [--sessions <folder>]\n    Dry run: what would happen if the window were opened in Warp (which tabs are already open, which\n    would open and how, and the exact file and URL). Writes and opens nothing, not even estat.json.";
+"warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]\n    Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna\n    amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta." = "warp-launch obre <window name or number> --obre [--config <folder>]\n    Opens the window in Warp, like the app's “Open” button: the tabs that aren't open, each one\n    with its own Claude. If Warp is closed, it opens it first. Does nothing if the app is open.";
+"warp-launch diagnostica [--json] [--anonimitza]\n    Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els\n    fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les\n    versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada\n    comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.\n    --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma)." = "warp-launch diagnostica [--json] [--anonimitza]\n    Checks whether Warp and Claude Code still have the shape the app reads: Warp's terminals, Claude's\n    session files and transcripts, ~/.claude.json, the warp.sqlite tables, the versions (compared\n    with the tested ones) and Warp's session restore with the consent. Each check says ok, warning\n    or error. The report is in English, so it can be pasted into a GitHub issue.\n    --anonimitza removes the user name, the home folder and the folder names (it keeps their shape).";
+"Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de\nles transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,\ntambé l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,\nexcepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).\nCodis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot\nobert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna\ncomprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no\ns'obriria; 64 ús incorrecte." = "Only reads Warp (warp.sqlite, read-only), ~/.claude/sessions and, with obre and diagnostica, the names of\nthe transcripts in ~/.claude/projects and the trusted folders in ~/.claude.json. With diagnostica, also\nthe warp.sqlite schema, Warp's Info.plist, ~/.warp/settings.toml and preferencies.json. Opens and closes nothing,\nexcept obre --obre, which opens the window and writes estat.json and Warp's temporary file (and deletes it).\nExit codes: 0 success; 1 couldn't read, save or open (or, with --obre, not everything was seen open;\nwith obre, also if there's no Warp or Warp Preview won't let anything open; with diagnostica, some check\ngave an error); 2 the configuration (read or imported) has errors, or some tab wouldn't open;\n64 incorrect usage.";
+
+/* OrdreCLI: errors d'ús */
+"ordre: «configuracio valida»" = "command: “configuracio valida”";
+"ordre desconeguda «%@»" = "unknown command “%@”";
+"opció desconeguda per a %@: «%@»" = "unknown option for %@: “%@”";
+"falta la ruta després de --warp" = "missing path after --warp";
+"falta la carpeta després de --sessions" = "missing folder after --sessions";
+"«--config» hi és més d'un cop" = "“--config” appears more than once";
+"falta la carpeta després de «--config»" = "missing folder after “--config”";
+"la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «%@»" = "the “--config” folder must be an absolute path (starting with / or ~/): “%@”";
+"«--desa» necessita «--config <carpeta>»: la configuració real només es crea des de l'app" = "“--desa” needs “--config <folder>”: the real configuration is only created from the app";
+"«--config» només serveix amb «--desa»" = "“--config” only works with “--desa”";
+"«--config» no pot ser la configuració real (%@), ni ser-hi a dins, ni passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app" = "“--config” can't be the real configuration (%@), be inside it, or go through “..” or a broken link: the real configuration is only created from the app";
+"falta la finestra: «warp-launch obre <nom o número de finestra>»" = "missing window: “warp-launch obre <window name or number>”";
+"«--obre» només funciona amb la comanda «warp-launch» de debò" = "“--obre” only works with the real “warp-launch” command";
+"hi ha més d'una finestra «%@» (%@): tria-la pel número" = "there's more than one window “%@” (%@): choose it by number";
+
+/* OrdreCLI: importa i configuracio valida */
+"no s'ha pogut generar el JSON" = "couldn't generate the JSON";
+"«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "“warp-launch importa” doesn't touch this setting and can't ask Warp to save them. The app, with the real configuration, can: it turns the setting on for a few seconds so that Warp saves them, and then turns it off again.";
+"ja hi ha una configuració a %@; tria una carpeta buida" = "there's already a configuration at %@; choose an empty folder";
+"Importació de Warp, desada a %@" = "Import from Warp, saved to %@";
+"Importació de Warp (vista prèvia: no s'ha desat res)" = "Import from Warp (preview: nothing was saved)";
+"Les pestanyes que no tenien Claude obert queden només terminal." = "Tabs that didn't have Claude open stay terminal only.";
+"Notes de la importació:" = "Import notes:";
+"Avisos de la lectura:" = "Warnings while reading:";
+"Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració)." = "Template: the safe one, without skipping permissions (there's no configuration yet).";
+"Plantilla: la de %@." = "Template: the one in %@.";
+"Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir %@: %@)." = "Template: the safe one, without skipping permissions (couldn't read %@: %@).";
+"no hi ha cap configuració a %@" = "there's no configuration at %@";
+"Configuració: %@" = "Configuration: %@";
+"Avisos del fitxer:" = "File warnings:";
+"Ordres de Claude:" = "Claude commands:";
+"sense Claude" = "without Claude";
+"Claude, de la seva ordre" = "Claude, from its command";
+
+/* OrdreCLI: obre i obre --obre */
+"la configuració ha canviat mentre s'obria Warp: torna-ho a provar" = "the configuration changed while Warp was opening: try again";
+"%@: %@; l'app no obriria res" = "%@: %@; the app wouldn't open anything";
+"l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. No s'ha obert res." = "the Warp Launch app is open: open the window from the app, or quit it and try again. Nothing was opened.";
+"No s'ha obert res." = "Nothing was opened.";
+"S'obre a Warp (--obre)." = "Opening in Warp (--obre).";
+"no s'ha obert res: %@" = "nothing was opened: %@";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar. No s'ha obert res." = "Warp is closed, and when it opens it will restore these tabs, without Claude. Open it and try again. Nothing was opened.";
+"Totes les pestanyes ja són obertes: no s'ha obert res." = "All the tabs are already open: nothing was opened.";
+"No hi ha cap pestanya per obrir (%lld ja obertes, %lld no s'obriran): no s'ha obert res." = "There are no tabs to open (%lld already open, %lld won't open): nothing was opened.";
+"S'ha obert Warp, però cap finestra de la configuració." = "Warp was opened, but no window from the configuration.";
+"En arrencar, Warp ha obert una finestra buida: la pots tancar." = "When it started, Warp opened an empty window: you can close it.";
+"Warp és tancat: l'obro i n'espero l'arrencada (fins a %lld s)." = "Warp is closed: opening it and waiting for it to start (up to %lld s).";
+"no s'ha pogut obrir Warp: %@" = "couldn't open Warp: %@";
+"Warp no ha arrencat en %lld s: mira'l i torna-ho a provar." = "Warp didn't start within %lld s: check it and try again.";
+"Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar." = "Warp closed while it was starting: check it and try again.";
+"en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar." = "while starting, Warp changed what would open: try again.";
+"No s'ha pogut esborrar el fitxer temporal: %@" = "Couldn't delete the temporary file: %@";
+"Tampoc no hi ha la base de Warp (%@)." = "Warp's database isn't there either (%@).";
+
+/* Informe: warp-launch llegeix */
+"La restauració de sessió és desactivada: Warp no desa les finestres, i l'app llegeix els processos." = "Session restore is turned off: Warp doesn't save its windows, and the app reads the processes.";
+"Warp és obert." = "Warp is open.";
+"Warp és tancat: són les finestres que restaurarà en obrir-se." = "Warp is closed: these are the windows it will restore when it opens.";
+"Warp és tancat." = "Warp is closed.";
+"Sessions de Claude en segon pla: %lld (%@)." = "Claude sessions in the background: %lld (%@).";
+"Terminals:" = "Terminals:";
+"pestanya %@" = "tab %@";
+"pane %@" = "pane %@";
+"(sense títol)" = "(untitled)";
+"historial" = "history";
+"no existeix" = "doesn't exist";
+"Sessions de Claude que no són a cap pestanya de Warp:" = "Claude sessions that aren't in any Warp tab:";
+"Sessions de Claude:" = "Claude sessions:";
+"fora de Warp" = "outside Warp";
+"pestanya no trobada a la base de Warp" = "tab not found in Warp's database";
+"a Warp" = "in Warp";
+"Avisos:" = "Warnings:";
+
+/* InformeObertura: warp-launch obre */
+"Mode de prova: no s'ha escrit ni obert res." = "Dry run: nothing was written or opened.";
+"Finestra %@ de %@: «%@» (%@)" = "Window %@ of %@: “%@” (%@)";
+"No s'obriria res." = "Nothing would open.";
+"Warp és tancat: primer s'obriria Warp." = "Warp is closed: Warp would be opened first.";
+"No se sap si Warp és obert." = "It isn't known whether Warp is open.";
+"Ja obertes (%lld):" = "Already open (%lld):";
+"No s'obriran (%lld):" = "Won't open (%lld):";
+"S'obririen (%lld):" = "Would open (%lld):";
+"No es pot generar el fitxer per a Warp: %@" = "Can't generate the file for Warp: %@";
+"Fitxer per a Warp: %@ (en obrir de debò, l'id serà un altre)" = "File for Warp: %@ (when opening for real, the id will be different)";
+
+/* Resum: les xifres, els arguments de l'app i les opcions de Claude */
+"argument desconegut «%@»; per provar l'app: --config <carpeta>" = "unknown argument “%@”; to test the app: --config <folder>";
+"Només terminal" = "Terminal only";
+"Baix" = "Low";
+"Mitjà" = "Medium";
+"Alt" = "High";
+"Molt alt" = "Extra high";
+"Màxim" = "Max";
+"Accepta les edicions" = "Accept edits";
+"Automàtic" = "Auto";
+"Sense cap permís" = "Bypass permissions";
+"Manual" = "Manual";
+"No preguntis" = "Don't ask";
+"Planifica" = "Plan";
+"sense nom" = "no name";
+"Altres" = "Other";
+
+/* WarpLaunch: les ordres dels menús que també surten als textos */
+"Actualitza l'estat de Warp" = "Refresh Warp Status";
+"Sobre l’app %@" = "About %@";
+"Surt de l’app %@" = "Quit %@";

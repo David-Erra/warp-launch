@@ -141,7 +141,7 @@ struct LectorTests {
         #expect(!pane.carpetaExisteix)
         let text = Informe.text(lectura, inici: inici)
         #expect(text.contains("Web · ~/GitHub/web-moguda (historial, no existeix)"))
-        #expect(text.contains("Carpetes: 1 recuperades de l'historial, 1 que ja no existeixen, 0 a la carpeta d'inici"))
+        #expect(text.contains("Carpetes: 1 recuperada de l'historial, 1 que ja no existeix, 0 a la carpeta d'inici"))
     }
 
     /// La lectura diu si la carpeta de Claude existeix (decisió d'en David del 09/11/2026): l'Importador no toca el disc.
