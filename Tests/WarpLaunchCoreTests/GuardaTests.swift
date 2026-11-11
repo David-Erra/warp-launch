@@ -2155,6 +2155,44 @@ extension GuardaTests {
         #expect(problemes.isEmpty, "\(problemes.joined(separator: "\n"))")
     }
 
+    /// F4: el menú de l'app el posa macOS (`MainMenu.loctable` de SwiftUI; docs/fets-verificats.md, «Els menús del sistema en
+    /// català»), i els nostres textos que en diuen les ordres han de dir exactament el mateix en cada llengua: «Sobre» i «Surt»
+    /// del menú de la icona i de la pantalla del permís (`laMateixaOrdreEsDiuIgualAlsDosMenus`), «Configuració…» i el menú
+    /// «Arxiu» de l'avís del full d'obrir («Arxiu › Lliga amb Warp…»). Amb la taula del sistema, la de cada llengua (també les de
+    /// F5); sense (una altra versió de macOS), els valors fixos del català i de l'anglès, que han de ser els de la taula.
+    @Test func lesOrdresDelMenuDeMacOSEsDiuenIgualEnCadaLlengua() throws {
+        let fixos: [String: [String: String]] = [
+            "ca": ["About %@": "Sobre l’app %@", "Quit %@": "Surt de l’app %@", "Settings…": "Configuració…", "File": "Arxiu"],
+            "en": ["About %@": "About %@", "Quit %@": "Quit %@", "Settings…": "Settings…", "File": "File"],
+        ]
+        let taula = URL(filePath: "/System/Library/Frameworks/SwiftUI.framework/Versions/A/Resources/MainMenu.loctable")
+        let sistema = (try? Data(contentsOf: taula))
+            .flatMap { try? PropertyListSerialization.propertyList(from: $0, format: nil) as? [String: Any] }
+        /// La taula fa servir els noms de macOS: `pt_BR`, `zh_CN`.
+        func delSistema(_ llengua: String) -> [String: String]? {
+            let nom = ["zh-Hans": "zh_CN"][llengua] ?? llengua.replacingOccurrences(of: "-", with: "_")
+            return sistema?[nom] as? [String: String]
+        }
+        for (llengua, valors) in fixos where sistema != nil {
+            let taula = try #require(delSistema(llengua), "\(llengua)")
+            for (clau, valor) in valors { #expect(taula[clau] == valor, "\(llengua): \(clau)") }
+        }
+        for llengua in try textosDelRepo().keys.sorted() {
+            let esperats = try #require(delSistema(llengua) ?? fixos[llengua], "sense els menús de macOS per a \(llengua)")
+            let sobre = try #require(esperats["About %@"]), surt = try #require(esperats["Quit %@"])
+            let configuracio = try #require(esperats["Settings…"]), arxiu = try #require(esperats["File"])
+            Idioma.$deProva.withValue(llengua) {
+                #expect(WarpLaunch.ordreSobre == sobre.replacingOccurrences(of: "%@", with: WarpLaunch.nom), "\(llengua)")
+                #expect(WarpLaunch.ordreSurt == surt.replacingOccurrences(of: "%@", with: WarpLaunch.nom), "\(llengua)")
+                #expect(t("Configuració…") == configuracio, "\(llengua)")
+                for n in [1, 2] {
+                    let avis = t("\(n) pestanyes sense lligam potser ja són obertes a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.")
+                    #expect(avis.contains("\(arxiu) › \(t("Lliga amb Warp…"))"), "\(llengua): \(avis)")
+                }
+            }
+        }
+    }
+
     /// La mostra: cada problema surt, i una traducció bona, amb els valors en un altre ordre o un plural sense nombre, no.
     @Test func laGuardaDelsTextosDetectaElQueHaDeDetectar() throws {
         #expect(try especificadors("%@ té %lld pestanyes") == ["1:@", "2:lld"])
@@ -2937,6 +2975,10 @@ extension GuardaTests {
         #expect(liniesDeCodi.filter { $0.text.contains(dinsDeFrase) }.map(\.ruta).isEmpty)
 
         #expect(WarpLaunch.ordreSobre == "Sobre l’app Warp Launch" && WarpLaunch.ordreSurt == "Surt de l’app Warp Launch")
+        // En anglès, com el menú que posa macOS (F4; en cada llengua, `lesOrdresDelMenuDeMacOSEsDiuenIgualEnCadaLlengua`).
+        Idioma.$deProva.withValue("en") {
+            #expect(WarpLaunch.ordreSobre == "About Warp Launch" && WarpLaunch.ordreSurt == "Quit Warp Launch")
+        }
         #expect(menuIcona.contains("Button(WarpLaunch.ordreSobre)"))
         #expect(menuIcona.components(separatedBy: "Button(WarpLaunch.ordreSurt)").count == 3, "amb el permís i sense")
 
@@ -3000,7 +3042,18 @@ extension GuardaTests {
         #expect(plist["CFBundleIdentifier"] as? String == "cat.davide.warp-launch")
         #expect(plist["CFBundleDevelopmentRegion"] as? String == Idioma.reserva)
         #expect(plist["CFBundleLocalizations"] == nil)
-        #expect(FileManager.default.fileExists(atPath: arrel.appending(path: "Recursos/ca.lproj/InfoPlist.strings").path))
+        // Els noms del paquet als menús que posa macOS («Sobre l’app Warp Launch», «Quit Warp Launch»), en català i en anglès
+        // (F4); cada `.lproj` de `Recursos` és d'una llengua dels textos i diu el mateix nom que l'Info.plist.
+        let recursos = try FileManager.default.contentsOfDirectory(at: arrel.appending(path: "Recursos"), includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "lproj" }.map { $0.deletingPathExtension().lastPathComponent }
+        #expect(Set(recursos).isSuperset(of: ["ca", "en"]), "\(recursos)")
+        #expect(Set(recursos).isSubset(of: try textosDelRepo().keys), "\(recursos)")
+        for llengua in recursos {
+            let dades = try Data(contentsOf: arrel.appending(path: "Recursos/\(llengua).lproj/InfoPlist.strings"))
+            let noms = try #require(try PropertyListSerialization.propertyList(from: dades, format: nil) as? [String: String])
+            #expect(noms == ["CFBundleName": WarpLaunch.nom, "CFBundleDisplayName": WarpLaunch.nom], "\(llengua)")
+            #expect(plist["CFBundleName"] as? String == WarpLaunch.nom && plist["CFBundleDisplayName"] as? String == WarpLaunch.nom)
+        }
         // El paquet de SwiftPM, la mateixa reserva.
         let paquet = try String(contentsOf: arrel.appending(path: "Package.swift"), encoding: .utf8)
         #expect(paquet.contains("defaultLocalization: \"\(Idioma.reserva)\","))
