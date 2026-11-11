@@ -80,15 +80,35 @@ public struct VincleEstat: Codable, Sendable, Equatable {
     public var vista: Date
     /// Des de quan la pestanya no és a la configuració; si torna (Desfés), es treu.
     public var foraDesDe: Date?
+    /// El shell que va obrir un llançament per a la pestanya, si era només de terminal (0.34.0, aprovat per en David
+    /// l'11/11/2026). Un shell sense fills no porta ni la marca ni el pane: mentre aquest shell sigui viu, amb el mateix pid i
+    /// la mateixa hora d'inici, la pestanya és oberta (`OnOberta.shellViu`).
+    ///
+    /// **Format:** és opcional, i la versió del fitxer continua sent 1 (regla 11). La 0.33.0 el llegeix sense error, perquè
+    /// `JSONDecoder` no mira les claus que no coneix (`EstatAppTests`, amb una còpia de les seves estructures); però si hi torna
+    /// a escriure, el perd, i la pestanya torna a ser com abans de la 0.34.0: es tornaria a obrir.
+    public var shell: ShellRecordat?
 
     public init(pane: String? = nil, sessio: String? = nil, carpetaSessio: String? = nil, origen: OrigenVincle,
-                vista: Date, foraDesDe: Date? = nil) {
+                vista: Date, foraDesDe: Date? = nil, shell: ShellRecordat? = nil) {
         self.pane = pane
         self.sessio = sessio
         self.carpetaSessio = carpetaSessio
         self.origen = origen
         self.vista = ActualitzaEstat.segons(vista)
         self.foraDesDe = foraDesDe.map(ActualitzaEstat.segons)
+        self.shell = shell
+    }
+}
+
+/// Un shell de Warp, pel pid i l'hora d'inici: el pid sol no val, perquè es reutilitza quan el procés acaba.
+public struct ShellRecordat: Codable, Sendable, Hashable {
+    public var pid: Int32
+    public var inici: IniciProces
+
+    public init(pid: Int32, inici: IniciProces) {
+        self.pid = pid
+        self.inici = inici
     }
 }
 
@@ -310,7 +330,7 @@ public enum ActualitzaEstat {
     }
 
     /// Els lligams d'una importació (en crear la configuració o tornar a importar). Una pestanya sense sessió viva
-    /// hereta la de l'entrada que tenia el mateix pane, si n'hi havia.
+    /// hereta la de l'entrada que tenia el mateix pane, si n'hi havia. El shell de la pestanya (0.34.0), si en tenia, es manté.
     public static func vincula(_ vincles: [UUID: VincleImportat], estat: EstatApp, ara: Date) -> EstatApp {
         let ara = segons(ara)
         var nou = estat
@@ -320,14 +340,17 @@ public enum ActualitzaEstat {
                 .max { $0.vista < $1.vista }
             nou.pestanyes[id] = VincleEstat(pane: vincle.pane, sessio: vincle.sessio ?? anterior?.sessio,
                                             carpetaSessio: vincle.sessio != nil ? vincle.carpetaSessio : anterior?.carpetaSessio,
-                                            origen: .importacio, vista: ara)
+                                            origen: .importacio, vista: ara, shell: estat.pestanyes[id]?.shell)
         }
         return nou
     }
 
-    /// Després d'obrir una finestra: el pane de cada pestanya a la finestra nova (`Confirmacio.panes`). La conversa es
-    /// manté (la de la marca ja la posa `amb`, a cada lectura). Un pane, una pestanya: si una altra el tenia, el perd.
-    public static func ambPanes(_ panes: [UUID: String], estat: EstatApp, ara: Date) -> EstatApp {
+    /// Després d'obrir una finestra: el pane de cada pestanya a la finestra nova (`Confirmacio.panes`) i el shell de cada
+    /// pestanya de terminal (`Confirmacio.shells`, 0.34.0). La conversa es manté (la de la marca ja la posa `amb`, a cada
+    /// lectura), i el shell també, si no n'hi ha cap de nou. Un pane, una pestanya, i un shell, una pestanya: si una altra el
+    /// tenia, el perd.
+    public static func ambPanes(_ panes: [UUID: String], shells: [UUID: ShellRecordat], estat: EstatApp,
+                                ara: Date) -> EstatApp {
         let ara = segons(ara)
         var nou = estat
         for (id, pane) in panes.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
@@ -338,7 +361,19 @@ public enum ActualitzaEstat {
             guard nou.pestanyes[id]?.pane != pane else { continue }
             let abans = nou.pestanyes[id]
             nou.pestanyes[id] = VincleEstat(pane: pane, sessio: abans?.sessio, carpetaSessio: abans?.carpetaSessio,
-                                            origen: .llancament, vista: ara)
+                                            origen: .llancament, vista: ara, shell: abans?.shell)
+        }
+        for (id, shell) in shells.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
+            for (altra, vincle) in nou.pestanyes where altra != id && vincle.shell == shell {
+                nou.pestanyes[altra]?.shell = nil
+                nou.pestanyes[altra]?.vista = ara
+            }
+            guard nou.pestanyes[id]?.shell != shell else { continue }
+            var vincle = nou.pestanyes[id] ?? VincleEstat(origen: .llancament, vista: ara)
+            vincle.shell = shell
+            vincle.origen = .llancament
+            vincle.vista = ara
+            nou.pestanyes[id] = vincle
         }
         return nou
     }

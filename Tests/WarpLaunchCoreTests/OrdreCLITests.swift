@@ -9,7 +9,7 @@ private struct Escenari {
     let tmp: CarpetaTemporal
     let inici: String
     let real: URL
-    let entorn: EntornCLI
+    var entorn: EntornCLI
 
     /// Warp amb dues finestres: «A» amb Claude, «B» sense, i una pestanya a la carpeta d'inici.
     init(argv: [String] = ["claude", "--dangerously-skip-permissions", "--continue", "--effort", "ultracode"]) throws {
@@ -827,6 +827,25 @@ private struct NoEngega: Error, CustomStringConvertible {
     var description: String { "macOS no l'obre" }
 }
 
+/// Processos inventats que canvien a mitja prova: els terminals d'una finestra que s'obre.
+private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
+    private let pany = NSLock()
+    private var actuals: ProcessosFalsos
+
+    init(_ processos: ProcessosFalsos) { actuals = processos }
+
+    func canvia(_ canvi: (inout ProcessosFalsos) -> Void) { pany.withLock { canvi(&actuals) } }
+
+    private var ara: ProcessosFalsos { pany.withLock { actuals } }
+    func proces(_ pid: Int32) -> InfoProces? { ara.proces(pid) }
+    func pare(_ pid: Int32) -> Int32? { ara.pare(pid) }
+    func inici(_ pid: Int32) -> IniciProces? { ara.inici(pid) }
+    func pids(nom: String) -> [Int32] { ara.pids(nom: nom) }
+    func fills() -> [Int32: [Int32]] { ara.fills() }
+    func carpeta(_ pid: Int32) -> String? { ara.carpeta(pid) }
+    func warpDelBinari(_ ruta: String) -> AppWarp? { ara.warpDelBinari(ruta) }
+}
+
 @MainActor
 @Suite struct OrdreCLIObreTests {
     /// La mateixa configuració que les proves del mode de prova (`ambConfiguracio`): «Feina» té A oberta, B2 i Docs per
@@ -880,6 +899,38 @@ private struct NoEngega: Error, CustomStringConvertible {
         #expect(estat.pestanyes[uuid(3)]?.pane == uuidDeProva("d"))
         #expect(estat.pestanyes[uuid(4)]?.pane == uuidDeProva("e"))
         #expect(FileManager.default.fileExists(atPath: EntornClaude.ruta(carpeta: carpeta)))
+    }
+
+    /// 0.34.0: amb la restauració desactivada, `--obre` desa el shell de la pestanya de terminal (el pid i l'hora d'inici), i
+    /// la vegada següent la pestanya ja és oberta.
+    @Test func desaElShellDeLaPestanyaDeTerminal() async throws {
+        var e = try Escenari()
+        try Data("[general]\nrestore_session = false\n".utf8).write(to: e.tmp.url("settings.toml"))
+        let processos = ProcessosCanviants(try #require(e.entorn.lector.processos as? ProcessosFalsos))
+        e.entorn.lector.processos = processos
+        let a = e.inici + "/GitHub/projectes/a"
+        let carpeta = e.tmp.url("prova")
+        try MagatzemConfiguracio(carpeta: carpeta, inici: e.inici).desa(Configuracio(plantilla: .habituals, finestres: [
+            Finestra(id: uuid(1), nom: "Docs", pestanyes: [
+                Pestanya(id: uuid(4), titol: "Docs", carpeta: a, claude: ClaudePestanya(activat: false)),
+            ]),
+        ]), sobre: nil)
+        let hora = IniciProces(segons: 1_793_750_000, microsegons: 7)
+        let o = try ObridorFals(e)
+        o.mentreObre = {
+            processos.canvia { p in
+                p.processos[700] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+                p.carpetes[700] = a
+                p.inicis[700] = hora
+            }
+        }
+        let (codi, sortida) = await o.executa(e, "obre", "Docs", "--obre", "--config", carpeta.path)
+        #expect(codi == 0, "\(sortida.errors)")
+        #expect(try MagatzemEstat(carpeta: carpeta).carrega().pestanyes[uuid(4)]?.shell == ShellRecordat(pid: 700, inici: hora))
+
+        let (_, segona) = await o.executa(e, "obre", "Docs", "--config", carpeta.path)
+        #expect(segona.text.contains("oberta a Warp, sense Claude"), "\(segona.text)")
+        #expect(o.urls.count == 1)
     }
 
     /// Amb l'app oberta no obre res, ni escriu res: tots dos escriurien `estat.json`.

@@ -20,12 +20,26 @@ public struct InfoProces: Sendable, Equatable {
     }
 }
 
+/// Quan va començar un procés (`p_starttime`), en segons i microsegons des de 1970. No canvia amb `exec`. Amb el pid,
+/// identifica el procés: quan acaba, el pid es pot reutilitzar, però el procés nou té una altra hora d'inici.
+public struct IniciProces: Codable, Sendable, Hashable {
+    public var segons: Int64
+    public var microsegons: Int32
+
+    public init(segons: Int64, microsegons: Int32) {
+        self.segons = segons
+        self.microsegons = microsegons
+    }
+}
+
 /// D'on surt la informació dels processos. Les proves en fan servir una de falsa.
 public protocol FontProcessos: Sendable {
     /// `nil` si el procés no existeix o no és de l'usuari.
     func proces(_ pid: Int32) -> InfoProces?
     /// Pid del pare, o `nil` si el procés no existeix.
     func pare(_ pid: Int32) -> Int32?
+    /// L'hora d'inici del procés, o `nil` si no existeix (0.34.0: el shell d'una pestanya de terminal, `ShellRecordat`).
+    func inici(_ pid: Int32) -> IniciProces?
     /// Pids dels processos de l'usuari amb aquest nom (`p_comm`: el nom de l'executable, tallat a 16 caràcters).
     func pids(nom: String) -> [Int32]
     /// Els fills de cada procés de l'usuari (pare → fills), d'una sola lectura.
@@ -82,15 +96,15 @@ extension FontProcessos {
     }
 
     /// Els terminals vius de Warp: els fills del seu `terminal-server` (el de `executable`), un per pane. No depèn de
-    /// `warp.sqlite`, i és el que hi ha ara mateix. Del shell només se'n sap el pid i la carpeta (el seu entorn surt buit):
-    /// el pane i la marca surten dels seus fills, que els hereten (docs/fets-verificats.md, 05/11/2026).
+    /// `warp.sqlite`, i és el que hi ha ara mateix. Del shell només se'n sap el pid, l'hora d'inici i la carpeta (el seu
+    /// entorn surt buit): el pane i la marca surten dels seus fills, que els hereten (docs/fets-verificats.md, 05/11/2026).
     public func terminalsDeWarp(executable: String) -> [TerminalViu] {
         let servidors = processos(executable: executable).filter { $0.info.argv.contains("terminal-server") }.map(\.pid)
         guard !servidors.isEmpty else { return [] }
         let arbre = fills()
         return servidors.flatMap { arbre[$0] ?? [] }.sorted().compactMap { shell in
             guard proces(shell) != nil else { return nil }
-            var terminal = TerminalViu(pid: shell, carpeta: carpeta(shell).map(Rutes.canonica))
+            var terminal = TerminalViu(pid: shell, carpeta: carpeta(shell).map(Rutes.canonica), inici: inici(shell))
             for fill in (arbre[shell] ?? []).sorted() {
                 guard let info = proces(fill) else { continue }
                 if terminal.pane == nil { terminal.pane = info.entorn["WARP_TERMINAL_SESSION_UUID"]?.lowercased() }
@@ -154,12 +168,21 @@ public struct ProcessosDelSistema: FontProcessos {
         return ruta.isEmpty ? nil : ruta
     }
 
-    public func pare(_ pid: Int32) -> Int32? {
+    public func pare(_ pid: Int32) -> Int32? { info(pid)?.kp_eproc.e_ppid }
+
+    /// `p_starttime` (`p_un.__p_starttime`). El 11/11/2026, el d'un shell coincidia amb el `lstart` de `ps`.
+    public func inici(_ pid: Int32) -> IniciProces? {
+        guard let hora = info(pid)?.kp_proc.p_un.__p_starttime, hora.tv_sec > 0 else { return nil }
+        return IniciProces(segons: Int64(hora.tv_sec), microsegons: hora.tv_usec)
+    }
+
+    /// `KERN_PROC_PID`: el `kinfo_proc` d'un procés, o `nil` si no existeix.
+    private func info(_ pid: Int32) -> kinfo_proc? {
         var info = kinfo_proc()
         var mida = MemoryLayout<kinfo_proc>.stride
         var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
         guard sysctl(&mib, 4, &info, &mida, nil, 0) == 0, mida > 0 else { return nil }
-        return info.kp_eproc.e_ppid
+        return info
     }
 
     /// `KERN_PROCARGS2`: argc, ruta de l'executable, argv i entorn, separats per zeros.

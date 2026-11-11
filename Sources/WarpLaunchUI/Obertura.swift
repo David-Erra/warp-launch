@@ -291,12 +291,15 @@ public final class Obertura {
 
     /// Els passos 2 a 5 d'una finestra (`ExecucioObertura`, com el CLI), i el que se'n recorda: les converses en curs i
     /// el registre. `llegeix`: d'on surten les lectures mentre s'espera (amb «Obre-ho tot», una de compartida).
+    /// `carpetesDAltres`: les carpetes de les pestanyes que obren les altres finestres alhora (`Peticio.carpetesDAltres`).
     func executa(_ proposta: Proposta, fitxer: FitxerLaunch, engegat: Bool,
                  llegeix: (@MainActor () async -> LecturaWarp?)? = nil, ambAltres: Bool = false,
+                 carpetesDAltres: Set<String> = [],
                  fase: @escaping @MainActor (Fase) -> Void) async -> ExecucioObertura.Resultat {
         let peticio = ExecucioObertura.Peticio(pla: proposta.pla, fitxer: fitxer, panesAbans: proposta.panesAbans,
                                                terminalsAbans: proposta.terminalsAbans, warpEngegat: engegat,
-                                               warpDesaFinestres: proposta.warpDesaFinestres, ambAltres: ambAltres)
+                                               warpDesaFinestres: proposta.warpDesaFinestres, ambAltres: ambAltres,
+                                               carpetesDAltres: carpetesDAltres)
         let sessions = sessions
         let carpeta = sessions.carpeta
         let id = fitxer.llancament
@@ -308,7 +311,7 @@ public final class Obertura {
             potCrearCarpeta: { [consentiment] in consentiment.potCrearCarpetaDeWarp },
             inici: entorn.inici, rellotge: entorn.rellotge, espera: entorn.espera,
             desaLlancament: { sessions.desa(llancament: $0) },
-            lligaPanes: { sessions.lliga(panes: $0) },
+            lligaPestanyes: { sessions.lliga(panes: $0, shells: $1) },
             desaEntornClaude: { if let carpeta { try EntornClaude.desa(carpeta: carpeta) } },
             enLlegir: { [weak self] in self?.enLlegir($0) },
             enFase: { nova in
@@ -377,7 +380,7 @@ public final class Obertura {
                 curs.llancament.estat = curs.vist?.vista(curs.llancament.pestanyes) == true ? .confirmat : .senseConfirmar
             }
             sessions.desa(llancament: curs.llancament)
-            if let panes = curs.vist?.panes, !panes.isEmpty { sessions.lliga(panes: panes) }
+            if let vist = curs.vist { sessions.lliga(panes: vist.panes, shells: vist.shells) }
             Registre.obertura.notice("surt a mig obrir: \(curs.llancament.estat.rawValue, privacy: .public), esborrat \(curs.llancament.esborrat)")
         }
     }

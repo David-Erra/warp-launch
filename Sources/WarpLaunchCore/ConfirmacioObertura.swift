@@ -17,15 +17,19 @@ public struct Confirmacio: Sendable, Equatable {
     /// El terminal sense marca que s'ha pres per a cada pestanya, només per la carpeta. Amb diverses finestres alhora
     /// («Obre-ho tot»), podria ser d'una altra: no el pot prendre ningú més.
     public var perCarpeta: [UUID: Int32]
+    /// El shell de cada pestanya només de terminal, si se sap sense dubte (`ConfirmacioObertura.shells`, 0.34.0). Es desa a
+    /// `estat.json` (`VincleEstat.shell`): és l'única manera de reconèixer-la després, perquè no porta ni la marca ni el pane.
+    public var shells: [UUID: ShellRecordat]
 
     public init(finestra: Int?, panes: [UUID: String], sessions: [UUID: String], terminals: Set<UUID> = [],
-                marcats: Set<UUID> = [], perCarpeta: [UUID: Int32] = [:]) {
+                marcats: Set<UUID> = [], perCarpeta: [UUID: Int32] = [:], shells: [UUID: ShellRecordat] = [:]) {
         self.finestra = finestra
         self.terminals = terminals
         self.panes = panes
         self.sessions = sessions
         self.marcats = marcats
         self.perCarpeta = perCarpeta
+        self.shells = shells
     }
 
     /// Hi ha un senyal que és d'aquest fitxer, i no d'una altra finestra que s'obre alhora: la finestra nova, una sessió o
@@ -33,7 +37,8 @@ public struct Confirmacio: Sendable, Equatable {
     public var segura: Bool { finestra != nil || !sessions.isEmpty || !marcats.isEmpty }
 
     /// Hi afegeix el que s'ha vist en una lectura posterior: la finestra, si se n'ha trobat (amb els seus panes), i les
-    /// marques. El que es veu més tard mana.
+    /// marques. El que es veu més tard mana. Els shells, sencers els de l'última lectura: una pestanya amb Claude que encara
+    /// no portava la marca feia dubtar d'un shell que ara ja és clar, i un shell nou que fa dubtar treu els d'abans.
     public mutating func afegeix(_ nova: Confirmacio) {
         if let numero = nova.finestra { finestra = numero }
         terminals.formUnion(nova.terminals)
@@ -41,6 +46,7 @@ public struct Confirmacio: Sendable, Equatable {
         sessions.merge(nova.sessions) { _, nova in nova }
         marcats.formUnion(nova.marcats)
         perCarpeta.merge(nova.perCarpeta) { _, nou in nou }
+        shells = nova.shells
     }
 
     /// S'ha vist que Warp ha obert aquestes pestanyes: la finestra nova, o un terminal nou per a cadascuna.
@@ -72,6 +78,7 @@ public struct Confirmacio: Sendable, Equatable {
 ///   amb la restauració activada mana la base, i un shell restaurat tard semblaria nou. El que porta la marca d'una
 ///   pestanya és el seu, encara que Claude s'hagi aturat a preguntar i no hagi escrit la sessió. Els altres compten per la
 ///   carpeta, un per pestanya. Si l'app acaba d'engegar Warp, la carpeta d'inici no compta: hi és la finestra buida.
+/// - **El shell de cada pestanya només de terminal** (0.34.0, `shells`), també només amb la restauració desactivada.
 /// Pura: no llegeix res.
 public enum ConfirmacioObertura {
     /// Marge per al rellotge de la sessió: `startedAt` el posa Claude, i pot anar una mica per darrere.
@@ -79,10 +86,11 @@ public enum ConfirmacioObertura {
 
     /// `obertes`: les pestanyes del fitxer, en ordre. `panesAbans` i `terminalsAbans`: els de la lectura del pla. `desDe`:
     /// quan s'ha obert. `inici`: la carpeta d'inici canònica. `warpAcabatDEngegar`: l'ha obert l'app per obrir la finestra.
+    /// `carpetesDAltres`: les carpetes canòniques de les pestanyes d'altres finestres que s'obren alhora («Obre-ho tot»).
     /// `nil` si encara no hi ha res.
     public static func busca(_ lectura: LecturaWarp, obertes: [PestanyaAObrir], panesAbans: Set<String>,
                              terminalsAbans: Set<Int32>, desDe: Date, inici: String,
-                             warpAcabatDEngegar: Bool = false) -> Confirmacio? {
+                             warpAcabatDEngegar: Bool = false, carpetesDAltres: Set<String> = []) -> Confirmacio? {
         let posicio = Dictionary(uniqueKeysWithValues: obertes.enumerated().map { ($1.pestanya.id, $0) })
 
         var sessions: [UUID: String] = [:]
@@ -144,7 +152,40 @@ public enum ConfirmacioObertura {
 
         guard numero != nil || !sessions.isEmpty || !terminals.isEmpty else { return nil }
         return Confirmacio(finestra: numero, panes: panes, sessions: sessions, terminals: terminals, marcats: marcats,
-                           perCarpeta: perCarpeta)
+                           perCarpeta: perCarpeta,
+                           shells: shells(vius, obertes: obertes, terminalsAbans: terminalsAbans, inici: inici,
+                                          warpAcabatDEngegar: warpAcabatDEngegar, carpetesDAltres: carpetesDAltres))
+    }
+
+    /// El shell de cada pestanya només de terminal (0.34.0): un shell nou (no hi era abans d'obrir ni l'ha pres una altra
+    /// finestra), sense marca ni Claude, a la carpeta de la pestanya. Només si no hi ha cap dubte; si n'hi ha, no se'n desa
+    /// cap, i la pestanya queda com abans de la 0.34.0 (es tornaria a obrir). Per carpeta:
+    /// - **Tants shells com pestanyes de terminal** de la finestra a la carpeta. Si són dues o més, són intercanviables: per
+    ///   ordre de pid, cada shell a una sola pestanya. Un shell de més (una pestanya oberta a mà, o la finestra buida de Warp) o
+    ///   de menys fa dubtar.
+    /// - **Cap pestanya amb Claude de la finestra a la carpeta sense la marca:** el seu shell, mentre Claude no arrenca, és
+    ///   igual que el d'una pestanya de terminal.
+    /// - **Cap pestanya d'una altra finestra que s'obre alhora a la carpeta** (`carpetesDAltres`): el shell podria ser d'aquella.
+    /// - **Ni la carpeta d'inici si l'app acaba d'engegar Warp** (hi és la finestra buida).
+    /// - **Se'n sap l'hora d'inici.** I si d'algun shell nou no se'n sap la carpeta, podria ser de qualsevol: no se'n desa cap.
+    static func shells(_ vius: [TerminalViu], obertes: [PestanyaAObrir], terminalsAbans: Set<Int32>, inici: String,
+                       warpAcabatDEngegar: Bool, carpetesDAltres: Set<String>) -> [UUID: ShellRecordat] {
+        let nous = vius.filter { !terminalsAbans.contains($0.pid) }
+        let candidats = nous.filter { $0.marca == nil && !$0.claude }
+        guard !candidats.contains(where: { $0.carpeta == nil }) else { return [:] }
+        let marcades = Set(nous.compactMap(\.marca))
+        var resultat: [UUID: ShellRecordat] = [:]
+        for (carpeta, pestanyes) in Dictionary(grouping: obertes, by: { Rutes.canonica($0.yaml.carpeta) }) {
+            let deTerminal = pestanyes.filter { $0.argv == nil }
+            guard !deTerminal.isEmpty, !carpetesDAltres.contains(carpeta), !warpAcabatDEngegar || carpeta != inici,
+                  pestanyes.allSatisfy({ $0.argv == nil || marcades.contains($0.pestanya.id) })
+            else { continue }
+            let aLaCarpeta = candidats.filter { $0.carpeta == carpeta }.sorted { $0.pid < $1.pid }
+            let seus = aLaCarpeta.compactMap(\.shell)
+            guard aLaCarpeta.count == deTerminal.count, seus.count == aLaCarpeta.count else { continue }
+            for (pestanya, shell) in zip(deTerminal, seus) { resultat[pestanya.pestanya.id] = shell }
+        }
+        return resultat
     }
 
     /// El mateix nombre de pestanyes que el fitxer, cadascuna amb un sol pane, i cap pane d'abans d'obrir.

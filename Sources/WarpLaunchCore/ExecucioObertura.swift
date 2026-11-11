@@ -7,7 +7,8 @@ import Foundation
 /// 2. Escriu el fitxer temporal (i `entorn-claude.sh`, si cal) i el fa obrir a Warp.
 /// 3. Llegeix Warp cada 0,5 s, fins a 30 s: esborra el fitxer en quant veu res de nou (Warp ja l'ha llegit), i continua
 ///    fins que ha vist la finestra i el Claude de cada pestanya.
-/// 4. Desa el llançament i el pane de cada pestanya que ha vist, i torna el text del resultat.
+/// 4. Desa el llançament, el pane de cada pestanya que ha vist i el shell de cada pestanya de terminal (0.34.0), i torna
+///    el text del resultat.
 ///
 /// Tot el que toca fora arriba per `Entorn`: les proves hi posen un obridor fals i una carpeta temporal.
 public enum ExecucioObertura {
@@ -24,8 +25,9 @@ public enum ExecucioObertura {
         public var espera: @MainActor (Duration) async -> Void
         /// Desa el llançament (nou o posat al dia) a `estat.json`. Torna l'error, si no s'ha pogut.
         public var desaLlancament: @MainActor (Llancament) -> String?
-        /// Desa el pane de cada pestanya que s'ha vist a la finestra nova.
-        public var lligaPanes: @MainActor ([UUID: String]) -> Void
+        /// Desa el pane de cada pestanya que s'ha vist a la finestra nova, i el shell de cada pestanya de terminal
+        /// (`ActualitzaEstat.ambPanes`).
+        public var lligaPestanyes: @MainActor (_ panes: [UUID: String], _ shells: [UUID: ShellRecordat]) -> Void
         /// Escriu `entorn-claude.sh` al costat de la configuració (només si el pla el fa servir).
         public var desaEntornClaude: @MainActor () throws -> Void
         /// Cada lectura de Warp, mentre s'espera la finestra.
@@ -47,7 +49,7 @@ public enum ExecucioObertura {
                     potCrearCarpeta: @escaping @MainActor () -> Bool = { false },
                     inici: String, rellotge: @escaping () -> Date, espera: @escaping @MainActor (Duration) async -> Void,
                     desaLlancament: @escaping @MainActor (Llancament) -> String?,
-                    lligaPanes: @escaping @MainActor ([UUID: String]) -> Void,
+                    lligaPestanyes: @escaping @MainActor ([UUID: String], [UUID: ShellRecordat]) -> Void,
                     desaEntornClaude: @escaping @MainActor () throws -> Void,
                     enLlegir: @escaping @MainActor (LecturaWarp) -> Void = { _ in },
                     enFase: @escaping @MainActor (Fase) -> Void = { _ in },
@@ -63,7 +65,7 @@ public enum ExecucioObertura {
             self.rellotge = rellotge
             self.espera = espera
             self.desaLlancament = desaLlancament
-            self.lligaPanes = lligaPanes
+            self.lligaPestanyes = lligaPestanyes
             self.desaEntornClaude = desaEntornClaude
             self.enLlegir = enLlegir
             self.enFase = enFase
@@ -98,10 +100,15 @@ public enum ExecucioObertura {
         /// S'obren altres finestres alhora («Obre-ho tot»): un terminal reconegut només per la carpeta podria ser d'una
         /// altra, i no fa esborrar el fitxer (`Confirmacio.segura`).
         public var ambAltres: Bool
+        /// Les carpetes canòniques de les pestanyes que obren les altres finestres alhora: un shell nou en una d'aquestes
+        /// carpetes podria ser d'una altra finestra, i no es desa (`ConfirmacioObertura.shells`, 0.34.0).
+        public var carpetesDAltres: Set<String>
 
         public init(pla: Pla, fitxer: FitxerLaunch, panesAbans: Set<String>, terminalsAbans: Set<Int32>,
-                    warpEngegat: Bool = false, warpDesaFinestres: Bool = true, ambAltres: Bool = false) {
+                    warpEngegat: Bool = false, warpDesaFinestres: Bool = true, ambAltres: Bool = false,
+                    carpetesDAltres: Set<String> = []) {
             self.ambAltres = ambAltres
+            self.carpetesDAltres = carpetesDAltres
             self.pla = pla
             self.fitxer = fitxer
             self.panesAbans = panesAbans
@@ -204,7 +211,8 @@ public enum ExecucioObertura {
             let presos = entorn.presosPerAltres().subtracting(vist.map { Set($0.perCarpeta.values) } ?? [])
             guard let nova = ConfirmacioObertura.busca(lectura, obertes: aObrir, panesAbans: peticio.panesAbans,
                                                        terminalsAbans: peticio.terminalsAbans.union(presos), desDe: desDe,
-                                                       inici: inici, warpAcabatDEngegar: peticio.warpEngegat)
+                                                       inici: inici, warpAcabatDEngegar: peticio.warpEngegat,
+                                                       carpetesDAltres: peticio.carpetesDAltres)
             else { continue }
             if vist == nil { vist = nova } else { vist?.afegeix(nova) }
             if let vist { entorn.pren(Set(vist.perCarpeta.values)) }
@@ -218,13 +226,13 @@ public enum ExecucioObertura {
             }
         } while vist?.completa(aObrir) != true && entorn.rellotge() < fins
 
-        // 4. Ho desa tot: el llançament, i el pane de cada pestanya que s'ha vist.
+        // 4. Ho desa tot: el llançament, el pane de cada pestanya que s'ha vist i el shell de cada pestanya de terminal.
         let finestra = vist?.vista(ids) == true
         llancament.estat = finestra ? .confirmat : .senseConfirmar
         if !llancament.esborrat { llancament.esborrat = esborra(llancament) }
         llancament.segons = segons ?? (entorn.rellotge().timeIntervalSince(desDe) * 10).rounded() / 10
         _ = entorn.desaLlancament(llancament)
-        if let panes = vist?.panes, !panes.isEmpty { entorn.lligaPanes(panes) }
+        if let vist, !vist.panes.isEmpty || !vist.shells.isEmpty { entorn.lligaPestanyes(vist.panes, vist.shells) }
 
         let senseClaude = vist?.senseClaude(aObrir) ?? aObrir.filter { $0.argv != nil }
         let ambClaude = x.ambClaude

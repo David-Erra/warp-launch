@@ -503,7 +503,7 @@ private final class ComptaLectures: @unchecked Sendable {
     /// Warp és tancat, restaura la sessió i totes les pestanyes hi són: no són «ja obertes». Ho diu, i no obre res.
     @Test func siWarpTancatLesRestauraraNoDiuQueSonObertes() async throws {
         let b = try Banc()
-        b.sessions.lliga(panes: [id(1): pane("a"), id(2): pane("b")])
+        b.sessions.lliga(panes: [id(1): pane("a"), id(2): pane("b")], shells: [:])
         b.lectures = [lectura([[Llegida(titol: "T1", pane: pane("a"), carpeta: "/x/t1"),
                                 Llegida(titol: "T2", pane: pane("b"), carpeta: "/x/t2")]], warpObert: false)]
         await b.obertura.demana(id(100))
@@ -640,6 +640,59 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(b.estatAlDisc.llancaments.last?.estat == .confirmat)
         #expect(b.estatAlDisc.pestanyes[id(1)]?.pane == pane("n"))
         #expect(b.obertura.resultat?.correcte == true, "\(b.obertura.resultat?.text ?? "")")
+    }
+
+    /// 0.34.0: la pestanya de terminal (T2) desa el seu shell en obrir-se, i a la vegada següent és oberta: no se n'obre cap
+    /// més. Les lectures de cada minut no el perden. Si Warp es reinicia, el shell nou no és el mateix (encara que tingués el
+    /// mateix pid), i es torna a obrir.
+    @Test func laPestanyaDeTerminalNoEsTornaAObrir() async throws {
+        let b = try Banc()
+        let hora = IniciProces(segons: 1_793_750_000, microsegons: 7)
+        let ambShell = [terminalsNous[0], TerminalViu(pid: 602, carpeta: "/x/t2", inici: hora)]
+        b.lectures = [senseBase([])]
+        await b.obertura.demana(id(100))
+        b.llegides = 0
+        b.lectures = [senseBase([]), senseBase(ambShell, sessions: [claudeT1()])]
+        await b.obertura.confirmaIObre()
+        #expect(b.obertura.resultat?.correcte == true)
+        #expect(b.estatAlDisc.pestanyes[id(2)]?.shell == ShellRecordat(pid: 602, inici: hora))
+        #expect(b.estatAlDisc.pestanyes[id(1)]?.shell == nil, "una pestanya amb Claude es reconeix per la marca")
+
+        // Una lectura de cada minut, i tornar a obrir: totes dues pestanyes ja són obertes.
+        b.sessions.actualitza(amb: senseBase(ambShell, sessions: [claudeT1()]), configuracio: b.editor.configuracio)
+        b.llegides = 0
+        b.lectures = [senseBase(ambShell, sessions: [claudeT1()])]
+        await b.obertura.demana(id(100))
+        let proposta = try #require(b.proposta)
+        #expect(proposta.pla.aObrir.isEmpty)
+        #expect(proposta.pla.obertes.map(\.on) == [.marca(lloc: nil), .shellViu(ambClaude: false)])
+        b.obertura.cancela()
+
+        // Warp reiniciat: un shell amb el mateix pid, però començat més tard, no és el de T2.
+        let reiniciat = TerminalViu(pid: 602, carpeta: "/x/t2", inici: IniciProces(segons: hora.segons + 3600, microsegons: 7))
+        b.lectures = [senseBase([reiniciat])]
+        await b.obertura.demana(id(100))
+        #expect(b.proposta?.pla.aObrir.map(\.pestanya.id) == [id(1), id(2)])
+    }
+
+    /// Sortir de l'app a mig obrir també desa el shell que ja s'ha vist.
+    @Test func enSortirDesaElShell() async throws {
+        let b = try Banc()
+        let hora = IniciProces(segons: 1_793_750_000, microsegons: 7)
+        b.lectures = [senseBase([])]
+        await b.obertura.demana(id(100))
+        b.llegides = 0
+        // El Claude de T1 encara no ha arrencat: s'espera, i mentrestant l'app surt.
+        b.lectures = [senseBase([]), senseBase([TerminalViu(pid: 601, carpeta: "/x/t1"),
+                                                TerminalViu(pid: 602, carpeta: "/x/t2", inici: hora)])]
+        var desat: EstatApp?
+        b.abansDeLlegir = { [unowned b] n in
+            guard n == 3, desat == nil else { return }
+            b.obertura.enSortir()
+            desat = b.estatAlDisc
+        }
+        await b.obertura.confirmaIObre()
+        #expect(desat?.pestanyes[id(2)]?.shell == ShellRecordat(pid: 602, inici: hora))
     }
 
     /// Els terminals que ja hi eren no confirmen res, encara que siguin a la mateixa carpeta.
@@ -1354,6 +1407,30 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         #expect(llancaments.filter { $0.estat == .confirmat }.count == 1, "\(llancaments.map(\.estat))")
         #expect(b.obertura.resultat?.correcte == false)
         #expect(b.fitxersWarp.isEmpty, "als 30 s, tots dos s'esborren igualment")
+    }
+
+    /// 0.34.0: el shell d'una pestanya de terminal es desa si cap altra finestra que s'obre alhora no té cap pestanya a la
+    /// seva carpeta. Si en té, el shell podria ser el de l'altra, i no se'n desa cap.
+    @Test(arguments: [false, true])
+    func elShellNomesSiCapAltraFinestraTeLaCarpeta(mateixa: Bool) async throws {
+        let (a, b2) = mateixa ? ("/x/t", "/x/t") : ("/x/a", "/x/b")
+        let hora = IniciProces(segons: 1_793_750_000, microsegons: 7)
+        let b = try Banc(configuracio: Configuracio(plantilla: .habituals, finestres: [
+            Finestra(id: id(100), nom: "W", pestanyes: [
+                Pestanya(id: id(1), titol: "T", carpeta: a, claude: ClaudePestanya(activat: false)),
+            ]),
+            Finestra(id: id(300), nom: "V", pestanyes: [
+                Pestanya(id: id(11), titol: "U", carpeta: b2, claude: ClaudePestanya(activat: false)),
+            ]),
+        ]))
+        b.lectures = [senseBase([])]
+        await b.obertura.demanaTot()
+        b.lectures = [senseBase([]), senseBase([]), senseBase([TerminalViu(pid: 601, carpeta: a, inici: hora),
+                                                               TerminalViu(pid: 701, carpeta: b2, inici: hora)])]
+        await b.obertura.confirmaIObreTot()
+        #expect(b.estatAlDisc.llancaments.allSatisfy { $0.estat == .confirmat })
+        let shells = [id(1), id(11)].map { b.estatAlDisc.pestanyes[$0]?.shell }
+        #expect(shells == (mateixa ? [nil, nil] : [ShellRecordat(pid: 601, inici: hora), ShellRecordat(pid: 701, inici: hora)]))
     }
 
     /// Desmarcar una finestra en torna a calcular el pla: la conversa que li tocava queda lliure per a l'altra.

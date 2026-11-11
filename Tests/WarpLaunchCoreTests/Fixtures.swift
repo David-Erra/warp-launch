@@ -114,11 +114,14 @@ struct ProcessosFalsos: FontProcessos {
 
     var processos: [Int32: (info: InfoProces, pare: Int32)] = [:]
     var carpetes: [Int32: String] = [:]
+    /// L'hora d'inici de cada procés (0.34.0); sense, `nil`, com si no s'hagués pogut llegir.
+    var inicis: [Int32: IniciProces] = [:]
 
     func fills() -> [Int32: [Int32]] {
         Dictionary(grouping: processos, by: \.value.pare).mapValues { $0.map(\.key) }
     }
     func carpeta(_ pid: Int32) -> String? { carpetes[pid] }
+    func inici(_ pid: Int32) -> IniciProces? { processos[pid] == nil ? nil : inicis[pid] }
     func proces(_ pid: Int32) -> InfoProces? { processos[pid]?.info }
     func pare(_ pid: Int32) -> Int32? { processos[pid]?.pare }
     func pids(nom: String) -> [Int32] {

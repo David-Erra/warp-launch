@@ -72,6 +72,21 @@ private func id(_ n: Int) -> UUID { UUID(uuidString: String(format: "00000000-00
         #expect(q.terminalsDeWarp(executable: ProcessosFalsos.executableWarp).isEmpty)
     }
 
+    /// 0.34.0: de cada shell, l'hora d'inici, que amb el pid el reconeix encara que no tingui cap fill. Si no s'ha pogut llegir,
+    /// el shell no es pot recordar: el pid sol no val, perquè es reutilitza.
+    @Test func lHoraDIniciDelShell() {
+        var p = ProcessosFalsos.ambWarp()
+        let hora = IniciProces(segons: 1_793_750_400, microsegons: 123_456)
+        p.processos[200] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+        p.carpetes[200] = "/x/t2"
+        p.inicis[200] = hora
+        p.processos[201] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+        let terminals = p.terminalsDeWarp(executable: ProcessosFalsos.executableWarp)
+        #expect(terminals == [TerminalViu(pid: 200, carpeta: "/x/t2", inici: hora), TerminalViu(pid: 201)])
+        #expect(terminals.first?.shell == ShellRecordat(pid: 200, inici: hora))
+        #expect(terminals.last?.shell == nil)
+    }
+
     /// Una marca que no és un UUID no és cap marca.
     @Test func unaMarcaEstranyaNoCompta() {
         var p = ProcessosFalsos.ambWarp()

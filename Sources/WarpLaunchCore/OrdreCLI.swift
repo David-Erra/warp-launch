@@ -633,7 +633,7 @@ public enum OrdreCLI {
                 nou.desa(llancament)
                 return desa(nou)
             },
-            lligaPanes: { _ = desa(ActualitzaEstat.ambPanes($0, estat: estat, ara: ara())) },
+            lligaPestanyes: { _ = desa(ActualitzaEstat.ambPanes($0, shells: $1, estat: estat, ara: ara())) },
             desaEntornClaude: { try EntornClaude.desa(carpeta: p.carpeta) },
             enLlegir: { estat = ActualitzaEstat.amb($0, configuracio: configuracio, estat: estat, ara: ara()) },
             // Ctrl-C a mig obrir: com `Obertura.enSortir` a l'app, esborra el fitxer i desa el llançament.

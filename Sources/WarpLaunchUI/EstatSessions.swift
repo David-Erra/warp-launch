@@ -123,10 +123,10 @@ public final class EstatSessions {
         return error
     }
 
-    /// El pane de cada pestanya a la finestra que s'acaba d'obrir.
-    public func lliga(panes: [UUID: String]) {
-        guard !panes.isEmpty else { return }
-        desa(ActualitzaEstat.ambPanes(panes, estat: estat, ara: rellotge()))
+    /// El pane de cada pestanya a la finestra que s'acaba d'obrir, i el shell de cada pestanya de terminal (0.34.0).
+    public func lliga(panes: [UUID: String], shells: [UUID: ShellRecordat]) {
+        guard !panes.isEmpty || !shells.isEmpty else { return }
+        desa(ActualitzaEstat.ambPanes(panes, shells: shells, estat: estat, ara: rellotge()))
     }
 
     /// La carpeta de Warp dels panes on no coincideix amb la del seu Claude, posada al dia amb la foto. Si Claude ja no hi és

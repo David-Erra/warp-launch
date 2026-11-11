@@ -325,7 +325,8 @@ public enum LligamWarp {
 extension ActualitzaEstat {
     /// «Lliga amb Warp…»: el pane de cada pestanya (`origen` `importacio`, com en importar). La conversa és la del Claude
     /// viu del pane; si no n'hi ha, la pestanya conserva la que recordava o, si no en recordava cap, hereta la de
-    /// l'entrada que tenia el pane. Un pane, una pestanya: si una altra entrada el tenia, el perd.
+    /// l'entrada que tenia el pane. Un pane, una pestanya: si una altra entrada el tenia, el perd. El shell de la pestanya
+    /// (0.34.0), si en tenia, es manté: «Lliga» no en desa cap, perquè el pane de la foto de Warp no diu quin shell és.
     public static func lliga(_ vincles: [UUID: VincleImportat], estat: EstatApp, ara: Date) -> EstatApp {
         let ara = segons(ara)
         var nou = estat
@@ -345,7 +346,7 @@ extension ActualitzaEstat {
                 (heretada?.sessio, heretada?.carpetaSessio)
             }
             nou.pestanyes[id] = VincleEstat(pane: vincle.pane, sessio: sessio, carpetaSessio: carpeta,
-                                            origen: .importacio, vista: ara)
+                                            origen: .importacio, vista: ara, shell: abans?.shell)
         }
         return nou
     }

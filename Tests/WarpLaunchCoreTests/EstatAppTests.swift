@@ -249,3 +249,94 @@ private func lectura(_ sessions: [SessioClaude]) -> LecturaWarp {
         #expect(nou.pestanyes[id(1)] == estatInicial.pestanyes[id(1)])
     }
 }
+
+// MARK: - El shell de les pestanyes de terminal (0.34.0)
+
+private let hora = IniciProces(segons: 1_793_750_000, microsegons: 123_456)
+private let shell7 = ShellRecordat(pid: 7, inici: hora)
+
+@Suite struct ShellDeLEstatTests {
+    /// El camp nou és opcional i va dins de cada pestanya, sense canviar la versió (1). Sense shell, el JSON és el d'abans.
+    @Test func elFormat() throws {
+        let estat = EstatApp(pestanyes: [
+            id(2): VincleEstat(origen: .llancament, vista: t0, shell: shell7),
+            id(3): VincleEstat(pane: pane("c"), origen: .llancament, vista: t0),
+        ])
+        let json = try estat.json(generador: "Warp Launch 0.34.0")
+        #expect(try EstatApp.llegeix(json) == estat)
+        #expect(String(decoding: json, as: UTF8.self) == """
+            {
+              "generador" : "Warp Launch 0.34.0",
+              "llancaments" : [
+
+              ],
+              "pestanyes" : {
+                "00000000-0000-0000-0000-000000000002" : {
+                  "origen" : "llancament",
+                  "shell" : {
+                    "inici" : {
+                      "microsegons" : 123456,
+                      "segons" : 1793750000
+                    },
+                    "pid" : 7
+                  },
+                  "vista" : "2026-11-04T00:00:00Z"
+                },
+                "00000000-0000-0000-0000-000000000003" : {
+                  "origen" : "llancament",
+                  "pane" : "cccccccccccccccccccccccccccccccc",
+                  "vista" : "2026-11-04T00:00:00Z"
+                }
+              },
+              "versio" : 1
+            }
+
+            """)
+    }
+
+    /// La lectura de cada 60 s (`amb`) no toca el shell, tampoc el d'una pestanya esborrada que torna amb el Desfés.
+    @Test func lesLecturesNoPerdenElShell() {
+        var estat = estatInicial
+        estat.pestanyes[id(2)]?.shell = shell7
+        estat.pestanyes[id(3)] = VincleEstat(origen: .llancament, vista: t0, shell: ShellRecordat(pid: 8, inici: hora))
+        let llegit = ActualitzaEstat.amb(lectura([sessio("s9", pane: pane("b"))]), configuracio: configuracio, estat: estat,
+                                         ara: t0 + 10)
+        #expect(llegit.pestanyes[id(2)]?.sessio == "s9" && llegit.pestanyes[id(2)]?.shell == shell7)
+        #expect(llegit.pestanyes[id(3)] == estat.pestanyes[id(3)])
+
+        var sense = configuracio
+        sense.finestres[0].pestanyes.removeLast()  // T3
+        let esborrada = ActualitzaEstat.amb(lectura([]), configuracio: sense, estat: llegit, ara: t0 + 20)
+        #expect(esborrada.pestanyes[id(3)]?.foraDesDe == t0 + 20 && esborrada.pestanyes[id(3)]?.shell != nil)
+        let tornada = ActualitzaEstat.amb(lectura([]), configuracio: configuracio, estat: esborrada, ara: t0 + 30)
+        #expect(tornada.pestanyes[id(3)] == llegit.pestanyes[id(3)])
+    }
+
+    /// Després d'obrir: el shell de cada pestanya de terminal, amb la conversa i el pane que ja tenia; el d'una altra pestanya
+    /// el perd (un shell, una pestanya); i un pane nou no esborra el shell.
+    @Test func ambPanesDesaElShell() {
+        let nou = ActualitzaEstat.ambPanes([:], shells: [id(2): shell7, id(4): ShellRecordat(pid: 8, inici: hora)],
+                                           estat: estatInicial, ara: t0 + 10)
+        #expect(nou.pestanyes[id(2)] == VincleEstat(pane: pane("b"), origen: .llancament, vista: t0 + 10, shell: shell7))
+        #expect(nou.pestanyes[id(4)] == VincleEstat(origen: .llancament, vista: t0 + 10, shell: ShellRecordat(pid: 8, inici: hora)))
+        #expect(nou.pestanyes[id(1)] == estatInicial.pestanyes[id(1)])
+        #expect(ActualitzaEstat.ambPanes([:], shells: [id(2): shell7], estat: nou, ara: t0 + 20) == nou, "res de nou")
+
+        let altra = ActualitzaEstat.ambPanes([:], shells: [id(3): shell7], estat: nou, ara: t0 + 20)
+        #expect(altra.pestanyes[id(3)]?.shell == shell7 && altra.pestanyes[id(2)]?.shell == nil)
+        #expect(altra.pestanyes[id(2)]?.pane == pane("b"))
+
+        let ambPane = ActualitzaEstat.ambPanes([id(2): pane("z")], shells: [:], estat: nou, ara: t0 + 30)
+        #expect(ambPane.pestanyes[id(2)]?.pane == pane("z") && ambPane.pestanyes[id(2)]?.shell == shell7)
+    }
+
+    /// Tornar a importar i «Lliga amb Warp…» no desen cap shell (la foto de Warp no diu quin és), però no esborren el que hi ha.
+    @Test func importarILligarNoPerdenElShell() {
+        var estat = estatInicial
+        estat.pestanyes[id(2)]?.shell = shell7
+        let importat = ActualitzaEstat.vincula([id(2): VincleImportat(pane: pane("y"))], estat: estat, ara: t0 + 5)
+        #expect(importat.pestanyes[id(2)]?.pane == pane("y") && importat.pestanyes[id(2)]?.shell == shell7)
+        let lligat = ActualitzaEstat.lliga([id(2): VincleImportat(pane: pane("x"))], estat: estat, ara: t0 + 5)
+        #expect(lligat.pestanyes[id(2)]?.pane == pane("x") && lligat.pestanyes[id(2)]?.shell == shell7)
+    }
+}

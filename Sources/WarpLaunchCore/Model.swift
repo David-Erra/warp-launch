@@ -87,16 +87,22 @@ public struct TerminalViu: Codable, Sendable, Equatable {
     /// La conversa que li han dit que reprengui (`--resume`, als arguments del `claude`). Pot ser vella: mana la seva sessió,
     /// si l'ha escrit (`LecturaWarp.conversesArrencant`).
     public var conversa: String?
+    /// L'hora d'inici del shell (0.34.0), si s'ha pogut llegir: amb el pid, el reconeix encara que no tingui cap fill.
+    public var inici: IniciProces?
 
     public init(pid: Int32, carpeta: String? = nil, pane: String? = nil, marca: UUID? = nil, claude: Bool = false,
-                conversa: String? = nil) {
+                conversa: String? = nil, inici: IniciProces? = nil) {
         self.pid = pid
         self.carpeta = carpeta
         self.pane = pane
         self.marca = marca
         self.claude = claude
         self.conversa = conversa
+        self.inici = inici
     }
+
+    /// El pid i l'hora d'inici del shell, com es desen a `estat.json` (`VincleEstat.shell`); `nil` sense l'hora.
+    public var shell: ShellRecordat? { inici.map { ShellRecordat(pid: pid, inici: $0) } }
 }
 
 /// Una sessió de Claude viva que no és interactiva.

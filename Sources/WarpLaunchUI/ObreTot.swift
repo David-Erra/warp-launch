@@ -14,7 +14,8 @@ import WarpLaunchCore
 ///   diverses finestres alhora, un terminal que n'ha pres una ja no compta per a cap altra, i un terminal reconegut només
 ///   per la carpeta no fa esborrar el fitxer (`Confirmacio.segura`; si no hi ha res més, s'esborra als 30 s). Si dues
 ///   finestres en tenen a la mateixa carpeta, l'app encara pot lligar-ne una a la finestra de l'altra (cap Claude no queda
-///   repetit).
+///   repetit). El shell d'una pestanya de terminal (0.34.0) no es desa si una altra finestra que s'obre alhora té alguna
+///   pestanya a la mateixa carpeta: podria ser el d'aquella.
 extension Obertura {
     /// El que mostra el full de «Obre-ho tot».
     public struct PropostaTot: Equatable, Sendable {
@@ -149,12 +150,16 @@ extension Obertura {
         presos = [:]
         defer { presos = [:] }
         var tasques: [Int: Task<ExecucioObertura.Resultat, Never>] = [:]
+        let carpetes = finestres.map { Set($0.pla.aObrir.map { Rutes.canonica($0.yaml.carpeta) }) }
         for n in finestres.indices {
             let finestra = finestres[n]
             guard case let .success(fitxer)? = finestra.fitxer else { continue }
+            // Un shell nou en una carpeta d'una altra finestra podria ser d'aquella: no es desa (0.34.0).
+            let carpetesDAltres = carpetes.indices.filter { $0 != n }.reduce(into: Set<String>()) { $0.formUnion(carpetes[$1]) }
             tasques[n] = Task { @MainActor in
                 await executa(finestra, fitxer: fitxer, engegat: engegat, llegeix: { await compartida.llegeix() },
-                              ambAltres: finestres.count > 1, fase: { self.avancaTot($0) })
+                              ambAltres: finestres.count > 1, carpetesDAltres: carpetesDAltres,
+                              fase: { self.avancaTot($0) })
             }
         }
         var resultats: [Int: ExecucioObertura.Resultat] = [:]

@@ -51,6 +51,9 @@ public enum OnOberta: Sendable, Equatable, CustomStringConvertible {
     case pane(lloc: String, ambClaude: Bool)
     /// El pane recordat és viu: hi corre un procés que el porta. Sense la base de Warp, no se sap en quina finestra.
     case paneViu(ambClaude: Bool)
+    /// El shell que va obrir un llançament per a la pestanya de terminal és viu (el mateix pid i la mateixa hora d'inici,
+    /// 0.34.0): un shell sense fills no porta ni la marca ni el pane. Sense la base de Warp, no se sap en quina finestra.
+    case shellViu(ambClaude: Bool)
     /// La seva conversa és viva en una pestanya de Warp.
     case conversa(lloc: String)
     case conversaForaDeWarp
@@ -66,7 +69,7 @@ public enum OnOberta: Sendable, Equatable, CustomStringConvertible {
     /// És una pestanya de Warp (si Warp és tancat, de la sessió que restauraria), i no una conversa fora de Warp o en segon pla.
     public var esAWarp: Bool {
         switch self {
-        case .marca, .pane, .paneViu, .conversa, .conversaAWarp, .tancadaFaPoc: true
+        case .marca, .pane, .paneViu, .shellViu, .conversa, .conversaAWarp, .tancadaFaPoc: true
         case .conversaForaDeWarp, .conversaEnSegonPla, .conversaEnCurs: false
         }
     }
@@ -75,7 +78,7 @@ public enum OnOberta: Sendable, Equatable, CustomStringConvertible {
         switch self {
         case let .marca(lloc): "oberta a Warp, amb Claude" + (lloc.map { " (\($0))" } ?? "")
         case let .pane(lloc, ambClaude): "oberta a Warp" + (ambClaude ? "" : ", sense Claude") + " (\(lloc))"
-        case let .paneViu(ambClaude): "oberta a Warp" + (ambClaude ? "" : ", sense Claude")
+        case let .paneViu(ambClaude), let .shellViu(ambClaude): "oberta a Warp" + (ambClaude ? "" : ", sense Claude")
         case let .conversa(lloc): "la seva conversa és oberta a Warp (\(lloc))"
         case .conversaForaDeWarp: "la seva conversa és oberta fora de Warp"
         case .conversaAWarp: "la seva conversa és oberta a Warp"
@@ -356,7 +359,11 @@ public enum PlaObertura {
                                           uniquingKeysWith: { a, _ in a })
         let terminalPerPane = Dictionary(lectura.terminals.compactMap { t in t.pane.map { ($0, t) } },
                                          uniquingKeysWith: { a, _ in a })
+        // Pel pid i l'hora d'inici (0.34.0): el pid sol no val, perquè es reutilitza.
+        let terminalPerShell = Dictionary(lectura.terminals.compactMap { t in t.shell.map { ($0, t) } },
+                                          uniquingKeysWith: { a, _ in a })
         let panesRecordats = Set(entrada.estat.pestanyes.values.compactMap(\.pane))
+        let shellsRecordats = Set(entrada.estat.pestanyes.values.compactMap(\.shell))
         let carpetaClaudePerPane = Dictionary(interactives.compactMap { s in s.paneUUID.map { ($0, s.carpeta) } },
                                               uniquingKeysWith: { a, _ in a })
         // També les dels Claude que encara no han escrit la sessió: no surten a `perSessio` (R9).
@@ -393,6 +400,10 @@ public enum PlaObertura {
             if let pane = vincle?.pane {
                 if let (llegit, lloc) = panes[pane] { return .pane(lloc: lloc, ambClaude: llegit.claude != nil) }
                 if !desaFinestres, let terminal = terminalPerPane[pane] { return .paneViu(ambClaude: terminal.claude) }
+            }
+            // El shell d'una pestanya de terminal, viu: com el pane, només sense la base (amb la base, mana el pane).
+            if !desaFinestres, let shell = vincle?.shell, let terminal = terminalPerShell[shell] {
+                return .shellViu(ambClaude: terminal.claude)
             }
             if let id = vincle?.sessio {
                 if let sessio = perSessio[id] {
@@ -501,10 +512,12 @@ public enum PlaObertura {
                 }
             }
             if !desaFinestres, carpeta != entrada.inici, let viu = lectura.terminals.first(where: { terminal in
-                // Un Claude amb marca, o en un pane recordat, és d'una altra pestanya.
+                // Un Claude amb marca, o en un pane recordat, és d'una altra pestanya; i el shell recordat d'una pestanya de
+                // terminal (0.34.0), també.
                 // Si Warp i Claude no coincideixen, la pestanya hi pot ser per Claude (09/11/2026), com a `potserJaOberta`.
                 (terminal.carpeta == carpeta || terminal.pane.flatMap { carpetaClaudePerPane[$0] } == carpeta)
                     && (!terminal.claude || (terminal.marca == nil && !panesRecordats.contains(terminal.pane ?? "")))
+                    && !(terminal.shell.map(shellsRecordats.contains) ?? false)
             }) {
                 avisosPestanya.append(.terminalALaCarpeta(ambClaude: viu.claude))
             }
@@ -514,7 +527,7 @@ public enum PlaObertura {
 
         if !desaFinestres, obertes.contains(where: {
             switch $0.on {
-            case .marca, .paneViu, .conversaAWarp: true
+            case .marca, .paneViu, .shellViu, .conversaAWarp: true
             default: false
             }
         }) {

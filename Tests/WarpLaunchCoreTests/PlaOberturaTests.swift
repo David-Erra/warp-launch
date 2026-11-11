@@ -681,9 +681,9 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
         finestra([pestanya(1), pestanya(2)]), entrada(lectura([]))).aObrir
 
     private func busca(_ lectura: LecturaWarp, abans: Set<Int32> = [99], obertes: [PestanyaAObrir] = Self.aObrir,
-                       warpAcabatDEngegar: Bool = false) -> Confirmacio? {
+                       warpAcabatDEngegar: Bool = false, carpetesDAltres: Set<String> = []) -> Confirmacio? {
         ConfirmacioObertura.busca(lectura, obertes: obertes, panesAbans: [], terminalsAbans: abans, desDe: t0, inici: inici,
-                                  warpAcabatDEngegar: warpAcabatDEngegar)
+                                  warpAcabatDEngegar: warpAcabatDEngegar, carpetesDAltres: carpetesDAltres)
     }
 
     /// El cas real (05/11/2026): cap finestra a la base, i un terminal nou amb la marca per pestanya. Abans, «No s'ha pogut
@@ -767,5 +767,147 @@ private func vincle(pane: String? = nil, sessio: String? = nil) -> VincleEstat {
         #expect(vist.vista([id(1), id(2)]))
         #expect(!vist.vista([id(1), id(2), id(3)]))
         #expect(!Confirmacio(finestra: nil, panes: [:], sessions: [:]).vista([]), "sense res, no s'ha vist res")
+    }
+
+    // MARK: El shell de les pestanyes de terminal (0.34.0)
+
+    private static let hora = IniciProces(segons: 1_793_750_000, microsegons: 42)
+
+    /// Un shell amb l'hora d'inici (`TerminalViu.inici`).
+    private func shell(_ pid: Int32, _ carpeta: String?, hora: IniciProces? = Self.hora) -> TerminalViu {
+        TerminalViu(pid: pid, carpeta: carpeta, inici: hora)
+    }
+
+    private func recordat(_ pid: Int32) -> ShellRecordat { ShellRecordat(pid: pid, inici: Self.hora) }
+
+    /// Les pestanyes per obrir d'una finestra, totes sense lligam.
+    private func aObrir(_ pestanyes: [Pestanya]) -> [PestanyaAObrir] {
+        PlaObertura.calcula(finestra(pestanyes), entrada(lectura([]))).aObrir
+    }
+
+    /// T1 amb Claude, a /x/t1, i T2 només terminal, a /x/t2.
+    private static let ambTerminal: [PestanyaAObrir] = PlaObertura.calcula(
+        finestra([pestanya(1), pestanya(2, claude: .nomesTerminal)]), entrada(lectura([]))).aObrir
+
+    /// El Claude de T1, amb la marca: el seu shell no és de cap pestanya de terminal.
+    private static let claudeT1 = TerminalViu(pid: 1, carpeta: "/x/t1", pane: pane("n"), marca: id(1), claude: true,
+                                              inici: hora)
+
+    /// En confirmar, el shell nou de la pestanya de terminal, a la seva carpeta i sense Claude, és seu: el pid i l'hora d'inici.
+    @Test func elShellDeLaPestanyaDeTerminal() throws {
+        let vist = try #require(busca(processos([Self.claudeT1, shell(2, "/x/t2")]), obertes: Self.ambTerminal))
+        #expect(vist.shells == [id(2): recordat(2)])
+        #expect(vist.perCarpeta == [id(2): 2])
+    }
+
+    /// Dues pestanyes de terminal a la mateixa carpeta són intercanviables: per ordre de pid, cada shell a una sola.
+    @Test func duesPestanyesDeTerminalALaMateixaCarpeta() throws {
+        let dues = aObrir([pestanya(2, carpeta: "/x/c", claude: .nomesTerminal), pestanya(3, carpeta: "/x/c", claude: .nomesTerminal)])
+        let vist = try #require(busca(processos([shell(9, "/x/c"), shell(8, "/x/c")]), obertes: dues))
+        #expect(vist.shells == [id(2): recordat(8), id(3): recordat(9)])
+    }
+
+    /// Si hi ha cap dubte, no se'n desa cap: la pestanya es tornarà a obrir, com abans de la 0.34.0.
+    @Test func ambDubtesNoEsDesaCapShell() throws {
+        let dues = aObrir([pestanya(2, carpeta: "/x/c", claude: .nomesTerminal), pestanya(3, carpeta: "/x/c", claude: .nomesTerminal)])
+        // Un shell de més (una pestanya oberta a mà) o de menys a la carpeta.
+        #expect(try #require(busca(processos([Self.claudeT1, shell(2, "/x/t2"), shell(3, "/x/t2")]), obertes: Self.ambTerminal))
+            .shells.isEmpty)
+        #expect(try #require(busca(processos([shell(8, "/x/c")]), obertes: dues)).shells.isEmpty)
+        // D'algun shell nou no se'n sap la carpeta: podria ser de qualsevol pestanya.
+        #expect(try #require(busca(processos([Self.claudeT1, shell(2, "/x/t2"), shell(3, nil)]), obertes: Self.ambTerminal))
+            .shells.isEmpty)
+        // No se'n sap l'hora d'inici.
+        #expect(try #require(busca(processos([Self.claudeT1, shell(2, "/x/t2", hora: nil)]), obertes: Self.ambTerminal))
+            .shells.isEmpty)
+        // Una altra finestra que s'obre alhora («Obre-ho tot») té alguna pestanya a la mateixa carpeta.
+        #expect(try #require(busca(processos([Self.claudeT1, shell(2, "/x/t2")]), obertes: Self.ambTerminal,
+                                   carpetesDAltres: ["/x/t2"])).shells.isEmpty)
+        // Amb la restauració activada, els terminals no compten (mana la base).
+        var ambBase = lectura([])
+        ambBase.terminals = [Self.claudeT1, shell(2, "/x/t2")]
+        #expect(busca(ambBase, obertes: Self.ambTerminal)?.shells.isEmpty ?? true)
+        // Un shell d'abans d'obrir no és de la finestra nova.
+        #expect(busca(processos([Self.claudeT1, shell(2, "/x/t2")]), abans: [2], obertes: Self.ambTerminal)?.shells.isEmpty == true)
+    }
+
+    /// Una pestanya amb Claude a la mateixa carpeta, mentre el seu Claude no porta la marca: el seu shell és igual que el de la
+    /// de terminal. Quan la porta, el dubte s'acaba.
+    @Test func unaPestanyaAmbClaudeSenseMarcaFaDubtar() throws {
+        let mateixa = aObrir([pestanya(1, carpeta: "/x/c"), pestanya(2, carpeta: "/x/c", claude: .nomesTerminal)])
+        let abansDeClaude = try #require(busca(processos([shell(1, "/x/c"), shell(2, "/x/c")]), obertes: mateixa))
+        #expect(abansDeClaude.shells.isEmpty)
+        let claude = TerminalViu(pid: 1, carpeta: "/x/c", pane: pane("n"), marca: id(1), claude: true, inici: Self.hora)
+        let ambClaude = try #require(busca(processos([claude, shell(2, "/x/c")]), obertes: mateixa))
+        #expect(ambClaude.shells == [id(2): recordat(2)])
+
+        // `afegeix`: els shells són els de l'última lectura, també si ara fan dubtar.
+        var vist = abansDeClaude
+        vist.afegeix(ambClaude)
+        #expect(vist.shells == [id(2): recordat(2)])
+        vist.afegeix(try #require(busca(processos([claude, shell(2, "/x/c"), shell(3, "/x/c")]), obertes: mateixa)))
+        #expect(vist.shells.isEmpty)
+    }
+
+    /// La carpeta d'inici, només si Warp ja era obert: si l'app l'acaba d'engegar, hi ha la finestra buida.
+    @Test func elShellALaCarpetaDInici() throws {
+        let aInici = aObrir([pestanya(2, carpeta: inici, claude: .nomesTerminal)])
+        #expect(try #require(busca(processos([shell(2, inici)]), obertes: aInici)).shells == [id(2): recordat(2)])
+        #expect(busca(processos([shell(2, inici)]), obertes: aInici, warpAcabatDEngegar: true)?.shells.isEmpty ?? true)
+    }
+
+    // MARK: Reconèixer-la pel shell (0.34.0)
+
+    private func ambShell(_ n: Int, pid: Int32, hora: IniciProces = Self.hora) -> EstatApp {
+        EstatApp(pestanyes: [id(n): VincleEstat(origen: .llancament, vista: t0, shell: ShellRecordat(pid: pid, inici: hora))])
+    }
+
+    /// Una pestanya de terminal amb el seu shell viu, el mateix pid i la mateixa hora d'inici, és oberta: no es torna a obrir.
+    /// Si després s'hi ha engegat un Claude a mà, també.
+    @Test func laPestanyaDeTerminalEsReconeixPelShell() {
+        let terminal = pestanya(2, claude: .nomesTerminal)
+        let viu = pla(processos([shell(7, "/x/t2")]), estat: ambShell(2, pid: 7), pestanyes: [terminal])
+        #expect(viu.obertes.map(\.on) == [.shellViu(ambClaude: false)])
+        #expect(viu.aObrir.isEmpty)
+        #expect(viu.obertes.first?.on.description == "oberta a Warp, sense Claude")
+        // Com el pane viu: pot ser una pestanya acabada de tancar, i el full ho diu.
+        #expect(avisTancada(viu) == [.potserTancadaFaPoc(partiria: false)])
+
+        // El shell s'ha mogut de carpeta, o hi corre un Claude: continua sent la pestanya.
+        let ambClaude = pla(processos([TerminalViu(pid: 7, carpeta: "/x/altra", pane: pane("h"), claude: true, inici: Self.hora)]),
+                            estat: ambShell(2, pid: 7), pestanyes: [terminal])
+        #expect(ambClaude.obertes.map(\.on) == [.shellViu(ambClaude: true)])
+    }
+
+    /// El pid sol no val: si el procés ha acabat i el pid és d'un altre (una altra hora d'inici), o el shell ja no hi és (Warp
+    /// tancat, o el Mac reiniciat), la pestanya es torna a obrir, com abans.
+    @Test func elPidSolNoVal() {
+        let terminal = pestanya(2, claude: .nomesTerminal)
+        let altraHora = IniciProces(segons: Self.hora.segons, microsegons: Self.hora.microsegons + 1)
+        let reutilitzat = pla(processos([shell(7, "/x/t2", hora: altraHora)]), estat: ambShell(2, pid: 7), pestanyes: [terminal])
+        #expect(reutilitzat.obertes.isEmpty && reutilitzat.aObrir.map(\.pestanya.id) == [id(2)])
+        let senseHora = pla(processos([shell(7, "/x/t2", hora: nil)]), estat: ambShell(2, pid: 7), pestanyes: [terminal])
+        #expect(senseHora.obertes.isEmpty)
+        let reiniciat = pla(processos([]), estat: ambShell(2, pid: 7), pestanyes: [terminal])
+        #expect(reiniciat.obertes.isEmpty && reiniciat.aObrir.map(\.pestanya.id) == [id(2)])
+    }
+
+    /// Amb la restauració activada, mana la base (com amb el pane viu): el shell no es mira.
+    @Test func ambLaBaseNoEsMiraElShell() {
+        var warp = lectura([])
+        warp.terminals = [shell(7, "/x/t2")]
+        let resultat = PlaObertura.calcula(finestra([pestanya(2, claude: .nomesTerminal)]), entrada(warp, estat: ambShell(2, pid: 7)))
+        #expect(resultat.obertes.isEmpty)
+    }
+
+    /// El shell recordat d'una pestanya no fa dir «potser ja és oberta» d'una altra a la mateixa carpeta; un shell que no és de
+    /// cap pestanya, sí.
+    @Test func elShellDUnaPestanyaNoFaAvisarUnaAltra() {
+        let pestanyes = [pestanya(2, carpeta: "/x/c", claude: .nomesTerminal), pestanya(3, carpeta: "/x/c", claude: .nomesTerminal)]
+        let reconegut = pla(processos([shell(7, "/x/c")]), estat: ambShell(2, pid: 7), pestanyes: pestanyes)
+        #expect(reconegut.obertes.map(\.pestanya.id) == [id(2)] && reconegut.aObrir.map(\.pestanya.id) == [id(3)])
+        #expect(avisosDeTerminal(reconegut).isEmpty)
+        let desconegut = pla(processos([shell(7, "/x/c")]), pestanyes: pestanyes)
+        #expect(avisosDeTerminal(desconegut) == [id(2): false, id(3): false])
     }
 }
