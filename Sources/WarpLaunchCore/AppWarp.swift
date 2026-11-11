@@ -143,13 +143,13 @@ public enum WarpPreview: String, Codable, Sendable, Equatable {
     /// confirmar.
     case capWarp
 
-    public static let noCompatible = "Warp Preview encara no és compatible: cal Warp Stable."
+    public static var noCompatible: String { t("Warp Preview encara no és compatible: cal Warp Stable.") }
 
     public var text: String {
         switch self {
-        case .nomesPreview: "\(Self.noCompatible) En aquest Mac només hi ha Warp Preview."
-        case .obert: "\(Self.noCompatible) Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar."
-        case .capWarp: "No s'ha trobat Warp en aquest Mac: cal Warp Stable."
+        case .nomesPreview: Self.noCompatible + " " + t("En aquest Mac només hi ha Warp Preview.")
+        case .obert: Self.noCompatible + " " + t("Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar.")
+        case .capWarp: t("No s'ha trobat Warp en aquest Mac: cal Warp Stable.")
         }
     }
 }

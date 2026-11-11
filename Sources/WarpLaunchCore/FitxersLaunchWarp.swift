@@ -38,17 +38,15 @@ public struct FitxersLaunchWarp: Sendable {
 
         public var description: String {
             switch self {
-            case .senseCarpeta: "Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp "
-                + "encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, "
-                + "que no la creen"
-            case .jaExisteix: "ja hi ha un fitxer amb aquest nom, i no se sobreescriu"
-            case let .escriptura(error): "no s'ha pogut escriure el fitxer: \(error)"
-            case .noEsUnFitxer: "no és un fitxer normal, i no s'esborra"
+            case .senseCarpeta: t("Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, que no la creen")
+            case .jaExisteix: t("ja hi ha un fitxer amb aquest nom, i no se sobreescriu")
+            case let .escriptura(error): t("no s'ha pogut escriure el fitxer: \(error)")
+            case .noEsUnFitxer: t("no és un fitxer normal, i no s'esborra")
             case let .midaDiferent(esperada, trobada):
-                "fa \(trobada) bytes i se n'havien escrit \(esperada): algú l'ha canviat, i no s'esborra"
-            case .senseMarca: "no comença amb la marca de l'app, i no s'esborra"
-            case let .lectura(error): "no s'ha pogut llegir: \(error)"
-            case let .esborrat(error): "no s'ha pogut esborrar: \(error)"
+                t("fa \(trobada) bytes i se n'havien escrit \(esperada): algú l'ha canviat, i no s'esborra")
+            case .senseMarca: t("no comença amb la marca de l'app, i no s'esborra")
+            case let .lectura(error): t("no s'ha pogut llegir: \(error)")
+            case let .esborrat(error): t("no s'ha pogut esborrar: \(error)")
             }
         }
     }

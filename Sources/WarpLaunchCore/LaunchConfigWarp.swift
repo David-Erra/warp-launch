@@ -65,10 +65,10 @@ public enum LaunchConfigWarp {
 
         public var description: String {
             switch self {
-            case let .carpetaNoAbsoluta(carpeta): "la carpeta «\(carpeta)» no és una ruta absoluta"
-            case let .titol(error): "al títol, \(error)"
-            case let .carpeta(error): "a la carpeta, \(error)"
-            case let .ordre(error): "a l'ordre, \(error)"
+            case let .carpetaNoAbsoluta(carpeta): t("la carpeta «\(carpeta)» no és una ruta absoluta")
+            case let .titol(error): t("al títol, \(error.description)")
+            case let .carpeta(error): t("a la carpeta, \(error.description)")
+            case let .ordre(error): t("a l'ordre, \(error.description)")
             }
         }
     }
@@ -81,8 +81,8 @@ public enum LaunchConfigWarp {
 
         public var description: String {
             switch self {
-            case .capPestanya: "no hi ha cap pestanya per obrir"
-            case let .pestanya(index, error): "pestanya \(index + 1): \(error)"
+            case .capPestanya: t("no hi ha cap pestanya per obrir")
+            case let .pestanya(index, error): t("pestanya \(String(index + 1)): \(error.description)")
             }
         }
     }

@@ -138,7 +138,7 @@ public enum ExecucioObertura {
         public var desDe: Date
     }
 
-    public static let finestraBuida = "En arrencar, Warp ha obert també una finestra buida: la pots tancar."
+    public static var finestraBuida: String { t("En arrencar, Warp ha obert també una finestra buida: la pots tancar.") }
     public static let interval: Duration = .milliseconds(500)
     public static let tempsMaxim: TimeInterval = 30
     /// Quant s'espera que Warp arrenqui, i el marge perquè acabi de restaurar la sessió, si la restaura.
@@ -158,7 +158,7 @@ public enum ExecucioObertura {
                                     creat: entorn.rellotge(), finestra: pla.finestra.id,
                                     pestanyes: pla.aObrir.map(\.pestanya.id), estat: .pendent)
         if let error = entorn.desaLlancament(llancament) {
-            return .noEsPot("No s'ha pogut desar el llançament a «estat.json»: \(error)")
+            return .noEsPot(t("No s'ha pogut desar el llançament a «estat.json»: \(error)"))
         }
 
         func esborra(_ llancament: Llancament) -> Bool {
@@ -180,7 +180,7 @@ public enum ExecucioObertura {
         } catch {
             llancament.estat = .error
             _ = entorn.desaLlancament(llancament)
-            return acaba("No s'ha pogut obrir «\(nom)» a Warp: \(error)")
+            return acaba(t("No s'ha pogut obrir «\(nom)» a Warp: \(String(describing: error))"))
         }
         entorn.enCurs(llancament, nil)
         defer { entorn.enCurs(nil, nil) }
@@ -192,7 +192,7 @@ public enum ExecucioObertura {
             llancament.estat = .error
             llancament.esborrat = esborra(llancament)
             _ = entorn.desaLlancament(llancament)
-            return acaba("No s'ha pogut obrir «\(nom)» a Warp: \(error)")
+            return acaba(t("No s'ha pogut obrir «\(nom)» a Warp: \(String(describing: error))"))
         }
 
         // 3. La finestra nova i el Claude de cada pestanya, cada 0,5 s fins a 30 s (com a mínim, una lectura).
@@ -238,19 +238,18 @@ public enum ExecucioObertura {
         let ambClaude = x.ambClaude
         var text: String
         if finestra {
-            text = "S'ha obert «\(nom)» a Warp: \(Plural.compta(x.pestanyes, "pestanya", "pestanyes")), \(ambClaude) amb Claude."
+            text = t("S'ha obert «\(nom)» a Warp: \(x.pestanyes) pestanyes, \(ambClaude) amb Claude.")
             if !senseClaude.isEmpty {
-                text += " Claude encara no ha arrencat a \(llista(senseClaude)): mira-ho a Warp."
+                text += " " + t("Claude encara no ha arrencat a \(llista(senseClaude)): mira-ho a Warp.")
             }
         } else if vist != nil {
-            text = "No s'ha pogut reconèixer la finestra nova de «\(nom)» (s'ha vist Claude a "
-                + "\(ambClaude - senseClaude.count) de \(ambClaude) pestanyes): mira-la a Warp abans de tornar-la a obrir."
+            text = t("No s'ha pogut reconèixer la finestra nova de «\(nom)» (s'ha vist Claude a \(ambClaude - senseClaude.count) de \(ambClaude) pestanyes): mira-la a Warp abans de tornar-la a obrir.")
         } else {
-            text = "No s'ha pogut confirmar que s'hagi obert «\(nom)»: mira si hi ha una finestra nova a Warp."
+            text = t("No s'ha pogut confirmar que s'hagi obert «\(nom)»: mira si hi ha una finestra nova a Warp.")
         }
         if peticio.warpEngegat, !peticio.warpDesaFinestres { text += " " + finestraBuida }
         if !llancament.esborrat {
-            text += " El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app."
+            text += " " + t("El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app.")
         }
         return .acabat(Acabat(correcte: finestra && senseClaude.isEmpty, text: text, llancament: llancament, vist: vist,
                               finestra: finestra, senseClaude: senseClaude, desDe: desDe))
@@ -292,8 +291,6 @@ public enum ExecucioObertura {
 
     /// «T1» o «T1, T2 i T3», amb el títol que es veu a Warp.
     static func llista(_ pestanyes: [PestanyaAObrir]) -> String {
-        let titols = pestanyes.map { "«\($0.yaml.titolAWarp)»" }
-        guard titols.count > 1 else { return titols.first ?? "" }
-        return titols.dropLast().joined(separator: ", ") + " i " + titols.last!
+        Idioma.llista(pestanyes.map { t("«\($0.yaml.titolAWarp)»") })
     }
 }

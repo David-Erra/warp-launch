@@ -76,15 +76,15 @@ public enum OnOberta: Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case let .marca(lloc): "oberta a Warp, amb Claude" + (lloc.map { " (\($0))" } ?? "")
-        case let .pane(lloc, ambClaude): "oberta a Warp" + (ambClaude ? "" : ", sense Claude") + " (\(lloc))"
-        case let .paneViu(ambClaude), let .shellViu(ambClaude): "oberta a Warp" + (ambClaude ? "" : ", sense Claude")
-        case let .conversa(lloc): "la seva conversa és oberta a Warp (\(lloc))"
-        case .conversaForaDeWarp: "la seva conversa és oberta fora de Warp"
-        case .conversaAWarp: "la seva conversa és oberta a Warp"
-        case .conversaEnCurs: "una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)"
-        case let .conversaEnSegonPla(tipus): "la seva conversa és oberta en segon pla (\(tipus))"
-        case .tancadaFaPoc: "tancada fa menys d'1 minut: espera i torna-ho a provar"
+        case let .marca(lloc): lloc.map { t("oberta a Warp, amb Claude (\($0))") } ?? t("oberta a Warp, amb Claude")
+        case let .pane(lloc, ambClaude): ambClaude ? t("oberta a Warp (\(lloc))") : t("oberta a Warp, sense Claude (\(lloc))")
+        case let .paneViu(ambClaude), let .shellViu(ambClaude): ambClaude ? t("oberta a Warp") : t("oberta a Warp, sense Claude")
+        case let .conversa(lloc): t("la seva conversa és oberta a Warp (\(lloc))")
+        case .conversaForaDeWarp: t("la seva conversa és oberta fora de Warp")
+        case .conversaAWarp: t("la seva conversa és oberta a Warp")
+        case .conversaEnCurs: t("una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)")
+        case let .conversaEnSegonPla(tipus): t("la seva conversa és oberta en segon pla (\(tipus))")
+        case .tancadaFaPoc: t("tancada fa menys d'1 minut: espera i torna-ho a provar")
         }
     }
 }
@@ -100,10 +100,10 @@ public enum MotiuExclusio: Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .carpetaNoExisteix: "la carpeta no existeix"
+        case .carpetaNoExisteix: t("la carpeta no existeix")
         case let .validacio(text): text
-        case let .ordre(error): "no es pot generar l'ordre: \(error)"
-        case let .fitxer(error): "no es pot escriure per a Warp: \(error)"
+        case let .ordre(error): t("no es pot generar l'ordre: \(error.description)")
+        case let .fitxer(error): t("no es pot escriure per a Warp: \(error.description)")
         }
     }
 }
@@ -135,9 +135,9 @@ public enum ConversaObertura: Sendable, Equatable {
     /// «només terminal», «Claude, reprèn 1b2c3d4e» o «Claude, conversa nova» (el motiu és als avisos).
     public var descripcio: String {
         switch self {
-        case .terminal: "només terminal"
-        case let .repren(id): "Claude, reprèn \(id.prefix(8))"
-        case .nova: "Claude, conversa nova"
+        case .terminal: t("només terminal")
+        case let .repren(id): t("Claude, reprèn \(String(id.prefix(8)))")
+        case .nova: t("Claude, conversa nova")
         }
     }
 }
@@ -210,39 +210,39 @@ public struct AvisObertura: Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         let text: String = switch tipus {
-        case let .potserJaOberta(lloc): "potser ja és oberta a Warp (\(lloc)): és a la mateixa carpeta"
+        case let .potserJaOberta(lloc): t("potser ja és oberta a Warp (\(lloc)): és a la mateixa carpeta")
         case let .terminalALaCarpeta(ambClaude):
-            "potser ja és oberta a Warp: hi ha " + (ambClaude ? "un Claude a la seva carpeta, que no és de cap pestanya de la "
-                + "configuració" : "un terminal a la seva carpeta, sense Claude")
+            ambClaude ? t("potser ja és oberta a Warp: hi ha un Claude a la seva carpeta, que no és de cap pestanya de la configuració")
+                : t("potser ja és oberta a Warp: hi ha un terminal a la seva carpeta, sense Claude")
         case let .potserTancadaFaPoc(partiria):
-            "si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer"
-                + (partiria ? "; si obres ara, la finestra quedarà partida" : "")
+            partiria ? t("si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer; si obres ara, la finestra quedarà partida")
+                : t("si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer")
         case let .conversaDUnaAltraCarpeta(projecte):
-            "la conversa és d'una altra carpeta (\(projecte)); Claude la reprendrà en aquesta"
+            t("la conversa és d'una altra carpeta (\(projecte)); Claude la reprendrà en aquesta")
         case let .conversaEnDiversosProjectes(projectes):
-            "la conversa és en \(projectes.count) projectes de Claude i cap no és el d'aquesta carpeta: en començarà una de nova"
-        case .conversaRepetida: "una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova"
-        case let .conversaMesRecent(fa): "reprèn la conversa més recent de la carpeta (\(Self.fa(fa)))"
-        case .senseConversa: "no se'n sap la conversa: en començarà una de nova"
-        case .senseTranscripcio: "la conversa no té cap missatge desat: en començarà una de nova"
-        case .confianca: "Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla"
-        case .forkSession: "porta «--fork-session»: cada obertura farà una còpia de la conversa"
-        case let .moltesSessions(n): "s'engegaran \(n) sessions de Claude alhora"
+            t("la conversa és en \(projectes.count) projectes de Claude i cap no és el d'aquesta carpeta: en començarà una de nova")
+        case .conversaRepetida: t("una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova")
+        case let .conversaMesRecent(fa): t("reprèn la conversa més recent de la carpeta (\(Self.fa(fa)))")
+        case .senseConversa: t("no se'n sap la conversa: en començarà una de nova")
+        case .senseTranscripcio: t("la conversa no té cap missatge desat: en començarà una de nova")
+        case .confianca: t("Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla")
+        case .forkSession: t("porta «--fork-session»: cada obertura farà una còpia de la conversa")
+        case let .moltesSessions(n): t("s'engegaran \(n) sessions de Claude alhora")
         case let .validacio(text): text
         case let .darrerSenseConfirmar(minuts):
-            "l'últim cop que es va obrir aquesta finestra (fa \(minuts) min) no es va poder confirmar: mira Warp abans"
+            t("l'últim cop que es va obrir aquesta finestra (fa \(minuts) min) no es va poder confirmar: mira Warp abans")
         case let .darrerAmbError(minuts):
-            "l'últim intent d'obrir aquesta finestra (fa \(minuts) min) va fallar: si Warp n'ha obert res, mira-ho abans"
+            t("l'últim intent d'obrir aquesta finestra (fa \(minuts) min) va fallar: si Warp n'ha obert res, mira-ho abans")
         }
-        return pestanya.map { "\($0.nomAlFull): \(text)" } ?? text
+        return pestanya.map { t("\($0.nomAlFull): \(text)") } ?? text
     }
 
     /// «fa menys d'1 h», «fa 5 h» o «fa 3 dies».
     private static func fa(_ segons: TimeInterval) -> String {
         let hores = Int(segons / 3600)
-        if hores < 1 { return "fa menys d'1 h" }
-        if hores < 24 { return "fa \(hores) h" }
-        return "fa " + Plural.compta(hores / 24, "dia", "dies")
+        if hores < 1 { return t("fa menys d'1 h") }
+        if hores < 24 { return t("fa \(hores) h") }
+        return t("fa \(hores / 24) dies")
     }
 }
 
@@ -261,28 +261,26 @@ public struct XifresObertura: Sendable, Equatable {
     /// «S'obrirà 1 finestra nova de Warp amb 9 pestanyes: 6 amb Claude (4 reprenen la seva conversa, 2 en comencen una
     /// de nova) i 3 només terminal · unes 3 GB · ja obertes: 14 · no s'obriran: 1».
     public var text: String {
-        guard pestanyes > 0 else { return "No s'obrirà res." + resta }
+        guard pestanyes > 0 else { return t("No s'obrirà res.") + resta }
         var parts: [String] = []
         if ambClaude > 0 {
             var detall: [String] = []
-            if reprenen > 0 {
-                detall.append(reprenen == 1 ? "1 reprèn la seva conversa" : "\(reprenen) reprenen la seva conversa")
-            }
-            if noves > 0 { detall.append(noves == 1 ? "1 en comença una de nova" : "\(noves) en comencen una de nova") }
-            parts.append("\(ambClaude) amb Claude (\(detall.joined(separator: ", ")))")
+            if reprenen > 0 { detall.append(t("\(reprenen) reprenen la seva conversa")) }
+            if noves > 0 { detall.append(t("\(noves) en comencen una de nova")) }
+            parts.append(t("\(ambClaude) amb Claude (\(detall.joined(separator: ", ")))"))
         }
-        if terminal > 0 { parts.append("\(terminal) només terminal") }
-        let memoria = ambClaude > 0 ? " · unes \(Self.gb(memoriaGB)) GB" : ""
-        return "S'obrirà 1 finestra nova de Warp amb \(Plural.compta(pestanyes, "pestanya", "pestanyes")): "
-            + parts.joined(separator: " i ") + memoria + resta
+        if terminal > 0 { parts.append(t("\(terminal) només terminal")) }
+        let memoria = ambClaude > 0 ? " · " + t("unes \(Self.gb(memoriaGB)) GB") : ""
+        return t("S'obrirà 1 finestra nova de Warp amb \(pestanyes) pestanyes: \(Idioma.llista(parts))") + memoria + resta
     }
 
     private var resta: String {
-        (jaObertes > 0 ? " · ja obertes: \(jaObertes)" : "") + (excloses > 0 ? " · no s'obriran: \(excloses)" : "")
+        (jaObertes > 0 ? " · " + t("ja obertes: \(jaObertes)") : "") + (excloses > 0 ? " · " + t("no s'obriran: \(excloses)") : "")
     }
 
+    /// «3» o «2,5» (amb el separador decimal de la llengua).
     private static func gb(_ valor: Double) -> String {
-        valor == valor.rounded() ? String(Int(valor)) : String(format: "%.1f", valor).replacingOccurrences(of: ".", with: ",")
+        valor == valor.rounded() ? String(Int(valor)) : String(format: "%.1f", locale: Idioma.locale, valor)
     }
 }
 
@@ -298,8 +296,7 @@ public struct Pla: Sendable, Equatable {
     /// les altres, la finestra quedaria partida en dues.
     public var motiuEspera: String? {
         guard !aObrir.isEmpty, obertes.contains(where: { $0.on == .tancadaFaPoc }) else { return nil }
-        return "Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: "
-            + "espera 1 minut i torna-ho a provar."
+        return t("Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: espera 1 minut i torna-ho a provar.")
     }
 
     /// Pestanyes sense lligam a la mateixa carpeta que una d'oberta («potser ja és oberta»): el full d'obrir proposa
@@ -347,7 +344,7 @@ public enum PlaObertura {
             for p in f.pestanyes {
                 for pane in p.panes {
                     let titol = p.titol.flatMap { $0.isEmpty ? nil : $0 } ?? (pane.carpeta as NSString).lastPathComponent
-                    panes[pane.uuid] = (pane, "finestra \(f.numero) › \(titol)")
+                    panes[pane.uuid] = (pane, t("finestra \(String(f.numero)) › \(titol)"))
                 }
             }
         }
@@ -355,12 +352,12 @@ public enum PlaObertura {
         let perMarca = Dictionary(interactives.compactMap { s in s.marca.map { ($0, s) } }, uniquingKeysWith: { a, _ in a })
         let perSessio = Dictionary(interactives.map { ($0.sessionId, $0) }, uniquingKeysWith: { a, _ in a })
         let segonPla = Dictionary(lectura.sessionsNoInteractives.map { ($0.sessionId, $0) }, uniquingKeysWith: { a, _ in a })
-        let terminalPerMarca = Dictionary(lectura.terminals.compactMap { t in t.marca.map { ($0, t) } },
+        let terminalPerMarca = Dictionary(lectura.terminals.compactMap { terminal in terminal.marca.map { ($0, terminal) } },
                                           uniquingKeysWith: { a, _ in a })
-        let terminalPerPane = Dictionary(lectura.terminals.compactMap { t in t.pane.map { ($0, t) } },
+        let terminalPerPane = Dictionary(lectura.terminals.compactMap { terminal in terminal.pane.map { ($0, terminal) } },
                                          uniquingKeysWith: { a, _ in a })
         // Pel pid i l'hora d'inici (0.34.0): el pid sol no val, perquè es reutilitza.
-        let terminalPerShell = Dictionary(lectura.terminals.compactMap { t in t.shell.map { ($0, t) } },
+        let terminalPerShell = Dictionary(lectura.terminals.compactMap { terminal in terminal.shell.map { ($0, terminal) } },
                                           uniquingKeysWith: { a, _ in a })
         let panesRecordats = Set(entrada.estat.pestanyes.values.compactMap(\.pane))
         let shellsRecordats = Set(entrada.estat.pestanyes.values.compactMap(\.shell))

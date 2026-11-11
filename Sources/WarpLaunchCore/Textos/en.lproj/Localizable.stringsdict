@@ -325,5 +325,153 @@
 			<string>%lld tabs</string>
 		</dict>
 	</dict>
+	<!-- PlaObertura: els avisos del full d'obrir -->
+	<key>la conversa és en %lld projectes de Claude i cap no és el d'aquesta carpeta: en començarà una de nova</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>the conversation is in %#@p@ and none of them is this folder's: it will start a new one</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude project</string>
+			<key>other</key>
+			<string>%lld Claude projects</string>
+		</dict>
+	</dict>
+	<key>s'engegaran %lld sessions de Claude alhora</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@s@ will start at once</string>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude session</string>
+			<key>other</key>
+			<string>%lld Claude sessions</string>
+		</dict>
+	</dict>
+	<key>fa %lld dies</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@d@</string>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld day ago</string>
+			<key>other</key>
+			<string>%lld days ago</string>
+		</dict>
+	</dict>
+	<!-- PlaObertura: les xifres del full d'obrir -->
+	<key>%lld reprenen la seva conversa</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@r@</string>
+		<key>r</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld resumes its conversation</string>
+			<key>other</key>
+			<string>%lld resume their conversation</string>
+		</dict>
+	</dict>
+	<key>%lld en comencen una de nova</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld starts a new one</string>
+			<key>other</key>
+			<string>%lld start a new one</string>
+		</dict>
+	</dict>
+	<key>S'obrirà 1 finestra nova de Warp amb %lld pestanyes: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>1 new Warp window will open with %#@p@: %@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld tab</string>
+			<key>other</key>
+			<string>%lld tabs</string>
+		</dict>
+	</dict>
+	<!-- ExecucioObertura: el resultat d'obrir -->
+	<key>S'ha obert «%@» a Warp: %lld pestanyes, %lld amb Claude.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>“%@” opened in Warp: %#@p@, %lld with Claude.</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld tab</string>
+			<key>other</key>
+			<string>%lld tabs</string>
+		</dict>
+	</dict>
+	<key>No s'ha pogut reconèixer la finestra nova de «%@» (s'ha vist Claude a %lld de %lld pestanyes): mira-la a Warp abans de tornar-la a obrir.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Couldn't recognize the new window of “%@” (Claude was seen in %lld of %#@p@): check it in Warp before opening it again.</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld tab</string>
+			<key>other</key>
+			<string>%lld tabs</string>
+		</dict>
+	</dict>
+	<!-- LaunchConfigWarp, FitxersLaunchWarp i YAMLWarp: el fitxer temporal de Warp -->
+	<key>fa %lld bytes i se n'havien escrit %lld: algú l'ha canviat, i no s'esborra</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>it's %#@b@ and %lld had been written: someone changed it, so it isn't deleted</string>
+		<key>b</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld byte</string>
+			<key>other</key>
+			<string>%lld bytes</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

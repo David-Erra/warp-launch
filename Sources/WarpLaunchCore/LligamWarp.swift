@@ -146,7 +146,8 @@ public enum LligamWarp {
                 for pane in p.panes { perPane[pane.uuid] = warp.count }
                 warp.append(DeWarp(numero: f.numero, titol: titol, principal: principal, carpeta: carpeta,
                                    clau: (titol ?? perDefecte).map { $0.trimmingCharacters(in: .whitespaces).lowercased() },
-                                   lloc: "finestra \(f.numero) › \(titol ?? (principal.carpeta as NSString).lastPathComponent)", alternativa: alternativa))
+                                   lloc: t("finestra \(String(f.numero)) › \(titol ?? (principal.carpeta as NSString).lastPathComponent)"),
+                                   alternativa: alternativa))
             }
         }
         let interactives = lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).compactMap(\.claude)

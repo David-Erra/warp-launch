@@ -31,14 +31,14 @@ public enum OrdreClaude {
         public var description: String {
             switch self {
             case .ultracodeAmbSettingsDeFitxer:
-                "ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer"
+                t("ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer")
             case .settingsNoEsJSON:
-                "«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode"
-            case .ultracodeEstranyASettings: "«--settings» ja té «ultracode» amb un valor que no és true ni false"
-            case .sessioBuida: "falta la sessió que s'ha de reprendre"
-            case let .opcioPropiaAAltres(opcio): "«\(opcio)» és a les altres opcions, però té camp propi"
+                t("«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode")
+            case .ultracodeEstranyASettings: t("«--settings» ja té «ultracode» amb un valor que no és true ni false")
+            case .sessioBuida: t("falta la sessió que s'ha de reprendre")
+            case let .opcioPropiaAAltres(opcio): t("«\(opcio)» és a les altres opcions, però té camp propi")
             case let .promptAAltres(text):
-                "les altres opcions porten «\(text)», que Claude prendria pel primer missatge de cada obertura"
+                t("les altres opcions porten «\(text)», que Claude prendria pel primer missatge de cada obertura")
             }
         }
     }

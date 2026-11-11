@@ -15,7 +15,7 @@ public enum YAMLWarp {
         public var description: String {
             switch self {
             case let .caracterNoAdmes(c):
-                "hi ha un caràcter que l'app no sap escriure per a Warp (U+\(String(format: "%04X", c.value)))"
+                t("hi ha un caràcter que l'app no sap escriure per a Warp (U+\(String(format: "%04X", c.value)))")
             }
         }
     }

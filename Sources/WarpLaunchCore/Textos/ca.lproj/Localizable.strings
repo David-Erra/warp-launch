@@ -122,3 +122,91 @@
 "Actualitza l'estat de Warp" = "Actualitza l'estat de Warp";
 "Sobre l’app %@" = "Sobre l’app %@";
 "Surt de l’app %@" = "Surt de l’app %@";
+
+/* PlaObertura: on és oberta una pestanya, per què no s'obre i com s'obrirà */
+"oberta a Warp, amb Claude (%@)" = "oberta a Warp, amb Claude (%@)";
+"oberta a Warp, amb Claude" = "oberta a Warp, amb Claude";
+"oberta a Warp (%@)" = "oberta a Warp (%@)";
+"oberta a Warp, sense Claude (%@)" = "oberta a Warp, sense Claude (%@)";
+"oberta a Warp" = "oberta a Warp";
+"oberta a Warp, sense Claude" = "oberta a Warp, sense Claude";
+"la seva conversa és oberta a Warp (%@)" = "la seva conversa és oberta a Warp (%@)";
+"la seva conversa és oberta fora de Warp" = "la seva conversa és oberta fora de Warp";
+"la seva conversa és oberta a Warp" = "la seva conversa és oberta a Warp";
+"una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)" = "una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)";
+"la seva conversa és oberta en segon pla (%@)" = "la seva conversa és oberta en segon pla (%@)";
+"tancada fa menys d'1 minut: espera i torna-ho a provar" = "tancada fa menys d'1 minut: espera i torna-ho a provar";
+"la carpeta no existeix" = "la carpeta no existeix";
+"no es pot generar l'ordre: %@" = "no es pot generar l'ordre: %@";
+"no es pot escriure per a Warp: %@" = "no es pot escriure per a Warp: %@";
+"només terminal" = "només terminal";
+"Claude, reprèn %@" = "Claude, reprèn %@";
+"Claude, conversa nova" = "Claude, conversa nova";
+"finestra %@ › %@" = "finestra %@ › %@";
+
+/* PlaObertura: els avisos del full d'obrir */
+"potser ja és oberta a Warp (%@): és a la mateixa carpeta" = "potser ja és oberta a Warp (%@): és a la mateixa carpeta";
+"potser ja és oberta a Warp: hi ha un Claude a la seva carpeta, que no és de cap pestanya de la configuració" = "potser ja és oberta a Warp: hi ha un Claude a la seva carpeta, que no és de cap pestanya de la configuració";
+"potser ja és oberta a Warp: hi ha un terminal a la seva carpeta, sense Claude" = "potser ja és oberta a Warp: hi ha un terminal a la seva carpeta, sense Claude";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer; si obres ara, la finestra quedarà partida" = "si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer; si obres ara, la finestra quedarà partida";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer" = "si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer";
+"la conversa és d'una altra carpeta (%@); Claude la reprendrà en aquesta" = "la conversa és d'una altra carpeta (%@); Claude la reprendrà en aquesta";
+"una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova" = "una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova";
+"reprèn la conversa més recent de la carpeta (%@)" = "reprèn la conversa més recent de la carpeta (%@)";
+"no se'n sap la conversa: en començarà una de nova" = "no se'n sap la conversa: en començarà una de nova";
+"la conversa no té cap missatge desat: en començarà una de nova" = "la conversa no té cap missatge desat: en començarà una de nova";
+"Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla" = "Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla";
+"porta «--fork-session»: cada obertura farà una còpia de la conversa" = "porta «--fork-session»: cada obertura farà una còpia de la conversa";
+"l'últim cop que es va obrir aquesta finestra (fa %lld min) no es va poder confirmar: mira Warp abans" = "l'últim cop que es va obrir aquesta finestra (fa %lld min) no es va poder confirmar: mira Warp abans";
+"l'últim intent d'obrir aquesta finestra (fa %lld min) va fallar: si Warp n'ha obert res, mira-ho abans" = "l'últim intent d'obrir aquesta finestra (fa %lld min) va fallar: si Warp n'ha obert res, mira-ho abans";
+"%@: %@" = "%@: %@";
+"fa menys d'1 h" = "fa menys d'1 h";
+"fa %lld h" = "fa %lld h";
+
+/* PlaObertura: les xifres del full d'obrir */
+"No s'obrirà res." = "No s'obrirà res.";
+"%lld amb Claude (%@)" = "%lld amb Claude (%@)";
+"%lld només terminal" = "%lld només terminal";
+"unes %@ GB" = "unes %@ GB";
+"ja obertes: %lld" = "ja obertes: %lld";
+"no s'obriran: %lld" = "no s'obriran: %lld";
+"Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: espera 1 minut i torna-ho a provar." = "Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: espera 1 minut i torna-ho a provar.";
+
+/* ExecucioObertura: el resultat d'obrir */
+"En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "En arrencar, Warp ha obert també una finestra buida: la pots tancar.";
+"No s'ha pogut desar el llançament a «estat.json»: %@" = "No s'ha pogut desar el llançament a «estat.json»: %@";
+"No s'ha pogut obrir «%@» a Warp: %@" = "No s'ha pogut obrir «%@» a Warp: %@";
+"Claude encara no ha arrencat a %@: mira-ho a Warp." = "Claude encara no ha arrencat a %@: mira-ho a Warp.";
+"No s'ha pogut confirmar que s'hagi obert «%@»: mira si hi ha una finestra nova a Warp." = "No s'ha pogut confirmar que s'hagi obert «%@»: mira si hi ha una finestra nova a Warp.";
+"El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app." = "El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app.";
+"«%@»" = "«%@»";
+
+/* LaunchConfigWarp, FitxersLaunchWarp i YAMLWarp: el fitxer temporal de Warp */
+"la carpeta «%@» no és una ruta absoluta" = "la carpeta «%@» no és una ruta absoluta";
+"al títol, %@" = "al títol, %@";
+"a la carpeta, %@" = "a la carpeta, %@";
+"a l'ordre, %@" = "a l'ordre, %@";
+"no hi ha cap pestanya per obrir" = "no hi ha cap pestanya per obrir";
+"pestanya %@: %@" = "pestanya %@: %@";
+"Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, que no la creen" = "Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, que no la creen";
+"ja hi ha un fitxer amb aquest nom, i no se sobreescriu" = "ja hi ha un fitxer amb aquest nom, i no se sobreescriu";
+"no s'ha pogut escriure el fitxer: %@" = "no s'ha pogut escriure el fitxer: %@";
+"no és un fitxer normal, i no s'esborra" = "no és un fitxer normal, i no s'esborra";
+"no comença amb la marca de l'app, i no s'esborra" = "no comença amb la marca de l'app, i no s'esborra";
+"no s'ha pogut llegir: %@" = "no s'ha pogut llegir: %@";
+"no s'ha pogut esborrar: %@" = "no s'ha pogut esborrar: %@";
+"hi ha un caràcter que l'app no sap escriure per a Warp (U+%@)" = "hi ha un caràcter que l'app no sap escriure per a Warp (U+%@)";
+
+/* OrdreClaude: per què no es pot fer l'ordre de Claude */
+"ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer" = "ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer";
+"«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode" = "«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode";
+"«--settings» ja té «ultracode» amb un valor que no és true ni false" = "«--settings» ja té «ultracode» amb un valor que no és true ni false";
+"falta la sessió que s'ha de reprendre" = "falta la sessió que s'ha de reprendre";
+"«%@» és a les altres opcions, però té camp propi" = "«%@» és a les altres opcions, però té camp propi";
+"les altres opcions porten «%@», que Claude prendria pel primer missatge de cada obertura" = "les altres opcions porten «%@», que Claude prendria pel primer missatge de cada obertura";
+
+/* AppWarp: Warp Preview i cap Warp */
+"Warp Preview encara no és compatible: cal Warp Stable." = "Warp Preview encara no és compatible: cal Warp Stable.";
+"En aquest Mac només hi ha Warp Preview." = "En aquest Mac només hi ha Warp Preview.";
+"Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar." = "Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar.";
+"No s'ha trobat Warp en aquest Mac: cal Warp Stable." = "No s'ha trobat Warp en aquest Mac: cal Warp Stable.";

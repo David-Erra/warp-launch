@@ -832,7 +832,7 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(c.estatAlDisc.llancaments.last?.estat == .senseConfirmar)
         #expect(c.estatAlDisc.pestanyes[id(1)]?.pane == pane("n"), "el pane de la marca sí que és segur")
         #expect(c.obertura.resultat == Obertura.Resultat(correcte: false, text: "No s'ha pogut reconèixer la finestra nova "
-            + "de «W» (s'ha vist Claude a 1 de 1 pestanyes): mira-la a Warp abans de tornar-la a obrir."))
+            + "de «W» (s'ha vist Claude a 1 de 1 pestanya): mira-la a Warp abans de tornar-la a obrir."))
     }
 
     /// La finestra nova, però el Claude de T1 no arrenca: s'espera fins als 30 s, i es diu. Si es tanca la finestra i
