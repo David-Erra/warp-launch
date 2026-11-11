@@ -2805,7 +2805,7 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 | 2 | `Package.swift`: una sola `.package(url:` amb la URL i `exact: "2.10.1"`; `.product(name: "Sparkle"` només a `WarpLaunchApp`. `Tests/` no enllaça Sparkle | 5 |
 | 3 | `Recursos/Info.plist`: les quatre claus de la secció 4; `SUEnableSystemProfiling`, `SUFeedURL`, `SUPublicEDKey` i `SUEnableInstallerLauncherService` absents | 5 |
 | 4 | Fins al pas 11, `Recursos/Actualitzacions.plist` absent. Després (0.33.0), la forma exacta, amb l'adreça i la clau fixades (`lesAdrecesDeLActualitzacioSonLesDeDebo`) | 5 i 11 |
-| 5 | `build-app.sh`: el Merge només dins de la branca de `--amb-feed`, i `publica.sh` és l'únic que el passa | 5 i 9 |
+| 5 | `build-app.sh`: el Merge només dins de la branca de `--amb-feed`, i `publica.sh` és l'únic que el passa. Des de la 0.33.0, la variable del fitxer (`$FEED` o `${FEED}`) només surt a la comprovació, al missatge i al Merge, i cap línia no escriu `SUFeedURL` ni `SUPublicEDKey` pel seu compte | 5, 9 i 11 |
 | 6 | Xarxa, a tot `Sources/`, sense excepcions: `URLSession`, `URLRequest`, `NSURLConnection`, `import Network`, `NWConnection`, `NWPathMonitor`, `CFNetwork`, `WKWebView`, `https?://` | 6 |
 | 7 | Prohibits al servei: `feedURLString`, `setFeedURL`, `sendsSystemProfile`, `allowedChannels`, `startUpdater()` | 6 |
 | 8 | `checkForUpdates`, `checkForUpdatesInBackground` i `checkForUpdateInformation`, només al servei; el bloc, només es crida des d'`Actualitzacions` | 6 i 7 |

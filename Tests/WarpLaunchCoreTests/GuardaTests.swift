@@ -2594,9 +2594,16 @@ private let prohibidesArrossegar = [
         #expect(!branca.isEmpty)
         // Des del pas 11 el fitxer hi és: només el poden llegir la comprovació i el Merge de la branca, i el paquet no copia res més de
         // `Recursos` que el que hi ha a la llista (una còpia de tota la carpeta hi portaria l'adreça).
-        #expect(script.components(separatedBy: "$FEED").count == 3)
-        #expect(script.contains(#"if [[ "$AMB_FEED" -eq 1 && ! -f "$FEED" ]]; then"#))
         let linies = script.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.hasPrefix("#") }
+        // Tots els usos de la variable, també amb claus (`${FEED}`): un `cp "${FEED}"` o un `plutil` amb `${FEED}` fora de la branca no hi
+        // sortirien comptant només `$FEED`. I cap línia no escriu les dues claus pel seu compte.
+        let usosFeed = linies.filter { $0.contains("$FEED") || $0.contains("${FEED") }
+        #expect(usosFeed == [
+            #"if [[ "$AMB_FEED" -eq 1 && ! -f "$FEED" ]]; then"#,
+            #"echo "build-app: --amb-feed necessita «${FEED}», i no hi és." >&2"#,
+            #"/usr/libexec/PlistBuddy -c "Merge $FEED" "$APP/Contents/Info.plist" > /dev/null"#,
+        ], "\(usosFeed)")
+        #expect(!linies.contains { $0.contains("SUFeedURL") || $0.contains("SUPublicEDKey") })
         #expect(linies.filter { $0.contains("Actualitzacions") } == [#"FEED="Recursos/Actualitzacions.plist""#])
         let recursos = Set(linies.flatMap { $0.matches(of: #/Recursos(/[A-Za-z0-9._-]*)?/#).map { String($0.output.0) } })
         #expect(recursos == ["Recursos/Actualitzacions.plist", "Recursos/Info.plist", "Recursos/ca.lproj", "Recursos/AppIcon.icon",
