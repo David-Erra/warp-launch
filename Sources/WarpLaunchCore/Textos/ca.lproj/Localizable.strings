@@ -563,6 +563,12 @@
 "Torna a deixar Warp com era" = "Torna a deixar Warp com era";
 "Deixar de fer servir Warp Launch" = "Deixar de fer servir Warp Launch";
 
+/* SelectorIdioma: la secció «Idioma» de la Configuració (F4) */
+"Idioma" = "Idioma";
+"Idioma de l'app" = "Idioma de l'app";
+"El del sistema (%@)" = "El del sistema (%@)";
+"L'idioma canviarà la propera vegada que obris l'app." = "L'idioma canviarà la propera vegada que obris l'app.";
+
 /* Actualitzacions: l'estat, el peu, l'ítem del menú i el motiu d'esperar (amb el motiu de PoliticaActualitzacions a dins) */
 "la versió «%@» no té la forma que toca" = "la versió «%@» no té la forma que toca";
 "La %@ s'instal·larà quan l'app es pugui reiniciar." = "La %@ s'instal·larà quan l'app es pugui reiniciar.";

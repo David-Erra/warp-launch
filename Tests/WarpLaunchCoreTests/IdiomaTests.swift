@@ -212,4 +212,20 @@ private func pluralFinestres(_ formes: [String: String]) -> String {
             #expect(t("\(1000) finestres") == "1,000 windows")
         }
     }
+
+    /// El selector de la Configuració (F4): cada llengua, amb el seu nom en ella mateixa i la primera lletra en majúscula, com als
+    /// menús de macOS; l'opció del sistema, amb el nom en la llengua de l'app. Les del paquet són les de les carpetes.
+    @Test func elsNomsDeLesLlengues() {
+        let esperats = ["ca": "Català", "en": "English", "es": "Español", "fr": "Français", "de": "Deutsch", "it": "Italiano",
+                        "pt-BR": "Português (Brasil)", "ja": "日本語", "zh-Hans": "简体中文", "ko": "한국어"]
+        for (codi, nom) in esperats {
+            #expect(Idioma.nomPropi(codi) == nom, "\(codi)")
+        }
+        #expect(Idioma.nom("en") == "anglès" && Idioma.nom("ca") == "català")
+        Idioma.$deProva.withValue("en") {
+            #expect(Idioma.nom("ca") == "Catalan" && Idioma.nom("pt-BR") == "Portuguese (Brazil)")
+        }
+        #expect(Idioma.llenguesDisponibles == Idioma.textos?.llengues)
+        #expect(Idioma.llenguesDisponibles.contains("ca") && Idioma.llenguesDisponibles.contains("en"))
+    }
 }

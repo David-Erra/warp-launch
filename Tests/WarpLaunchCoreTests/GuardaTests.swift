@@ -240,13 +240,51 @@ private let prohibidesCodi = [
     workspace, #"openURL"#,
     #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, paraulaExec, tascaUsuari,
     #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
-    #"@AppStorage"#,
+    #"@AppStorage"#, #"CFPreferences"#,
     // Tancar o matar Warp o Claude (regla 2), o obrir apps. La paraula `openApplication` només pot ser a l'obridor, per
     // obrir Warp si és tancat (`nomesLObridorObreWarp`).
     #"NSRunningApplication"#, #"forceTerminate"#, #"launchApplication"#, paraulaKill,
 ]
 
 private let serveiArrencada = "Sources/WarpLaunchApp/ServeiArrencada.swift"
+
+/// F4 (excepció de l'autor, docs/disseny.md, secció 12): les preferències del sistema (`UserDefaults`), només a `ServeiIdioma`
+/// i només per a la clau `AppleLanguages`: la de l'app (llegir-la, desar-la i esborrar-la) i la del Mac (llegir-la). Al servei,
+/// fora dels comentaris, cap altra línia amb `UserDefaults`, cap altre text que "AppleLanguages" i cap altra declaració de
+/// `clau` (`nomesElServeiDIdiomaFaServirLesPreferencies`).
+private let serveiIdioma = "Sources/WarpLaunchApp/ServeiIdioma.swift"
+private let declaracioClauIdioma = #"private static let clau = "AppleLanguages""#
+private let preferenciesAlServeiIdioma = [
+    "delSistema: { UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?[clau] as? [String] ?? [] },",
+    "deLApp: { UserDefaults.standard.persistentDomain(forName: domini)?[clau] as? [String] },",
+    "UserDefaults.standard.set(llengues, forKey: clau)",
+    "UserDefaults.standard.removeObject(forKey: clau)",
+]
+
+/// Les línies de `Sources` que fan servir les preferències del sistema (`UserDefaults`, `CFPreferences`, `@AppStorage`) fora de
+/// l'excepció: a qualsevol altre fitxer, totes (també en un comentari, com `prohibidesCodi`); al servei, fora dels comentaris,
+/// les que no són de `preferenciesAlServeiIdioma` (cadascuna, un sol cop), les que porten un text que no és "AppleLanguages" i
+/// les que donen un valor a `clau` i no són `declaracioClauIdioma`.
+private func preferenciesForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    let preferencies = try Regex(#"UserDefaults|CFPreferences|@AppStorage"#)
+    let literal = try Regex(#""(?:[^"\\]|\\.)*""#)
+    let assignaClau = try Regex(#"(^|[^A-Za-z0-9_])clau\s*=(?!=)"#)
+    return codi.flatMap { f -> [String] in
+        let linies = f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        guard f.ruta == serveiIdioma else {
+            return linies.filter { $0.contains(preferencies) }.map { "\(f.ruta): \($0)" }
+        }
+        var permeses = preferenciesAlServeiIdioma
+        return linies.filter { !$0.hasPrefix("//") }.filter { linia in
+            if linia.contains(preferencies) {
+                guard let i = permeses.firstIndex(of: linia) else { return true }
+                permeses.remove(at: i)
+            }
+            if linia.matches(of: literal).contains(where: { linia[$0.range] != #""AppleLanguages""# }) { return true }
+            return linia.contains(assignaClau) && linia != declaracioClauIdioma
+        }.map { "\(f.ruta): \($0)" }
+    }
+}
 
 /// Sparkle només el coneix aquest fitxer (`sparkleNomesAlServei`).
 private let serveiActualitzacions = "Sources/WarpLaunchApp/ServeiActualitzacions.swift"
@@ -270,10 +308,12 @@ private let workspaceTrobaWarp = #"NSWorkspace(?!\.shared\.(activateFileViewerSe
 private let senseInstallacio = #"lector\.warp(?![A-Za-z0-9_])"#
 
 /// Les expressions de `prohibidesCodi` que valen per a un fitxer de `Sources`: totes, menys les excepcions, cadascuna en
-/// un sol fitxer. `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`).
+/// un sol fitxer. `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`), i `UserDefaults`, només a
+/// la llengua de l'app (F4, `nomesElServeiDIdiomaFaServirLesPreferencies`).
 private func prohibidesCodi(a ruta: String) -> [String] {
     switch ruta {
     case serveiArrencada: prohibidesCodi.filter { $0 != #"SMAppService"# }
+    case serveiIdioma: prohibidesCodi.filter { $0 != #"UserDefaults"# }
     case trobaWarp: prohibidesCodi.map { $0 == workspace ? workspaceTrobaWarp : $0 }
     case serveiActualitzacions: prohibidesCodi.map { $0 == #"launchApplication"# ? obrirAppAlServei : $0 }
     default: prohibidesCodi
@@ -691,6 +731,58 @@ private let prohibidesArrossegar = [
         #expect(servei.components(separatedBy: "entorn").count == 2)
         // Amb `\b`, `mainApp.register()` no hi sortia, i la llista buida ho donava per bo: n'hi ha d'haver exactament una.
         #expect(try aparicions(de: [paraulaRegister], a: codi) == ["\(serveiArrencada):18: «\(paraulaRegister)»"])
+    }
+
+    /// F4 (excepció de l'autor): les preferències del sistema, només a `ServeiIdioma` i només per a `AppleLanguages`. La mostra:
+    /// la guarda falla amb `UserDefaults` en un altre fitxer, o al servei amb una altra clau, una altra crida o una altra API.
+    @Test func nomesElServeiDIdiomaFaServirLesPreferencies() throws {
+        let codi = try fitxers("Sources")
+        let fora = try preferenciesForaDeLloc(codi)
+        #expect(fora.isEmpty, "\(fora.joined(separator: "\n"))")
+        let servei = try #require(codi.first { $0.ruta == serveiIdioma }).text
+        let linies = servei.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        for permesa in preferenciesAlServeiIdioma + [declaracioClauIdioma] {
+            #expect(linies.filter { $0 == permesa }.count == 1, "\(permesa)")
+        }
+        // A la resta de la llista, el servei hi continua: l'excepció només hi treu `UserDefaults`.
+        #expect(Set(prohibidesCodi).subtracting(prohibidesCodi(a: serveiIdioma)) == [#"UserDefaults"#])
+        #expect(prohibidesCodi(a: serveiIdioma).count == prohibidesCodi.count - 1)
+        #expect(try obrenOTanquen([(ruta: serveiIdioma, text: servei)]).isEmpty)
+
+        // En un altre fitxer, també amb la mateixa clau, surt a totes dues guardes; i en un comentari, també.
+        let crida = #"UserDefaults.standard.set(["en"], forKey: "AppleLanguages")"#
+        for ruta in ["Sources/WarpLaunchUI/SelectorIdioma.swift", "Sources/WarpLaunchApp/WarpLaunchApp.swift",
+                     "Sources/WarpLaunchApp/Altre.swift", "ServeiIdioma.swift"] {
+            #expect(try preferenciesForaDeLloc(codi + [(ruta: ruta, text: crida)]) == ["\(ruta): \(crida)"], "\(ruta)")
+            #expect(try obrenOTanquen([(ruta: ruta, text: crida)]) == ["\(ruta):1: «UserDefaults»"], "\(ruta)")
+        }
+        let altre = "Sources/WarpLaunchUI/Altre.swift"
+        #expect(try preferenciesForaDeLloc([(ruta: altre, text: "/// `UserDefaults`")]).count == 1)
+        #expect(try obrenOTanquen([(ruta: altre, text: "CFPreferencesCopyAppValue(k, a)")]).count == 1)
+
+        // Al servei: una altra clau (amb el text, amb una altra variable o donant un altre valor a `clau`), una altra crida, la
+        // mateixa dues vegades o una altra API. Un comentari, no.
+        let altres = codi.filter { $0.ruta != serveiIdioma }
+        func ambServei(_ text: String) throws -> [String] {
+            try preferenciesForaDeLloc(altres + [(ruta: serveiIdioma, text: text)])
+        }
+        #expect(try ambServei(servei).isEmpty)
+        let mostres = [
+            servei + "\n" + #"UserDefaults.standard.set(true, forKey: "NSAltra")"#,
+            servei.replacingOccurrences(of: #""AppleLanguages""#, with: #""AppleLocale""#),
+            servei.replacingOccurrences(of: "UserDefaults.standard.set(llengues, forKey: clau)",
+                                        with: "UserDefaults.standard.set(llengues, forKey: altra)"),
+            servei + "\n" + #"private static let altra = "NSAltra""#,
+            servei + "\nclau = altra",
+            servei + "\nlet d = UserDefaults.standard",
+            servei + "\nUserDefaults.standard.set(llengues, forKey: clau)",
+            servei + "\nCFPreferencesSetAppValue(k, v, a)",
+            servei + "\n@AppStorage(clau) var llengues = [String]()",
+        ]
+        for mostra in mostres {
+            #expect(try !ambServei(mostra).isEmpty, "\(mostra)")
+        }
+        #expect(try ambServei(servei + "\n/// " + #"`UserDefaults.standard.set(x, forKey: "Altra")`"#).isEmpty)
     }
 
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch» (vegeu `retirada`). Cada pas, al seu fitxer i amb la seva línia,

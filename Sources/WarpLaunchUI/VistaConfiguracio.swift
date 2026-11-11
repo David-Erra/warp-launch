@@ -3,10 +3,10 @@ import WarpLaunchCore
 
 /// Les pestanyes de la Configuració, en aquest ordre (settings.md de mac-design: una per tema, «General» primer). macOS en
 /// posa les icones a la barra d'eines, i el títol de la finestra és el de la pestanya que es veu. L'app no desa quina és
-/// l'última: el codi de l'app no fa servir les preferències del sistema (prova de guarda; només Sparkle hi desa les seves), i la
-/// configuració JSON és d'en David.
+/// l'última: el codi de l'app no fa servir les preferències del sistema (prova de guarda; només Sparkle hi desa les seves, i
+/// `ServeiIdioma`, la llengua), i la configuració JSON és d'en David.
 public enum PestanyaConfiguracio: CaseIterable, Identifiable, Sendable {
-    /// «En iniciar sessió», «Fitxer», «Diagnòstic» i, al final, «Deixar de fer servir Warp Launch».
+    /// «En iniciar sessió», «Idioma», «Fitxer», «Diagnòstic» i, al final, «Deixar de fer servir Warp Launch».
     case general
     /// La plantilla de les pestanyes noves, l'ordre que en surt i les opcions que la Configuració no canvia.
     case pestanyesNoves
@@ -43,6 +43,8 @@ public struct VistaConfiguracio: View {
     let carpeta: String
     let deProva: Bool
     let arrencada: ArrencadaSessio
+    /// «Idioma» (F4). Sense, la secció no surt (l'executable sol, sense paquet).
+    let idioma: SelectorIdioma?
     /// Pla A4: «Copia el diagnòstic».
     let diagnostic: CopiaDiagnostic
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch».
@@ -50,13 +52,14 @@ public struct VistaConfiguracio: View {
     /// «Actualitzacions», i la pestanya que es veu.
     @Bindable var actualitzacions: Actualitzacions
 
-    public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio, diagnostic: CopiaDiagnostic,
-                desinstallacio: Desinstallacio, actualitzacions: Actualitzacions) {
+    public init(editor: Editor, carpeta: String, deProva: Bool, arrencada: ArrencadaSessio, idioma: SelectorIdioma?,
+                diagnostic: CopiaDiagnostic, desinstallacio: Desinstallacio, actualitzacions: Actualitzacions) {
         self.actualitzacions = actualitzacions
         self.editor = editor
         self.carpeta = carpeta
         self.deProva = deProva
         self.arrencada = arrencada
+        self.idioma = idioma
         self.diagnostic = diagnostic
         self.desinstallacio = desinstallacio
     }
@@ -95,6 +98,7 @@ public struct VistaConfiguracio: View {
             switch pestanya {
             case .general:
                 seccioArrencada
+                seccioIdioma
                 seccioFitxer
                 seccioDiagnostic
                 seccioDesinstallacio
@@ -221,6 +225,31 @@ public struct VistaConfiguracio: View {
                 : arrencada.motiuNoDisponible ?? "")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// F4: la llengua de l'app, o la del sistema. Es desa a les preferències de l'app i canvia la propera vegada que s'obre: l'app
+    /// no es reinicia sola.
+    @ViewBuilder
+    private var seccioIdioma: some View {
+        if let idioma {
+            Section {
+                Picker(t("Idioma de l'app"), selection: Binding { idioma.tria } set: { idioma.posa($0) }) {
+                    Text(idioma.sistema.text).tag(SelectorIdioma.Tria.sistema)
+                    Divider()
+                    ForEach(idioma.llengues) { opcio in
+                        Text(opcio.text).tag(opcio.tria)
+                    }
+                }
+            } header: {
+                Text(t("Idioma"))
+            } footer: {
+                if let nota = idioma.nota {
+                    Text(nota)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 

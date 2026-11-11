@@ -45,7 +45,8 @@ struct WarpLaunchApp: App {
                               surt: { NSApp.terminate(nil) }) {
                 VistaConfiguracio(editor: aplicacio.editor, carpeta: aplicacio.carpetaDescrita,
                                   deProva: aplicacio.arguments.deProva, arrencada: aplicacio.arrencada,
-                                  diagnostic: aplicacio.copiaDiagnostic, desinstallacio: aplicacio.desinstallacio,
+                                  idioma: aplicacio.idioma, diagnostic: aplicacio.copiaDiagnostic,
+                                  desinstallacio: aplicacio.desinstallacio,
                                   actualitzacions: aplicacio.actualitzacions)
             }
             .background(AccesFinestra { aplicacio.activacio.adoptaConfiguracio($0) })
@@ -84,6 +85,8 @@ final class Aplicacio {
     let activacio: Activacio
     /// «Obre Warp Launch en iniciar sessió» (D3): l'interruptor de la Configuració.
     let arrencada: ArrencadaSessio
+    /// «Idioma» (F4): la llengua de l'app, a les seves preferències (`ServeiIdioma`). `nil` sense paquet (l'executable sol).
+    let idioma: SelectorIdioma?
     /// Pla A4: «Copia el diagnòstic», a la Configuració, amb el mateix Warp i Claude que llegeix l'app. Només llegeix.
     let copiaDiagnostic: CopiaDiagnostic
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch», a la Configuració. Només es pot amb la configuració de debò i el
@@ -190,6 +193,8 @@ final class Aplicacio {
             arrencada = ArrencadaSessio(entorn: nil, motiuNoDisponible: t("Amb una configuració de prova, l'app no s'obre sola."))
         }
         self.arrencada = arrencada
+        // La llengua és de l'app, no de la configuració: també amb una de prova.
+        idioma = ServeiIdioma.entorn.map { SelectorIdioma(entorn: $0) }
         let desinstallacio = Desinstallacio(consentiment: consentiment, arrencada: arrencada, surt: { NSApp.terminate(nil) })
         self.desinstallacio = desinstallacio
         editor.conversaDe = { sessions.conversaAReprendre($0, transcripcions: transcripcions) }

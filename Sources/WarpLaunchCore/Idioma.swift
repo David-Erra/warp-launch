@@ -54,6 +54,23 @@ public enum Idioma {
     /// Les llengües amb textos. Sense el bundle, només la de les claus.
     static var disponibles: [String] { textos?.llengues ?? [original] }
 
+    /// Les llengües amb textos (les carpetes `.lproj`), en ordre alfabètic del codi: les del selector de la Configuració. Una
+    /// llengua nova hi surt sola.
+    public static var llenguesDisponibles: [String] { disponibles }
+
+    /// El nom d'una llengua en ella mateixa, amb la primera lletra en majúscula com als menús de macOS («Català», «English»,
+    /// «Português (Brasil)», «简体中文»): el del selector.
+    public static func nomPropi(_ codi: String) -> String {
+        let propi = Locale(identifier: codi)
+        guard let nom = propi.localizedString(forIdentifier: codi), let primera = nom.first else { return codi }
+        return String(primera).uppercased(with: propi) + nom.dropFirst()
+    }
+
+    /// El nom d'una llengua en la llengua dels textos («anglès» en català, «Catalan» en anglès).
+    public static func nom(_ codi: String) -> String {
+        locale.localizedString(forIdentifier: codi) ?? codi
+    }
+
     /// La llengua del procés: no canvia mentre corre, com la dels menús de macOS.
     private static let delProces = tria(disponibles: disponibles,
                                         preferencies: preferencies(entorn: ProcessInfo.processInfo.environment,
@@ -66,8 +83,8 @@ public enum Idioma {
     }
 
     /// La primera llengua de `preferencies` que té textos, amb les equivalències de macOS; si cap no en té, la de reserva
-    /// (o, si tampoc no en té, la primera disponible).
-    static func tria(disponibles: [String], preferencies: [String]) -> String {
+    /// (o, si tampoc no en té, la primera disponible). El selector de la Configuració hi diu quina sortiria.
+    public static func tria(disponibles: [String], preferencies: [String]) -> String {
         let reserva = disponibles.contains(Self.reserva) ? Self.reserva : (disponibles.first ?? original)
         // La reserva no va al final de les preferències: macOS triaria l'anglès abans que pt-BR per a pt-PT.
         guard let triada = Bundle.preferredLocalizations(from: disponibles, forPreferences: preferencies).first else {
