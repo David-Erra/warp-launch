@@ -940,7 +940,8 @@ explícita, també obre) i D18 (lectura cada 60 s).
    una marca sola no confirma la finestra, i les pestanyes de terminal només es lliguen per la finestra. Als 30 s
    sense res, l'esborra igualment.
 10. Desa a `estat.json` el resultat (`confirmat` si s'ha vist la finestra; si no, `senseConfirmar`), el pane de cada
-    pestanya (de la finestra, per ordre, o de la marca, que mana) i la sessió de cada marca. Bàner: «S'ha obert
+    pestanya (de la finestra, per ordre, o de la marca, que mana), la sessió de cada marca i, sense la base, el shell de cada
+    pestanya de terminal (0.34.0, vegeu «Sense la base de Warp», «Els límits»). Bàner: «S'ha obert
     «empresa» a Warp: 9 pestanyes, 6 amb Claude», amb «Claude encara no ha arrencat a «Botiga»: mira-ho a Warp» si en
     falta algun; «No s'ha pogut reconèixer la finestra nova… (s'ha vist Claude a 2 de 6 pestanyes)» si només s'han
     vist marques; i «No s'ha pogut confirmar…» si no s'ha vist res.
@@ -1028,8 +1029,14 @@ es va escriure. Mentre existeix, Warp el pot mostrar a ⌃⌘L (watcher amb 500 
 }
 ```
 
-- **`origen`:** `importacio` (el pane, i la sessió si era viva), `llancament` (pane de la finestra confirmada),
+- **`origen`:** `importacio` (el pane, i la sessió si era viva), `llancament` (pane de la finestra confirmada, o shell),
   `marca` (sessió amb la marca), `pane` (sessió vista al pane recordat).
+- **`shell` (0.34.0, opcional; aprovat per en David l'11/11/2026):** `{"pid": 12345, "inici": {"segons": 1793750000,
+  "microsegons": 123456}}`, el shell que un llançament confirmat va obrir per a una pestanya només de terminal (vegeu «Sense
+  la base de Warp», «Els límits»). La versió continua sent 1 (regla 11): la 0.33.0 el llegeix sense error, perquè `JSONDecoder`
+  no mira les claus que no coneix (`ShellDeLEstatTests`, amb una còpia de les seves estructures); si el torna a desar, el perd,
+  i la pestanya torna a ser com abans. Sense shell, el JSON és el d'abans. Les lectures de cada minut, importar, «Lliga» i
+  el Desfés no el toquen.
 - **`llancaments`:** els 20 últims; per a les proves i per avisar si l'últim no es va confirmar.
 - **Pestanyes que ja no són a la configuració:** l'entrada es guarda 30 dies (`vista`), perquè el Desfés no perdi la
   conversa.
@@ -1289,6 +1296,13 @@ Com a la fase 2: cada `feat:` porta proves, el bump de `VERSION` i `WarpLaunch.v
    obert, i el full quedava blocat si `openApplication` no tornava. Els 2 que queden: la pestanya de terminal que no es
    reconeix (vegeu «Els límits») i reactivar la restauració, sense provar.
 6g. **0.23.0 — l'app gestiona `restore_session` (D19).** Vegeu «Sense la base de Warp». Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, la foto quadra amb tots els terminals vius (`docs/fets-verificats.md`).
+6h. **0.34.0 — les pestanyes de terminal, pel shell** (aprovat per en David l'11/11/2026). Fet (11/11/2026), sense prova real.
+   `FontProcessos.inici` (`p_starttime` amb `KERN_PROC_PID`; el d'un shell coincidia amb el `lstart` de `ps`, 11/11/2026),
+   `TerminalViu.inici`, `VincleEstat.shell`, `ConfirmacioObertura.shells`, `ActualitzaEstat.ambPanes` amb els shells,
+   `OnOberta.shellViu` i `Peticio.carpetesDAltres` («Obre-ho tot»). Proves: el format i la lectura amb la 0.33.0
+   (`ShellDeLEstatTests`), cada dubte que no desa res, el pid reutilitzat, l'app (obrir, tornar a obrir, sortir a mig obrir,
+   «Obre-ho tot») i el CLI (`--obre`). «Lliga amb Warp…» no en desa: de la foto de Warp no se sap quin shell és cada pane (un
+   shell sense fills no porta el pane). Vegeu «Els límits».
 7. **0.24.0 — el CLI obre amb `--obre` (D17).** Fet (05/11/2026), sense prova real. Els passos d'obrir després de la confirmació
    (desar el llançament, escriure el fitxer, obrir, esperar la finestra, esborrar i lligar) passen d'`Obertura` a
    `ExecucioObertura` (core), que fan servir l'app i el CLI; també l'espera de l'arrencada de Warp. El CLI depèn de
@@ -1324,7 +1338,10 @@ finestra**, totes marcades.
 - **Pestanyes sense marca** (només de terminal, o abans que arrenqui Claude): es reconeixen per la carpeta. Amb diverses
   finestres alhora, el terminal que pren una finestra no compta per a cap altra fins que acaben totes, i un terminal reconegut
   només per la carpeta no fa esborrar el fitxer (`Confirmacio.segura`). Límit: si dues finestres en tenen a la mateixa carpeta,
-  l'app encara pot lligar-ne una a la finestra de l'altra (cap Claude no queda repetit).
+  l'app encara pot lligar-ne una a la finestra de l'altra (cap Claude no queda repetit). Per això, des de la 0.34.0, el shell
+  d'una pestanya de terminal no es desa si una altra finestra que s'obre alhora té alguna pestanya a la mateixa carpeta
+  (`Peticio.carpetesDAltres`): si es desés el de l'altra, en tancar aquella finestra la pestanya semblaria oberta i no es
+  tornaria a obrir.
 - **En marcar o desmarcar,** es tornen a calcular els plans amb la mateixa lectura i els mateixos llançaments: les converses
   d'una finestra desmarcada queden lliures per a les altres.
 - **Revisió** (3 revisors i 3 verificadors, 05/11/2026): 5 defectes confirmats, corregits (els dos d'aquí dalt; la finestra buida
@@ -1357,10 +1374,11 @@ shell i, dels seus fills, el pane i la marca.
 | 1 | Una sessió viva porta la seva marca | «oberta a Warp, amb Claude» |
 | 2 | Un procés viu porta la seva marca, sense sessió (Claude arrenca o s'ha aturat a preguntar) | «oberta a Warp, amb Claude» |
 | 3 | Un procés viu porta el pane recordat | «oberta a Warp», amb Claude o sense |
-| 4 | La seva conversa és viva | «la seva conversa és oberta a Warp», fora de Warp o en segon pla |
-| 5 | A la seva carpeta, que no és la d'inici, hi ha un terminal sense Claude, o un Claude sense marca en un pane que cap pestanya recorda | **s'obre, amb un avís** |
+| 4 | El shell recordat és viu: el mateix pid i la mateixa hora d'inici (0.34.0, una pestanya de terminal) | «oberta a Warp», amb Claude o sense |
+| 5 | La seva conversa és viva | «la seva conversa és oberta a Warp», fora de Warp o en segon pla |
+| 6 | A la seva carpeta, que no és la d'inici, hi ha un terminal sense Claude que no és el shell recordat de cap pestanya, o un Claude sense marca en un pane que cap pestanya recorda | **s'obre, amb un avís** |
 
-La regla 5 només avisa: pot ser una pestanya on Claude n'ha sortit, un Claude obert a mà o un terminal qualsevol, i no se'n pot
+La regla 6 només avisa: pot ser una pestanya on Claude n'ha sortit, un Claude obert a mà o un terminal qualsevol, i no se'n pot
 saber el títol. Una pestanya de més es veu i es tanca; una que no s'obre perquè «ja és oberta» no es trobaria enlloc, que és el
 que va passar.
 
@@ -1368,7 +1386,9 @@ que va passar.
 mentre Claude no ha arrencat, el de la seva carpeta (un per pestanya; la d'inici, llevat que l'app acabi d'engegar Warp, perquè
 hi ha la finestra buida). Un Claude aturat a preguntar es veu pel procés: la finestra es confirma, i el bàner diu que encara no
 ha arrencat. **Amb la restauració activada, els terminals no compten:** mana la base, com abans. Un shell restaurat tard
-semblaria nou, i sense la finestra no se sabrien els panes de les pestanyes de terminal.
+semblaria nou, i sense la finestra no se sabrien els panes de les pestanyes de terminal. Des de la 0.34.0, la confirmació
+també dona el shell de cada pestanya de terminal (`ConfirmacioObertura.shells`), que es desa a `estat.json` en acabar (o en
+sortir de l'app a mig obrir): vegeu «Els límits».
 
 **Una finestra acabada de tancar:** els processos no distingeixen una pestanya oberta d'una que Warp manté 60 s per poder-la
 desfer. Per això no es pot bloquejar (`motiuEspera` és sempre `nil`): una finestra oberta a la qual falta una pestanya es veu
@@ -1379,9 +1399,21 @@ n'obriria només una part, que la finestra quedarà partida (`.potserTancadaFaPo
 - No se sap en quina finestra és cada terminal.
 - Una pestanya tancada a mà semblarà oberta 1 minut, i durant aquest minut la finestra es pot partir (el full ho avisa).
 - No es pot importar ni lligar res de Warp, i una pestanya feta a mà que no sigui a la configuració no l'obre mai ningú.
-- **Una pestanya de terminal no es reconeix** (un shell sense fills no porta ni marca ni pane): cada «Obre» en fa una altra, amb
-  un avís llevat que sigui a la carpeta d'inici. Una pestanya on Claude n'ha sortit també es torna a obrir, però una sola vegada
-  (la còpia ja porta la marca), i és el que es vol: recupera la conversa. Arreglar-ho demana desar el pid i l'hora d'inici del shell a `estat.json`, un camp nou que ha d'aprovar en David.
+- **Una pestanya de terminal es reconeix pel seu shell** (0.34.0, aprovat per en David l'11/11/2026). Un shell sense fills no
+  porta ni marca ni pane, i fins a la 0.33.0 cada «Obre» en feia una altra. Ara, en confirmar el llançament, l'app desa a
+  `estat.json` el pid i l'hora d'inici del shell (`VincleEstat.shell`, de `p_starttime`); mentre és viu amb el mateix pid i la
+  mateixa hora, la pestanya és oberta (regla 4 de la taula). El pid sol no val: es reutilitza.
+  - **Quin shell és de quina pestanya:** un shell nou de la finestra (no hi era abans d'obrir), sense marca ni Claude, a la
+    carpeta de la pestanya. Dues pestanyes de terminal de la finestra a la mateixa carpeta són intercanviables: cada shell a una.
+  - **Si hi ha dubte, no es desa res,** i la pestanya es torna a obrir com abans (amb un avís, llevat que sigui a la carpeta
+    d'inici): un shell de més o de menys a la carpeta (una pestanya oberta a mà durant l'espera); una pestanya amb Claude a la
+    mateixa carpeta que encara no porta la marca; una altra finestra que s'obre alhora («Obre-ho tot») amb alguna pestanya a
+    la mateixa carpeta; la carpeta d'inici, si l'app acaba d'engegar Warp; o un shell nou del qual no se sap la carpeta o l'hora.
+  - **Quan es torna a obrir igualment:** si Warp o el Mac s'han reiniciat (el shell ja no hi és); si la pestanya es va obrir
+    abans de la 0.34.0, amb «Lliga amb Warp…» o important (la foto de Warp no diu quin shell és cada pane); amb la restauració
+    activada (mana la base); i si la 0.33.0 ha tornat a desar `estat.json` (el camp es perd).
+  - Una pestanya on Claude n'ha sortit també es torna a obrir, però una sola vegada (la còpia ja porta la marca), i és el que es
+    vol: recupera la conversa.
 - Si es torna a activar la restauració, la base torna a manar: no s'ha provat quant triga Warp a posar-la al dia.
 
 **Warp tancat.** Abans, «Obre Warp primer». Ara el full ho diu i el botó «Obre» l'obre (`ObreWarp.engega`), n'espera l'arrencada
@@ -1405,8 +1437,9 @@ l'app no pot tancar: ho diuen el full i el bàner.
   `…/warp-launch/docs`, Claude desactivat. **S'obren 1 finestra de Warp, 1 pestanya i 0 sessions de Claude.** Es mira:
   el full; la finestra nova al davant; si macOS demana permisos; el temps fins a «confirmat» (registre i `warp.log`);
   que el fitxer desaparegui i ⌃⌘L no el mostri; `estat.json` amb el pane; i que tornar a obrir digui «Totes les
-  pestanyes ja són obertes» (**amb la restauració desactivada, no ho pot dir:** una pestanya de terminal no es reconeix, i
-  tornar a obrir en fa una altra). Es desfà: en David tanca la finestra; `rm -r /tmp/warp-launch-provaL1`.
+  pestanyes ja són obertes» (**amb la restauració desactivada, fins a la 0.33.0 no ho podia dir:** una pestanya de terminal no
+  es reconeixia, i tornar a obrir en feia una altra; des de la 0.34.0, la reconeix pel shell, sense provar a Warp). Es desfà:
+  en David tanca la finestra; `rm -r /tmp/warp-launch-provaL1`.
   **Feta el 05/11/2026 amb la 0.20.2** (4 obertures, 3 amb Claude; resultats a `docs/fets-verificats.md`). Warp accepta
   el fitxer i l'app confirma en 0,6 s. Desmenteix D16: la línia surt a `~/.zsh_history` i a `commands`. En David
   troba a faltar «Obre a Warp…» a l'editor: la 0.20.3 l'afegeix a la barra d'eines de la llista i al menú contextual
@@ -1435,9 +1468,10 @@ l'app no pot tancar: ho diuen el full i el bàner.
   `estat.json`. Es desfà: en David tanca la finestra; `rm -r /tmp/warp-launch-provaL2`.
 - **L4. Una finestra oberta en part (D13).** 3 pestanyes (una amb Claude, dues de terminal). **Primer: 1 finestra, 3
   pestanyes i 1 sessió.** En David tanca una pestanya de terminal i espera 1 min; «2 ja obertes, 1 falta». **Segon: 1
-  finestra amb 1 pestanya i 0 sessions.** **Amb la restauració desactivada surt una altra cosa:** una pestanya de terminal no
-  es reconeix, així que són «1 ja oberta, 2 a obrir»: **1 finestra amb 2 pestanyes i 0 sessions**, i una d'aquestes és una
-  còpia de la que seguia oberta. Opcional, amb un altre OK: `--resume` des d'una altra carpeta (**1
+  finestra amb 1 pestanya i 0 sessions.** **Amb la restauració desactivada, fins a la 0.33.0 sortia una altra cosa:** una
+  pestanya de terminal no es reconeixia, així que eren «1 ja oberta, 2 a obrir»: **1 finestra amb 2 pestanyes i 0 sessions**,
+  i una d'aquestes era una còpia de la que seguia oberta. Des de la 0.34.0, la que segueix oberta es reconeix pel shell, si se'n
+  va desar en obrir-la (sense provar a Warp). Opcional, amb un altre OK: `--resume` des d'una altra carpeta (**1
   finestra, 1 pestanya, 1 sessió represa**).
 - **L5. Una finestra real.** Abans, amb el seu OK, «Importa de Warp…» crea la configuració real. En David tanca a mà
   una finestra petita i espera 1 min. **S'obren 1 finestra, N pestanyes i fins a N sessions (el full diu el nombre
