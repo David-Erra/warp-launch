@@ -391,3 +391,57 @@
 "No s'ha pogut desactivar: %@" = "Couldn't turn it off: %@";
 "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "Couldn't remove Warp Launch from Login Items: %@. Nothing else was changed.";
 "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més." = "macOS still has Warp Launch in Login Items: remove it in System Settings › General › Login Items, and try again. Nothing else was changed.";
+
+/* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
+"Per revisar" = "Needs Review";
+"El fitxer ha canviat fora de l'app" = "The file changed outside the app";
+"No s'ha pogut desar" = "Couldn't save";
+"Res per revisar" = "Nothing to Review";
+"no hi ha cap carpeta de configuració" = "there's no configuration folder";
+"Torna a importar" = "Re-import";
+"Nova finestra" = "New Window";
+"Finestra nova" = "New Window";
+"Canvia el nom" = "Rename";
+"Elimina la finestra" = "Delete Window";
+"Duplica la finestra" = "Duplicate Window";
+"Nova pestanya" = "New Tab";
+"Duplica la pestanya" = "Duplicate Tab";
+"Duplica les pestanyes" = "Duplicate Tabs";
+"Elimina la pestanya" = "Delete Tab";
+"Elimina les pestanyes" = "Delete Tabs";
+"Retalla la pestanya" = "Cut Tab";
+"Retalla les pestanyes" = "Cut Tabs";
+"Enganxa la pestanya" = "Paste Tab";
+"Enganxa les pestanyes" = "Paste Tabs";
+"Mou la pestanya" = "Move Tab";
+"Mou les pestanyes" = "Move Tabs";
+"Mou la finestra" = "Move Window";
+"Mou les finestres" = "Move Windows";
+"Canvia la carpeta" = "Change Folder";
+"Activa Claude" = "Turn On Claude";
+"Desactiva Claude" = "Turn Off Claude";
+
+/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (un interruptor i el seu pas de Desfés tenen la mateixa clau) */
+"Tria una pestanya per revisar-la" = "Choose a Tab to Review";
+"Cap finestra" = "No Windows";
+"Tria una finestra" = "Choose a Window";
+"Canvia el model" = "Change Model";
+"Canvia l'esforç" = "Change Effort";
+"Canvia el mode de permisos" = "Change Permission Mode";
+"%@ (desconegut)" = "%@ (unknown)";
+"Per defecte" = "Default";
+"Valors diversos" = "Multiple Values";
+"Activa l'ultracode" = "Turn On Ultracode";
+"Desactiva l'ultracode" = "Turn Off Ultracode";
+"Continua la conversa" = "Continue conversation";
+"No continuïs la conversa" = "Don't continue conversation";
+"Salta els permisos" = "Skip permissions";
+"No saltis els permisos" = "Don't skip permissions";
+"Canvia el nom de la sessió" = "Change Session Name";
+
+/* EditorOrdres i EditorPlantilla: «Duplica», els avisos del menú de la icona i per què no es pot canviar la plantilla */
+"Duplica" = "Duplicate";
+"La configuració té errors" = "The configuration has errors";
+"Es llegeix la configuració…" = "Reading the configuration…";
+"Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb «%@»." = "There's no configuration yet. If you import from Warp, tabs that didn't have Claude open stay terminal only. Tabs you add, and those if you turn Claude on in them, will open with “%@”.";
+"No es pot canviar: %@" = "Can't be changed: %@";

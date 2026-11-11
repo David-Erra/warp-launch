@@ -319,22 +319,22 @@ public final class Editor {
 
     /// El títol de la finestra de l'editor: la finestra de Warp seleccionada, o «Per revisar».
     public var titol: String {
-        perRevisar ? "Per revisar" : finestra?.nom ?? WarpLaunch.nom
+        perRevisar ? t("Per revisar") : finestra?.nom ?? WarpLaunch.nom
     }
 
     /// «12 pestanyes · 8 amb Claude · 2 avisos». Si no s'ha pogut desar, ho diu.
     public var subtitol: String {
         if let errorDesat {
-            return errorDesat == .modificadaFora ? "El fitxer ha canviat fora de l'app" : "No s'ha pogut desar"
+            return errorDesat == .modificadaFora ? t("El fitxer ha canviat fora de l'app") : t("No s'ha pogut desar")
         }
         if perRevisar {
             let n = nombrePerRevisar
-            return n == 0 ? "Res per revisar" : "\(Plural.compta(n, "pestanya", "pestanyes")) per revisar"
+            return n == 0 ? t("Res per revisar") : t("\(n) pestanyes per revisar")
         }
         guard let finestra else { return "" }
         let n = finestra.pestanyes.filter { avisPrincipal($0.id) != nil }.count
             + (avisPrincipal(finestra: finestra.id) == nil ? 0 : 1)
-        return finestra.resum + (n == 0 ? "" : " · \(Plural.compta(n, "avís", "avisos"))")
+        return n == 0 ? finestra.resum : t("\(finestra.pestanyes.count) pestanyes · \(finestra.ambClaude) amb Claude · \(n) avisos")
     }
 
     /// On s'obre el diàleg de «Nova pestanya…»: la carpeta que conté la de l'última pestanya seleccionada (o la de
@@ -379,7 +379,7 @@ public final class Editor {
                 estat = .error(error.description)
             }
         } else {
-            estat = .error(motiuSenseCarpeta ?? "no hi ha cap carpeta de configuració")
+            estat = .error(motiuSenseCarpeta ?? t("no hi ha cap carpeta de configuració"))
         }
         actualitzaAvisos()
         ajustaSeleccio()
@@ -462,7 +462,7 @@ public final class Editor {
     public func substitueix(amb importacio: Importacio) {
         guard potEditar else { return }
         let abans = configuracio
-        canvia("Torna a importar") { $0.finestres = importacio.configuracio.finestres }
+        canvia(t("Torna a importar")) { $0.finestres = importacio.configuracio.finestres }
         // Si no ha canviat res (la mateixa importació dues vegades), no cal cap còpia.
         if configuracio != abans {
             finestresImportades = Set(importacio.configuracio.finestres.map(\.id))
@@ -479,10 +479,10 @@ public final class Editor {
         guard potEditar else { return }
         let nomPendent = prenNomPendent()
         let nova = nouId()
-        canvia("Nova finestra") {
+        canvia(t("Nova finestra")) {
             nomPendent?(&$0)
             // El nom, després del pendent: si aquell deixa lliure «Finestra nova», la nova el pot fer servir.
-            $0.afegeix(Finestra(id: nova, nom: $0.nomUnic("Finestra nova"), pestanyes: []), despresDe: finestraSeleccionada)
+            $0.afegeix(Finestra(id: nova, nom: $0.nomUnic(t("Finestra nova")), pestanyes: []), despresDe: finestraSeleccionada)
         }
         lateral = .finestra(nova)
         comencaNom(.finestra(nova))
@@ -536,7 +536,7 @@ public final class Editor {
     /// - Parameter agrupa: per al camp de text de l'inspector (vegeu `canviaClaude`).
     public func reanomenaFinestra(_ id: Finestra.ID, a nom: String, agrupa: String? = nil) {
         guard potEditar else { return }
-        canvia("Canvia el nom", agrupa: Self.clau(agrupa, [id])) { $0.reanomenaFinestra(id, a: nom) }
+        canvia(t("Canvia el nom"), agrupa: Self.clau(agrupa, [id])) { $0.reanomenaFinestra(id, a: nom) }
     }
 
     /// Elimina una finestra, sense confirmació (es desfà amb ⌘Z; si tenia pestanyes, abans de desar es fa còpia).
@@ -544,7 +544,7 @@ public final class Editor {
     public func eliminaFinestra(_ id: Finestra.ID) {
         guard potEditar else { return }
         var index: Int?
-        canvia("Elimina la finestra") { index = $0.eliminaFinestra(id) }
+        canvia(t("Elimina la finestra")) { index = $0.eliminaFinestra(id) }
         if let index, finestraSeleccionada == id {
             let finestres = configuracio.finestres
             finestraSeleccionada = finestres.isEmpty ? nil : finestres[min(index, finestres.count - 1)].id
@@ -557,7 +557,7 @@ public final class Editor {
         var copia: Finestra.ID?
         // Un nom a mig escriure (⌘D amb el camp obert) va al mateix pas.
         let nomPendent = prenNomPendent()
-        canvia("Duplica la finestra") {
+        canvia(t("Duplica la finestra")) {
             nomPendent?(&$0)
             copia = $0.duplicaFinestra(id, nouId: nouId)
         }
@@ -575,7 +575,7 @@ public final class Editor {
         guard potAfegirPestanya, let finestra else { return }
         let nova = Pestanya.nova(id: nouId(), carpeta: carpeta, plantilla: configuracio.plantilla, inici: inici)
         let despres = finestra.pestanyes.lastIndex { pestanyesSeleccionades.contains($0.id) }
-        canvia("Nova pestanya") { $0.afegeix(nova, a: finestra.id, index: despres.map { $0 + 1 }) }
+        canvia(t("Nova pestanya")) { $0.afegeix(nova, a: finestra.id, index: despres.map { $0 + 1 }) }
         pestanyesSeleccionades = [nova.id]
     }
 
@@ -585,7 +585,7 @@ public final class Editor {
         guard potEditar, !seleccionades.isEmpty else { return }
         var noves: [Pestanya.ID] = []
         let nomPendent = prenNomPendent()
-        canvia(seleccionades.count == 1 ? "Duplica la pestanya" : "Duplica les pestanyes") {
+        canvia(seleccionades.count == 1 ? t("Duplica la pestanya") : t("Duplica les pestanyes")) {
             nomPendent?(&$0)
             noves = $0.duplicaPestanyes(seleccionades, nouId: nouId)
         }
@@ -594,7 +594,7 @@ public final class Editor {
 
     /// Elimina les pestanyes seleccionades, sense confirmació. Queda seleccionada la que venia després a la llista.
     public func eliminaPestanyes() {
-        elimina(accio: seleccioVisible.count == 1 ? "Elimina la pestanya" : "Elimina les pestanyes")
+        elimina(accio: seleccioVisible.count == 1 ? t("Elimina la pestanya") : t("Elimina les pestanyes"))
     }
 
     private func elimina(accio: String) {
@@ -620,7 +620,7 @@ public final class Editor {
     /// ⌘X: les copia i les elimina, en un sol pas de Desfés.
     public func retallaPestanyes() -> Data? {
         guard potEditar, let dades = copiaPestanyes() else { return nil }
-        elimina(accio: pestanyes.count == 1 ? "Retalla la pestanya" : "Retalla les pestanyes")
+        elimina(accio: pestanyes.count == 1 ? t("Retalla la pestanya") : t("Retalla les pestanyes"))
         return dades
     }
 
@@ -635,7 +635,7 @@ public final class Editor {
         guard potEnganxar, let finestra, let noves = PortaRetalls.pestanyes(de: dades, inici: inici) else { return false }
         let despresDe = finestra.pestanyes.last { pestanyesSeleccionades.contains($0.id) }?.id
         var ids: [Pestanya.ID] = []
-        canvia(noves.count == 1 ? "Enganxa la pestanya" : "Enganxa les pestanyes") {
+        canvia(noves.count == 1 ? t("Enganxa la pestanya") : t("Enganxa les pestanyes")) {
             ids = $0.enganxa(noves, a: finestra.id, despresDe: despresDe, nouId: nouId)
         }
         pestanyesSeleccionades = Set(ids)
@@ -644,7 +644,7 @@ public final class Editor {
 
     public func reanomenaPestanya(_ id: Pestanya.ID, a titol: String, agrupa: String? = nil) {
         guard potEditar else { return }
-        canvia("Canvia el nom", agrupa: Self.clau(agrupa, [id])) { $0.canviaPestanyes([id]) { $0.titol = titol } }
+        canvia(t("Canvia el nom"), agrupa: Self.clau(agrupa, [id])) { $0.canviaPestanyes([id]) { $0.titol = titol } }
     }
 
     /// Mou pestanyes a una finestra (reordenar, arrossegar o «Mou a ▸»). `index`: la posició de la llista de destinació
@@ -665,7 +665,7 @@ public final class Editor {
         // A «Per revisar» les pestanyes no desapareixen de la llista en canviar de finestra: no cal seguir-les.
         let seguir = !abans.perRevisar && abans.finestra != desti && !abans.pestanyes.isEmpty
             && abans.pestanyes.isSubset(of: ids)
-        canvia(mogudes == 1 ? "Mou la pestanya" : "Mou les pestanyes", seleccioAbans: abans) {
+        canvia(mogudes == 1 ? t("Mou la pestanya") : t("Mou les pestanyes"), seleccioAbans: abans) {
             nomPendent?(&$0)
             $0.mouPestanyes(ids, a: desti, index: index)
         }
@@ -718,7 +718,7 @@ public final class Editor {
         let repetit = avisos.finestres[finestra.id]?.contains {
             if case .nomRepetit = $0.tipus { true } else { false }
         } ?? false
-        return repetit ? "\(finestra.nom) — \(finestra.resum)" : finestra.nom
+        return repetit ? t("\(finestra.nom) — \(finestra.resum)") : finestra.nom
     }
 
     /// Mou pestanyes al final d'una finestra (fila de la barra lateral o «Mou a ▸»). Les que ja hi són es queden on
@@ -850,7 +850,7 @@ public final class Editor {
     public func mouFinestres(_ ids: Set<Finestra.ID>, a index: Int) {
         guard potEditar else { return }
         let nomPendent = prenNomPendent()
-        canvia(ids.count == 1 ? "Mou la finestra" : "Mou les finestres") {
+        canvia(ids.count == 1 ? t("Mou la finestra") : t("Mou les finestres")) {
             nomPendent?(&$0)
             $0.mouFinestres(ids, a: index)
         }
@@ -899,12 +899,12 @@ public final class Editor {
     /// «Activa Claude».
     public func canviaCarpeta(_ ids: Set<Pestanya.ID>, a carpeta: String, agrupa: String? = nil) {
         guard potEditar else { return }
-        canvia("Canvia la carpeta", agrupa: Self.clau(agrupa, ids)) { $0.canviaPestanyes(ids) { $0.carpeta = carpeta } }
+        canvia(t("Canvia la carpeta"), agrupa: Self.clau(agrupa, ids)) { $0.canviaPestanyes(ids) { $0.carpeta = carpeta } }
     }
 
     public func activaClaude(_ ids: Set<Pestanya.ID>, _ activat: Bool) {
         guard potEditar else { return }
-        canvia(activat ? "Activa Claude" : "Desactiva Claude") { $0.canviaPestanyes(ids) { $0.claude.activat = activat } }
+        canvia(activat ? t("Activa Claude") : t("Desactiva Claude")) { $0.canviaPestanyes(ids) { $0.claude.activat = activat } }
     }
 
     /// Canvia les opcions de Claude d'una o de diverses pestanyes (l'inspector).

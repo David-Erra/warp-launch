@@ -392,3 +392,57 @@
 "No s'ha pogut desactivar: %@" = "No s'ha pogut desactivar: %@";
 "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més.";
 "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més." = "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més.";
+
+/* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
+"Per revisar" = "Per revisar";
+"El fitxer ha canviat fora de l'app" = "El fitxer ha canviat fora de l'app";
+"No s'ha pogut desar" = "No s'ha pogut desar";
+"Res per revisar" = "Res per revisar";
+"no hi ha cap carpeta de configuració" = "no hi ha cap carpeta de configuració";
+"Torna a importar" = "Torna a importar";
+"Nova finestra" = "Nova finestra";
+"Finestra nova" = "Finestra nova";
+"Canvia el nom" = "Canvia el nom";
+"Elimina la finestra" = "Elimina la finestra";
+"Duplica la finestra" = "Duplica la finestra";
+"Nova pestanya" = "Nova pestanya";
+"Duplica la pestanya" = "Duplica la pestanya";
+"Duplica les pestanyes" = "Duplica les pestanyes";
+"Elimina la pestanya" = "Elimina la pestanya";
+"Elimina les pestanyes" = "Elimina les pestanyes";
+"Retalla la pestanya" = "Retalla la pestanya";
+"Retalla les pestanyes" = "Retalla les pestanyes";
+"Enganxa la pestanya" = "Enganxa la pestanya";
+"Enganxa les pestanyes" = "Enganxa les pestanyes";
+"Mou la pestanya" = "Mou la pestanya";
+"Mou les pestanyes" = "Mou les pestanyes";
+"Mou la finestra" = "Mou la finestra";
+"Mou les finestres" = "Mou les finestres";
+"Canvia la carpeta" = "Canvia la carpeta";
+"Activa Claude" = "Activa Claude";
+"Desactiva Claude" = "Desactiva Claude";
+
+/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (un interruptor i el seu pas de Desfés tenen la mateixa clau) */
+"Tria una pestanya per revisar-la" = "Tria una pestanya per revisar-la";
+"Cap finestra" = "Cap finestra";
+"Tria una finestra" = "Tria una finestra";
+"Canvia el model" = "Canvia el model";
+"Canvia l'esforç" = "Canvia l'esforç";
+"Canvia el mode de permisos" = "Canvia el mode de permisos";
+"%@ (desconegut)" = "%@ (desconegut)";
+"Per defecte" = "Per defecte";
+"Valors diversos" = "Valors diversos";
+"Activa l'ultracode" = "Activa l'ultracode";
+"Desactiva l'ultracode" = "Desactiva l'ultracode";
+"Continua la conversa" = "Continua la conversa";
+"No continuïs la conversa" = "No continuïs la conversa";
+"Salta els permisos" = "Salta els permisos";
+"No saltis els permisos" = "No saltis els permisos";
+"Canvia el nom de la sessió" = "Canvia el nom de la sessió";
+
+/* EditorOrdres i EditorPlantilla: «Duplica», els avisos del menú de la icona i per què no es pot canviar la plantilla */
+"Duplica" = "Duplica";
+"La configuració té errors" = "La configuració té errors";
+"Es llegeix la configuració…" = "Es llegeix la configuració…";
+"Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb «%@»." = "Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb «%@».";
+"No es pot canviar: %@" = "No es pot canviar: %@";

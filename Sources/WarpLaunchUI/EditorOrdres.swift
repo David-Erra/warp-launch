@@ -94,9 +94,9 @@ extension Editor {
 
     public func titolDuplica(_ columna: ColumnaEditor?) -> String {
         switch objecte(columna) {
-        case let .pestanyes(ids)?: ids.count == 1 ? "Duplica la pestanya" : "Duplica les pestanyes"
-        case .finestra?: "Duplica la finestra"
-        case nil: "Duplica"
+        case let .pestanyes(ids)?: ids.count == 1 ? t("Duplica la pestanya") : t("Duplica les pestanyes")
+        case .finestra?: t("Duplica la finestra")
+        case nil: t("Duplica")
         }
     }
 
@@ -159,9 +159,9 @@ extension Editor {
 
         public var text: String {
             switch self {
-            case .configuracioAmbErrors: "La configuració té errors"
-            case .fitxerCanviatFora: "El fitxer ha canviat fora de l'app"
-            case .noSHaPogutDesar: "No s'ha pogut desar"
+            case .configuracioAmbErrors: t("La configuració té errors")
+            case .fitxerCanviatFora: t("El fitxer ha canviat fora de l'app")
+            case .noSHaPogutDesar: t("No s'ha pogut desar")
             }
         }
     }

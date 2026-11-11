@@ -21,10 +21,10 @@ extension Editor {
         if triades.count == 1 { return .pestanya(triades[0]) }
         if triades.count > 1 { return .pestanyes(triades) }
         if perRevisar {
-            return .res(perRevisarPerFinestra.isEmpty ? "Res per revisar" : "Tria una pestanya per revisar-la")
+            return .res(perRevisarPerFinestra.isEmpty ? t("Res per revisar") : t("Tria una pestanya per revisar-la"))
         }
         if let finestra { return .finestra(finestra) }
-        return .res(configuracio.finestres.isEmpty ? "Cap finestra" : "Tria una finestra")
+        return .res(configuracio.finestres.isEmpty ? t("Cap finestra") : t("Tria una finestra"))
     }
 
     // MARK: - Camps amb opcions (model, esforç, mode de permisos)
@@ -58,9 +58,9 @@ extension Editor {
         /// El nom del pas de Desfés.
         public var accio: String {
             switch self {
-            case .model: "Canvia el model"
-            case .esforc: "Canvia l'esforç"
-            case .modePermisos: "Canvia el mode de permisos"
+            case .model: t("Canvia el model")
+            case .esforc: t("Canvia l'esforç")
+            case .modePermisos: t("Canvia el mode de permisos")
             }
         }
 
@@ -85,9 +85,9 @@ extension Editor {
             switch self {
             case .model: return ClaudePestanya.nomModel(valor)
             case .esforc:
-                return coneguts.contains(valor) ? ClaudePestanya.nomEsforc(valor) : "\(valor) (desconegut)"
+                return coneguts.contains(valor) ? ClaudePestanya.nomEsforc(valor) : t("\(valor) (desconegut)")
             case .modePermisos:
-                return coneguts.contains(valor) ? ClaudePestanya.nomMode(valor) : "\(valor) (desconegut)"
+                return coneguts.contains(valor) ? ClaudePestanya.nomMode(valor) : t("\(valor) (desconegut)")
             }
         }
     }
@@ -115,9 +115,9 @@ extension Editor {
         for claude in claudes {
             if let valor = claude[keyPath: camp.cami].map(camp.canonic), !valors.contains(valor) { valors.append(valor) }
         }
-        var opcions = [Opcio(tria: .perDefecte, text: "Per defecte")]
+        var opcions = [Opcio(tria: .perDefecte, text: t("Per defecte"))]
             + valors.map { Opcio(tria: .valor($0), text: camp.text($0)) }
-        if tria(camp, de: claudes) == .diversos { opcions.insert(Opcio(tria: .diversos, text: "Valors diversos"), at: 0) }
+        if tria(camp, de: claudes) == .diversos { opcions.insert(Opcio(tria: .diversos, text: t("Valors diversos")), at: 0) }
         return opcions
     }
 
@@ -149,10 +149,10 @@ extension Editor {
         /// El nom del pas de Desfés.
         public func accio(_ valor: Bool) -> String {
             switch self {
-            case .activat: valor ? "Activa Claude" : "Desactiva Claude"
-            case .ultracode: valor ? "Activa l'ultracode" : "Desactiva l'ultracode"
-            case .continua: valor ? "Continua la conversa" : "No continuïs la conversa"
-            case .saltaPermisos: valor ? "Salta els permisos" : "No saltis els permisos"
+            case .activat: valor ? t("Activa Claude") : t("Desactiva Claude")
+            case .ultracode: valor ? t("Activa l'ultracode") : t("Desactiva l'ultracode")
+            case .continua: valor ? t("Continua la conversa") : t("No continuïs la conversa")
+            case .saltaPermisos: valor ? t("Salta els permisos") : t("No saltis els permisos")
             }
         }
     }
@@ -181,7 +181,7 @@ extension Editor {
     /// El nom fix de la sessió (`-n`). Un text buit o fet d'espais el treu.
     public func canviaNomSessio(_ id: Pestanya.ID, a nom: String, agrupa: String? = nil) {
         let net = nom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : nom
-        canviaClaude([id], nom: "Canvia el nom de la sessió", agrupa: agrupa) { $0.nom = net }
+        canviaClaude([id], nom: t("Canvia el nom de la sessió"), agrupa: agrupa) { $0.nom = net }
     }
 
     // MARK: - Carpeta

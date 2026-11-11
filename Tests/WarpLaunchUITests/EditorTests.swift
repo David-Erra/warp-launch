@@ -972,6 +972,26 @@ private func lecturaVariada() -> LecturaWarp {
         #expect(editor.subtitol == "El fitxer ha canviat fora de l'app")
     }
 
+    /// Multidioma (fase F3): en anglès, el subtítol és una frase sencera amb els plurals de la llengua, i el nom de Desfés i el
+    /// nom per defecte d'una finestra nova també es tradueixen.
+    @Test func elSubtitolIElNomDeDesfesEnAngles() throws {
+        let tmp = try Temporal()
+        let editor = try editorAmbAvisos(tmp)
+        Idioma.$deProva.withValue("en") {
+            #expect(editor.subtitol == "3 tabs · 3 with Claude · 2 warnings")
+            editor.lateral = .finestra(id(2))
+            #expect(editor.subtitol == "2 tabs · 2 with Claude · 1 warning")
+            editor.lateral = .perRevisar
+            #expect(editor.titol == "Needs Review" && editor.subtitol == "3 tabs to review")
+            editor.lateral = .finestra(id(2))
+            editor.activaClaude([id(22)], false)
+            #expect(editor.undoManager.undoActionName == "Turn Off Claude")
+            editor.afegeixFinestra()
+            #expect(editor.undoManager.undoActionName == "New Window")
+            #expect(editor.configuracio.finestres.last?.nom == "New Window")
+        }
+    }
+
     @Test func unaFinestraNovaObreElNom() throws {
         let tmp = try Temporal()
         let editor = try editorAmbAvisos(tmp)

@@ -82,14 +82,16 @@ extension Editor {
     public var motiuPlantillaNoEditable: String? {
         switch estat {
         case .oberta: return nil
-        case .carregant: return "Es llegeix la configuració…"
+        case .carregant: return t("Es llegeix la configuració…")
         case .senseConfiguracio:
             // En importar, les pestanyes que no tenien Claude obert queden només terminal (D-P5a): no s'hi obre aquesta.
-            return "Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert "
-                + "queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb "
-                + "«\(Self.textOrdre(plantillaPerImportar))»."
+            return t("""
+                Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només \
+                terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb \
+                «\(Self.textOrdre(plantillaPerImportar))».
+                """)
         case let .error(motiu):
-            return "No es pot canviar: \(motiu)"
+            return t("No es pot canviar: \(motiu)")
         }
     }
 

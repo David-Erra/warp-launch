@@ -578,5 +578,49 @@
 			<string>%lld pestanyes</string>
 		</dict>
 	</dict>
+	<!-- Editor: el subtítol de la finestra -->
+	<key>%lld pestanyes per revisar</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ per revisar</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes · %lld amb Claude · %lld avisos</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ · %lld amb Claude · %#@a@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld pestanya</string>
+			<key>other</key>
+			<string>%lld pestanyes</string>
+		</dict>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld avís</string>
+			<key>other</key>
+			<string>%lld avisos</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
