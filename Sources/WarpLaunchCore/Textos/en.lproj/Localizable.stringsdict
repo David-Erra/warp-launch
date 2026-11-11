@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Plurals en anglès (docs/disseny.md, secció 12): la clau és el text en català amb l'especificador. -->
+<plist version="1.0">
+<dict>
+	<key>%lld finestres</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@finestres@</string>
+		<key>finestres</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld window</string>
+			<key>other</key>
+			<string>%lld windows</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

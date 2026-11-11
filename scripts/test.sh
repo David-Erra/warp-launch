@@ -7,4 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PLUGINS="$(dirname "$(xcrun --find swift)")/../lib/swift/host/plugins/testing"
+# Les proves s'executen en català, sigui quina sigui la llengua del Mac (docs/disseny.md, secció 12): la variable mana sobre
+# tot, i una prova ho comprova (`IdiomaTests`). Per canviar de llengua dins d'una prova, `Idioma.$deProva`.
+export WARP_LAUNCH_IDIOMA=ca
 exec swift test -Xswiftc -plugin-path -Xswiftc "$PLUGINS" "$@"

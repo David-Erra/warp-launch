@@ -1,0 +1,5 @@
+/* Textos de Warp Launch en català (docs/disseny.md, secció 12). La clau és el text en català, i aquí el valor és el
+   mateix: aquest fitxer diu quines claus hi ha, i les altres llengües han de tenir exactament aquestes (GuardaTests).
+   Els plurals són a Localizable.stringsdict. */
+
+"Obre a Warp…" = "Obre a Warp…";

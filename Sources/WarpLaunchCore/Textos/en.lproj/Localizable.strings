@@ -1,0 +1,4 @@
+/* Textos de Warp Launch en anglès (docs/disseny.md, secció 12). La clau és el text en català. L'anglès també és la llengua
+   de reserva: la que surt si cap de les llengües preferides no té textos. Els plurals són a Localizable.stringsdict. */
+
+"Obre a Warp…" = "Open in Warp…";

@@ -6,6 +6,8 @@ import PackageDescription
 
 let package = Package(
     name: "WarpLaunch",
+    // Multidioma (docs/disseny.md, secció 12): la llengua de reserva és l'anglès. Les claus dels textos són en català.
+    defaultLocalization: "en",
     platforms: [.macOS("26.0")],
     products: [
         .executable(name: "WarpLaunch", targets: ["WarpLaunchApp"]),
@@ -16,8 +18,9 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
     ],
     targets: [
-        // Lògica sense interfície: models, lectura de Warp i de Claude Code, configuració.
-        .target(name: "WarpLaunchCore"),
+        // Lògica sense interfície: models, lectura de Warp i de Claude Code, configuració. També els textos de totes les
+        // llengües (`Textos/<llengua>.lproj`), que fan servir la UI, l'app, el CLI i les proves amb `t(_:)` (`Idioma.swift`).
+        .target(name: "WarpLaunchCore", resources: [.process("Textos")]),
         // Model de l'editor i vistes SwiftUI. No toca NSApp: es pot provar.
         .target(name: "WarpLaunchUI", dependencies: ["WarpLaunchCore"]),
         // L'única crida que fa obrir alguna cosa a Warp (fase 3.1): la fan servir l'app i el CLI (`obre --obre`, D17).
