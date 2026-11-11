@@ -2799,8 +2799,23 @@ extension GuardaTests {
                 $0.trimmingCharacters(in: .whitespaces).hasPrefix("Label(Obertura.textFeinesEnSegonPla")
             }.count == 1)
         }
+        // El README, en anglès (`README.md`) i en català (`README.ca.md`, F4).
         let readme = try String(contentsOf: arrel.appending(path: "README.md"), encoding: .utf8)
-        #expect(readme.contains("tancar Warp pot deixar-les a mitges, i reobrir les pestanyes no les fa continuar"))
+        #expect(readme.contains("quitting Warp can leave them half done, and reopening the tabs doesn't resume them"))
+        let readmeCa = try String(contentsOf: arrel.appending(path: "README.ca.md"), encoding: .utf8)
+        #expect(readmeCa.contains("tancar Warp pot deixar-les a mitges, i reobrir les pestanyes no les fa continuar"))
+    }
+
+    /// F4: el README és en anglès (`README.md`) i en català (`README.ca.md`), i a dalt de cadascun hi ha l'enllaç a l'altre. Tots
+    /// dos tenen les mateixes seccions, en el mateix ordre.
+    @Test func elReadmeEsEnAnglesIEnCatala() throws {
+        let angles = try String(contentsOf: arrel.appending(path: "README.md"), encoding: .utf8)
+        let catala = try String(contentsOf: arrel.appending(path: "README.ca.md"), encoding: .utf8)
+        #expect(angles.split(separator: "\n").prefix(3).contains("**English** · [Català](README.ca.md)"))
+        #expect(catala.split(separator: "\n").prefix(3).contains("[English](README.md) · **Català**"))
+        func seccions(_ text: String) -> Int { text.split(separator: "\n").filter { $0.hasPrefix("## ") || $0.hasPrefix("### ") }.count }
+        #expect(seccions(angles) == seccions(catala) && seccions(angles) > 5)
+        #expect(angles.contains("## Installing it") && catala.contains("## Instal·lar-la"))
     }
 
     /// Regla 7 (09/11/2026): la carpeta de Warp només la crea l'app, i només amb el refresc (la carpeta de debò i el permís).

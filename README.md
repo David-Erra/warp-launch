@@ -1,222 +1,231 @@
 # Warp Launch
 
-App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestres i pestanyes de Warp,
-cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
+**English** · [Català](README.ca.md)
 
-**Estat (11/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
-obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.33.0 (11/11/2026), la
-primera que s'actualitza sola, i s'instal·la amb Homebrew. La primera actualització automàtica de debò arribarà amb la versió següent (vegeu
-«Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
+A menu bar app for macOS that reads, edits and reopens your Warp windows and tabs, each one with its own Claude Code
+session. It can open on its own when you log in and offer to open everything with one click.
 
-## Instal·lar-la
+**Status (November 11, 2026):** it reads Warp, edits the configuration (windows, tabs and how Claude opens in them), opens one window
+or all of them in Warp and, if you turn it on, opens at login. The latest published version is 0.33.0 (November 11, 2026), the first
+one that updates itself, and it installs with Homebrew. The first real automatic update will come with the next version (see
+“Automatic updates”). Instructions for agents: [`CLAUDE.md`](CLAUDE.md).
 
-Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte d'administrador del Mac,
-[Warp](https://www.warp.dev) Stable i [Claude Code](https://docs.claude.com/claude-code). No cal compilar res.
-- **Warp Stable** a `/Applications` (des de la 0.29.2, a qualsevol carpeta: l'app pregunta a macOS on és; des de la 0.31.1, si
-  tens una altra còpia oberta, compta la que és oberta). **Warp Preview no és compatible:** si només hi ha Preview, o Preview és
-  obert i Stable no, l'app no obre res i ho diu. Sense cap Warp, tampoc.
-- Provat el 05/11/2026 amb macOS 27.2, Warp 0.2026.10.21 i Claude Code 2.1.318. Llegeix formats interns de Warp i de Claude Code que
-  no estan documentats, i una versió nova els pot trencar: el diagnòstic («Si alguna cosa falla», a sota) diu si encara quadren.
+## Installing it
 
-1. **Instal·la-la amb Homebrew.** Cal tenir [Homebrew](https://brew.sh). Si no el vols fer servir, vegeu «Sense Homebrew», a sota.
+You need a Mac with Apple silicon (M1 or later) and macOS 26 or later, an administrator account on the Mac,
+[Warp](https://www.warp.dev) Stable and [Claude Code](https://docs.claude.com/claude-code). There's nothing to compile.
+- **Warp Stable** in `/Applications` (since 0.29.2, in any folder: the app asks macOS where it is; since 0.31.1, if you have
+  another copy open, the one that's open counts). **Warp Preview isn't supported:** if there's only Preview, or Preview is open
+  and Stable isn't, the app doesn't open anything and says so. Without any Warp, it doesn't either.
+- Tested on November 5, 2026 with macOS 27.2, Warp 0.2026.10.21 and Claude Code 2.1.318. It reads internal Warp and Claude Code formats
+  that aren't documented, and a new version can break them: the diagnostics (“If something goes wrong”, below) tell you whether
+  they still match.
+
+1. **Install it with Homebrew.** You need [Homebrew](https://brew.sh). If you don't want to use it, see “Without Homebrew”, below.
    ```bash
    brew install --cask david-erra/tap/warp-launch
    ```
-   Afegeix el tap `David-Erra/homebrew-tap` i confia només en aquesta recepta. Baixa l'última versió publicada, en comprova
-   el sha256, la copia a `/Applications` i li treu la marca de baixada d'internet, perquè encara no està notaritzada per Apple.
-   No l'obre, no la registra a l'inici de sessió i no toca cap configuració.
-2. **Obre Warp Launch** des d'Aplicacions. Surt com una icona a la barra de menú (no al Dock).
-   - **El primer cop, el teu permís** (des de la 0.29.0): l'app explica que ha de desactivar l'ajust de Warp «Restore windows,
-     tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
-     llegeixi les finestres de Warp. Si no acceptes («Surt de l’app Warp Launch»), es tanca sense tocar res i t'ho torna a preguntar la
-     propera vegada. Fins que acceptes, no llegeix ni obre res. Si ja la feies servir (hi ha `configuracio.json` o `estat.json` a
-     `~/.config/warp-launch/`), no pregunta, llevat que hagis retirat el permís (vegeu «Desinstal·lar»). Des de la 0.33.0, aquesta
-     pantalla també diu que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README i per les notes de la versió.
-   - **Permís per llegir les dades de Warp:** macOS no pregunta; la primera vegada, l'app no les pot llegir i surt un avís
-     («Accés a les dades bloquejat», amb el botó «Gestiona»). Activa-ho a Configuració del Sistema › Privacitat i seguretat ›
-     Arxius i carpetes › Warp Launch.app › «Dades compartides per l'app Warp i les apps afiliades», i torna a obrir l'app.
-3. **Crea la configuració:** a l'editor, **Importa de Warp…** amb les finestres que vulguis ja obertes a Warp.
-   Es desa a `~/.config/warp-launch/`. Les pestanyes on corria Claude conserven l'ordre amb què es va obrir. Les altres
-   queden només terminal (des de la 0.29.1; abans hi obria `claude`): per obrir-hi Claude, marca «Obre Claude Code en aquesta
-   pestanya» a l'inspector, amb les opcions de Configuració (⌘,) › «Pestanyes noves». Les de la carpeta d'inici o d'una carpeta
-   que ja no existeix també queden sense Claude.
-4. Si vols que s'obri sola en iniciar sessió: Configuració (⌘,) › General › **Obre Warp Launch en iniciar sessió**.
-   Si a Warp tens activada «Start Warp at login», desactiva-la, perquè no s'obri pel seu compte (en un reinici, amb l'opció
-   desactivada, Warp es va obrir igualment, i encara no se sap per què).
+   It adds the `David-Erra/homebrew-tap` tap and trusts only this cask. It downloads the latest published version, checks its
+   sha256, copies it to `/Applications` and removes its downloaded-from-the-internet mark, because it isn't notarized by Apple
+   yet. It doesn't open it, doesn't register it at login and doesn't touch any configuration.
+2. **Open Warp Launch** from Applications. It shows up as an icon in the menu bar (not in the Dock).
+   - **The first time, your permission** (since 0.29.0): the app explains that it has to turn off the Warp setting “Restore
+     windows, tabs, and panes on startup” (if you have Settings Sync, on your other Macs too) and that it will turn it on for a
+     few seconds when you ask it to read Warp's windows. If you don't accept (“Quit Warp Launch”), it quits without touching
+     anything and asks you again next time. Until you accept, it doesn't read or open anything. If you were already using it
+     (there's a `configuracio.json` or `estat.json` in `~/.config/warp-launch/`), it doesn't ask, unless you've withdrawn the
+     permission (see “Uninstalling”). Since 0.33.0, this screen also says that the app connects to GitHub once a day. Anyone who
+     doesn't see it will learn it from this README and from the release notes.
+   - **Permission to read Warp's data:** macOS doesn't ask; the first time, the app can't read it and a notification appears
+     (“Data Access Blocked”, with a “Manage” button). Turn it on in System Settings › Privacy & Security › Files & Folders ›
+     Warp Launch.app › “Data shared by Warp and affiliated apps”, and open the app again.
+3. **Create the configuration:** in the editor, **Import from Warp…** with the windows you want already open in Warp.
+   It's saved to `~/.config/warp-launch/`. The tabs where Claude was running keep the command it was opened with. The others
+   stay terminal only (since 0.29.1; before, it opened `claude` in them): to open Claude in them, check “Open Claude Code in
+   this tab” in the inspector, with the options in Settings (⌘,) › “New Tabs”. Tabs in the home folder or in a folder that no
+   longer exists also stay without Claude.
+4. If you want it to open on its own at login: Settings (⌘,) › General › **Open Warp Launch at login**.
+   If you have “Start Warp at login” turned on in Warp, turn it off, so that Warp doesn't open on its own (in one restart, with
+   that option turned off, Warp opened anyway, and it isn't known why yet).
 
-**Per actualitzar-la:** `brew upgrade --cask warp-launch`. Si l'app és oberta, Homebrew la tanca, hi posa la versió nova i
-la torna a obrir. Des de la 0.33.0, l'app s'actualitza sola: si tens la 0.31.5 o una d'anterior, fes-ho una última vegada (vegeu
-«Actualitzacions automàtiques»).
-**Per desinstal·lar-la:** vegeu «Desinstal·lar», a sota.
+**To update it:** `brew upgrade --cask warp-launch`. If the app is open, Homebrew quits it, puts the new version in place and
+opens it again. Since 0.33.0, the app updates itself: if you have 0.31.5 or earlier, do this one last time (see “Automatic
+updates”).
+**To uninstall it:** see “Uninstalling”, below.
 
-### Sense Homebrew
+### Without Homebrew
 
-Amb l'eina de GitHub, `gh`:
+With the GitHub tool, `gh`:
 
-1. **Instal·la `gh`** (només la primera vegada), amb el paquet de https://cli.github.com.
-   Després, entra a `gh` amb un compte de GitHub i comprova que és el que surt com a actiu:
+1. **Install `gh`** (only the first time), with the package from https://cli.github.com.
+   Then sign in to `gh` with a GitHub account and check that it's the one shown as active:
    ```bash
    gh auth login
    gh auth status
    ```
-2. **Instal·la Warp Launch** amb una sola comanda, des de qualsevol carpeta:
+2. **Install Warp Launch** with a single command, from any folder:
    ```bash
    s="$(gh api -H 'Accept: application/vnd.github.raw' repos/David-Erra/warp-launch/contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --aplica
    ```
-   Si surt `gh: Not Found (HTTP 404)`, `gh` no troba el repo: revisa la comanda i el pas 1. No la facis amb `sudo`.
-   Baixa l'última versió publicada, comprova que està signada amb el certificat d'en David («Warp Launch Dev») i la
-   copia a `/Applications`. No l'obre, no la registra a l'inici de sessió i no toca cap configuració. Si l'app és oberta,
-   s'atura i et demana que en surtis. Sense `--aplica`, només diu què faria; amb `--versio x.y.z` (per exemple,
-   `--versio 0.28.0`), n'instal·la una de concreta. Al repo hi ha les versions des de la 0.28.0.
-3. Continua amb «Obre Warp Launch» (el pas 2 de dalt).
+   If you get `gh: Not Found (HTTP 404)`, `gh` can't find the repo: check the command and step 1. Don't run it with `sudo`.
+   It downloads the latest published version, checks that it's signed with David's certificate (“Warp Launch Dev”) and copies it
+   to `/Applications`. It doesn't open it, doesn't register it at login and doesn't touch any configuration. If the app is open,
+   it stops and asks you to quit it. Without `--aplica`, it only says what it would do; with `--versio x.y.z` (for example,
+   `--versio 0.28.0`), it installs a specific one. The repo has the versions from 0.28.0 on.
+3. Continue with “Open Warp Launch” (step 2 above).
 
-**Per actualitzar-la:** surt de l'app i torna a fer la comanda anterior. Des de la 0.33.0, l'app s'actualitza sola: si tens la 0.31.5
-o una d'anterior, fes-ho una última vegada (vegeu «Actualitzacions automàtiques»).
+**To update it:** quit the app and run the command above again. Since 0.33.0, the app updates itself: if you have 0.31.5 or
+earlier, do this one last time (see “Automatic updates”).
 
-### Des del codi
+### From the source code
 
-Per compilar-la tu mateix (cal `xcode-select --install`):
+To build it yourself (you need `xcode-select --install`):
 
 ```bash
 git clone https://github.com/David-Erra/warp-launch.git && cd warp-launch
-scripts/build-app.sh             # crea «build/Warp Launch.app»; no l'obre
-scripts/instal·la.sh --aplica    # la copia a /Applications (sense --aplica, només diu què faria)
+scripts/build-app.sh             # creates “build/Warp Launch.app”; doesn't open it
+scripts/instal·la.sh --aplica    # copies it to /Applications (without --aplica, it only says what it would do)
 ```
 
-La primera compilació baixa Sparkle: cal internet, també si només compiles el CLI. Una còpia compilada així no s'actualitza mai sola.
+The first build downloads Sparkle: you need internet access, even if you only build the CLI. A copy built this way never updates
+itself.
 
-### Publicar una versió (l'autor)
+### Publishing a version (the author)
 
-`--aplica` només l'executa l'autor, al seu terminal; cap agent. Cal `GH_TOKEN` d'un compte que pugui escriure a
-`David-Erra/warp-launch` i a `David-Erra/homebrew-tap`, passat només a aquesta ordre.
-`scripts/publica.sh` compila la versió de `VERSION` amb l'adreça de les actualitzacions (`build-app.sh --amb-feed`), comprova la
-signatura «Warp Launch Dev» de l'app i de les peces de Sparkle i diu què publicaria i quin canvi faria a la recepta de Homebrew; amb
-`--aplica`, signa el zip amb la clau del clauer, comprova la signatura amb la clau pública que porta l'app, la publica a GitHub
-(`vX.Y.Z`, amb `WarpLaunch-X.Y.Z.zip` i `appcast.xml`) i posa al dia la versió i el sha256 de la recepta (`Casks/warp-launch.rb`
-del tap). És la que instal·len `brew` i la comanda de «Sense Homebrew».
-Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui. Si la recepta no
-es pot escriure, la versió no s'esborra, i l'script diu què cal canviar a mà.
+Only the author runs `--aplica`, in his own terminal; no agent does. It needs a `GH_TOKEN` from an account that can write to
+`David-Erra/warp-launch` and to `David-Erra/homebrew-tap`, passed only to this command.
+`scripts/publica.sh` builds the version in `VERSION` with the update address (`build-app.sh --amb-feed`), checks the “Warp
+Launch Dev” signature of the app and of the Sparkle parts, and says what it would publish and what change it would make to the
+Homebrew cask; with `--aplica`, it signs the zip with the key in the keychain, checks the signature with the public key the app
+carries, publishes it on GitHub (`vX.Y.Z`, with `WarpLaunch-X.Y.Z.zip` and `appcast.xml`) and updates the version and the sha256
+in the cask (`Casks/warp-launch.rb` in the tap). That's the one that `brew` and the “Without Homebrew” command install.
+It only publishes what's in `origin/main`, with nothing left to commit, and a version that isn't there yet. If the cask can't be
+written, the version isn't deleted, and the script says what to change by hand.
 
-**La 0.33.0 (11/11/2026) és la primera publicada així,** amb l'appcast signat i la recepta amb `auto_updates true`. La 0.31.5 es va
-publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
-**Des de la 0.33.0, publicar ja no es desfà:** la versió arriba sola, en un dia, a tots els Macs que tinguin la 0.33.0 o posterior. Com
-s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, apartat 7.
+**0.33.0 (November 11, 2026) is the first one published this way,** with the signed appcast and the cask with `auto_updates true`.
+0.31.5 was published with that version's script, without automatic updates.
+**Since 0.33.0, publishing can't be undone:** the version reaches every Mac with 0.33.0 or later on its own, within a day. How to
+stop a bad version: [`docs/disseny.md`](docs/disseny.md), section 11, part 7.
 
-## Actualitzacions automàtiques
+## Automatic updates
 
-**Les porta la 0.33.0 (11/11/2026), la primera versió publicada amb actualitzacions automàtiques.** Comprovat des de fora el mateix dia:
-l'adreça que consulta l'app dona la 0.33.0, i la signatura del zip quadra amb la clau pública que porta l'app.
-**La primera actualització automàtica de debò arribarà amb la versió següent.** Fins ara, **només s'han vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
-(rondes A i B de [`docs/disseny.md`](docs/disseny.md), secció 11) i amb Warp Launch (ronda C, en part). S'actualitza sola sense cap diàleg de macOS, torna sense
-cap finestra i conserva el permís d'Arxius i carpetes i l'inici de sessió. No s'ha provat en un altre usuari o un altre Mac, ni amb un reinici del Mac: l'autor ha
-decidit no fer més proves (10/11/2026). El que segueix diu com funcionen.
+**0.33.0 (November 11, 2026) brings them: it's the first version published with automatic updates.** Checked from outside the same
+day: the address the app checks gives 0.33.0, and the zip's signature matches the public key the app carries.
+**The first real automatic update will come with the next version.** So far, **they've only been seen working with test
+versions,** a local server and a one-time key, on the author's Mac: with a test app (rounds A and B in
+[`docs/disseny.md`](docs/disseny.md), section 11) and with Warp Launch (round C, in part). It updates itself without any macOS
+dialog, comes back without any window and keeps the Files & Folders permission and the login item. It hasn't been tested for
+another user or on another Mac, or with a Mac restart: the author decided not to run more tests (November 10, 2026). What follows
+describes how they work.
 
-- **Qui tingui la 0.31.5 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
-  versions no porten res per actualitzar-se ni per avisar-ne. Des de llavors, és automàtic.
-- **Normalment no veuràs res.** Un cop al dia, l'app mira a GitHub si hi ha una versió nova. Si n'hi ha, la baixa (uns 5 MB), en
-  comprova la signatura i es reinicia sola quan no fas servir ni el Mac (2 minuts sense teclat ni ratolí) ni l'app (cap finestra
-  seva oberta, cap canvi recent, cap finestra de Warp obrint-se). La icona de la barra de menú desapareix un moment i torna.
-  **Warp i les sessions de Claude no es tanquen ni es toquen.** Si surts de l'app amb una versió a punt, s'instal·la en sortir.
-  Si apagues o reinicies el Mac, encara no se sap si s'instal·la llavors o a la propera sortida.
-- **Va encès de sèrie.** Per apagar-ho: Configuració (⌘,) › «Actualitzacions» › «Actualitza automàticament». Apagat, l'app no es
-  connecta sola, i una versió que ja fos a punt no la reinicia: s'instal·la quan en surts. A la mateixa pestanya hi ha «Comprova
-  ara» i, al menú de la icona, «Comprova si hi ha actualitzacions…»; amb una versió a punt, tots dos diuen «Reinicia i actualitza».
-- **Privacitat: és la primera connexió a internet de l'app.** Un cop al dia, i quan demanes de comprovar, una petició a GitHub i,
-  si hi ha versió nova, la baixada. **GitHub veu la teva adreça IP i la versió de l'app.** No s'hi envia cap perfil del Mac ni
-  cap dada de Warp o de Claude, i no se n'ha trobat cap altra connexió a les fonts de Sparkle (es comprovarà a les proves reals).
-  Abans d'acceptar el permís del primer ús, no es connecta.
-- **Només s'actualitzen les versions publicades, a Aplicacions.** Una còpia compilada des del codi, una altra carpeta, la còpia
-  d'un altre usuari del Mac o una obertura amb `--config`, no; la pestanya «Actualitzacions» diu per què.
-- **Si no es pot instal·lar,** la icona pot desaparèixer una vegada. Quan tornis a obrir l'app, la pestanya ho diu, i l'app no ho
-  torna a intentar sola amb aquella versió.
-- **Diversos usuaris del Mac:** si dos usuaris tenen la sessió i l'app obertes, l'actualització d'un no tanca la de l'altre
-  (llegit al codi de Sparkle, sense provar).
-- **Amb Homebrew:** si fas `brew upgrade` amb una versió ja a punt, surt de l'app abans, i no facis servir `--greedy`, que la
-  reinstal·laria. `brew upgrade --cask warp-launch`, amb el nom, també reinstal·la una còpia que ja s'ha actualitzat sola. Sense provar.
+- **Anyone with 0.31.5 or earlier will have to update by hand one last time** (“To update it”, above): those versions have
+  nothing to update themselves or to say so. From then on, it's automatic.
+- **Normally you won't see anything.** Once a day, the app checks GitHub for a new version. If there is one, it downloads it
+  (about 5 MB), checks its signature and restarts on its own when you're using neither the Mac (2 minutes without keyboard or
+  mouse) nor the app (none of its windows open, no recent change, no Warp window opening). The menu bar icon disappears for a
+  moment and comes back. **Warp and the Claude sessions aren't closed or touched.** If you quit the app with a version ready, it's
+  installed when you quit. If you shut down or restart the Mac, it isn't known yet whether it's installed then or the next time
+  you quit.
+- **It's on by default.** To turn it off: Settings (⌘,) › “Updates” › “Update automatically”. When it's off, the app doesn't
+  connect on its own, and a version that was already ready doesn't restart it: it's installed when you quit. The same tab has
+  “Check Now” and, in the icon menu, “Check for Updates…”; with a version ready, both say “Restart and Update”.
+- **Privacy: it's the app's first internet connection.** Once a day, and when you ask it to check, a request to GitHub and, if
+  there's a new version, the download. **GitHub sees your IP address and the app's version.** No Mac profile or any Warp or
+  Claude data is sent, and no other connection has been found in Sparkle's source code (it will be checked in the real tests).
+  Before you accept the first-use permission, it doesn't connect.
+- **Only published versions in Applications update.** A copy built from the source code, another folder, another Mac user's copy
+  or an app opened with `--config` don't; the “Updates” tab says why.
+- **If it can't be installed,** the icon may disappear once. When you open the app again, the tab says so, and the app doesn't
+  try again on its own with that version.
+- **Several Mac users:** if two users have their sessions and the app open, one user's update doesn't quit the other's (read in
+  Sparkle's source code, not tested).
+- **With Homebrew:** if you run `brew upgrade` with a version already ready, quit the app first, and don't use `--greedy`, which
+  would reinstall it. `brew upgrade --cask warp-launch`, with the name, also reinstalls a copy that has already updated itself.
+  Not tested.
 
-## Desinstal·lar
+## Uninstalling
 
-1. **Configuració (⌘,) › General › «Deixar de fer servir Warp Launch» › Restaura Warp i surt…** (des de la 0.31.0). Abans de
-   fer res, diu com quedarà l'ajust de Warp «Restore windows, tabs, and panes on startup»: com el tenies abans de Warp Launch;
-   si ja la feies servir abans que demanés permís (0.29.0), activat, com ve de sèrie a Warp; i, si Warp Launch no l'ha canviat
-   mai, com és. En confirmar, treu l'app dels ítems d'inici de sessió, torna l'ajust com ha dit, retira el permís i surt. Si un
-   pas no es pot fer, ho diu i no fa els següents. Si la tornes a obrir, et torna a demanar permís. Si no li has donat mai el
-   permís, aquest pas no cal: sense permís, Warp Launch no toca Warp.
-2. Si la vas instal·lar amb Homebrew, `brew uninstall --cask warp-launch`. Si no, arrossega `/Applications/Warp Launch.app` a
-   la Paperera.
-3. Si no vols conservar la configuració, esborra `~/.config/warp-launch/`.
-4. Amb una versió que porti actualització automàtica, si no vols que en quedi res: `~/Library/Caches/cat.davide.warp-launch`,
-   `~/Library/HTTPStorages/cat.davide.warp-launch` i `~/Library/Preferences/cat.davide.warp-launch.plist` (hi ha l'interruptor i
-   la data de l'última comprovació).
+1. **Settings (⌘,) › General › “Stop Using Warp Launch” › Restore Warp and Quit…** (since 0.31.0). Before doing anything, it
+   says how Warp's “Restore windows, tabs, and panes on startup” setting will end up: as you had it before Warp Launch; if you
+   were already using the app before it asked for permission (0.29.0), turned on, as Warp comes by default; and, if Warp Launch
+   has never changed it, as it is. When you confirm, it removes the app from your login items, puts the setting back as it said,
+   withdraws the permission and quits. If a step can't be done, it says so and doesn't do the next ones. If you open it again,
+   it asks you for permission again. If you've never given it permission, this step isn't needed: without permission, Warp
+   Launch doesn't touch Warp.
+2. If you installed it with Homebrew, `brew uninstall --cask warp-launch`. If not, drag `/Applications/Warp Launch.app` to the
+   Trash.
+3. If you don't want to keep the configuration, delete `~/.config/warp-launch/`.
+4. With a version that has automatic updates, if you don't want anything left: `~/Library/Caches/cat.davide.warp-launch`,
+   `~/Library/HTTPStorages/cat.davide.warp-launch` and `~/Library/Preferences/cat.davide.warp-launch.plist` (it holds the switch
+   and the date of the last check).
 
-Amb una versió sense el botó (d'abans de la 0.31.0): desactiva l'interruptor de l'inici de sessió, surt de l'app i, si vols que
-Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la configuració de Warp.
+With a version without the button (before 0.31.0): turn off the login switch, quit the app and, if you want Warp to reopen its
+windows when it starts, turn the setting back on in Warp's settings.
 
-## Què has de saber
+## What you should know
 
-- **L'app gestiona la restauració de sessió de Warp** (`restore_session` a `~/.warp/settings.toml`), amb el teu permís del
-  primer ús (pas 2): la deixa sempre
-  desactivada, perquè és ella qui torna a obrir les finestres, amb Claude. Només l'activa uns segons quan demanes
-  «Actualitza l'estat de Warp», «Importa de Warp» o «Lliga amb Warp», per llegir-ne les finestres. Si tens Settings Sync, l'ajust arriba
-  a les altres instal·lacions de Warp. Per deixar-la de fer servir, «Restaura Warp i surt…» torna l'ajust (vegeu «Desinstal·lar»).
-  Si encara no tens `~/.warp/settings.toml` (per exemple, si no has canviat mai cap ajust de Warp), des de la 0.31.3 l'app només
-  el crea quan Warp és obert amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos; fins llavors, Warp fa
-  servir la restauració de sèrie, activada, i el menú de la icona ho diu.
-- **Res no s'obre sense el teu clic.** Obrir una finestra o totes passa sempre per un full que diu quantes
-  pestanyes i sessions de Claude s'obriran.
-- **Les feines en segon pla de Claude:** tancar Warp pot deixar-les a mitges, i reobrir les pestanyes no les fa continuar.
-- **Ordre de Claude per defecte:** a les configuracions noves, Claude s'obre sense saltar els permisos (`claude`, continuant
-  la conversa). «Salta els permisos», l'esforç i «Ultracode» es trien a la Configuració (⌘,) › «Pestanyes noves», o per
-  pestanya a l'inspector. Les pestanyes que ja tenien Claude obert en importar conserven l'ordre amb què es va obrir.
-- **Si alguna cosa falla** (des de la 0.30.0): Configuració (⌘,) › General › «Diagnòstic» › **Copia el diagnòstic** copia un
-  informe en anglès, sense el teu nom d'usuari ni els noms de les carpetes, per enganxar-lo en una issue de GitHub. Diu, per a 8
-  comprovacions (els terminals de Warp, els fitxers de sessió, les transcripcions i `~/.claude.json` de Claude Code, les taules de
-  `warp.sqlite`, les versions i la restauració de Warp), si encara tenen la forma que l'app llegeix. Només llegeix: no obre, no
-  atura ni escriu res. Des del codi: `warp-launch diagnostica [--json] [--anonimitza]`.
-- **Signatura:** les versions publicades porten el certificat «Warp Launch Dev» d'en David, sempre el mateix: macOS
-  hauria de mantenir els permisos en actualitzar (deduït, encara no provat en un altre Mac). No és un certificat d'Apple:
-  baixada amb el navegador, macOS no l'obriria. La recepta de Homebrew en comprova el sha256 i li treu la marca de baixada
-  d'internet; la comanda de «Sense Homebrew» en comprova la signatura i també la hi treu. Compilada des del codi en un altre
-  Mac, `build-app.sh` la signa ad hoc, i llavors, després de cada actualització, macOS pot tornar a demanar el permís d'Arxius i
-  carpetes i el de l'inici de sessió. Des de la 0.33.0, les actualitzacions automàtiques només s'accepten si el zip porta la
-  signatura EdDSA de la clau de l'autor, comprovada abans d'extreure'l: amb el certificat sol no n'hi ha prou. Al Mac de l'autor,
-  amb versions de prova, macOS ha deixat substituir l'app sense cap diàleg i n'ha mantingut els permisos (rondes B i C); en un
-  altre Mac, encara no s'ha provat.
+- **The app manages Warp's session restore** (`restore_session` in `~/.warp/settings.toml`), with your first-use permission
+  (step 2): it always keeps it turned off, because the app is what reopens the windows, with Claude. It only turns it on for a
+  few seconds when you choose “Refresh Warp Status”, “Import from Warp” or “Link with Warp”, to read Warp's windows. If you have
+  Settings Sync, the setting reaches your other Warp installations. To stop using the app, “Restore Warp and Quit…” puts the
+  setting back (see “Uninstalling”). If you don't have `~/.warp/settings.toml` yet (for example, if you've never changed any
+  Warp setting), since 0.31.3 the app only creates it when Warp is open with a tab, so that Warp can move its settings into it
+  first; until then, Warp uses the default session restore, turned on, and the icon menu says so.
+- **Nothing opens without your click.** Opening one window or all of them always goes through a sheet that says how many tabs
+  and Claude sessions will open.
+- **Claude's background jobs:** quitting Warp can leave them half done, and reopening the tabs doesn't resume them.
+- **Default Claude command:** in new configurations, Claude opens without skipping permissions (`claude`, continuing the
+  conversation). “Skip permissions”, the effort and “Ultracode” are chosen in Settings (⌘,) › “New Tabs”, or per tab in the
+  inspector. Tabs that already had Claude open when imported keep the command it was opened with.
+- **If something goes wrong** (since 0.30.0): Settings (⌘,) › General › “Diagnostics” › **Copy Diagnostics** copies a report in
+  English, without your user name or folder names, to paste into a GitHub issue. For 8 checks (Warp's terminals; Claude Code's
+  session files, transcripts and `~/.claude.json`; the `warp.sqlite` tables; the versions; and Warp's session restore), it says
+  whether they still have the shape the app reads. It only reads: it doesn't open, stop or write anything. From the source
+  code: `warp-launch diagnostica [--json] [--anonimitza]`.
+- **Signature:** published versions carry David's “Warp Launch Dev” certificate, always the same one: macOS should keep the
+  permissions when updating (deduced, not tested on another Mac yet). It isn't an Apple certificate: downloaded with the
+  browser, macOS wouldn't open it. The Homebrew cask checks its sha256 and removes its downloaded-from-the-internet mark; the
+  “Without Homebrew” command checks its signature and removes the mark too. Built from the source code on another Mac,
+  `build-app.sh` signs it ad hoc, and then, after each update, macOS may ask again for the Files & Folders permission and the
+  login item. Since 0.33.0, automatic updates are only accepted if the zip carries the EdDSA signature of the author's key,
+  checked before extracting it: the certificate alone isn't enough. On the author's Mac, with test versions, macOS let the app be
+  replaced without any dialog and kept its permissions (rounds B and C); on another Mac, it hasn't been tested yet.
 
-## Desenvolupament
+## Development
 
-Swift 6.4 de les Command Line Tools. Una sola dependència externa: [Sparkle](https://sparkle-project.org) 2.10.1, amb la versió
-exacta i només a l'app, no al CLI.
+Swift 6.4 from the Command Line Tools. A single external dependency: [Sparkle](https://sparkle-project.org) 2.10.1, with the
+exact version and only in the app, not in the CLI.
 
 ```bash
-swift build                          # compila
-scripts/test.sh                      # proves (swift-testing); `swift test` sol falla de manera intermitent
+swift build                          # builds
+scripts/test.sh                      # tests (swift-testing); `swift test` alone fails intermittently
 .build/debug/warp-launch --versio    # CLI
-.build/debug/warp-launch llegeix     # finestres, pestanyes i sessions de Claude (afegeix --json per al detall)
-.build/debug/warp-launch importa     # la configuració que sortiria de Warp (no escriu res)
-.build/debug/warp-launch diagnostica # si Warp i Claude Code tenen la forma que l'app llegeix (--anonimitza, per a una issue)
+.build/debug/warp-launch llegeix     # windows, tabs and Claude sessions (add --json for the details)
+.build/debug/warp-launch importa     # the configuration that Warp would give (writes nothing)
+.build/debug/warp-launch diagnostica # whether Warp and Claude Code have the shape the app reads (--anonimitza, for an issue)
 ```
 
-## Documentació
+## Documentation
 
-- [`docs/especificacio.md`](docs/especificacio.md): requisits, decisions preses i obertes, fases.
-- [`docs/disseny.md`](docs/disseny.md): disseny i passos de cada fase.
-- [`docs/fets-verificats.md`](docs/fets-verificats.md): comportament comprovat de Warp, de Claude Code i de l'entorn.
-- [`docs/antecedents.md`](docs/antecedents.md): eines semblants que existeixen i per què no ens serveixen.
-- El prototip anterior en Python (`espai`), desinstal·lat, ja no és al repo: és a l'historial, al commit `114c97d`.
+The documentation is in Catalan.
+- [`docs/especificacio.md`](docs/especificacio.md): requirements, decisions made and open, phases.
+- [`docs/disseny.md`](docs/disseny.md): design and steps of each phase.
+- [`docs/fets-verificats.md`](docs/fets-verificats.md): verified behavior of Warp, Claude Code and the environment.
+- [`docs/antecedents.md`](docs/antecedents.md): similar tools that exist and why they don't work for us.
+- The previous Python prototype (`espai`), uninstalled, is no longer in the repo: it's in the history, in commit `114c97d`.
 
-## Llicència
+## License
 
 [MIT](LICENSE), © 2026 David Erra.
 
-## Tercers
+## Third parties
 
-Les skills [`.claude/skills/mac-design/`](.claude/skills/mac-design/) i [`.claude/skills/app-icon/`](.claude/skills/app-icon/),
-i `scripts/icona-compila.sh`, `scripts/icona-revisa.sh` i `scripts/icona-full.swift`, deriven de
-[BAMA](https://github.com/daveebbelaar/bama) (MIT, © 2026 Dave Ebbelaar). La llicència és a `LICENSE-BAMA`, a cada skill.
+The skills [`.claude/skills/mac-design/`](.claude/skills/mac-design/) and [`.claude/skills/app-icon/`](.claude/skills/app-icon/),
+and `scripts/icona-compila.sh`, `scripts/icona-revisa.sh` and `scripts/icona-full.swift`, are derived from
+[BAMA](https://github.com/daveebbelaar/bama) (MIT, © 2026 Dave Ebbelaar). The license is in `LICENSE-BAMA`, in each skill.
 
-L'app porta [Sparkle](https://github.com/sparkle-project/Sparkle) 2.10.1 per actualitzar-se. La seva llicència va dins de l'app, a
-`Contents/Resources/LICENSE-Sparkle`.
+The app includes [Sparkle](https://github.com/sparkle-project/Sparkle) 2.10.1 to update itself. Its license is inside the app,
+in `Contents/Resources/LICENSE-Sparkle`.
 
-Projecte independent: no està afiliat a Warp (Denver Technologies, Inc.) ni a Anthropic, ni l'avalen. Warp, Claude i
-Claude Code són marques dels seus titulars.
+Independent project: it isn't affiliated with or endorsed by Warp (Denver Technologies, Inc.) or Anthropic. Warp, Claude and
+Claude Code are trademarks of their respective owners.
