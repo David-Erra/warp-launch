@@ -45,7 +45,7 @@ Els requisits són a `docs/especificacio.md`.
   Configuració, amb el seu Desfés (pas 11, provat a l'app el 04/11/2026). Del pas 12, el paquet és fet (0.26.0: `Info.plist` i `scripts/instal·la.sh`); la icona, dibuixada amb codi (`scripts/icona-dibuixa.swift`, decisió d'en David del 06/11/2026), a la 0.26.1.
   Prova 8 feta el 06/11/2026 amb la 0.26.0. Passos a `docs/disseny.md`, secció 4.
 - **Fase 3.1 (obrir una finestra a Warp, R12): passos fets, de la 0.15.0 a la 0.24.0** (triada per en David abans del pas 12).
-  Per donar-la per feta falten proves reals (L2, L5 i la del CLI `--obre`) i l'OK d'en David. Pla, passos i proves L1 a L5 a
+  Per donar-la per feta falten proves reals (L2 i L5; la del CLI `--obre`, feta l'11/11/2026) i l'OK d'en David. Pla, passos i proves L1 a L5 a
   `docs/disseny.md`, secció 7. Fet: l'ordre sense `--continue` (D15),
   el generador del fitxer temporal (D5, D16), la lectura per obrir (marca, sessions
   en segon pla, Warp obert, transcripcions i confiança), `estat.json` (el pane i la conversa de cada pestanya, al
@@ -74,8 +74,8 @@ Els requisits són a `docs/especificacio.md`.
   Warp va restaurar la foto sol (les pestanyes, sense Claude). «Actualitza l'estat de Warp», importar i lligar: amb Warp obert, refresquen i llegeixen; amb Warp tancat, l'última foto. Obrir
   finestres continua pels processos. Prova real feta el 05/11/2026: dos refrescs de 5 i 6 s, i la foto quadra amb tots els terminals oberts.
 - **0.24.0 (D17): `warp-launch obre <finestra> --obre`** obre la finestra pel mateix camí que el botó de l'app (`ExecucioObertura`, compartit).
-  No fa res si l'app és oberta (tots dos escriurien `estat.json`), i si Warp és tancat, primer l'obre (en David, 05/11/2026). Sense prova real encara:
-  **mai sense l'OK d'en David per a cada prova** (regla 1).
+  No fa res si l'app és oberta (tots dos escriurien `estat.json`), i si Warp és tancat, primer l'obre (en David, 05/11/2026). **Provat de debò l'11/11/2026**
+  amb la 0.34.0 (`docs/fets-verificats.md`): sempre **amb l'OK d'en David per a cada prova** (regla 1).
 - **Fase 3.2, 0.25.0 (D4): «Obre-ho tot a Warp…»** (menú Fitxer i menú de la icona): un full amb una casella per finestra, totes
   marcades, i les obre totes de cop; si una falla, les altres continuen. **Provat el 06/11/2026 amb la 0.26.0**, amb la represa d'una conversa (prova 1), una finestra oberta en part (3) i la prova 8 (4): totes bé. `docs/disseny.md`, secció 8.
 - **Fase 3.3, 0.27.0 (D3): obrir-se en iniciar sessió.** Un interruptor a la Configuració afegeix l'app als ítems d'inici de macOS
@@ -188,7 +188,7 @@ Els requisits són a `docs/especificacio.md`.
   llançament, `ConfirmacioObertura.shells` desa a `estat.json` el pid i l'hora d'inici del shell de cada pestanya de terminal (`VincleEstat.shell`,
   opcional; la versió del fitxer continua a 1, i la 0.33.0 el llegeix: `EstatAppTests`), només si no hi ha cap dubte. Mentre el shell sigui viu
   (mateix pid i mateixa hora), el pla la dona per oberta (`OnOberta.shellViu`) i no la torna a obrir. Amb la restauració activada mana la base.
-  «Lliga» no en desa cap. Només proves amb dades fictícies: falta la prova real (`/tmp/warp-launch-prova034`, 2 pestanyes de terminal, amb l'OK).
+  «Lliga» no en desa cap. **Prova real feta l'11/11/2026** amb el CLI: la segona vegada no obre res, i després de tancar la finestra les tornaria a obrir (`docs/fets-verificats.md`).
 - **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».

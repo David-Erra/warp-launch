@@ -640,6 +640,20 @@ Llegit al registre de l'app (`log show`, procés `WarpLaunch`), a `~/Library/Log
 - **Risc vist:** si hagués fet clic sense tancar Warp, l'app hauria obert totes les pestanyes una altra vegada, perquè no reconeix les
   que restaura Warp (sense Claude ni marca). **0.27.3:** el full diu quantes pestanyes no reconeix; la foto només es fa quan es demana.
 
+## Pestanyes de terminal reconegudes pel shell, i `obre --obre` (11/11/2026, 0.34.0)
+
+Amb l'OK d'en David, l'app tancada i `restore_session = false`. Configuració temporal (`/tmp/warp-launch-prova034`, esborrada després) amb
+1 finestra de 2 pestanyes només de terminal (la carpeta del repo i `~/GitHub-Personal`), cap amb Claude.
+- **`warp-launch obre «Prova 0.34» --obre --config …`** (primera vegada que s'executa de debò): obre la finestra a les 20:56:58
+  («2 pestanyes, 0 amb Claude») i desa a `estat.json` el shell de cada pestanya (`-zsh`, pids 27259 i 27262), cadascun a la seva
+  carpeta (comprovat amb `lsof -d cwd`) i amb l'hora d'inici de `ps`. Cap fitxer temporal no queda a `launch_configurations`.
+- **La segona vegada no obre res:** «Totes les pestanyes ja són obertes: no s'ha obert res», amb les dues com a «oberta a Warp, sense
+  Claude». Abans de la 0.34.0 s'hauria obert una altra finestra.
+- **En David tanca la finestra:** els dos shells acaben a les 21:01:00, i el mode de prova torna a dir que les obriria totes dues.
+- L'avís «potser ja és oberta… hi ha un Claude a la seva carpeta» el feia la sessió de Claude Code que feia la prova, a la carpeta del
+  repo: no afecta l'aparellament, que només mira els shells nous.
+- No s'ha provat des de l'app («Obre a Warp…» i «Obre-ho tot…»), que fa servir el mateix `ExecucioObertura`.
+
 ## Ítems d'inici de macOS (06/11/2026, macOS 27.2)
 
 - **El tauler es diu «Ítems d’inici de sessió»** (General › Ítems d’inici de sessió, i el títol del tauler), amb l'apòstrof
