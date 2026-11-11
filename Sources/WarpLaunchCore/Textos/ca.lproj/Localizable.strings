@@ -341,3 +341,25 @@
 /* EdicioConfiguracio: els noms de les finestres i les pestanyes noves */
 "%@ còpia" = "%@ còpia";
 "Pestanya nova" = "Pestanya nova";
+
+/* PoliticaActualitzacions: per què l'app espera a reiniciar-se (després de «Ara no: ») i per què no s'actualitza */
+"no s'ha pogut desar la configuració" = "no s'ha pogut desar la configuració";
+"estàs canviant un nom" = "estàs canviant un nom";
+"s'estan obrint finestres a Warp" = "s'estan obrint finestres a Warp";
+"hi ha un full obert" = "hi ha un full obert";
+"encara s'estan reprenent converses a Warp" = "encara s'estan reprenent converses a Warp";
+"s'està llegint Warp" = "s'està llegint Warp";
+"falta desactivar la restauració de sessió de Warp" = "falta desactivar la restauració de sessió de Warp";
+"hi ha una finestra de l'app oberta" = "hi ha una finestra de l'app oberta";
+"hi ha canvis sense desar" = "hi ha canvis sense desar";
+"encara pots desfer l'últim canvi" = "encara pots desfer l'últim canvi";
+"l'app s'acaba d'obrir" = "l'app s'acaba d'obrir";
+"estàs fent servir el Mac" = "estàs fent servir el Mac";
+"aquesta versió no s'ha pogut instal·lar sola" = "aquesta versió no s'ha pogut instal·lar sola";
+"Amb una configuració de prova, l'app no s'actualitza." = "Amb una configuració de prova, l'app no s'actualitza.";
+"Sense configuració, l'app no s'actualitza." = "Sense configuració, l'app no s'actualitza.";
+"Només s'actualitza l'app instal·lada." = "Només s'actualitza l'app instal·lada.";
+"Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a %@." = "Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a %@.";
+"Aquesta còpia no és una versió publicada i no s'actualitza sola." = "Aquesta còpia no és una versió publicada i no s'actualitza sola.";
+"Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell.";
+"Aquesta versió de l'actualitzador no és compatible." = "Aquesta versió de l'actualitzador no és compatible.";

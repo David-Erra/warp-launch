@@ -49,19 +49,19 @@ public enum PoliticaActualitzacions {
         /// El que va després de «Ara no: ».
         public var text: String {
             switch self {
-            case .errorEnDesar: "no s'ha pogut desar la configuració"
-            case .nomAMigEscriure: "estàs canviant un nom"
-            case .obrint: "s'estan obrint finestres a Warp"
-            case .fullObert: "hi ha un full obert"
-            case .conversesEnCurs: "encara s'estan reprenent converses a Warp"
-            case .refrescant: "s'està llegint Warp"
-            case .ajustPerDesactivar: "falta desactivar la restauració de sessió de Warp"
-            case .finestraVisible: "hi ha una finestra de l'app oberta"
-            case .canvisSenseDesar: "hi ha canvis sense desar"
-            case .desfesRecent: "encara pots desfer l'últim canvi"
-            case .acabaDArrencar: "l'app s'acaba d'obrir"
-            case .macEnUs: "estàs fent servir el Mac"
-            case .installacioFallida: "aquesta versió no s'ha pogut instal·lar sola"
+            case .errorEnDesar: t("no s'ha pogut desar la configuració")
+            case .nomAMigEscriure: t("estàs canviant un nom")
+            case .obrint: t("s'estan obrint finestres a Warp")
+            case .fullObert: t("hi ha un full obert")
+            case .conversesEnCurs: t("encara s'estan reprenent converses a Warp")
+            case .refrescant: t("s'està llegint Warp")
+            case .ajustPerDesactivar: t("falta desactivar la restauració de sessió de Warp")
+            case .finestraVisible: t("hi ha una finestra de l'app oberta")
+            case .canvisSenseDesar: t("hi ha canvis sense desar")
+            case .desfesRecent: t("encara pots desfer l'últim canvi")
+            case .acabaDArrencar: t("l'app s'acaba d'obrir")
+            case .macEnUs: t("estàs fent servir el Mac")
+            case .installacioFallida: t("aquesta versió no s'ha pogut instal·lar sola")
             }
         }
     }
@@ -115,13 +115,13 @@ public enum PoliticaActualitzacions {
 
         public var text: String {
             switch self {
-            case .configuracioDeProva: "Amb una configuració de prova, l'app no s'actualitza."
-            case .senseConfiguracio: "Sense configuració, l'app no s'actualitza."
-            case .foraDeLPaquet: "Només s'actualitza l'app instal·lada."
-            case let .foraDAplicacions(ruta): "Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a \(ruta)."
-            case .senseFeed: "Aquesta còpia no és una versió publicada i no s'actualitza sola."
-            case .dUnAltreUsuari: "Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell."
-            case .incompatible: "Aquesta versió de l'actualitzador no és compatible."
+            case .configuracioDeProva: t("Amb una configuració de prova, l'app no s'actualitza.")
+            case .senseConfiguracio: t("Sense configuració, l'app no s'actualitza.")
+            case .foraDeLPaquet: t("Només s'actualitza l'app instal·lada.")
+            case let .foraDAplicacions(ruta): t("Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a \(ruta).")
+            case .senseFeed: t("Aquesta còpia no és una versió publicada i no s'actualitza sola.")
+            case .dUnAltreUsuari: t("Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell.")
+            case .incompatible: t("Aquesta versió de l'actualitzador no és compatible.")
             }
         }
 

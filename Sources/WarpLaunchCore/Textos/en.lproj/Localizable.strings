@@ -340,3 +340,25 @@
 /* EdicioConfiguracio: els noms de les finestres i les pestanyes noves */
 "%@ còpia" = "%@ copy";
 "Pestanya nova" = "New Tab";
+
+/* PoliticaActualitzacions: per què l'app espera a reiniciar-se (després de «Ara no: ») i per què no s'actualitza */
+"no s'ha pogut desar la configuració" = "the configuration couldn't be saved";
+"estàs canviant un nom" = "you're changing a name";
+"s'estan obrint finestres a Warp" = "windows are opening in Warp";
+"hi ha un full obert" = "a sheet is open";
+"encara s'estan reprenent converses a Warp" = "conversations are still being resumed in Warp";
+"s'està llegint Warp" = "Warp is being read";
+"falta desactivar la restauració de sessió de Warp" = "Warp's session restore still has to be turned off";
+"hi ha una finestra de l'app oberta" = "an app window is open";
+"hi ha canvis sense desar" = "there are unsaved changes";
+"encara pots desfer l'últim canvi" = "you can still undo the last change";
+"l'app s'acaba d'obrir" = "the app has just opened";
+"estàs fent servir el Mac" = "you're using the Mac";
+"aquesta versió no s'ha pogut instal·lar sola" = "this version couldn't install itself";
+"Amb una configuració de prova, l'app no s'actualitza." = "With a test configuration, the app doesn't update.";
+"Sense configuració, l'app no s'actualitza." = "Without a configuration, the app doesn't update.";
+"Només s'actualitza l'app instal·lada." = "Only the installed app updates.";
+"Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a %@." = "To update itself, the app must be in Applications. It's now in %@.";
+"Aquesta còpia no és una versió publicada i no s'actualitza sola." = "This copy isn't a published version and doesn't update itself.";
+"Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "Another user of this Mac installed this copy: they have to update it.";
+"Aquesta versió de l'actualitzador no és compatible." = "This version of the updater isn't compatible.";
