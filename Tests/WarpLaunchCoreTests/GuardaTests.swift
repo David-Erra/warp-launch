@@ -2569,13 +2569,19 @@ extension GuardaTests {
         #expect(pestanyes["UTTypeConformsTo"] as? [String] == ["public.data"])
     }
 
-    @Test func esUnaAppDeBarraDeMenuEnCatala() throws {
+    /// Multidioma (docs/disseny.md, secció 12): la llengua de reserva és l'anglès, també per als menús de macOS. Les llengües
+    /// (`CFBundleLocalizations`) no són a la plantilla: les posa `build-app.sh` (`elScriptDelPaquetCopiaLesLlengues`).
+    @Test func esUnaAppDeBarraDeMenuAmbLAnglesDeReserva() throws {
         let plist = try infoPlist()
         #expect(plist["LSUIElement"] as? Bool == true)
         #expect(plist["CFBundleIdentifier"] as? String == "cat.davide.warp-launch")
-        #expect(plist["CFBundleDevelopmentRegion"] as? String == "ca")
-        #expect(plist["CFBundleLocalizations"] as? [String] == ["ca"])
+        #expect(plist["CFBundleDevelopmentRegion"] as? String == Idioma.reserva)
+        #expect(plist["CFBundleLocalizations"] == nil)
         #expect(FileManager.default.fileExists(atPath: arrel.appending(path: "Recursos/ca.lproj/InfoPlist.strings").path))
+        // El paquet de SwiftPM, la mateixa reserva.
+        let paquet = try String(contentsOf: arrel.appending(path: "Package.swift"), encoding: .utf8)
+        #expect(paquet.contains("defaultLocalization: \"\(Idioma.reserva)\","))
+        #expect(paquet.contains(#".target(name: "WarpLaunchCore", resources: [.process("Textos")]),"#))
     }
 
     /// Pas 12: el que el Finder mostra a «Obtén informació» i la categoria de l'app.
@@ -2603,9 +2609,25 @@ extension GuardaTests {
         }
     }
 
-    @Test func elScriptDelPaquetCopiaElCatala() throws {
+    /// El paquet porta els textos (el bundle de SwiftPM, a `Contents/Resources`, on el busca `Idioma`) i les `.lproj` de `Recursos`,
+    /// i diu les llengües de totes dues (`CFBundleLocalizations`). Sense els textos, s'atura. Tot abans de signar.
+    @Test func elScriptDelPaquetCopiaLesLlengues() throws {
         let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
-        #expect(script.contains("Recursos/ca.lproj"))
+        #expect(script.contains(#"TEXTOS="\#(Idioma.nomDelBundle)""#))
+        let ordre = [
+            #"if [[ ! -d "$BIN/$TEXTOS/Contents/Resources/ca.lproj" ]]; then"#, "    exit 1\n",
+            #"ditto "$BIN/$TEXTOS" "$APP/Contents/Resources/$TEXTOS""#,
+            "for CARPETA in Recursos/*.lproj; do\n    cp -R \"$CARPETA\" \"$APP/Contents/Resources/\"\ndone",
+            #"for CARPETA in "$APP/Contents/Resources/$TEXTOS/Contents/Resources/"*.lproj "$APP/Contents/Resources/"*.lproj; do"#,
+            #"plutil -replace CFBundleLocalizations -json"#, #"plutil -lint "$APP/Contents/Info.plist" > /dev/null"#,
+            #"signa "$APP/Contents/Resources/$TEXTOS""#, #"signa "$APP"\#n"#,
+        ]
+        var darrer = script.startIndex
+        for pas in ordre {
+            let trobat = try #require(script.range(of: pas, range: darrer..<script.endIndex), "\(pas)")
+            darrer = trobat.upperBound
+        }
+        #expect(!script.contains("cp -R Recursos/ca.lproj"))
     }
 
     /// El repo és públic amb llicència MIT, i l'app compilada la porta a `Contents/Resources/LICENSE`.
@@ -2639,8 +2661,8 @@ extension GuardaTests {
     /// Una signatura de fora tanca les de dins: l'ordre, i la comprovació amb `--deep`, que és la que veu un framework a mig signar.
     @Test func elPaquetSignaDeDinsCapAForaIComprovaAmbDeep() throws {
         let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
-        let ordre = [#"signa "$FW/Versions/B/Autoupdate""#, #"signa "$FW/Versions/B/Updater.app""#, #"signa "$FW"\#n"#, #"signa "$APP"\#n"#,
-                     #"codesign --verify --deep --strict "$APP""#]
+        let ordre = [#"signa "$FW/Versions/B/Autoupdate""#, #"signa "$FW/Versions/B/Updater.app""#, #"signa "$FW"\#n"#,
+                     #"signa "$APP/Contents/Resources/$TEXTOS"\#n"#, #"signa "$APP"\#n"#, #"codesign --verify --deep --strict "$APP""#]
         var darrer = script.startIndex
         for pas in ordre {
             let trobat = try #require(script.range(of: pas, range: darrer..<script.endIndex), "\(pas)")
@@ -2840,8 +2862,9 @@ extension GuardaTests {
         ], "\(usosFeed)")
         #expect(!linies.contains { $0.contains("SUFeedURL") || $0.contains("SUPublicEDKey") })
         #expect(linies.filter { $0.contains("Actualitzacions") } == [#"FEED="Recursos/Actualitzacions.plist""#])
-        let recursos = Set(linies.flatMap { $0.matches(of: #/Recursos(/[A-Za-z0-9._-]*)?/#).map { String($0.output.0) } })
-        #expect(recursos == ["Recursos/Actualitzacions.plist", "Recursos/Info.plist", "Recursos/ca.lproj", "Recursos/AppIcon.icon",
+        // Les `.lproj`, amb un patró (`Recursos/*.lproj`), que no pot portar l'adreça.
+        let recursos = Set(linies.flatMap { $0.matches(of: #/Recursos(/[A-Za-z0-9._*-]*)?/#).map { String($0.output.0) } })
+        #expect(recursos == ["Recursos/Actualitzacions.plist", "Recursos/Info.plist", "Recursos/*.lproj", "Recursos/AppIcon.icon",
                              "Recursos/Assets.car", "Recursos/AppIcon.icns"], "\(recursos.sorted())")
         // Cap script no el passa, llevat de `publica.sh`, que és el que publica, ni llegeix el fitxer.
         let scripts = try FileManager.default.contentsOfDirectory(at: arrel.appending(path: "scripts"), includingPropertiesForKeys: nil)

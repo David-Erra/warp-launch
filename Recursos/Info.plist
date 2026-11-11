@@ -29,13 +29,11 @@
 	<string>__VERSIO__</string>
 	<key>CFBundleVersion</key>
 	<string>__VERSIO__</string>
+	<!-- La llengua de reserva (docs/disseny.md, secció 12): amb el Mac en una llengua que l'app no té, els menús del sistema
+	     (Edició, Finestra…) surten en anglès, i no en català. CFBundleLocalizations la posa scripts/build-app.sh, amb les
+	     llengües de les carpetes .lproj dels textos i de Recursos. -->
 	<key>CFBundleDevelopmentRegion</key>
-	<string>ca</string>
-	<!-- Amb ca.lproj, els menús del sistema (Edició, Finestra…) surten en català. -->
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>ca</string>
-	</array>
+	<string>en</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>26.0</string>
 	<!-- Pestanyes copiades a l'editor (PortaRetalls). Dades, mai text: enganxades a Warp no hi escriuen res. -->

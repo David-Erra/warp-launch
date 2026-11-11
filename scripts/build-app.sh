@@ -5,8 +5,8 @@
 # --amb-feed hi posa l'adreça i la clau pública (Recursos/Actualitzacions.plist): només per publicar. Sense, la còpia no s'actualitza
 # mai sola (docs/disseny.md, secció 11, 2.4).
 # No instal·la res ni obre l'app.
-# Limitació: encara no copia bundles de recursos de SwiftPM (`resources:` a Package.swift).
-# Quan se n'afegeixin, cal copiar-los aquí abans de signar.
+# Els bundles de recursos de SwiftPM (`resources:` a Package.swift) s'han de copiar aquí abans de signar. N'hi ha un, el dels
+# textos de totes les llengües (`WarpLaunch_WarpLaunchCore.bundle`, docs/disseny.md, secció 12).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -64,6 +64,12 @@ fi
 # SwiftPM no hi posa la ruta on l'app trobarà el framework dins del paquet.
 swift build -c "$CONFIG" --product WarpLaunch -Xlinker -rpath -Xlinker "$RPATH"
 BIN="$(swift build -c "$CONFIG" --show-bin-path)"
+# Els textos (docs/disseny.md, secció 12). `Idioma` els busca a Contents/Resources; sense, l'app sortiria sempre en català.
+TEXTOS="WarpLaunch_WarpLaunchCore.bundle"
+if [[ ! -d "$BIN/$TEXTOS/Contents/Resources/ca.lproj" ]]; then
+    echo "build-app: SwiftPM no ha deixat els textos a «${BIN}/${TEXTOS}»." >&2
+    exit 1
+fi
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
@@ -76,8 +82,20 @@ sed "s/__VERSIO__/$VERSIO/g" Recursos/Info.plist > "$APP/Contents/Info.plist"
 if [[ "$AMB_FEED" -eq 1 ]]; then
     /usr/libexec/PlistBuddy -c "Merge $FEED" "$APP/Contents/Info.plist" > /dev/null
 fi
+ditto "$BIN/$TEXTOS" "$APP/Contents/Resources/$TEXTOS"
+# SwiftPM hi posa un identificador fet amb el nom de la carpeta del clon: el de l'app, perquè el paquet no en depengui.
+plutil -replace CFBundleIdentifier -string "cat.davide.warp-launch.textos" "$APP/Contents/Resources/$TEXTOS/Contents/Info.plist"
+# Els noms del paquet per als menús de macOS, per llengua (`InfoPlist.strings`).
+for CARPETA in Recursos/*.lproj; do
+    cp -R "$CARPETA" "$APP/Contents/Resources/"
+done
+# Les llengües de l'app: les dels textos i les de `Recursos`. Entre aquestes, macOS tria la dels seus menús (Edició, Finestra…),
+# i si no n'hi ha cap de les de l'usuari, la de `CFBundleDevelopmentRegion` (en).
+LLENGUES="$(for CARPETA in "$APP/Contents/Resources/$TEXTOS/Contents/Resources/"*.lproj "$APP/Contents/Resources/"*.lproj; do
+    basename "$CARPETA" .lproj
+done | sort -u)"
+plutil -replace CFBundleLocalizations -json "[$(sed 's/.*/"&"/' <<< "$LLENGUES" | paste -sd, -)]" "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist" > /dev/null
-cp -R Recursos/ca.lproj "$APP/Contents/Resources/"
 # La llicència (MIT) va dins de l'app: qui la rep compilada també la rep. I la de Sparkle, que hi va inclòs.
 cp -X LICENSE "$APP/Contents/Resources/LICENSE"
 cp -X .build/artifacts/sparkle/Sparkle/LICENSE "$APP/Contents/Resources/LICENSE-Sparkle"
@@ -101,9 +119,10 @@ signa() { codesign --force --sign "$FIRMA" --timestamp=none "$1"; }
 signa "$FW/Versions/B/Autoupdate"
 signa "$FW/Versions/B/Updater.app"
 signa "$FW"
+signa "$APP/Contents/Resources/$TEXTOS"
 signa "$APP"
 # Sense `--deep`, no es veuria un framework a mig signar.
 codesign --verify --deep --strict "$APP"
 
-echo "$APP ($VERSIO, $CONFIG)"
+echo "$APP ($VERSIO, $CONFIG; llengües: $(paste -sd' ' - <<< "$LLENGUES"))"
 codesign -d -r- "$APP" 2>&1 | sed -n 's/^#* *designated => /identitat per a macOS: /p'
