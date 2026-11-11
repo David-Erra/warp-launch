@@ -86,12 +86,12 @@ import Testing
     /// menú, els botons i les capçaleres, amb majúscules a cada paraula; les etiquetes i els interruptors, només la primera.
     @Test func elsTermesDeMacOSIElsDeLApp() {
         Idioma.$deProva.withValue("en") {
-            #expect(t("Mostra Ítems d’inici de sessió…") == "Show Login Items & Extensions…")
-            #expect(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió")
+            #expect(t("Mostra Ítems d’inici de sessió i extensions…") == "Show Login Items & Extensions…")
+            #expect(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions")
                 == "macOS won't open it until you allow it in Login Items & Extensions")
             #expect(t("""
                 Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas \
-                clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió.
+                clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions.
                 """).hasSuffix("System Settings › General › Login Items & Extensions."))
             #expect(t("No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: \("x"). No s'ha canviat res més.")
                 == "Couldn't remove Warp Launch from your login items: x. Nothing else was changed.")

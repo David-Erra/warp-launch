@@ -4,7 +4,7 @@ import WarpLaunchCore
 
 /// «Obre Warp Launch en iniciar sessió», a la Configuració (D3, fase 3.3). L'app només s'afegeix als ítems d'inici quan en
 /// David activa l'interruptor (regla 3); mai sola. Es desfà amb el mateix interruptor, o a Configuració del Sistema ›
-/// General › Ítems d’inici de sessió.
+/// General › Ítems d’inici de sessió i extensions.
 @MainActor
 @Observable
 public final class ArrencadaSessio {
@@ -97,7 +97,7 @@ public final class ArrencadaSessio {
         guard !activada else {
             return t("""
                 macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › \
-                Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més.
+                Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més.
                 """)
         }
         error = nil

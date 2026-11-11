@@ -203,11 +203,11 @@ public struct VistaConfiguracio: View {
                 .disabled(!arrencada.editable)
             if arrencada.estat == .perAprovar {
                 HStack {
-                    Label(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió"),
+                    Label(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions"),
                           systemImage: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
                     Spacer()
-                    Button(t("Mostra Ítems d’inici de sessió…")) { arrencada.obreAjustos() }
+                    Button(t("Mostra Ítems d’inici de sessió i extensions…")) { arrencada.obreAjustos() }
                 }
             }
             if let error = arrencada.error {
@@ -220,7 +220,7 @@ public struct VistaConfiguracio: View {
             Text(arrencada.activada || arrencada.motiuNoDisponible == nil
                 ? t("""
                     Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas \
-                    clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió.
+                    clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions.
                     """)
                 : arrencada.motiuNoDisponible ?? "")
                 .foregroundStyle(.secondary)

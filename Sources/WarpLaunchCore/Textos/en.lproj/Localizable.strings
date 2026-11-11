@@ -390,7 +390,7 @@
 "No s'ha pogut activar: %@" = "Couldn't turn it on: %@";
 "No s'ha pogut desactivar: %@" = "Couldn't turn it off: %@";
 "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "Couldn't remove Warp Launch from your login items: %@. Nothing else was changed.";
-"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més." = "macOS still has Warp Launch in your login items: remove it in System Settings › General › Login Items & Extensions, and try again. Nothing else was changed.";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més." = "macOS still has Warp Launch in your login items: remove it in System Settings › General › Login Items & Extensions, and try again. Nothing else was changed.";
 
 /* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
 "Per revisar" = "Needs Review";
@@ -538,10 +538,10 @@
 "S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien." = "Applies to new tabs and to tabs imported without a Claude session. Existing tabs don't change.";
 "La Configuració no les canvia: es conserven tal com són." = "They can't be changed here; they're kept as they are.";
 "Obre Warp Launch en iniciar sessió" = "Open Warp Launch at login";
-"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió" = "macOS won't open it until you allow it in Login Items & Extensions";
-"Mostra Ítems d’inici de sessió…" = "Show Login Items & Extensions…";
+"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions" = "macOS won't open it until you allow it in Login Items & Extensions";
+"Mostra Ítems d’inici de sessió i extensions…" = "Show Login Items & Extensions…";
 "En iniciar sessió" = "At Login";
-"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió." = "When Warp is ready, it shows “Open All in Warp…” with the missing windows. Nothing opens until you click. You can also turn this off in System Settings › General › Login Items & Extensions.";
+"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions." = "When Warp is ready, it shows “Open All in Warp…” with the missing windows. Nothing opens until you click. You can also turn this off in System Settings › General › Login Items & Extensions.";
 "Fitxer" = "File";
 "Carpeta de la configuració" = "Configuration folder";
 "Mostra al Finder" = "Show in Finder";

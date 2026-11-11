@@ -391,7 +391,7 @@
 "No s'ha pogut activar: %@" = "No s'ha pogut activar: %@";
 "No s'ha pogut desactivar: %@" = "No s'ha pogut desactivar: %@";
 "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més.";
-"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més." = "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió, i torna-ho a provar. No s'ha canviat res més.";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més." = "macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més.";
 
 /* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
 "Per revisar" = "Per revisar";
@@ -539,10 +539,10 @@
 "S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien." = "S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien.";
 "La Configuració no les canvia: es conserven tal com són." = "La Configuració no les canvia: es conserven tal com són.";
 "Obre Warp Launch en iniciar sessió" = "Obre Warp Launch en iniciar sessió";
-"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió" = "macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió";
-"Mostra Ítems d’inici de sessió…" = "Mostra Ítems d’inici de sessió…";
+"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions" = "macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions";
+"Mostra Ítems d’inici de sessió i extensions…" = "Mostra Ítems d’inici de sessió i extensions…";
 "En iniciar sessió" = "En iniciar sessió";
-"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió." = "Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió.";
+"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions." = "Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions.";
 "Fitxer" = "Fitxer";
 "Carpeta de la configuració" = "Carpeta de la configuració";
 "Mostra al Finder" = "Mostra al Finder";
