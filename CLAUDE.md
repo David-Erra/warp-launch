@@ -184,19 +184,21 @@ Els requisits són a `docs/especificacio.md`.
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
   - **L'autor ha decidit activar-la (09/11/2026, després de publicar la 0.31.5).** Vol dir fer el que falta, en l'ordre de sota: no treu l'OK de cada ronda
     (regla 4), i la clau i publicar només els fa ell (regles 3 i 12).
-  - **De l'app de debò, res no s'ha vist funcionar.** Warp Launch no s'ha obert mai amb Sparkle: les proves del repo són amb falsos i carpetes temporals, i el que depèn de Sparkle i de macOS en aquesta app està llegit o suposat.
-    **Amb una app de prova, les rondes A i B són fetes,** amb clau d'un sol ús i l'OK de l'autor. **A** (09/11/2026, signatura ad hoc, carpeta temporal, canal d'ordres en lloc de clics):
-    cicle complet, sortir amb la versió a punt, sortida cancel·lada, un zip dolent, interruptor apagat sense cap petició, instal·lació fallida (`chflags uchg`), sense servidor i appcasts
-    refusats. **B** (10/11/2026, «Warp Launch Dev», `/Applications`, clics reals de l'autor): s'actualitza **sense cap diàleg de macOS**, també amb «Instal·la i reinicia»; refusa un zip
-    dolent i una altra clau. `docs/fets-verificats.md`, «Sparkle», seccions 15 i 16.
+  - **Rondes de prova fetes: la A, la B i la C, en part,** totes amb un servidor local, una clau d'un sol ús i l'OK de l'autor (`docs/fets-verificats.md`, «Sparkle», seccions 15 a 17).
+    **A** (09/11/2026, una app de prova, signatura ad hoc, canal d'ordres en lloc de clics): cicle complet, sortir amb la versió a punt, sortida cancel·lada, un zip dolent,
+    interruptor apagat sense cap petició, instal·lació fallida (`chflags uchg`), sense servidor i appcasts refusats. **B** (10/11/2026, l'app de prova amb «Warp Launch Dev» a
+    `/Applications`, clics reals): s'actualitza **sense cap diàleg de macOS**, també amb «Instal·la i reinicia»; refusa un zip dolent i una altra clau. **C** (10/11/2026, la Warp
+    Launch de debò substituïda per versions de prova del codi de la 0.32.9): s'aplica sola amb l'editor tancat i sense tocar el Mac, i no amb l'editor obert; torna sense finestra, sense
+    Dock i amb el focus a l'app d'abans; conserva el permís d'Arxius i carpetes i l'ítem d'inici. No s'han vist C5 (el clic al Finder després d'un reinici sol), C7 ni C10.
+  - **Decisió de l'autor (10/11/2026): no es fan més rondes.** La D, la E i la F no es fan; per tant, la decisió 11 (esperar el Developer ID si la E no sortia neta) ja no pot passar.
+    Res no s'ha vist amb l'adreça i la clau de debò.
   - **0.32.9: el que va sortir de la ronda A.** «Mostra la finestra» (la finestra de baixada acabada no es pot tancar i l'app no té Dock), el reinici ajornat diu per què, l'intent es treu si l'app
     no surt, l'estat no promet el que no farà ni diu «comprovar» quan falla la baixada, i desmarcar la casella de Sparkle apaga l'interruptor. A la ronda B, amb l'app de prova, s'han vist
     «Mostra la finestra», els textos nous i la casella; el reinici ajornat i l'intent tret, no.
-  - **Falta, en aquest ordre:** les rondes C a F (amb clau d'un sol ús i l'OK de l'autor per a cada una); la clau de signatura, que
-    només crea l'autor, i `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (pas 11; sense aquest fitxer, cap còpia
-    s'actualitza); `auto_updates true` i `zap` a la recepta del tap (pas 12; sense, `publica.sh` refusa); publicar (l'autor); i la
-    primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia. La B ha sortit neta; si la E no ho surt, s'espera el
-    Developer ID (decisió 11).
+  - **Falta, en aquest ordre:** la clau de signatura, que només crea l'autor (creada l'11/11/2026; la còpia fora del Mac, per confirmar), i
+    `Recursos/Actualitzacions.plist` amb l'adreça i la part pública (pas 11; sense aquest fitxer, cap còpia s'actualitza); pujar `main` i la
+    recepta del tap amb `auto_updates true` i `zap` (pas 12, commit local `d9581af` del tap; sense, `publica.sh` refusa); publicar (l'autor); i la
+    primera actualització real, també amb Homebrew. Fins llavors, no s'anuncia.
   - **Les còpies d'abans (0.31.5 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
     avisar-ne. Com a molt 7 instal·lacions (baixades dels zips, API de GitHub, 09/11/2026: 1 de la 0.31.5, 4 de la 0.31.4 i 2 de la 0.28.0).
   - **Com va:** l'únic `import Sparkle` és a `ServeiActualitzacions.swift`; la lògica, sense Sparkle i amb proves, a

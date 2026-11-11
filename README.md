@@ -106,10 +106,11 @@ s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, a
 ## Actualitzacions automàtiques
 
 **Encara no les porta cap còpia publicada.** El codi és al repo des de la 0.32.0, però l'última versió publicada és la 0.31.5.
-**Res d'això no s'ha vist funcionar a l'app:** només hi ha proves amb falsos, i el que depèn de Sparkle i de macOS s'ha llegit al
-codi o es dona per suposat. L'autor ha decidit activar-les (09/11/2026), i abans de publicar-les falten la clau de signatura de l'autor, les proves reals que queden (rondes C a F de
-[`docs/disseny.md`](docs/disseny.md), secció 11; la A i la B s'han fet amb una app de prova, i la B, sense cap diàleg de macOS) i la primera actualització real amb l'adreça i la clau de debò.
-Si la ronda E no surt neta, s'esperarà el Developer ID d'Apple, i l'app continuarà com avui. El que segueix diu com funcionaran.
+**Només s'han vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
+(rondes A i B de [`docs/disseny.md`](docs/disseny.md), secció 11) i amb Warp Launch (ronda C, en part). S'actualitza sola sense cap diàleg de macOS, torna sense
+cap finestra i conserva el permís d'Arxius i carpetes i l'inici de sessió. No s'ha provat en un altre usuari o un altre Mac, ni amb un reinici del Mac: l'autor ha
+decidit no fer més proves (10/11/2026). Abans de publicar-les, falta posar a l'app l'adreça i la clau de signatura de l'autor, i després, la primera actualització
+real. El que segueix diu com funcionaran.
 
 - **Qui tingui la 0.31.5 o una d'anterior haurà d'actualitzar a mà una última vegada** («Per actualitzar-la», a dalt): aquelles
   versions no porten res per actualitzar-se ni per avisar-ne. Des de llavors, és automàtic.

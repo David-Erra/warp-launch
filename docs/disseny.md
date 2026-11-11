@@ -197,7 +197,8 @@ d'un `Divider` feia dos separadors seguits.
 - `ca.lproj` al bundle, perquè els menús del sistema surtin en català.
 - Sense menú del Dock, dreceres globals, notificacions ni `@AppStorage`. La selecció la guarda l'`Editor`.
 - **Reobrir-se després d'una actualització automàtica (0.32.3, secció 11, 3.4):** sense editor, sense Dock i amagada, i el clic al Finder
-  mostra l'editor encara que SwiftUI no l'hagi creat. Només amb l'intent de `actualitzacio.json`, i **sense veure-ho funcionar** (rondes C4 i C5).
+  mostra l'editor encara que SwiftUI no l'hagi creat. Només amb l'intent de `actualitzacio.json`. **Vist a la ronda C, C4** (sense editor ni Dock, i el focus a l'app d'abans); el clic
+  al Finder, no (C5).
 
 ### Avisos
 
@@ -877,7 +878,7 @@ pestanya a pestanya, `configuracio mostra|ruta`, captures de pantalla automàtiq
 | El desat automàtic trepitja una edició a mà | Proves del canvi extern | Comparar bytes, bàner i còpies |
 | Una prova o el codi obre alguna cosa o llegeix l'estat real | Prova de guarda | Magatzem sense ruta per defecte; lector injectat |
 | Dues còpies de l'app (`build/` i `/Applications`) | `lsregister -dump` | Després d'instal·lar, obrir només la d'Aplicacions |
-| Una versió dolenta arriba sola a tots els Macs en un dia (des de la primera 0.32.x) | Rondes A a F abans de publicar; la Porta 3 | Secció 11, apartat 7: `latest` a l'anterior, revertir la recepta i publicar una correcció superior |
+| Una versió dolenta arriba sola a tots els Macs en un dia (des de la primera 0.32.x) | Rondes A, B i C (en part) abans de publicar; la D, la E i la F no es fan (10/11/2026); la Porta 3 | Secció 11, apartat 7: `latest` a l'anterior, revertir la recepta i publicar una correcció superior |
 | Claude Code canvia les seves opcions (canvia gairebé cada dia) i la taula de la 2.1.318 queda antiga | Avís d'opció desconeguda a la importació | Tornar a llegir les definicions del binari i comparar-ho amb el `parseOptions` del binari (docs/fets-verificats.md) |
 
 ## 6. Respostes d'en David (03/11/2026)
@@ -2206,8 +2207,8 @@ només terminal) i la 5 (al full d'una finestra). **Falten:** la 1, la 4, la 6 i
 ## 11. Actualització automàtica amb Sparkle 2.10.1 (disseny del 09/11/2026)
 
 Sobre la 0.31.4 (commit 7180f73). **Al codi des de la 0.32.0 (passos 0 a 10 de la secció 9), sense publicar:** cap còpia no porta encara l'adreça ni la clau, i les còpies d'abans (0.31.5 o anteriors, la 0.31.5 publicada després de fer aquest disseny) necessiten una última actualització a mà.
-**Res d'això s'ha vist funcionar amb la Warp Launch de debò** (amb una app de prova, una part a les rondes A i B, apartat 8). Cap app s'ha obert per a aquest disseny: la descàrrega, la instal·lació, la reobertura i l'efecte sobre els permisos de
-macOS es comproven a les rondes de la secció 8, abans de publicar.
+**Vist funcionar només amb versions de prova,** un servidor local i una clau d'un sol ús: una app de prova a les rondes A i B, i la Warp Launch de debò, en part, a la C (apartat 8). Res amb
+l'adreça i la clau de debò.
 
 Dins d'aquesta secció, les remissions («secció 5», «2.3», «decisió 1») són internes. Les decisions numerades 1 a 13 són les de la taula de sota; el codi les cita
 com «decisió N de Sparkle». Etiquetes: **[P]** provat, amb l'ordre i el resultat; **[L]** llegit, amb fitxer:línia; **[S]** suposat, i cada [S] diu on es comprova.
@@ -2216,9 +2217,13 @@ Els fets, a `docs/fets-verificats.md`, «Sparkle».
 
 **Fet (09/11/2026): els passos 0 a 10** (secció 9): els 1 a 4 i el 9, sense versió, i els 5 a 8, de la 0.32.0 a la 0.32.3, amb dues revisions (0.32.4 i 0.32.5).
 - **Provat:** només amb falsos i carpetes temporals (`scripts/test.sh`), la compilació i el paquet (`otool`, `codesign --verify --deep --strict`).
-- **Llegit o suposat, res vist funcionar a l'app de debò:** tot el que depèn de Sparkle i de macOS (etiquetes [L] i [S] d'aquesta secció). Warp Launch no s'ha obert cap vegada amb Sparkle; una app de prova, a les rondes A i B (`docs/fets-verificats.md`, «Sparkle», seccions 15 i 16).
-- **Falta:** les rondes C a F (Porta 1; la A és feta, 09/11/2026, i la B, 10/11/2026, neta: apartat 8); la clau de l'autor i `Recursos/Actualitzacions.plist` (pas 11); la recepta (pas 12); publicar (Porta 2); i la primera actualització real (Porta 3).
+- **Rondes:** la A (09/11/2026) i la B (10/11/2026, neta), amb una app de prova; la C, en part (10/11/2026), amb la Warp Launch de debò; la D, la E i la F no es fan (apartat 8;
+  `docs/fets-verificats.md`, «Sparkle», seccions 15 a 17). La resta del que depèn de Sparkle i de macOS continua llegit o suposat (etiquetes [L] i [S]).
+- **Falta:** la clau de l'autor (creada l'11/11/2026; la còpia fora del Mac, per confirmar) i `Recursos/Actualitzacions.plist` (pas 11); pujar `main` i la recepta (pas 12; al tap,
+  commit local `d9581af`); publicar (Porta 2); i la primera actualització real (Porta 3).
 - **Decisió de l'autor (09/11/2026, després de publicar la 0.31.5): endavant amb l'activació.** És fer el que falta, en aquest ordre: no treu l'OK de cada ronda ni el de la recepta, i la clau i publicar només els fa ell.
+- **Decisió de l'autor (10/11/2026, de nit, durant la C): no fer més proves** («Anem al grà i deixa de fer proves inútils»). La C es queda sense C7 ni C10, i la D, la E i la F
+  no es fan: es passa a activar. La decisió 11 ja no pot passar (la B va sortir neta i la E no es fa), ni la 12 (el repo de la ronda F).
 
 El codi s'aparta del que hi ha a sota en això:
 - `Actualitzacions.Entorn` té tres camps més: `darreraComprovacio` (l'estat inicial), `models` (la `SituacioApp.Models`, que omplirà el servei) i `rellotge` (les hores). `comprova`, `rep`,
@@ -2257,7 +2262,7 @@ i, a `GuardaTests`, excepcions limitades: un fitxer, adreces en una llista fixa 
 
 1. **Crear la clau de signatura** al seu terminal, un sol cop, i fer-ne una còpia fora del Mac el mateix dia (secció 5). Passar la part pública.
 2. **Comprovar que el certificat «Warp Launch Dev» té còpia** fora del Mac.
-3. **Donar l'OK de cada ronda de prova** (secció 8): sortir de l'app, mirar el que diu i acceptar els diàlegs de macOS. La ronda D és un reinici, i la fa ell. La ronda E es fa en un usuari de macOS nou.
+3. **Donar l'OK de cada ronda de prova** (secció 8): sortir de l'app, mirar el que diu i acceptar els diàlegs de macOS. La ronda D és un reinici, i la fa ell. La ronda E es fa en un usuari de macOS nou. **Fet fins a la C; la D i la E no es fan (10/11/2026).**
 4. **OK per a la recepta de Homebrew** (afegir `auto_updates true`) **i per a cada publicació**.
 5. **Passar el seu Mac a la 0.32.x a mà**, i mirar la primera actualització real.
 
@@ -2386,7 +2391,7 @@ Mantingut amb la decisió 2. Si es rebutja, `macEnUs` es treu i només queden el
 - Una sola línia al registre per canvi d'estat.
 - `shouldPostponeRelaunchForUpdate` només ajorna el camí de la finestra de Sparkle: si hi ha motiu, guarda el bloc i torna `true`, i `vigila` el crida quan es pugui. Una sola vegada [L: `SPUInstallerDriver.m:521-535`]. **Mai** `updaterShouldRelaunchApplication`: amb `false`, avorta [L: `:503-519`].
 
-**Després de reobrir-se** (automàtica): cap finestra, política `.accessory` i `NSApp.hide(nil)` a `applicationDidFinishLaunching`, perquè el focus torni a l'app d'abans **[S: ronda C, C4]**.
+**Després de reobrir-se** (automàtica): cap finestra, política `.accessory` i `NSApp.hide(nil)` a `applicationDidFinishLaunching`, perquè el focus torni a l'app d'abans **[P: ronda C, C4]**.
 
 #### 2.3 Quan la instal·lació falla després de sortir
 
@@ -2501,9 +2506,9 @@ Sparkle la reobre sense arguments [L: `InstallerProgressAppController.m:408`], S
 
 - `Aplicacio.init` (només `.real`): `IntentActualitzacio.enArrencar` → `reobertura: Tipus?`.
 - `InicDeSessio.es(..., reobertaPerActualitzacio: reobertura != nil)`: amb marca, `false`.
-- `.automatica`: `.defaultLaunchBehavior(.suppressed)` a l'escena de l'editor [P: compila; **S:** ronda C], `Activacio.enArrencar` posa `.accessory`, i `NSApp.hide(nil)`.
+- `.automatica`: `.defaultLaunchBehavior(.suppressed)` a l'escena de l'editor [P: compila, i a la ronda C, C4], `Activacio.enArrencar` posa `.accessory`, i `NSApp.hide(nil)`.
 - `.demanada`: com sempre, l'editor s'obre i serveix de confirmació.
-- **Forat:** amb l'editor suprimit, `applicationShouldHandleReopen` (`WarpLaunchApp.swift:276-279`) no fa res, perquè `mostraEditor(obre: {})` necessita `openWindow`. Es captura des de l'etiqueta del `MenuBarExtra`, i es passa a `Aplicacio`. **[S]: C5.** Si no funciona, es renuncia a `.suppressed` i es fa `amagaEditorSiNoSHaFetServir` (`Activacio.swift:107-111`), ja provat; la finestra es veuria un instant.
+- **Forat:** amb l'editor suprimit, `applicationShouldHandleReopen` (`WarpLaunchApp.swift:276-279`) no fa res, perquè `mostraEditor(obre: {})` necessita `openWindow`. Es captura des de l'etiqueta del `MenuBarExtra`, i es passa a `Aplicacio`. **[S]: no s'ha vist (a C5, l'autor va sortir de l'app abans del clic).** Si no funciona, es renuncia a `.suppressed` i es fa `amagaEditorSiNoSHaFetServir` (`Activacio.swift:107-111`), ja provat; la finestra es veuria un instant.
 
 **`applicationShouldTerminate` no canvia:** desa, atura el refresc i fa servir `.terminateLater`; Sparkle l'espera sense límit de temps [L: `InstallerProgressAppController.m:335-357`]. Si surt `restore_session` activat, `vigila` el desactiva en reobrir-se. Sense reobertura (2.3), fins que s'obri, com avui.
 
@@ -2648,7 +2653,7 @@ Són com a molt 7 instal·lacions [P: `download_count`, API de GitHub, 09/11/202
 
 ### 7. Aturar una versió dolenta
 
-Va a `docs/disseny.md`. El fre es comprova a la ronda F abans de publicar.
+Va a `docs/disseny.md`. El fre no s'ha comprovat: la ronda F no es fa (decisió de l'autor, 10/11/2026).
 
 1. `gh release edit <anterior> --latest --repo David-Erra/warp-launch`. No esborra res, i `latest/download` torna a apuntar a l'anterior. La redirecció no es desa en memòria cau (`cache-control: no-cache`) [P].
 2. Revertir la recepta (`git revert` al tap).
@@ -2740,6 +2745,14 @@ dues vegades) i 2 reinicis de Sparkle. **S'actualitza sense cap diàleg de macOS
 | C9 | Què hi ha a `~/Library/Caches/<id>` i `~/Library/HTTPStorages/<id>` |
 | C10 | `--config` (`build/`): la secció diu el motiu, i `lsof` no hi veu cap connexió |
 
+**Feta en part el 10/11/2026** (`docs/fets-verificats.md`, «Sparkle», secció 17), amb versions de prova del codi de la 0.32.9 en lloc de la Warp Launch de l'autor, que s'hi va tornar
+a posar l'11/11. **Sí:** C1; C2 (comprova sola, baixa i s'aplica sola 186 s després de tancar l'editor, i amb l'editor obert, cap reinici); C3; C4 (torna sense finestra, sense Dock
+ni el full, i TextEdit al davant); C6 (el permís d'Arxius i carpetes i l'ítem d'inici, després de dues actualitzacions); C8 (Warp intacte, `restore_session = false`) i C9 (16 MB a
+`Caches` i 56 KB a `HTTPStorages`, les dues carpetes del `zap`). **No:** C5 (l'autor va sortir de l'app abans del clic al Finder: va ser una arrencada normal), C7 i C10, per
+decisió de l'autor. Cap dels resultats vistos no demana canviar el codi.
+
+**Les rondes D, E i F no es fan** (decisió de l'autor del 10/11/2026, a l'estat d'aquesta secció). El que havien de mirar queda llegit o suposat. A sota, el pla, tal com era.
+
 **Ronda D (l'autor):** amb una versió a punt i l'editor obert, reiniciar el Mac. En iniciar sessió, l'app ja és nova, o s'instal·la a la propera sortida; cap bloqueig en apagar-se. Si no s'instal·la, no és greu, i el README ho dirà.
 
 **Ronda E: els altres Macs.** Un usuari de macOS nou, administrador, sense el certificat, amb la Warp Launch d'aquest usuari esborrada i la còpia posada **per aquell usuari** amb `ditto -x -k` des de `/Users/Shared` (si no, «un altre usuari»). El servidor de la ronda C serveix l'appcast: `127.0.0.1` és el mateix. Mirar: A1, A3, A6, el permís d'Arxius i carpetes, la reobertura i, amb tots dos usuaris connectats i l'app oberta als dos, què passa a l'altra instància (Sparkle no la tanca [L: `InstallerProgressAppController.m:300`]).
@@ -2773,7 +2786,7 @@ gh release create v3 appcast.xml …                                            
 | 8 | `feat:` la reobertura: `.suppressed`, `.accessory`, `hide`, `openWindow`, intent amb `.real` | Guarda: l'intent només amb `.real`; el comportament, a C4 i C5 | 0.32.3 |
 | 9 | `chore:` `publica.sh` i `verifica-signatura.swift` | `ScriptPublicaTests`: `sign_update` i `verifica` falsos; el mode de prova no els crida; l'appcast porta versió, URL, mida i signatura; refusa clau diferent, sortida mal formada, mida diferent, sense feed, recepta sense `auto_updates`, `latest` per davant; si signar falla, cap `gh release create`. El `gh` fals rep el zip a `$4`; `laPublica` compara l'ordre exacta amb `--latest` | Cap |
 | 10 | `docs:` README i `CLAUDE.md` (secció 11) | | Cap |
-| — | **Porta 1: rondes A a F, amb l'OK.** El que surti es corregeix amb commits i versions 0.32.x | | |
+| — | **Porta 1: rondes A a F, amb l'OK.** El que surti es corregeix amb commits i versions 0.32.x. **Fetes la A, la B i la C en part; la D, la E i la F no es fan (10/11/2026)** | | |
 | 11 | `feat:` `Recursos/Actualitzacions.plist` amb la clau real i el feed (l'autor ha fet la secció 5) | Guarda inversa canviada: exactament dues claus, `SUFeedURL` exacte, `SUPublicEDKey` de 44 caràcters en base64 | 0.32.N |
 | 12 | Tap: `auto_updates true` i `zap` (amb l'OK) | `brew style`, `brew audit` | |
 | — | **Porta 2:** `publica.sh` en mode de prova, i `--aplica` (decisió 6). Es publica la 0.32.N | | |
@@ -2836,15 +2849,15 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 
 | Fet | Estat | Com | Si surt malament |
 |---|---|---|---|
-| macOS deixa `Autoupdate` substituir una app amb certificat propi, sense Team ID | [P] a B, amb l'app de prova al Mac de l'autor; falta E | B, E | Decisió 11 |
-| Gatekeeper no bloqueja la versió nova sense notaritzar | [P] a B, sense quarantena i cap diàleg; falta E | B, E | Igual |
+| macOS deixa `Autoupdate` substituir una app amb certificat propi, sense Team ID | [P] a B i C, al Mac de l'autor; la E no es fa | B, E | Decisió 11 |
+| Gatekeeper no bloqueja la versió nova sense notaritzar | [P] a B i C, sense quarantena i cap diàleg; la E no es fa | B, E | Igual |
 | «Comprova ara» amb `checkForUpdatesInBackground` no fa nosa | [P] a l'app de prova (A2, B2) | A2 | `checkForUpdateInformation` i «Actualitza ara» |
-| `latest` torna a l'anterior | [S] | F | Una versió superior; 1 dia de retard |
-| Permís d'Arxius i carpetes i ítem d'inici | [S] | C6, E | README, fins al Developer ID |
-| `.suppressed` i `openWindow` capturat | [S] | C4, C5 | `amagaEditorSiNoSHaFetServir` |
-| L'app no es queda el focus (`NSApp.hide`) | [S] | C4 | Pujar `inactivitatMinima` |
+| `latest` torna a l'anterior | [S]; la F no es fa | F | Una versió superior; 1 dia de retard |
+| Permís d'Arxius i carpetes i ítem d'inici | [P] a C6, al Mac de l'autor; la E no es fa | C6, E | README, fins al Developer ID |
+| `.suppressed` i `openWindow` capturat | `.suppressed` [P] a C4; `openWindow` [S]: C5 no ho va veure | C4, C5 | `amagaEditorSiNoSHaFetServir` |
+| L'app no es queda el focus (`NSApp.hide`) | [P] a C4 | C4 | Pujar `inactivitatMinima` |
 | `secondsSinceLastEventType` dins de l'app | [P] a l'app de prova: puja (A12) i baixa en moure el ratolí (B) | A12, B | Treure `macEnUs`: decisió 2 |
-| Instal·lar durant un reinici o un tancament de sessió | No se sap | D | README: a la propera sortida |
-| Altres usuaris amb sessió oberta | [S] | E | README |
+| Instal·lar durant un reinici o un tancament de sessió | No se sap: la D no es fa | D | README: a la propera sortida |
+| Altres usuaris amb sessió oberta | [S]; la E no es fa | E | README |
 | Homebrew i Sparkle alhora | Sense provar | Porta 3 | README |
 | Developer ID futur | [L] | Una ronda com la B | |
