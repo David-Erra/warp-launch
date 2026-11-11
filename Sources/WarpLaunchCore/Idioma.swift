@@ -6,9 +6,10 @@ import Foundation
 /// `Localizable.stringsdict`), i SwiftPM els copia al bundle `WarpLaunch_WarpLaunchCore.bundle`. La clau de cada text és el
 /// text en català, i `ca.lproj` els té tots (clau = valor).
 ///
-/// La llengua, per ordre: la de prova (`deProva`, només a les proves), la de la variable d'entorn `WARP_LAUNCH_IDIOMA`
-/// (`scripts/test.sh` hi posa `ca`) i les preferides del Mac (`Locale.preferredLanguages`). De la llista, la primera que té
-/// textos, amb les equivalències de macOS (pt-PT → pt-BR, zh-CN → zh-Hans, es-MX → es); si no n'hi ha cap, l'anglès.
+/// La llengua, per ordre: la d'un bloc que la fixa (`fixada`: el diagnòstic, en anglès), la de prova (`deProva`, només a les
+/// proves), la de la variable d'entorn `WARP_LAUNCH_IDIOMA` (`scripts/test.sh` hi posa `ca`) i les preferides del Mac
+/// (`Locale.preferredLanguages`). De la llista, la primera que té textos, amb les equivalències de macOS (pt-PT → pt-BR,
+/// zh-CN → zh-Hans, es-MX → es); si no n'hi ha cap, l'anglès.
 ///
 /// L'accessor que genera SwiftPM (`module`) no es fa servir: si no troba el bundle, atura el programa, i un binari copiat sol
 /// no el porta. Sense el bundle, `t(_:)` torna la clau, en català (`nomesIdiomaConeixElBundleDelsTextos`).
@@ -26,8 +27,13 @@ public enum Idioma {
     /// `Idioma.$deProva.withValue("en") { t("Obre a Warp…") }` dona «Open in Warp…».
     @TaskLocal public static var deProva: String?
 
+    /// La llengua d'un bloc de l'app, per sobre de tot (també de `deProva`): el diagnòstic, sempre en anglès perquè és el que
+    /// es comparteix a les incidències de GitHub, hi compon els motius que pren del Core (`Diagnostic.executa`).
+    @TaskLocal static var fixada: String?
+
     /// La llengua dels textos, entre les que en tenen (`ca`, `en`, `pt-BR`…).
     public static var efectiva: String {
+        if let fixada { return tria(disponibles: disponibles, preferencies: [fixada]) }
         if let deProva { return tria(disponibles: disponibles, preferencies: [deProva]) }
         return delProces
     }

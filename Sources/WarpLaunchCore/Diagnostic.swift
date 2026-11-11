@@ -228,8 +228,16 @@ public struct InformeDiagnostic: Sendable, Equatable {
 public enum Diagnostic {
     /// La variable que Warp posa a l'entorn de cada shell (docs/fets-verificats.md, «Identitat de pane»).
     static let variablePane = "WARP_TERMINAL_SESSION_UUID"
+    /// La llengua de l'informe, sigui quina sigui la de l'app: és el que es comparteix a les incidències de GitHub.
+    static let llengua = "en"
 
+    /// L'informe, en anglès: també els motius que pren del Core (els errors de `preferencies.json` i de `settings.toml`), que
+    /// es componen dins del bloc amb la llengua fixada (`Idioma.fixada`).
     public static func executa(_ entorn: EntornDiagnostic, anonimitza: Bool) -> InformeDiagnostic {
+        Idioma.$fixada.withValue(llengua) { compon(entorn, anonimitza: anonimitza) }
+    }
+
+    private static func compon(_ entorn: EntornDiagnostic, anonimitza: Bool) -> InformeDiagnostic {
         let anon = Anonimitzador(inici: entorn.inici, usuari: entorn.usuari, actiu: anonimitza)
         let installacio = entorn.warp()
         let claude = processosClaude(entorn.processos)
@@ -688,7 +696,7 @@ public enum Diagnostic {
         case .senseCarpeta:
             deConsentiment = (.avis, "Consent: unknown (Warp Launch has no configuration folder).")
         case let .error(motiu):
-            deConsentiment = (.error, "\(Preferencies.nomFitxer) can't be read (reason, in Catalan: «\(motiu)»): Warp "
+            deConsentiment = (.error, "\(Preferencies.nomFitxer) can't be read (reason: \(motiu)): Warp "
                 + "Launch shows the error instead of the editor.")
         case let .llegit(llegit) where !llegit.esAcceptat:
             // 0.31.0: retirat amb «Deixa de fer servir Warp Launch», que torna l'ajust com era.
@@ -729,8 +737,8 @@ public enum Diagnostic {
         do {
             lectura = try AjustRestauracio.llegeix(ruta)
         } catch {
-            return Comprovacio(.restauracio, .error, "\(mostrada): Warp Launch can't manage restore_session (reason, in "
-                + "Catalan: «\(anon.text(error.description))»). " + deConsentiment.1)
+            return Comprovacio(.restauracio, .error, "\(mostrada): Warp Launch can't manage restore_session (reason: "
+                + "\(anon.text(error.description))). " + deConsentiment.1)
         }
         let text: String
         switch lectura {
@@ -754,9 +762,9 @@ public enum Diagnostic {
         do {
             analisi = try AjustRestauracio.analitza(text)
         } catch {
-            // El motiu és el que diu l'app (en català).
+            // El motiu és el que diu l'app, en anglès (`executa`).
             return Comprovacio(.restauracio, .error, "\(mostrada) doesn't have the form Warp Launch expects for "
-                + "restore_session (reason, in Catalan: «\(error.description)»). Warp may have changed its settings file: "
+                + "restore_session (reason: \(error.description)). Warp may have changed its settings file: "
                 + "Warp Launch won't change it. " + deConsentiment.1)
         }
         if case let .senseLinia(afegida) = analisi.lloc {
@@ -765,7 +773,7 @@ public enum Diagnostic {
                     + "\(deSerie) Warp Launch adds restore_session = false to [general] \(quan). " + deConsentiment.1)
             }
             return Comprovacio(.restauracio, .error, "\(mostrada) has no restore_session: \(deSerie) Warp Launch can't add "
-                + "it to this file (reason, in Catalan: «\(motiu.description)»), and won't change it. To let Warp Launch "
+                + "it to this file (reason: \(motiu.description)), and won't change it. To let Warp Launch "
                 + "manage it, turn «Restore windows, tabs, and panes on startup» off once in Warp's settings. "
                 + deConsentiment.1)
         }
@@ -856,10 +864,11 @@ struct Anonimitzador: Sendable {
 
     /// Un text qualsevol (el detall d'una comprovació, o el missatge d'un error): les rutes entre «» (també les relatives,
     /// com la destinació d'un enllaç: tot el que hi porta una `/`) o que comencen per la carpeta d'inici o per `~/`,
-    /// anonimitzades, i el nom d'usuari, fora.
+    /// anonimitzades, i el nom d'usuari, fora. Els motius del Core surten en anglès (`Diagnostic.executa`): entre “”.
     func text(_ text: String) -> String {
         guard actiu else { return text }
         var resultat = substitueix(#"«([^»]*/[^»]*)»"#, a: text) { "«" + ruta($0) + "»" }
+        resultat = substitueix(#"“([^”]*/[^”]*)”"#, a: resultat) { "“" + ruta($0) + "”" }
         for inici in inicis {
             resultat = substitueix(NSRegularExpression.escapedPattern(for: inici) + #"(?=$|[/\s«»"'“”,;:()])"#, a: resultat) {
                 _ in "~"

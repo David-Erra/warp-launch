@@ -505,8 +505,8 @@ private struct MacDeProva {
         let noEsPot = try mac.comprovacio(.restauracio)
         #expect(noEsPot.resultat == .error)
         #expect(noEsPot.detall.hasPrefix("\(mac.ajustos.path) has no restore_session: \(deSerie) Warp Launch can't add it "
-            + "to this file (reason, in Catalan: ««restore_session» no hi és, i no s'hi pot afegir: a la línia 1, «general» "
-            + "és una clau, no una taula [general]»), and won't change it."), "\(noEsPot.detall)")
+            + "to this file (reason: “restore_session” isn't there, and it can't be added: on line 1, “general” is a key, "
+            + "not a [general] table), and won't change it."), "\(noEsPot.detall)")
         // Sense el fitxer, el crea, però només amb Warp obert i amb algun terminal (ronda 5): diu com és Warp ara. No diu
         // que Warp restaurarà res. Sense la carpeta de Warp, Warp no s'ha obert mai, i no la crea. El diagnòstic no escriu
         // res.
@@ -560,8 +560,8 @@ private struct MacDeProva {
             try FileManager.default.createSymbolicLink(at: mac.ajustos, withDestinationURL: real)
             let enllac = try mac.comprovacio(.restauracio)
             #expect(enllac.resultat == .error, "\(enllac.detall)")
-            #expect(enllac.detall.hasPrefix("\(mac.ajustos.path): Warp Launch can't manage restore_session (reason, in "
-                + "Catalan: ««\(mac.ajustos.path)» no és un fitxer normal»)."), "\(enllac.detall)")
+            #expect(enllac.detall.hasPrefix("\(mac.ajustos.path): Warp Launch can't manage restore_session (reason: "
+                + "“\(mac.ajustos.path)” isn't a regular file)."), "\(enllac.detall)")
             #expect(!enllac.detall.contains("adds") && !enllac.detall.contains("turns it off"), "\(enllac.detall)")
             let anonimitzat = try mac.comprovacio(.restauracio, anonimitza: true).detall
             #expect(!anonimitzat.contains("maria.prova"), "\(anonimitzat)")
@@ -571,15 +571,15 @@ private struct MacDeProva {
         try Data([0x5B, 0x67, 0x65, 0x6E, 0x65, 0x72, 0x61, 0x6C, 0x5D, 0x0A, 0xFF, 0x0A]).write(to: mac.ajustos)
         let noUTF8 = try mac.comprovacio(.restauracio)
         #expect(noUTF8.resultat == .error, "\(noUTF8.detall)")
-        #expect(noUTF8.detall.contains("no es pot llegir"), "\(noUTF8.detall)")
+        #expect(noUTF8.detall.contains("can't read"), "\(noUTF8.detall)")
         // La carpeta de Warp és un fitxer: l'app no crearia res.
         let carpetaWarp = mac.ajustos.deletingLastPathComponent()
         try FileManager.default.removeItem(at: carpetaWarp)
         try Data("x".utf8).write(to: carpetaWarp)
         let carpetaFitxer = try mac.comprovacio(.restauracio)
         #expect(carpetaFitxer.resultat == .error, "\(carpetaFitxer.detall)")
-        #expect(carpetaFitxer.detall.hasPrefix("\(mac.ajustos.path): Warp Launch can't manage restore_session (reason, in "
-            + "Catalan: «no es pot mirar «\(mac.ajustos.path)»: "), "\(carpetaFitxer.detall)")
+        #expect(carpetaFitxer.detall.hasPrefix("\(mac.ajustos.path): Warp Launch can't manage restore_session (reason: "
+            + "can't check “\(mac.ajustos.path)”: "), "\(carpetaFitxer.detall)")
         #expect(!carpetaFitxer.detall.contains("creates it") && !carpetaFitxer.detall.contains("doesn't exist"),
                 "\(carpetaFitxer.detall)")
     }
@@ -603,6 +603,22 @@ private struct MacDeProva {
         #expect(retirat.detall.contains("Consent withdrawn on 2026-11-04, when restore_session was put back as it was "
             + "before Warp Launch (or to Warp's default, on, if that wasn't known): Warp Launch asks for it again the next "
             + "time it opens"), "\(retirat.detall)")
+    }
+
+    /// Multidioma (docs/disseny.md, secció 12): l'informe és en anglès sencer, també el motiu que pren del Core, encara que
+    /// l'app sigui en una altra llengua (aquí, el català). La llengua fixada (`Idioma.fixada`) només val mentre es compon.
+    @Test func elMotiuDelCoreSurtEnAngles() throws {
+        let mac = try MacDeProva()
+        try mac.escriu("{\"versio\": 1, \"restauracio\": {\"consentiment\": \"potser\"}}",
+                       a: mac.configuracio.appending(path: Preferencies.nomFitxer))
+        try Idioma.$deProva.withValue("ca") {
+            let malmes = try mac.comprovacio(.restauracio)
+            #expect(malmes.detall.contains("can't be read (reason: "), "\(malmes.detall)")
+            #expect(malmes.detall.contains("“potser” isn't a known consent"), "\(malmes.detall)")
+            #expect(!malmes.detall.contains("Catalan") && !malmes.detall.contains("«"), "\(malmes.detall)")
+            // Fora del diagnòstic, la llengua de l'app.
+            #expect(t("Obre a Warp…") == "Obre a Warp…")
+        }
     }
 
     // MARK: - Anonimització
@@ -641,11 +657,11 @@ private struct MacDeProva {
         #expect(informe.text.contains("~/aaaaaa-aaaaaaaaa"))
         #expect(informe.text.contains("pid 102, other arguments"))
         let consentiment = try #require(informe.comprovacio(.restauracio)).detall
-        #expect(consentiment.contains("«~/Aaaaa/AaaaaaAaaaaa/aaaaa.aaaaa/preferencies.json»"), "\(consentiment)")
+        #expect(consentiment.contains("“~/Aaaaa/AaaaaaAaaaaa/aaaaa.aaaaa/preferencies.json”"), "\(consentiment)")
     }
 
-    /// `preferencies.json` és un enllaç trencat amb una destinació relativa: el missatge de l'error la porta entre «», i no
-    /// comença per `/` ni per `~`.
+    /// `preferencies.json` és un enllaç trencat amb una destinació relativa: el missatge de l'error (en anglès) la porta entre
+    /// “”, i no comença per `/` ni per `~`.
     @Test func lInformeAnonimitzatTreuLesRutesRelatives() throws {
         let mac = try MacDeProva()
         let preferencies = mac.configuracio.appending(path: Preferencies.nomFitxer)
@@ -656,7 +672,7 @@ private struct MacDeProva {
         let informe = mac.diagnostic(anonimitza: true)
         #expect(!informe.text.contains("Secreta"), "\(informe.text)")
         #expect(try #require(informe.comprovacio(.restauracio)).detall
-            .contains("«../Aaaaaaa Aaaaaaa/preferencies.json»"))
+            .contains("“../Aaaaaaa Aaaaaaa/preferencies.json”"))
     }
 
     @Test func laFormaDelsNoms() {
@@ -675,6 +691,9 @@ private struct MacDeProva {
         // Entre «», també una ruta relativa (la destinació d'un enllaç); sense `/`, no és cap ruta.
         #expect(anon.text("a «../Carpeta Secreta/prefs.json» i «settings.toml»")
             == "a «../Aaaaaaa Aaaaaaa/aaaaa.aaaa» i «settings.toml»")
+        // Entre “”, igual: els motius del Core surten en anglès.
+        #expect(anon.text("a “../Carpeta Secreta/prefs.json” i “settings.toml”")
+            == "a “../Aaaaaaa Aaaaaaa/aaaaa.aaaa” i “settings.toml”")
         let inactiu = Anonimitzador(inici: "/Users/joan", usuari: "joan", actiu: false)
         #expect(inactiu.text("/Users/joan/x joan") == "/Users/joan/x joan")
     }
