@@ -2900,3 +2900,14 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 | Altres usuaris amb sessió oberta | [S]; la E no es fa | E | README |
 | Homebrew i Sparkle alhora | Sense provar | Porta 3 | README |
 | Developer ID futur | [L] | Una ronda com la B | |
+
+### 13. Betes (11/11/2026)
+
+Decisió de l'autor (11/11/2026): les betes, per a 2-4 provadors, són *pre-releases* de GitHub. `scripts/publica.sh --beta` les publica i `--promou X.Y.Z` en fa una versió normal; amb `--aplica`, només l'autor (regles 3 i 12).
+
+- **Per què no arriben a ningú:** l'app llegeix `releases/latest/download/appcast.xml`, i GitHub no dona mai una pre-release com a última. `--beta` la crea amb `--prerelease --latest=false` i després comprova que l'última continua essent l'anterior; si no, surt amb el codi 2 i diu les dues ordres per tornar-ho enrere.
+- **`--beta`:** les mateixes comprovacions que una versió normal (`origin/main`, sense canvis, «Warp Launch Dev», les peces de Sparkle, l'adreça i la clau) i el mateix zip signat amb EdDSA, amb `appcast.xml`; la recepta, ni la llegeix ni l'escriu. La versió ha de ser posterior a l'última normal (si no, l'endemà les seves còpies hi tornarien soles) i numèrica: Sparkle llegeix `0.35.0-beta` com la 0.35.0 (`fets-verificats.md`). Si el número ja hi és, de prova o no, refusa.
+- **Instal·lar-la:** les notes porten l'ordre `instal·la.sh --github --versio X.Y.Z --aplica`. `gh release download <etiqueta>` també baixa una pre-release; sense `--versio`, `instal·la.sh` baixa l'última, que mai no és una beta (llegit a l'script i a l'ajuda de `gh`; no provat amb GitHub). Una beta no s'actualitza sola a la beta següent, només a la versió normal posterior.
+- **`--promou X.Y.Z`:** no compila ni signa res. Comprova que sigui una pre-release publicada amb el zip i `appcast.xml`, que l'última normal sigui anterior i, sobre el zip baixat, el mateix paquet que després de compilar (versió, adreça, clau i signatures), i que l'appcast sigui el del zip (versió, URL i mida) amb una signatura que quadra amb la clau pública de `Recursos/Actualitzacions.plist`. Llavors, `gh release edit vX.Y.Z --prerelease=false --latest` amb les notes d'una versió normal, i la recepta amb el sha256 d'aquest zip. D'aquí endavant, com una publicació normal: no es desfà (apartat 7).
+- **Les notes** d'una versió normal o d'una beta comparen amb l'última normal (`gh release list --exclude-pre-releases`), no amb una beta.
+- **Sense provar amb GitHub de debò:** `ScriptPublicaTests` fa servir un `gh` fals.
