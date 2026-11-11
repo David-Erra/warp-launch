@@ -2949,7 +2949,10 @@ F2, també que cada `t("…")` del codi és al català (`cadaTextDelCodiEsAlCata
 escapaments, els textos de diverses línies sense el sagnat del final, el `%` doblat si hi ha valors) i, com que el tipus d'una
 interpolació no surt del codi, n'hi ha prou que hi sigui una de les combinacions de `%@`, `%lld`, `%llu`, `%d` i `%lf`. Una mostra
 en comprova la lectura (`laGuardaDelsTextosDelCodiFaLesClausComElCompilador`). Des de F3, a la interfície (`WarpLaunchUI` i
-`WarpLaunchApp`) cap text no s'escriu directament (`capTextNoEsEscritDirectamentALaInterficie`, vegeu «F3»).
+`WarpLaunchApp`) cap text no s'escriu directament (`capTextNoEsEscritDirectamentALaInterficie`, vegeu «F3»). Des de F4, els textos
+de les ordres del menú de macOS són els de SwiftUI en cada llengua (`lesOrdresDelMenuDeMacOSEsDiuenIgualEnCadaLlengua`), cada
+`.lproj` de `Recursos` és d'una llengua dels textos, i `UserDefaults` només és a `ServeiIdioma`, per a `AppleLanguages` (vegeu
+«F4»).
 
 **Fases:**
 
@@ -2958,7 +2961,7 @@ en comprova la lectura (`laGuardaDelsTextosDelCodiFaLesClausComElCompilador`). D
 | F1 | La infraestructura: `Idioma`, el bundle, les guardes, `test.sh`, `build-app.sh` i `Info.plist` | 0.34.1 |
 | F2 | Els textos del Core (`WarpLaunchCore`: el CLI, els avisos, els errors…) amb `t`, i la guarda de F1 activada | 0.34.2 |
 | F3 | Els de la UI i l'app (`Text`, `Button`, menús…), i el diagnòstic sencer en anglès | 0.34.3 |
-| F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | |
+| F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | 0.34.4 |
 | F5 | Les 8 llengües restants | |
 | F6 | Les amplades: una prova que mesura els textos amb `NSFont`, i una pseudolocalització | |
 | F7 | La revisió visual de l'autor | 0.35 |
@@ -3036,8 +3039,8 @@ restants també).
   «HH:mm», com abans; en anglès, «MM/dd/yyyy» i «09:45 AM»). Les tres escenes porten `.environment(\.locale, Idioma.locale)`.
 - **Cap text en un `static let`** (`textPeuBase`, `textActualitzacions`, `titolConfirmacio`, `ErrorRetirada.haCanviat`, les notes de
   `RefrescWarp`, `warpRestaurara`, `textFeinesEnSegonPla`, `motiuNoEsPotLlegir`): `static var` calculades.
-- **Un interruptor i el seu pas de Desfés** comparteixen la clau: «Salta els permisos» és «Skip permissions» als dos llocs (en
-  anglès, «Undo Skip permissions»).
+- **Un interruptor i el seu pas de Desfés** compartien la clau: «Salta els permisos» era «Skip permissions» als dos llocs (en
+  anglès, «Undo Skip permissions»). Des de F4, no (vegeu «F4»).
 - **El català, igual que abans,** excepte el singular amb 1, que abans no hi era: «En llegir el fitxer s'ha corregit 1 cosa»,
   «S'obrirà 1 finestra nova», «S'ha obert 1 finestra», «S'ha lligat 1 pestanya», «1 pestanya sense lligam potser ja és oberta a
   Warp: si ho és, …» i «Warp ja té 1 pestanya que l'app no reconeix (potser l'ha restaurat Warp…). Si obres, quedarà repetida:
@@ -3065,13 +3068,58 @@ restants també).
   d'esperar, l'ítem del menú i la data de les actualitzacions (`elTextDEsperaEnAngles`) i la pantalla del permís
   (`laPantallaDelPermisEnAngles`).
 
-**Per a F4 i F6:**
+**F4 (0.34.4): el selector, l'anglès revisat i els menús de macOS.**
+- **El selector** (decisió de l'autor): Configuració › General › «Idioma», després d'«En iniciar sessió». Un `Picker` («Idioma de
+  l'app») amb «El del sistema (català)» (el nom, en la llengua de l'app, de la llengua que surt amb les preferències del Mac), un
+  separador i les llengües de `Textos/*.lproj`, cadascuna amb el nom en ella mateixa i la primera lletra en majúscula
+  (`Idioma.nomPropi`: «Català», «English», «Português (Brasil)», «简体中文»), per ordre alfabètic del nom. Una llengua nova hi
+  surt sola. La tria es desa a `AppleLanguages` del domini de l'app (`[codi]`, o sense la clau per a la del sistema), que macOS
+  llegeix en obrir l'app; si hi és, es marca (amb una regió, `en-GB`, o una llengua sense textos, la que surt). Si la tria canvia
+  la llengua que es veu, la nota «L'idioma canviarà la propera vegada que obris l'app.»: l'app no es reinicia sola. La del Mac es
+  llegeix al domini global, perquè `Locale.preferredLanguages` ja porta la de l'app. També amb una configuració de prova: la
+  llengua és de l'app, no de la configuració. Sense identificador de paquet (l'executable sol), la secció no surt.
+- **El model** (`SelectorIdioma`, a `WarpLaunchUI`): les opcions, què es desa i quina es marca, amb un entorn fals
+  (`SelectorIdiomaTests`: sense la preferència, amb `en`, `en-GB` o `de`, desar i esborrar, la nota, les 10 llengües en ordre i
+  l'anglès). Les preferències de debò, només a `ServeiIdioma` (`WarpLaunchApp`).
+- **L'excepció de la guarda** (aprovada per l'autor): `UserDefaults`, prohibit a tot `Sources`, només a `ServeiIdioma.swift`, i
+  només amb les quatre línies fixades (llegir la de l'app i la del Mac, desar-la i esborrar-la), amb `clau = "AppleLanguages"`
+  com a únic text del fitxer; `CFPreferences`, prohibit a tot arreu. La mostra demostra que la guarda falla amb `UserDefaults` en
+  un altre fitxer (també en un comentari) i, al servei, amb una altra clau, una altra variable, una altra crida, la mateixa dues
+  vegades, `CFPreferences` o `@AppStorage` (`nomesElServeiDIdiomaFaServirLesPreferencies`).
+- **El pas de Desfés d'un interruptor ja no comparteix la clau amb l'etiqueta:** és una ordre, com «Activa Claude» i «Activa
+  l'ultracode»: «Activa «Salta els permisos»» i «Desactiva «Continua la conversa»» (en anglès, «Undo Turn On Skip Permissions»).
+  Les etiquetes no canvien. Les claus «No saltis els permisos» i «No continuïs la conversa» ja no hi són.
+- **L'anglès, revisat sencer.** Termes de macOS 27, llegits a les seves taules (`LoginItems.appex`,
+  `SecurityPrivacyExtension.appex`, `TCC.framework`): «Login Items & Extensions» (el tauler, al botó, al peu i als errors) i «login
+  items» (la llista, en minúscula); «Settings…», «About Warp Launch», «Quit Warp Launch» i «File», els del menú de SwiftUI.
+  Majúscules a cada paraula als ítems de menú, als botons, als títols i a les capçaleres («Will Open (3)», «Already Open (3): won't
+  open», «To Review (3)», «Others (3)», «Why It's Needed», «Warnings While Reading», «Claude Code in 3 Tabs»); només la primera a
+  les etiquetes, als interruptors, a les descripcions i a les ajudes. Coherència: «Claude sessions» (no «Claudes»), «click» (no
+  «press»), «in Finder», i les ajudes diuen què fa el control. Es queden, revisades: «Needs Review», «Link with Warp…» (curt i
+  coherent amb «linked» i «unlinked»; el full explica què fa) i «Start from Scratch». `TextosEnAnglesTests.elsTermesDeMacOSIElsDeLApp`
+  en fixa una mostra.
+- **`Recursos/en.lproj/InfoPlist.strings`,** com el català: el nom del paquet als menús que posa macOS. La guarda mira que cada
+  `.lproj` de `Recursos` sigui d'una llengua dels textos i digui «Warp Launch».
+- **Els menús de macOS, en cada llengua** (`lesOrdresDelMenuDeMacOSEsDiuenIgualEnCadaLlengua`): «Sobre» i «Surt» (menú de la icona
+  i pantalla del permís), «Configuració…» i «Arxiu ›» de l'avís del full d'obrir diuen exactament el que diu `MainMenu.loctable` de
+  SwiftUI per a cada llengua dels textos (`pt_BR`, `zh_CN`). Sense la taula (una altra versió de macOS), els valors fixos del català
+  i de l'anglès, que, amb la taula, han de ser els seus. `laMateixaOrdreEsDiuIgualAlsDosMenus` també ho mira en anglès.
+- **El README, en anglès** (`README.md`), traduït sencer amb els noms de la interfície en anglès i les dates sense ambigüitat
+  («November 11, 2026»); el català, a `README.ca.md`, i a dalt de cadascun l'enllaç a l'altre. La guarda de les feines en segon
+  pla mira la frase a tots dos, i `elReadmeEsEnAnglesIEnCatala`, els enllaços i que tinguin les mateixes seccions.
+
+**Per a F5 i F6:**
 - Els textos del Core que la UI compara o en què busca (`.contains`) han de ser les claus, no el text traduït: avui no n'hi ha cap.
+- **Els menús de macOS** (F5): la guarda compara cada llengua nova amb `MainMenu.loctable`, que no sempre és l'esperable:
+  en alemany, «Über „%@“», «„%@“ beenden» i «Einstellungen …» amb un espai que no es parteix (U+00A0); en castellà, «Acerca de %@»,
+  «Salir de %@» i «Ajustes…». I el menú «Arxiu» de l'avís del full d'obrir és el «File» de cada llengua («Ablage», «Archivo»).
+- **El català de macOS 15 i posteriors** diu «Ítems d’inici de sessió i extensions» (`LoginItems.appex`), i l'app, «Ítems d’inici
+  de sessió» (decisió oberta de l'autor: canviar-lo canvia les claus).
 - Les amplades, en alemany (F6 les ha de mesurar). Els que poden no cabre, d'una sola línia i amb un control al costat:
   - a la Configuració (520 pt): «Torna a deixar Warp com era» amb el botó «Restaura Warp i surt…», «macOS no l'obrirà sola fins
-    que la permetis a Ítems d’inici de sessió» amb «Mostra Ítems d’inici de sessió…», «Informe per a una issue a GitHub» amb el
-    menú «Copia el diagnòstic», «Estat» amb «Reinicia i actualitza», i «Mode de permisos» amb «Sense cap permís
-    (bypassPermissions)»;
+    que la permetis a Ítems d’inici de sessió» amb «Mostra Ítems d’inici de sessió…» (en anglès, ja més llarg: «Show Login Items &
+    Extensions…»), «Informe per a una issue a GitHub» amb el menú «Copia el diagnòstic», «Estat» amb «Reinicia i actualitza»,
+    «Mode de permisos» amb «Sense cap permís (bypassPermissions)», i «Idioma de l'app» amb «El del sistema (…)»;
   - als fulls (560 i 600 pt): les capçaleres «Sense parella (3): s'obriran si n'obres la finestra» i «Ja obertes (3): no
     s'obriran», el peu del full d'importar («Actualitza l'estat de Warp», «Cancel·la» i «Substitueix», a 560 pt) i el detall de
     cada pestanya a la dreta («oberta a Warp, amb Claude (finestra 2 › Botiga)»);

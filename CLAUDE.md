@@ -300,7 +300,7 @@ scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-bana
 | `Sources/WarpLaunchCLI/` | Comanda `warp-launch`: només hi posa els valors reals; la lògica és a `OrdreCLI` (core), que es prova amb fixtures |
 | `Tests/WarpLaunchCoreTests/` | Proves `swift-testing`, sempre amb dades fictícies; inclou la prova de guarda (`GuardaTests`) |
 | `Tests/WarpLaunchUITests/` | Proves del model de l'editor, amb carpetes temporals |
-| `Recursos/Info.plist` | Plantilla del bundle (`LSUIElement`; la versió surt de `VERSION`); `ca.lproj` per als menús en català |
+| `Recursos/Info.plist` | Plantilla del bundle (`LSUIElement`; la versió surt de `VERSION`); `ca.lproj` i `en.lproj` per als menús que posa macOS |
 | `Recursos/Actualitzacions.plist` | L'adreça de les actualitzacions i la clau pública (pas 11, 0.33.0; una guarda en fixa els valors): només les porta la còpia que es compila amb `--amb-feed`, la que es publica |
 | `scripts/` | `test.sh` (proves), `build-app.sh` (empaqueta i signa el `.app`), `instal·la.sh` (el copia a `/Applications`, també des de GitHub), `publica.sh` (publica la versió a GitHub i posa al dia la recepta de Homebrew), `verifica-signatura.swift` (comprova la signatura del zip amb la clau pública de l'app), `warp-restauracio.sh` (regla 7), `genera-imatge.sh` (nano-banana) i `icona-*` (icona; `icona-dibuixa.swift` en dibuixa les capes) |
 | `.claude/skills/mac-design/` | Normes de disseny d'app de Mac (adaptada de BAMA, MIT); `docs/disseny.md` hi mana |
