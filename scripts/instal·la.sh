@@ -13,15 +13,38 @@
 # - No registra cap arrencada automàtica, no obre l'app i no toca la configuració (~/.config/warp-launch).
 # - Si l'app és oberta, s'atura sense tancar-la: primer en surts tu.
 # - Si a /Applications hi ha una «Warp Launch.app» que no és d'aquesta app (un altre identificador), no la toca.
-# - Amb --github, només instal·la una app signada amb el certificat «Warp Launch Dev» d'en David (el requisit de sota).
-# - Proves: WARP_LAUNCH_ORIGEN, WARP_LAUNCH_DESTI, WARP_LAUNCH_REPO i WARP_LAUNCH_REQUISIT canvien l'app d'origen, la carpeta
-#   de destí, el repo de GitHub i el requisit de la signatura.
+# - Amb --github, només instal·la una app signada per en David: amb el seu Developer ID (des de la 0.37, notaritzada) o amb el seu
+#   certificat «Warp Launch Dev» (fins a la 0.36, i per això també les versions d'abans, amb --versio). Els requisits de sota.
+# - Proves: WARP_LAUNCH_ORIGEN, WARP_LAUNCH_DESTI, WARP_LAUNCH_REPO, WARP_LAUNCH_REQUISIT i WARP_LAUNCH_TEAM_ID canvien l'app d'origen,
+#   la carpeta de destí, el repo de GitHub, el requisit de «Warp Launch Dev» i el Team ID del de Developer ID.
 set -euo pipefail
 
 IDENTIFICADOR="cat.davide.warp-launch"
 REPO="${WARP_LAUNCH_REPO:-David-Erra/warp-launch}"
+# El Team ID del Developer ID d'en David: els deu caràcters entre parèntesis de «Developer ID Application: … (XXXXXXXXXX)», a
+# `security find-identity -v -p codesigning`. Mentre és buit (fins que hi hagi el certificat: docs/disseny.md, secció 13), només s'accepta
+# «Warp Launch Dev». publica.sh el llegeix d'aquí, i des que hi és només publica amb aquest Developer ID, notaritzada.
+TEAM_ID=""
 # El certificat «Warp Launch Dev» (D12 de docs/especificacio.md), fins al 2036: `codesign -dr - "/Applications/Warp Launch.app"`.
-REQUISIT="${WARP_LAUNCH_REQUISIT:-identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\"}"
+REQUISIT_DEV="identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\""
+# El de Developer ID, el que Apple posa a les apps que s'hi signen (`codesign -d -r-`): un certificat «Developer ID Application» (…6.1.13),
+# emès per l'autoritat de Developer ID (…6.2.6), de l'equip $1.
+requisit_developer_id() { printf 'identifier "%s" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "%s"' "$IDENTIFICADOR" "$1"; }
+EQUIP="${WARP_LAUNCH_TEAM_ID:-$TEAM_ID}"
+FORMA_TEAM_ID='^[A-Z0-9]{10}$'
+if [[ -n "$EQUIP" && ! "$EQUIP" =~ $FORMA_TEAM_ID ]]; then
+    echo "instal·la: el Team ID («${EQUIP}») no té la forma de deu lletres majúscules o xifres. No s'ha copiat res." >&2
+    exit 1
+fi
+# Per ordre: el de Developer ID, si se sap l'equip, i el de «Warp Launch Dev». Una llista fixa: cap altre certificat no hi entra.
+REQUISITS=()
+SIGNATURES=()
+if [[ -n "$EQUIP" ]]; then
+    REQUISITS+=("$(requisit_developer_id "$EQUIP")")
+    SIGNATURES+=("el Developer ID de l'equip ${EQUIP}")
+fi
+REQUISITS+=("${WARP_LAUNCH_REQUISIT:-$REQUISIT_DEV}")
+SIGNATURES+=("«Warp Launch Dev»")
 DESTI_CARPETA="${WARP_LAUNCH_DESTI:-/Applications}"
 DESTI="$DESTI_CARPETA/Warp Launch.app"
 
@@ -104,14 +127,25 @@ if [[ "$GITHUB" -eq 1 ]]; then
         echo "instal·la: el fitxer baixat no porta cap app de Warp Launch. No s'ha copiat res." >&2
         exit 1
     fi
-    # codesign: 3 vol dir que no compleix el requisit; qualsevol altre error (el requisit mateix, una signatura trencada), es diu tal qual.
-    CODI=0
-    ERROR="$(codesign --verify --deep --strict -R="$REQUISIT" "$ORIGEN" 2>&1)" || CODI=$?
-    if [[ "$CODI" -eq 3 ]]; then
-        echo "instal·la: l'app baixada no està signada amb el certificat d'en David («Warp Launch Dev»): no la instal·lo." >&2
-        exit 1
-    elif [[ "$CODI" -ne 0 ]]; then
-        echo "instal·la: no s'ha pogut comprovar la signatura de l'app baixada (codesign, codi ${CODI}): ${ERROR}" >&2
+    # codesign: 3 vol dir que no compleix aquest requisit, i es prova el següent; qualsevol altre error (el requisit mateix, una signatura
+    # trencada), es diu tal qual.
+    SIGNATURA=""
+    I=0
+    while [[ "$I" -lt "${#REQUISITS[@]}" ]]; do
+        CODI=0
+        ERROR="$(codesign --verify --deep --strict -R="${REQUISITS[$I]}" "$ORIGEN" 2>&1)" || CODI=$?
+        if [[ "$CODI" -eq 0 ]]; then
+            SIGNATURA="${SIGNATURES[$I]}"
+            break
+        elif [[ "$CODI" -ne 3 ]]; then
+            echo "instal·la: no s'ha pogut comprovar la signatura de l'app baixada (codesign, codi ${CODI}): ${ERROR}" >&2
+            exit 1
+        fi
+        I=$((I + 1))
+    done
+    if [[ -z "$SIGNATURA" ]]; then
+        QUINES="$(printf '%s\n' "${SIGNATURES[@]}" | sed '$!s/$/ ni/' | paste -sd' ' -)"
+        echo "instal·la: l'app baixada no està signada amb el certificat d'en David (${QUINES}): no la instal·lo." >&2
         exit 1
     fi
     FONT="GitHub ($REPO)"
@@ -145,6 +179,7 @@ fi
 if [[ "$APLICA" -eq 0 ]]; then
     echo "Mode de prova: no s'ha copiat res."
     echo "Amb --aplica, $ACCIO (de ${FONT}) a «${DESTI}»."
+    if [[ "$GITHUB" -eq 1 ]]; then echo "Signada amb ${SIGNATURA}."; fi
     exit 0
 fi
 
@@ -153,8 +188,8 @@ NOU="$DESTI_CARPETA/.Warp Launch.app.nova-$$"
 ditto "$ORIGEN" "$NOU"
 codesign --verify --deep --strict "$NOU"
 if [[ "$GITHUB" -eq 1 ]]; then
-    # Si el que l'ha baixat la marca com a baixada d'internet, macOS no l'obriria (no és signada per Apple). La signatura
-    # ja s'ha comprovat amb el certificat d'en David.
+    # Si el que l'ha baixat la marca com a baixada d'internet, macOS no obriria una versió signada amb «Warp Launch Dev» (fins a la
+    # 0.36: no és notaritzada). A una de notaritzada no li cal, i no li fa res. La signatura ja s'ha comprovat amb els requisits de dalt.
     xattr -dr com.apple.quarantine "$NOU" 2> /dev/null || true
 fi
 if [[ -n "$ANTIGA" ]]; then
@@ -173,6 +208,7 @@ if [[ -n "$ANTIGA" ]]; then
 else
     echo "Fet: Warp Launch $NOVA és a «${DESTI}». No s'ha obert ni registrat res."
 fi
+if [[ "$GITHUB" -eq 1 ]]; then echo "Signada amb ${SIGNATURA}."; fi
 if [[ -n "${AVIS_VELLA:-}" ]]; then
     echo "Avís: la versió d'abans ha quedat a «${AVIS_VELLA}» (amagada) i no s'ha pogut esborrar: esborra-la a mà." >&2
 fi

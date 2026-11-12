@@ -322,19 +322,109 @@ private let script = URL(filePath: #filePath).deletingLastPathComponent().deleti
         #expect(!sortida.contains("no està signada amb el certificat"))
     }
 
-    /// El requisit de la signatura és el mateix a publica.sh i a instal·la.sh, i és vàlid (`csreq`).
-    @Test func elRequisitEsElMateixIEsValid() throws {
+    /// Els requisits de la signatura són els mateixos a publica.sh i a instal·la.sh (les mateixes línies), i són vàlids (`csreq`): el de
+    /// «Warp Launch Dev» i el de Developer ID, que és el que Apple posa a les apps que s'hi signen.
+    @Test func elsRequisitsSonElsMateixosISonValids() throws {
         let publica = script.deletingLastPathComponent().appending(path: "publica.sh")
         let linies = try [script, publica].map { url in
-            try String(contentsOf: url, encoding: .utf8).split(separator: "\n").filter { $0.hasPrefix("REQUISIT=") }
+            try String(contentsOf: url, encoding: .utf8).split(separator: "\n").filter { $0.hasPrefix("REQUISIT_DEV=") || $0.hasPrefix("requisit_developer_id() {") }
         }
-        #expect(linies[0].count == 1 && linies[0] == linies[1], "\(linies)")
-        let requisit = try sortidaDe("/bin/bash", "IDENTIFICADOR=cat.davide.warp-launch; unset WARP_LAUNCH_REQUISIT; "
-                                     + linies[0][0] + "; printf '%s\\0' \"$REQUISIT\"")
-        #expect(requisit.first?.contains(#"identifier "cat.davide.warp-launch" and certificate leaf = H""#) == true, "\(requisit)")
-        let binari = FileManager.default.temporaryDirectory.appending(path: "warp-launch-requisit-\(UUID().uuidString)")
-        let csreq = try executaPrograma("/usr/bin/csreq", ["-r=" + (requisit.first ?? ""), "-b", binari.path], entorn: [:])
-        #expect(csreq.codi == 0, "\(csreq.sortida)")
+        #expect(linies[0].count == 2 && linies[0] == linies[1], "\(linies)")
+        let requisits = try sortidaDe("/bin/bash", "IDENTIFICADOR=cat.davide.warp-launch; unset WARP_LAUNCH_REQUISIT; " + linies[0].joined(separator: "; ")
+                                      + #"; printf '%s\0' "$REQUISIT_DEV" "$(requisit_developer_id ABCDE12345)""#)
+        #expect(requisits.count == 2, "\(requisits)")
+        #expect(requisits.first == #"identifier "cat.davide.warp-launch" and certificate leaf = H"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6""#, "\(requisits)")
+        #expect(requisits.last == #"identifier "cat.davide.warp-launch" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "ABCDE12345""#, "\(requisits)")
+        for requisit in requisits {
+            let binari = FileManager.default.temporaryDirectory.appending(path: "warp-launch-requisit-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: binari) }
+            let csreq = try executaPrograma("/usr/bin/csreq", ["-r=" + requisit, "-b", binari.path], entorn: [:])
+            #expect(csreq.codi == 0, "\(requisit): \(csreq.sortida)")
+        }
+    }
+
+    /// El Team ID és en un sol lloc, `instal·la.sh`: una sola línia, buida (encara sense el certificat) o amb deu lletres majúscules o
+    /// xifres. Un de mal format fa fallar aquesta prova. `publica.sh` no en porta cap de seu: el llegeix d'aquí.
+    @Test func elTeamIDTeLaFormaBona() throws {
+        let text = try String(contentsOf: script, encoding: .utf8)
+        let linies = text.split(separator: "\n").filter { $0.hasPrefix("TEAM_ID=") }.map(String.init)
+        #expect(linies.count == 1, "\(linies)")
+        let forma = try Regex(#"^TEAM_ID="([A-Z0-9]{10})?"$"#)
+        #expect(linies.allSatisfy { $0.wholeMatch(of: forma) != nil }, "\(linies)")
+        // La mateixa forma que comproven els dos scripts.
+        #expect(text.contains(#"FORMA_TEAM_ID='^[A-Z0-9]{10}$'"#))
+        let publica = try String(contentsOf: script.deletingLastPathComponent().appending(path: "publica.sh"), encoding: .utf8)
+        #expect(publica.contains(#"FORMA_TEAM_ID='^TEAM_ID="([A-Z0-9]{10})?"$'"#))
+        #expect(publica.contains(#"INSTALLA="scripts/instal·la.sh""#))
+        let propis = publica.split(separator: "\n").filter { $0.hasPrefix("TEAM_ID=") }
+        #expect(propis == [#"TEAM_ID="${BASH_REMATCH[1]}""#], "\(propis)")
+        // Les mostres, perquè la forma no ho doni tot per bo.
+        for dolent in [#"TEAM_ID="abcde12345""#, #"TEAM_ID="ABCDE1234""#, #"TEAM_ID="ABCDE123456""#, #"TEAM_ID='ABCDE12345'"#, #"TEAM_ID="ABCDE-2345""#] {
+            #expect(dolent.wholeMatch(of: forma) == nil, "\(dolent)")
+        }
+        for bo in [#"TEAM_ID="""#, #"TEAM_ID="ABCDE12345""#] {
+            #expect(bo.wholeMatch(of: forma) != nil, "\(bo)")
+        }
+    }
+
+    // MARK: --github amb Developer ID: un `codesign` fals que accepta un sol dels dos requisits (i apunta quins se li demanen).
+
+    /// `accepta`: «developer» (el de Developer ID de l'equip ABCDE12345), «dev» (el de «Warp Launch Dev», el de debò) o «cap».
+    private func codesignFals(_ b: Banc, accepta: String) throws {
+        let fitxer = b.carpeta.appending(path: "bin/codesign")
+        try Data(#"""
+        #!/bin/bash
+        if [[ "${1:-} ${2:-} ${3:-}" == "--verify --deep --strict" && "${4:-}" == -R=* ]]; then
+            R="${4#-R=}"
+            echo "$R" >> "$CODESIGN_FALS_REGISTRE"
+            /usr/bin/codesign --verify --deep --strict "$5" || exit $?
+            case "\#(accepta)" in
+                developer) [[ "$R" == *'anchor apple generic'*'certificate leaf[subject.OU] = "ABCDE12345"' ]] && exit 0 ;;
+                dev) [[ "$R" == 'identifier "cat.davide.warp-launch" and certificate leaf = H"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6"' ]] && exit 0 ;;
+            esac
+            echo "$5: test-requirement: code failed to satisfy specified code requirement(s)" >&2
+            exit 3
+        fi
+        exec /usr/bin/codesign "$@"
+
+        """#.utf8).write(to: fitxer)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fitxer.path)
+    }
+
+    /// Accepta tots dos requisits: el de Developer ID (les versions notaritzades) i el de «Warp Launch Dev» (les d'abans, amb --versio).
+    /// Primer prova el de Developer ID. Sense Team ID, només el de «Warp Launch Dev»; amb cap dels dos, no s'instal·la.
+    @Test(arguments: [
+        ("ABCDE12345", "developer", true, ["developer"], "Signada amb el Developer ID de l'equip ABCDE12345."),
+        ("ABCDE12345", "dev", true, ["developer", "dev"], "Signada amb «Warp Launch Dev»."),
+        ("ABCDE12345", "cap", false, ["developer", "dev"], "no està signada amb el certificat d'en David (el Developer ID de l'equip ABCDE12345 ni «Warp Launch Dev»)"),
+        ("", "dev", true, ["dev"], "Signada amb «Warp Launch Dev»."),
+        ("", "developer", false, ["dev"], "no està signada amb el certificat d'en David («Warp Launch Dev»)"),
+    ] as [(String, String, Bool, [String], String)])
+    func githubAcceptaTotsDosRequisits(equip: String, accepta: String, installa: Bool, provats: [String], missatge: String) throws {
+        let b = try Banc()
+        try b.ghFals()
+        try codesignFals(b, accepta: accepta)
+        let registre = b.carpeta.appending(path: "codesign.log")
+        let zip = try b.zip(versio: "0.36.0")
+        let (codi, sortida) = try b.executa("--github", "--versio", "0.36.0", "--aplica",
+                                            entorn: ["GH_FALS_ZIP": zip.path, "WARP_LAUNCH_TEAM_ID": equip, "CODESIGN_FALS_REGISTRE": registre.path])
+        #expect(codi == (installa ? 0 : 1), "\(sortida)")
+        #expect(sortida.contains(missatge), "\(sortida)")
+        #expect(b.versioInstal·lada == (installa ? "0.36.0" : nil))
+        let demanats = ((try? String(contentsOf: registre, encoding: .utf8)) ?? "").split(separator: "\n").map { $0.contains("anchor apple generic") ? "developer" : "dev" }
+        #expect(demanats == provats, "\(demanats)")
+    }
+
+    /// Un Team ID mal format s'atura abans de baixar res.
+    @Test(arguments: ["abcde12345", "ABCDE1234", "ABCDE123456", "ABCDE 2345"])
+    func unTeamIDMalFormatNoBaixaRes(equip: String) throws {
+        let b = try Banc()
+        try b.ghFals()
+        let (codi, sortida) = try b.executa("--github", "--aplica", entorn: ["WARP_LAUNCH_TEAM_ID": equip])
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains("no té la forma de deu lletres majúscules o xifres"), "\(sortida)")
+        #expect(!b.ordresGh.contains("release download"))
+        #expect(b.noms.isEmpty)
     }
 
     /// --versio en demana una de concreta; sense, l'última.

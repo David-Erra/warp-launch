@@ -113,6 +113,8 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             let scripts = carpeta.appending(path: "repo/scripts")
             try FileManager.default.createDirectory(at: scripts, withIntermediateDirectories: true)
             try FileManager.default.copyItem(at: script, to: scripts.appending(path: "publica.sh"))
+            // El Team ID del Developer ID és a `instal·la.sh`, i `publica.sh` el llegeix d'allà: la còpia de debò, amb el seu TEAM_ID.
+            try FileManager.default.copyItem(at: script.deletingLastPathComponent().appending(path: "instal·la.sh"), to: scripts.appending(path: "instal·la.sh"))
             try Self.executable(scripts.appending(path: "build-app.sh"), #"""
             #!/bin/bash
             set -euo pipefail
@@ -384,6 +386,97 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             }
         }
 
+        // --- Developer ID (docs/disseny.md, secció 13): un `codesign` fals que diu que el paquet n'és signat, i un `xcrun` fals que fa
+        // de notarytool i de stapler. Mai no parlen amb Apple.
+
+        var fitxerInstalla: URL { repo.appending(path: "scripts/instal·la.sh") }
+        var registreCodesign: URL { carpeta.appending(path: "codesign.log") }
+        /// Els requisits que s'han comprovat, «camí => requisit», en ordre.
+        var requisitsComprovats: [String] { ((try? String(contentsOf: registreCodesign, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init) }
+        var registreXcrun: URL { carpeta.appending(path: "xcrun.log") }
+        var ordresXcrun: [String] { ((try? String(contentsOf: registreXcrun, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init) }
+        var fitxerTokenXcrun: URL { carpeta.appending(path: "token-xcrun.txt") }
+        /// Una còpia del zip que ha rebut Apple.
+        var zipEnviat: URL { carpeta.appending(path: "enviat.zip") }
+        static let equipDeProva = "ABCDE12345"
+        static let idNotari = "2efe2717-52ef-43a5-96dc-0797e4ca1041"
+        static let requisitDeveloperID = #"identifier "cat.davide.warp-launch" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "ABCDE12345""#
+
+        /// Canvia la línia TEAM_ID de la còpia d'`instal·la.sh` (el text sencer de la línia, o `nil` per treure-la), i ho deixa a origin/main.
+        func posaTeamID(linia: String?) throws {
+            let text = try String(contentsOf: fitxerInstalla, encoding: .utf8)
+            #expect(text.components(separatedBy: "\nTEAM_ID=\"\"\n").count == 2, "la còpia de debò porta TEAM_ID=\"\"")
+            try Data(text.replacing("\nTEAM_ID=\"\"\n", with: linia.map { "\n\($0)\n" } ?? "\n").utf8).write(to: fitxerInstalla)
+            try commit("chore: el Team ID", afegeix: true)
+            try git("push", "-q", "origin", "main")
+        }
+
+        /// El paquet que fa el `build-app.sh` fals passa per signat amb el Developer ID de `equip`: `-dvv` en diu les autoritats, i
+        /// `--verify -R=` accepta els requisits d'Apple d'aquest equip (i apunta quins). La resta, el `codesign` de debò.
+        func ambDeveloperID(equip: String = equipDeProva) throws {
+            try Self.executable(carpeta.appending(path: "bin/codesign"), #"""
+            #!/bin/bash
+            if [[ "${1:-}" == -dvv ]]; then
+                {
+                    echo "Executable=$2"
+                    echo "Identifier=cat.davide.warp-launch"
+                    echo "Authority=Developer ID Application: Prova (\#(equip))"
+                    echo "Authority=Developer ID Certification Authority"
+                    echo "Authority=Apple Root CA"
+                    echo "TeamIdentifier=\#(equip)"
+                } >&2
+                exit 0
+            fi
+            if [[ "${1:-} ${2:-} ${3:-}" == "--verify --deep --strict" && "${4:-}" == -R=* ]]; then
+                REQ="${4#-R=}"
+                echo "$5 => $REQ" >> "$CODESIGN_FALS_REGISTRE"
+                /usr/bin/codesign --verify --deep --strict "$5" || exit $?
+                if [[ "$REQ" == *"anchor apple generic"* && "$REQ" == *'certificate leaf[subject.OU] = "\#(equip)"' ]]; then exit 0; fi
+                echo "$5: test-requirement: code failed to satisfy specified code requirement(s)" >&2
+                exit 3
+            fi
+            exec /usr/bin/codesign "$@"
+
+            """#)
+            try Self.executable(carpeta.appending(path: "bin/xcrun"), #"""
+            #!/bin/bash
+            echo "$*" >> "$XCRUN_FALS_REGISTRE"
+            printf '%s' "${GH_TOKEN:-}${GITHUB_TOKEN:-}" >> "$XCRUN_FALS_TOKEN"
+            case "${1:-} ${2:-}" in
+                "notarytool submit")
+                    [[ -f "$3" ]] || exit 9
+                    /bin/cp "$3" "$XCRUN_FALS_ENVIAT"
+                    [[ -z "${NOTARI_FALS_FALLA:-}" ]] || { echo "Error: HTTP status code: 401. Unable to authenticate." >&2; exit 69; }
+                    printf '{"id":"%s","message":"Processing complete","status":"%s"}\n' "$NOTARI_FALS_ID" "${NOTARI_FALS_ESTAT:-Accepted}"
+                    exit "${NOTARI_FALS_CODI:-0}" ;;
+                "stapler staple")
+                    [[ -z "${STAPLER_FALS_FALLA:-}" ]] || exit 65
+                    # On el deixa el de debò, en una app: fora del que segella la signatura.
+                    printf 'tiquet de prova' > "$3/Contents/CodeResources"
+                    exit 0 ;;
+                "stapler validate")
+                    [[ -z "${STAPLER_FALS_VALIDA_FALLA:-}" ]] || exit 65
+                    [[ -f "$3/Contents/CodeResources" ]] || exit 66
+                    exit 0 ;;
+            esac
+            exit 1
+
+            """#)
+        }
+
+        /// L'entorn de les proves amb Developer ID: sense cap requisit de prova, perquè `publica.sh` triï el seu.
+        var entornDeveloperID: [String: String] {
+            ["CODESIGN_FALS_REGISTRE": registreCodesign.path, "XCRUN_FALS_REGISTRE": registreXcrun.path, "XCRUN_FALS_TOKEN": fitxerTokenXcrun.path,
+             "XCRUN_FALS_ENVIAT": zipEnviat.path, "NOTARI_FALS_ID": Self.idNotari]
+        }
+
+        /// Els noms dels fitxers d'un zip.
+        func contingut(de zip: URL) throws -> [String] {
+            let (codi, sortida) = try executaPrograma("/usr/bin/zipinfo", ["-1", zip.path], entorn: ["PATH": "/usr/bin:/bin"])
+            #expect(codi == 0, "\(sortida)")
+            return sortida.split(separator: "\n").map(String.init)
+        }
+
         /// Canvia el fitxer de l'adreça, i ho deixa tot a origin/main.
         func posaActualitzacions(_ text: String?) throws {
             if let text { try Data(text.utf8).write(to: fitxerActualitzacions) } else { try FileManager.default.removeItem(at: fitxerActualitzacions) }
@@ -414,14 +507,19 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(try String(contentsOf: b.fitxerArgumentsCompilacio, encoding: .utf8) == "release --amb-feed")
     }
 
-    /// El requisit de les peces de Sparkle és el certificat de l'app, sense el seu identificador: les peces tenen el seu.
-    @Test func elRequisitDeSparkleEsNomesElCertificat() throws {
+    /// El requisit de les peces de Sparkle és el certificat de l'app, sense el seu identificador: les peces tenen el seu. Amb tots dos
+    /// requisits, el de «Warp Launch Dev» i el de Developer ID, i amb les línies de l'script.
+    @Test(arguments: [("$REQUISIT_DEV", #"certificate leaf = H""#),
+                      (#"$(requisit_developer_id ABCDE12345)"#, "anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and ")])
+    func elRequisitDeSparkleEsNomesElCertificat(requisit: String, comenca: String) throws {
         let text = try String(contentsOf: script, encoding: .utf8)
-        let linies = text.split(separator: "\n").filter { $0.hasPrefix("REQUISIT=") || $0.hasPrefix("REQUISIT_SPARKLE=") }.map(String.init)
-        #expect(linies.count == 2, "\(linies)")
+        let linies = text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        let definicions = linies.filter { $0.hasPrefix("REQUISIT_DEV=") || $0.hasPrefix("requisit_developer_id() {") }
+        let sparkle = linies.filter { $0.hasPrefix("REQUISIT_SPARKLE=") }
+        #expect(definicions.count == 2 && sparkle.count == 1, "\(definicions) \(sparkle)")
         let valor = try sortidaDe("/bin/bash", "IDENTIFICADOR=cat.davide.warp-launch; unset WARP_LAUNCH_REQUISIT WARP_LAUNCH_REQUISIT_SPARKLE; "
-                                  + linies.joined(separator: "; ") + "; printf '%s\\0' \"$REQUISIT_SPARKLE\"")
-        #expect(valor.first?.hasPrefix(#"certificate leaf = H""#) == true, "\(valor)")
+                                  + definicions.joined(separator: "; ") + "; REQUISIT=\"\(requisit)\"; " + sparkle.joined() + "; printf '%s\\0' \"$REQUISIT_SPARKLE\"")
+        #expect(valor.first?.hasPrefix(comenca) == true, "\(valor)")
         #expect(valor.first?.contains("identifier") == false, "\(valor)")
         let binari = FileManager.default.temporaryDirectory.appending(path: "warp-launch-requisit-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: binari) }
@@ -1373,6 +1471,167 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             #expect(!b.ordresGh.contains("release edit"), "\(b.ordresGh)")
             #expect(!b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
         }
+    }
+
+    // --- Developer ID i notarització (docs/disseny.md, secció 13), amb un `codesign` i un `xcrun` falsos.
+
+    /// Amb Developer ID i --aplica (també una beta): primer el zip per a Apple, notarytool fins a «Accepted», el tiquet i la seva
+    /// validació, i després el zip definitiu, que el porta, i que és el que es signa i es puja. Cap d'aquestes eines no veu el token.
+    @Test(arguments: [[], ["--beta"]])
+    func ambDeveloperIDLaNotaritzaAbansDePublicar(mode: [String]) throws {
+        let b = try Banc()
+        try b.posaTeamID(linia: #"TEAM_ID="ABCDE12345""#)
+        try b.ambDeveloperID()
+        let entorn = b.entornDeveloperID.merging(["GH_TOKEN": "token-de-prova-1", "GITHUB_TOKEN": "token-de-prova-2"]) { $1 }
+        let (codi, sortida) = try b.executa(arguments: mode + ["--aplica"], entorn: entorn)
+        #expect(codi == 0, "\(sortida)")
+        let ordres = b.ordresXcrun
+        #expect(ordres.count == 3, "\(ordres)")
+        let enviament = try #require(ordres.first)
+        #expect(enviament.hasPrefix("notarytool submit ") && enviament.hasSuffix("/notaritzacio/WarpLaunch-0.28.0.zip --keychain-profile warp-launch --wait --output-format json"), "\(enviament)")
+        #expect(Array(ordres.dropFirst()) == ["stapler staple build/Warp Launch.app", "stapler validate build/Warp Launch.app"], "\(ordres)")
+        #expect(sortida.contains("Notarització: Apple l'ha acceptada (\(Banc.idNotari))."), "\(sortida)")
+        // A Apple hi va l'app sense el tiquet; el zip que es signa i es puja, amb.
+        #expect(try b.contingut(de: b.zipEnviat).contains("Warp Launch.app/Contents/Info.plist"))
+        #expect(!(try b.contingut(de: b.zipEnviat)).contains("Warp Launch.app/Contents/CodeResources"))
+        #expect(try b.contingut(de: b.zip).contains("Warp Launch.app/Contents/CodeResources"))
+        #expect(b.zipPujat == (try b.sha256(de: b.zip)))
+        #expect(b.ordresSign == ["build/WarpLaunch-0.28.0.zip"])
+        #expect(b.ordresGh.contains("release create v0.28.0 build/WarpLaunch-0.28.0.zip"), "\(b.ordresGh)")
+        // El requisit de Developer ID per a l'app, i el mateix sense l'identificador per a les peces de Sparkle. Abans i després del tiquet.
+        let sparkle = String(Banc.requisitDeveloperID.trimmingPrefix(#"identifier "cat.davide.warp-launch" and "#))
+        let unCop = ["build/Warp Launch.app => \(Banc.requisitDeveloperID)",
+                     "build/Warp Launch.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate => \(sparkle)",
+                     "build/Warp Launch.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app => \(sparkle)",
+                     "build/Warp Launch.app/Contents/Frameworks/Sparkle.framework => \(sparkle)"]
+        #expect(b.requisitsComprovats == unCop + unCop, "\(b.requisitsComprovats)")
+        #expect(((try? String(contentsOf: b.fitxerTokenXcrun, encoding: .utf8)) ?? "") == "")
+    }
+
+    /// Si Apple no l'accepta (o no respon, o el tiquet no es pot grapar o no és vàlid), no es publica res: ni el zip es signa, ni es crea
+    /// la versió, ni es toca la recepta. Si se sap l'enviament, diu com veure'n el registre.
+    @Test(arguments: [
+        (["NOTARI_FALS_ESTAT": "Invalid"], "estat «Invalid», notarytool ha acabat amb el codi 0"),
+        (["NOTARI_FALS_ESTAT": "Invalid", "NOTARI_FALS_CODI": "1"], "estat «Invalid», notarytool ha acabat amb el codi 1"),
+        (["NOTARI_FALS_ESTAT": "Rejected"], "estat «Rejected»"),
+        (["NOTARI_FALS_ESTAT": "Accepted", "NOTARI_FALS_CODI": "1"], "estat «Accepted», notarytool ha acabat amb el codi 1"),
+        (["NOTARI_FALS_FALLA": "1"], "estat «cap», notarytool ha acabat amb el codi 69"),
+        (["STAPLER_FALS_FALLA": "1"], "no s'ha pogut grapar el tiquet"),
+        (["STAPLER_FALS_VALIDA_FALLA": "1"], "no és vàlid (xcrun stapler validate)"),
+    ] as [([String: String], String)])
+    func siLaNotaritzacioFallaNoEsPublicaRes(entorn extra: [String: String], missatge: String) throws {
+        let b = try Banc()
+        try b.posaTeamID(linia: #"TEAM_ID="ABCDE12345""#)
+        try b.ambDeveloperID()
+        let abans = try Data(contentsOf: b.fitxerRecepta)
+        let (codi, sortida) = try b.executa("--aplica", entorn: b.entornDeveloperID.merging(extra) { $1 })
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains(missatge), "\(sortida)")
+        #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+        #expect(b.ordresSign.isEmpty && b.ordresVerifica.isEmpty, "un zip sense notaritzar no es signa")
+        #expect(!b.ordresGh.contains("release create") && !b.ordresGh.contains("release edit"), "\(b.ordresGh)")
+        #expect(!b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+        #expect(try Data(contentsOf: b.fitxerRecepta) == abans)
+        #expect(!sortida.contains("Fet:"), "\(sortida)")
+        if extra["NOTARI_FALS_FALLA"] != nil {
+            #expect(sortida.contains("xcrun notarytool history --keychain-profile warp-launch"), "\(sortida)")
+        } else if extra["NOTARI_FALS_ESTAT"] != nil {
+            #expect(sortida.contains("Per veure'n el registre: xcrun notarytool log \(Banc.idNotari) --keychain-profile warp-launch"), "\(sortida)")
+            #expect(!b.ordresXcrun.contains { $0.hasPrefix("stapler") }, "\(b.ordresXcrun)")
+        }
+    }
+
+    /// El mode de prova no parla amb Apple: ni notarytool ni stapler. Diu què faria, i ho comprova tot com sempre.
+    @Test(arguments: [[], ["--beta"]])
+    func elModeDeProvaNoNotaritza(mode: [String]) throws {
+        let b = try Banc()
+        try b.posaTeamID(linia: #"TEAM_ID="ABCDE12345""#)
+        try b.ambDeveloperID()
+        let (codi, sortida) = try b.executa(arguments: mode, entorn: b.entornDeveloperID)
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresXcrun.isEmpty, "\(b.ordresXcrun)")
+        #expect(sortida.contains("Mode de prova: no s'ha publicat res."), "\(sortida)")
+        #expect(sortida.contains("És signada amb el Developer ID de l'equip ABCDE12345. Abans, la notaritzaria a Apple (xcrun notarytool submit --wait, amb el perfil «warp-launch» del clauer)"), "\(sortida)")
+        #expect(b.ordresSign.isEmpty && b.ordresVerifica.isEmpty)
+        #expect(b.requisitsComprovats.first == "build/Warp Launch.app => \(Banc.requisitDeveloperID)", "\(b.requisitsComprovats)")
+    }
+
+    /// Sense Developer ID (TEAM_ID buit, «Warp Launch Dev»), com fins ara: no es notaritza, ni amb --aplica, ni se'n parla.
+    @Test(arguments: [[], ["--aplica"]])
+    func senseDeveloperIDNoEsNotaritza(arguments: [String]) throws {
+        let b = try Banc()
+        try b.ambDeveloperID()
+        // Només l'`xcrun` fals: el `codesign` és el de debò, i el paquet, ad hoc.
+        try FileManager.default.removeItem(at: b.carpeta.appending(path: "bin/codesign"))
+        let (codi, sortida) = try b.executa(arguments: arguments, entorn: Banc.requisitDeProva.merging(b.entornDeveloperID) { $1 })
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.ordresXcrun.isEmpty, "\(b.ordresXcrun)")
+        #expect(!sortida.contains("notari"), "\(sortida)")
+        #expect(!(try b.contingut(de: b.zip)).contains("Warp Launch.app/Contents/CodeResources"))
+    }
+
+    /// Un Developer ID que `instal·la.sh` encara no coneix, o d'un altre equip, no es publica: `instal·la.sh --github` no l'instal·laria.
+    @Test(arguments: [(nil, #"Posa-hi TEAM_ID="ABCDE12345", fes-ne commit i push"#),
+                      (#"TEAM_ID="ZZZZZ99999""#, "és signada amb el Developer ID de l'equip ABCDE12345 («Developer ID Application: Prova (ABCDE12345)»), i scripts/instal·la.sh espera el de l'equip ZZZZZ99999")]
+          as [(String?, String)])
+    func unDeveloperIDQueInstallaNoConeixNoEsPublica(linia: String?, missatge: String) throws {
+        let b = try Banc()
+        if let linia { try b.posaTeamID(linia: linia) }
+        try b.ambDeveloperID()
+        for arguments: [String] in [[], ["--aplica"]] {
+            let (codi, sortida) = try b.executa(arguments: arguments, entorn: b.entornDeveloperID)
+            #expect(codi == 1, "\(sortida)")
+            #expect(sortida.contains(missatge), "\(sortida)")
+            #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+            #expect(b.ordresXcrun.isEmpty && b.ordresSign.isEmpty, "\(b.ordresXcrun)")
+            #expect(!b.ordresGh.contains("release create") && !b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+        }
+    }
+
+    /// Un cop `instal·la.sh` sap el Team ID, només es publica amb aquest Developer ID: la recepta ja no traurà la marca de baixada.
+    @Test func ambTeamIDNoEsPublicaSenseDeveloperID() throws {
+        let b = try Banc()
+        try b.posaTeamID(linia: #"TEAM_ID="ABCDE12345""#)
+        try b.comprovaRefusDespresDeCompilar(conte: "no és signada amb Developer ID (ad hoc), i scripts/instal·la.sh ja espera el de l'equip ABCDE12345", entorn: [:])
+    }
+
+    /// TEAM_ID ha de ser una sola línia, buida o amb deu lletres majúscules o xifres: si no, no es compila ni es publica res.
+    @Test(arguments: [#"TEAM_ID="abcde12345""#, #"TEAM_ID="ABCDE1234""#, #"TEAM_ID="ABCDE123456""#, #"TEAM_ID='ABCDE12345'"#, #"TEAM_ID="ABCDE12345" "#,
+                      #"TEAM_ID="""# + "\nTEAM_ID=\"\"", nil] as [String?])
+    func unTeamIDMalFormatNoEsPublica(linia: String?) throws {
+        let b = try Banc()
+        try b.posaTeamID(linia: linia)
+        try b.comprovaRefus(conte: "ha de tenir exactament una línia TEAM_ID=\"\" (sense Developer ID) o TEAM_ID=\"XXXXXXXXXX\"")
+        #expect(b.ordresGh.isEmpty, "\(b.ordresGh)")
+    }
+
+    /// Amb Developer ID, si la recepta encara treu la marca de baixada, ho recorda (no la toca: es treu a mà). Amb «Warp Launch Dev», no.
+    @Test(arguments: [true, false])
+    func recordaElPasDeLaQuarantena(developerID: Bool) throws {
+        let b = try Banc()
+        try Data(recepta().replacing("  app \"Warp Launch.app\"\n", with: """
+          app "Warp Launch.app"
+
+          postflight_steps do
+            run "/usr/bin/xattr",
+                args:         ["-dr", "com.apple.quarantine", "{{appdir}}/Warp Launch.app"],
+                must_succeed: false
+          end
+
+        """).utf8).write(to: b.fitxerRecepta)
+        if developerID {
+            try b.posaTeamID(linia: #"TEAM_ID="ABCDE12345""#)
+            try b.ambDeveloperID()
+        }
+        let entorn = developerID ? b.entornDeveloperID : Banc.requisitDeProva
+        let (codi, sortida) = try b.executa(entorn: entorn)
+        #expect(codi == 0, "\(sortida)")
+        #expect(sortida.contains("encara treu la marca de baixada (com.apple.quarantine)") == developerID, "\(sortida)")
+        // Sense el pas, res a recordar.
+        try Data(recepta().utf8).write(to: b.fitxerRecepta)
+        let senseElPas = try b.executa(entorn: entorn)
+        #expect(senseElPas.codi == 0, "\(senseElPas.sortida)")
+        #expect(!senseElPas.sortida.contains("marca de baixada"), "\(senseElPas.sortida)")
     }
 
     /// Si GitHub no la deixa passar a l'última, la recepta no es toca.
