@@ -342,6 +342,12 @@ comprova_paquet() {
         exit 1
     fi
     tria_el_requisit "$PAQUET"
+    # La 1.0.0 i les següents, només notaritzades (criteri de la 1.0.0, decisió D-P1 de l'autor): sense Developer ID, macOS no
+    # l'obre baixada amb el navegador. Una beta sí que es pot publicar sense: els provadors la instal·len amb instal·la.sh.
+    if [[ "$MODE" != beta && "$DEVELOPER_ID" -eq 0 && "${VERSIO%%.*}" -ge 1 ]]; then
+        echo "publica: la ${VERSIO} és la 1.0.0 o posterior, i «${PAQUET}» no és signada amb Developer ID: des de la 1.0.0 només es publiquen versions notaritzades (docs/disseny.md, secció 13). Amb --beta sí que es pot publicar per provar-la. No s'ha publicat res." >&2
+        exit 1
+    fi
     comprova_signatura "$PAQUET" "$REQUISIT"
     # `--deep` comprova que les peces de dins siguin vàlides, però no qui les signa.
     for PECA in "$FRAMEWORK/Versions/B/Autoupdate" "$FRAMEWORK/Versions/B/Updater.app" "$FRAMEWORK"; do

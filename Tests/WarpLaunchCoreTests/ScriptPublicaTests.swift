@@ -487,12 +487,12 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         /// Publica la 0.28.0 com a versió de prova, i en posa l'etiqueta a origin, com fa GitHub. Després, ni la compilació ni el zip
         /// queden a `build/` (el que es promogui ha de sortir del que hi ha publicat), i els registres de `gh` i de les eines tornen a
         /// començar. `zipPujat` continua dient el sha256 del zip pujat.
-        func publicaBeta() throws {
+        func publicaBeta(versio: String = "0.28.0") throws {
             let (codi, sortida) = try executa("--beta", "--aplica", entorn: Self.requisitDeProva)
             #expect(codi == 0, "\(sortida)")
-            try git("tag", "v0.28.0")
-            try git("push", "-q", "origin", "v0.28.0")
-            try git("tag", "-d", "v0.28.0")
+            try git("tag", "v\(versio)")
+            try git("push", "-q", "origin", "v\(versio)")
+            try git("tag", "-d", "v\(versio)")
             for fitxer in [repo.appending(path: "build"), fitxerArgumentsCompilacio, registreGh, registreSign, registreVerifica] {
                 try FileManager.default.removeItem(at: fitxer)
             }
@@ -1373,6 +1373,50 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         let deProva = try #require(sortida.range(of: "gh release edit v0.28.0 --prerelease --repo exemple/prova"), "\(sortida)")
         #expect(anterior.lowerBound < deProva.lowerBound, "\(sortida)")
         #expect(!sortida.contains("Fet:"), "\(sortida)")
+    }
+
+    // --- La 1.0.0 i les següents, només notaritzades (criteri de la 1.0.0, decisió D-P1).
+
+    /// Sense Developer ID, la 1.0.0 no es publica com a versió normal, ni en mode de prova ni amb --aplica: no puja res ni toca la recepta.
+    @Test func laPrimeraVersioNoEsPublicaSenseDeveloperID() throws {
+        for arguments in [[String](), ["--aplica"]] {
+            let b = try Banc(versio: "1.0.0")
+            let abans = try Data(contentsOf: b.fitxerRecepta)
+            let (codi, sortida) = try b.executa(arguments: arguments, entorn: Banc.requisitDeProva)
+            #expect(codi == 1, "\(sortida)")
+            #expect(sortida.contains("des de la 1.0.0 només es publiquen versions notaritzades"), "\(sortida)")
+            #expect(sortida.contains("No s'ha publicat res."), "\(sortida)")
+            #expect(!b.ordresGh.contains("release create") && !b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+            #expect(b.ordresSign.isEmpty)
+            #expect(try Data(contentsOf: b.fitxerRecepta) == abans)
+        }
+    }
+
+    /// Com a beta, la 1.0.0 sí que es pot publicar sense Developer ID: els provadors la instal·len amb instal·la.sh.
+    @Test func laPrimeraVersioEsPotProvarComABetaSenseDeveloperID() throws {
+        let b = try Banc(versio: "1.0.0")
+        let (codi, sortida) = try b.executa("--beta", entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(sortida.contains("com a versió de prova: una pre-release"), "\(sortida)")
+        #expect(!sortida.contains("només es publiquen versions notaritzades"), "\(sortida)")
+    }
+
+    /// Una beta 1.0.0 sense Developer ID no es pot promoure: arribaria a tothom sense notaritzar. No toca ni GitHub ni la recepta.
+    @Test func unaBetaSenseDeveloperIDNoEsPromouALaPrimeraVersio() throws {
+        let b = try Banc(versio: "1.0.0")
+        try b.publicaBeta(versio: "1.0.0")
+        let (codi, sortida) = try b.executa("--promou", "1.0.0", "--aplica", entorn: Banc.requisitDeProva)
+        #expect(codi == 1, "\(sortida)")
+        #expect(sortida.contains("des de la 1.0.0 només es publiquen versions notaritzades"), "\(sortida)")
+        #expect(!b.ordresGh.contains("release edit") && !b.ordresGh.contains("--method PUT"), "\(b.ordresGh)")
+    }
+
+    /// Abans de la 1.0.0, sense Developer ID, com fins ara.
+    @Test func abansDeLaPrimeraVersioEsPublicaSenseDeveloperID() throws {
+        let b = try Banc(versio: "0.99.0")
+        let (codi, sortida) = try b.executa(entorn: Banc.requisitDeProva)
+        #expect(codi == 0, "\(sortida)")
+        #expect(!sortida.contains("només es publiquen versions notaritzades"), "\(sortida)")
     }
 
     // --- --promou: la versió de prova passa a ser l'última, amb el mateix zip.
