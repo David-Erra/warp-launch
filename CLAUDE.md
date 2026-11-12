@@ -23,7 +23,7 @@ Els requisits són a `docs/especificacio.md`.
   es reconeixen i no es dupliquen; reinici, L2 i L5 amb l'OK; en publicar-la, la primera actualització automàtica real); 0.35, multidioma en 10 llengües (ca, en, es, fr, de, it, pt-BR, ja,
   zh-Hans i ko; el del sistema per defecte i selector: la 1.0.0 ha d'acceptar multidioma; al codi de la 0.35.0, de F1 a F6; falta F7, la revisió visual de l'autor); 0.36, la candidata (primer ús guiat, botó del permís i versions provades; al codi l'11/11/2026, sense veure); 0.37, Developer ID i notarització, quan l'autor tingui el certificat; beta amb pre-releases
   de GitHub i 1.0.0. Fora de la 1.0.0: D20, D9, les pestanyes fetes a mà a Warp i els extres de l'editor. D16 queda desmentida i acceptada.
-  **Acord amb la sessió de ThingWorx (11/11/2026):** cap prova real d'aquest repo obre finestres amb repos `ot-*`; si cal obrir pestanyes reals, s'avisa abans.
+  **Acord amb una altra sessió de feina de l'autor (11/11/2026):** cap prova real d'aquest repo obre finestres amb els seus repos de feina; si cal obrir pestanyes reals, s'avisa abans.
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
   sense l'historial anterior ni les versions d'abans de la 0.28.0. El `README.md` explica com instal·lar-la.
   - **Homebrew:** el tap és `David-Erra/homebrew-tap`, públic (`Casks/warp-launch.rb`): `brew install --cask
