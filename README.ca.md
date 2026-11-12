@@ -17,7 +17,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
 - **Warp Stable** a `/Applications` (des de la 0.29.2, a qualsevol carpeta: l'app pregunta a macOS on és; des de la 0.31.1, si
   tens una altra còpia oberta, compta la que és oberta). **Warp Preview no és compatible:** si només hi ha Preview, o Preview és
   obert i Stable no, l'app no obre res i ho diu. Sense cap Warp, tampoc.
-- Provat el 05/11/2026 amb macOS 27.2, Warp 0.2026.10.21 i Claude Code 2.1.318. Llegeix formats interns de Warp i de Claude Code que
+- Provat l'11/11/2026 amb macOS 27.2, Warp 0.2026.11.04 i Claude Code 2.1.322. Llegeix formats interns de Warp i de Claude Code que
   no estan documentats, i una versió nova els pot trencar: el diagnòstic («Si alguna cosa falla», a sota) diu si encara quadren.
 
 1. **Instal·la-la amb Homebrew.** Cal tenir [Homebrew](https://brew.sh). Si no el vols fer servir, vegeu «Sense Homebrew», a sota.

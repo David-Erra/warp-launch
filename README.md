@@ -17,7 +17,7 @@ You need a Mac with Apple silicon (M1 or later) and macOS 26 or later, an admini
 - **Warp Stable** in `/Applications` (since 0.29.2, in any folder: the app asks macOS where it is; since 0.31.1, if you have
   another copy open, the one that's open counts). **Warp Preview isn't supported:** if there's only Preview, or Preview is open
   and Stable isn't, the app doesn't open anything and says so. Without any Warp, it doesn't either.
-- Tested on November 5, 2026 with macOS 27.2, Warp 0.2026.10.21 and Claude Code 2.1.318. It reads internal Warp and Claude Code formats
+- Tested on November 11, 2026 with macOS 27.2, Warp 0.2026.11.04 and Claude Code 2.1.322. It reads internal Warp and Claude Code formats
   that aren't documented, and a new version can break them: the diagnostics (“If something goes wrong”, below) tell you whether
   they still match.
 

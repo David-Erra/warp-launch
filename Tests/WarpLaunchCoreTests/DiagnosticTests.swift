@@ -393,20 +393,25 @@ private struct MacDeProva {
     @Test func lesVersionsNoProvadesSonAvisos() throws {
         let mac = try MacDeProva()
         #expect(try mac.comprovacio(.versioWarp).detall.contains("Warp 0.2026.10.21.08.25.02, at "))
+        // Des de la 0.36.0, també la 0.2026.11.04 (11/11/2026).
         try mac.appDeWarp(versio: "0.2026.11.04.08.17.01")
+        #expect(try mac.comprovacio(.versioWarp).resultat == .be)
+        try mac.appDeWarp(versio: "0.2026.11.18.08.00.00")
         let warp = try mac.comprovacio(.versioWarp)
         #expect(warp.resultat == .avis)
-        #expect(warp.detall.contains("hasn't been tested with Warp Launch (tested: 0.2026.10.21)"))
+        #expect(warp.detall.contains("hasn't been tested with Warp Launch (tested: 0.2026.10.21, 0.2026.11.04)"))
 
-        try mac.versioDeClaude("2.1.319")
+        try mac.versioDeClaude("2.1.323")
         let claude = try mac.comprovacio(.versioClaude)
         #expect(claude.resultat == .avis)
         // La versió, un sol cop, com la de Warp.
-        #expect(claude.detall == "Claude Code 2.1.319 (1 session), from the session files, hasn't been tested with Warp "
-            + "Launch (tested: 2.1.317–2.1.318). It isn't an error: if something fails, this may be why.")
-        #expect(claude.detall.components(separatedBy: "2.1.319").count == 2)
-        try mac.versioDeClaude("2.1.318")
-        #expect(try mac.comprovacio(.versioClaude).resultat == .be)
+        #expect(claude.detall == "Claude Code 2.1.323 (1 session), from the session files, hasn't been tested with Warp "
+            + "Launch (tested: 2.1.317–2.1.322). It isn't an error: if something fails, this may be why.")
+        #expect(claude.detall.components(separatedBy: "2.1.323").count == 2)
+        for provada in ["2.1.318", "2.1.319", "2.1.321", "2.1.322"] {
+            try mac.versioDeClaude(provada)
+            #expect(try mac.comprovacio(.versioClaude).resultat == .be, "\(provada)")
+        }
     }
 
     /// Amb versions provades i no provades, cada una surt un sol cop, i la no provada ho porta al costat; amb dues de no
@@ -415,15 +420,15 @@ private struct MacDeProva {
         var mac = try MacDeProva()
         mac.processos.claude(102, argv: ["claude"], uuid: uuidDeProva("a"))
         try escriuSessio(a: mac.sessions, pid: 102, sessionId: "1c3d5f7a-2b4c-4d6e-8f0a-1b2c3d4e5f6a", cwd: mac.projecte)
-        try mac.versioDeClaude("2.1.318", pid: 101)
-        try mac.versioDeClaude("2.1.319", pid: 102)
+        try mac.versioDeClaude("2.1.322", pid: 101)
+        try mac.versioDeClaude("2.1.323", pid: 102)
         let barrejades = try mac.comprovacio(.versioClaude)
         #expect(barrejades.resultat == .avis)
-        #expect(barrejades.detall == "Claude Code 2.1.318 (1 session), 2.1.319 (1 session, not tested with Warp Launch), "
-            + "from the session files (tested: 2.1.317–2.1.318). It isn't an error: if something fails, this may be why.")
-        try mac.versioDeClaude("2.1.320", pid: 101)
-        #expect(try mac.comprovacio(.versioClaude).detall == "Claude Code 2.1.319 (1 session), 2.1.320 (1 session), from "
-            + "the session files, haven't been tested with Warp Launch (tested: 2.1.317–2.1.318). It isn't an error: if "
+        #expect(barrejades.detall == "Claude Code 2.1.322 (1 session), 2.1.323 (1 session, not tested with Warp Launch), "
+            + "from the session files (tested: 2.1.317–2.1.322). It isn't an error: if something fails, this may be why.")
+        try mac.versioDeClaude("2.1.324", pid: 101)
+        #expect(try mac.comprovacio(.versioClaude).detall == "Claude Code 2.1.323 (1 session), 2.1.324 (1 session), from "
+            + "the session files, haven't been tested with Warp Launch (tested: 2.1.317–2.1.322). It isn't an error: if "
             + "something fails, this may be why.")
     }
 
@@ -454,6 +459,13 @@ private struct MacDeProva {
         #expect(claude.description == "2.1.317–2.1.318")
         #expect(VersionsProvades.provada("2.1.317", VersionsProvades.claude))
         #expect(VersionsProvades.provada("0.2026.10.21.08.25.02", VersionsProvades.warp))
+        // 0.36.0 (11/11/2026): la 0.2026.11.04 de Warp, conservant la 0.2026.10.21, i Claude Code fins a la 2.1.322.
+        #expect(VersionsProvades.warp == [RangVersions("0.2026.10.21"), RangVersions("0.2026.11.04")])
+        #expect(VersionsProvades.claude == [RangVersions(desDe: "2.1.317", finsA: "2.1.322")])
+        #expect(VersionsProvades.provada("0.2026.11.04.08.17.01", VersionsProvades.warp))
+        #expect(!VersionsProvades.provada("0.2026.11.05", VersionsProvades.warp))
+        #expect(VersionsProvades.provada("2.1.322", VersionsProvades.claude))
+        #expect(!VersionsProvades.provada("2.1.323", VersionsProvades.claude))
     }
 
     // MARK: - g) Restauració i consentiment

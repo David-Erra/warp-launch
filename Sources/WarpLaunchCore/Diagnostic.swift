@@ -8,10 +8,12 @@ import Foundation
 /// Les versions de Warp i de Claude Code amb prova real (docs/fets-verificats.md). Fora d'aquí, el diagnòstic avisa que no
 /// s'han provat, però no és cap error. És una constant de Swift (no un recurs de SwiftPM): va dins del binari.
 public enum VersionsProvades {
-    /// Warp Stable 0.2026.10.21 (qualsevol compilació: `0.2026.10.21.08.25.02`, a la prova L1).
-    public static let warp = [RangVersions("0.2026.10.21")]
-    /// Claude Code de la 2.1.317 a la 2.1.318.
-    public static let claude = [RangVersions(desDe: "2.1.317", finsA: "2.1.318")]
+    /// Warp Stable 0.2026.10.21 (qualsevol compilació: `0.2026.10.21.08.25.02`, a la prova L1) i 0.2026.11.04
+    /// (`0.2026.11.04.08.17.01`, 11/11/2026: la lectura completa de 75 terminals i 74 sessions, i la prova real de la 0.34.0).
+    public static let warp = [RangVersions("0.2026.10.21"), RangVersions("0.2026.11.04")]
+    /// Claude Code de la 2.1.317 a la 2.1.322 (11/11/2026: amb la 2.1.322 instal·lada, hi corrien sessions de la 2.1.319, la
+    /// 2.1.321 i la 2.1.322, i la lectura les va llegir totes).
+    public static let claude = [RangVersions(desDe: "2.1.317", finsA: "2.1.322")]
 
     /// Si `versio` és dins d'algun dels rangs.
     public static func provada(_ versio: String, _ rangs: [RangVersions]) -> Bool {
