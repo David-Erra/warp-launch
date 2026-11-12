@@ -515,7 +515,7 @@
 "Cap" = "Keiner";
 "Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "Fester Sitzungsname (-n): erscheint in der Auswahl von /resume und im Titel des Terminals";
 "--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions: Claude fragt nie um Erlaubnis, und auch neue Jobs, die es direkt mit claude --bg startet, fragen nicht";
-"Mode de permisos" = "Berechtigungsmodus";
+"Mode de permisos" = "Berechtigungen";
 "Amb «Salta els permisos», Claude no fa cas del mode" = "Mit „Berechtigungen überspringen“ ignoriert Claude den Modus";
 "Treu el mode de permisos" = "Berechtigungsmodus entfernen";
 "reprèn %@" = "setzt %@ fort";
@@ -615,7 +615,7 @@
 "No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat." = "Die Erlaubnis konnte nicht zurückgezogen werden: %@. Die Einstellung von Warp bleibt aktiviert, wie standardmäßig (Warp hat keine „settings.toml“): Warp Launch deaktiviert sie, sobald Warp mit einem Tab geöffnet ist. Die Erlaubnis hat sich nicht geändert.";
 "No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat." = "Die Erlaubnis konnte nicht zurückgezogen werden: %@. Die Einstellung von Warp bleibt aktiviert und konnte nicht wieder deaktiviert werden: Warp Launch versucht es in einer Minute erneut. Die Erlaubnis hat sich nicht geändert.";
 "Has deixat de fer servir Warp Launch" = "Du verwendest Warp Launch nicht mehr";
-"Warp Launch ha de desactivar un ajust de Warp" = "Warp Launch muss eine Einstellung von Warp deaktivieren";
+"Warp Launch ha de desactivar un ajust de Warp" = "Warp Launch muss eine Warp-Einstellung deaktivieren";
 "Abans de començar, necessita el teu permís." = "Vorher braucht die App deine Erlaubnis.";
 "Per què cal" = "Warum das nötig ist";
 "Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides." = "Beim Start kann Warp die Tabs vom letzten Mal wieder öffnen, aber ohne Claude. Warp Launch würde sie nicht als eigene erkennen, und beim Öffnen deiner Fenster wären die Tabs doppelt.";

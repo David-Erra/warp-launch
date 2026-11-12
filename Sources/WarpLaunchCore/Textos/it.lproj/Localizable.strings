@@ -287,7 +287,7 @@
 "L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "L’ultimo Claude di questo pannello era in esecuzione in “%@”, non in questa cartella (verifica)";
 "Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "Verifica che il modello supporti ultracode e che i dynamic workflows siano attivati";
 "Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "Sforzo “%@” sconosciuto: Claude lo ignora e usa quello predefinito";
-"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude non si avvierà: la modalità dei permessi “%@” non esiste (%@)";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude non si avvierà: la modalità permessi “%@” non esiste (%@)";
 "Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "Con “Salta i permessi”, Claude ignora la modalità “%@”";
 "Claude no arrencarà: els settings no són JSON vàlid" = "Claude non si avvierà: i settings non sono un JSON valido";
 "Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "Claude %@ non conosce %@: potrebbe non capirlo (se è di una versione nuova, bisogna aggiornare la tabella delle opzioni)";
@@ -429,7 +429,7 @@
 "Tria una finestra" = "Scegli una finestra";
 "Canvia el model" = "Cambia modello";
 "Canvia l'esforç" = "Cambia sforzo";
-"Canvia el mode de permisos" = "Cambia modalità dei permessi";
+"Canvia el mode de permisos" = "Cambia modalità permessi";
 "%@ (desconegut)" = "%@ (sconosciuto)";
 "Per defecte" = "Predefinito";
 "Valors diversos" = "Valori multipli";
@@ -516,9 +516,9 @@
 "Cap" = "Nessuno";
 "Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "Nome fisso della sessione (-n): compare nel selettore di /resume e nel titolo del terminale";
 "--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions: Claude non chiede il permesso per nulla, e nemmeno le nuove attività che avvia direttamente con claude --bg";
-"Mode de permisos" = "Modalità dei permessi";
+"Mode de permisos" = "Modalità permessi";
 "Amb «Salta els permisos», Claude no fa cas del mode" = "Con “Salta i permessi”, Claude ignora la modalità";
-"Treu el mode de permisos" = "Rimuovi modalità dei permessi";
+"Treu el mode de permisos" = "Rimuovi modalità permessi";
 "reprèn %@" = "riprende %@";
 "nova" = "nuova";
 "Només terminal: no s'hi obre Claude." = "Solo terminale: Claude non vi si apre.";

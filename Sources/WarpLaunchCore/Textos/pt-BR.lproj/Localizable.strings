@@ -286,7 +286,7 @@
 "L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "O último Claude desta aba rodava em “%@”, não nesta pasta (verifique)";
 "Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "Verifique se o modelo é compatível com o ultracode e se os dynamic workflows estão ativados";
 "Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "Esforço “%@” desconhecido: o Claude o ignora e usa o padrão";
-"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "O Claude não vai iniciar: o modo de permissões “%@” não existe (%@)";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "O Claude não vai iniciar: o modo de permissão “%@” não existe (%@)";
 "Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "Com “Pular permissões”, o Claude ignora o modo “%@”";
 "Claude no arrencarà: els settings no són JSON vàlid" = "O Claude não vai iniciar: os settings não são um JSON válido";
 "Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "O Claude %@ não conhece %@: talvez não o entenda (se for de uma versão mais nova, é preciso atualizar a tabela de opções)";
@@ -428,7 +428,7 @@
 "Tria una finestra" = "Escolha uma Janela";
 "Canvia el model" = "Alterar Modelo";
 "Canvia l'esforç" = "Alterar Esforço";
-"Canvia el mode de permisos" = "Alterar Modo de Permissões";
+"Canvia el mode de permisos" = "Alterar Modo de Permissão";
 "%@ (desconegut)" = "%@ (desconhecido)";
 "Per defecte" = "Padrão";
 "Valors diversos" = "Múltiplos Valores";
@@ -515,9 +515,9 @@
 "Cap" = "Nenhum";
 "Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "Nome fixo da sessão (-n): aparece no seletor do /resume e no título do terminal";
 "--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions: o Claude não pede permissão para nada, nem as tarefas novas que ele iniciar diretamente com claude --bg";
-"Mode de permisos" = "Modo de permissões";
+"Mode de permisos" = "Modo de permissão";
 "Amb «Salta els permisos», Claude no fa cas del mode" = "Com “Pular permissões”, o Claude ignora o modo";
-"Treu el mode de permisos" = "Remover Modo de Permissões";
+"Treu el mode de permisos" = "Remover Modo de Permissão";
 "reprèn %@" = "retoma %@";
 "nova" = "nova";
 "Només terminal: no s'hi obre Claude." = "Somente terminal: o Claude não é aberto nela.";

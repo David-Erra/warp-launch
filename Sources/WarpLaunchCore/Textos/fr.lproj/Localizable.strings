@@ -286,7 +286,7 @@
 "L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "Le dernier Claude de cet onglet tournait dans « %@ », pas dans ce dossier (vérifiez-le)";
 "Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "Vérifiez que le modèle prend en charge ultracode et que les dynamic workflows sont activés";
 "Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "Effort « %@ » inconnu : Claude l’ignore et utilise celui par défaut";
-"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude ne démarrera pas : le mode d’autorisations « %@ » n’existe pas (%@)";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude ne démarrera pas : le mode d’autorisation « %@ » n’existe pas (%@)";
 "Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "Avec « Ignorer les autorisations », Claude ne tient pas compte du mode « %@ »";
 "Claude no arrencarà: els settings no són JSON vàlid" = "Claude ne démarrera pas : les settings ne sont pas un JSON valide";
 "Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "Claude %@ ne connaît pas %@ : il ne le comprend peut-être pas (s’il vient d’une version plus récente, il faut mettre à jour la table des options)";
@@ -428,7 +428,7 @@
 "Tria una finestra" = "Choisissez une fenêtre";
 "Canvia el model" = "Changer le modèle";
 "Canvia l'esforç" = "Changer l’effort";
-"Canvia el mode de permisos" = "Changer le mode d’autorisations";
+"Canvia el mode de permisos" = "Changer le mode d’autorisation";
 "%@ (desconegut)" = "%@ (inconnu)";
 "Per defecte" = "Par défaut";
 "Valors diversos" = "Valeurs multiples";
@@ -515,9 +515,9 @@
 "Cap" = "Aucun";
 "Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "Nom fixe de la session (-n) : apparaît dans le sélecteur de /resume et dans le titre du terminal";
 "--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions : Claude ne demande d’autorisation pour rien, pas plus que les nouvelles tâches qu’il lance directement avec claude --bg";
-"Mode de permisos" = "Mode d’autorisations";
+"Mode de permisos" = "Mode d’autorisation";
 "Amb «Salta els permisos», Claude no fa cas del mode" = "Avec « Ignorer les autorisations », Claude ne tient pas compte du mode";
-"Treu el mode de permisos" = "Retirer le mode d’autorisations";
+"Treu el mode de permisos" = "Retirer le mode d’autorisation";
 "reprèn %@" = "reprend %@";
 "nova" = "nouvelle";
 "Només terminal: no s'hi obre Claude." = "Terminal uniquement : Claude ne s’y ouvre pas.";
