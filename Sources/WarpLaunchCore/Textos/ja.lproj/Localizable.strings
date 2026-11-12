@@ -1,0 +1,756 @@
+/* Textos de Warp Launch en japonès (docs/disseny.md, secció 12). La clau és el text en català, i la referència de
+   la traducció, l'anglès (en.lproj). Els plurals són a Localizable.stringsdict. */
+
+/* Fase F1: la prova de la infraestructura (IdiomaTests); a F3, el menú */
+"Obre a Warp…" = "Warpで開く…";
+
+/* OrdreCLI: l'ajuda del CLI (les ordres i les opcions no es tradueixen) */
+"Ús:" = "使いかた：";
+"warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <carpeta>]\n    Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya." = "warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <フォルダ>]\n    Warpで開いているウインドウとタブ、および各タブのClaudeセッション。";
+"warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]\n    La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.\n    Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,\n    tenen les opcions de la plantilla de ~/.config/warp-launch.\n    --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:\n    la configuració real només es crea des de l'app." = "warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <フォルダ>] [--desa --config <フォルダ>]\n    今Warpから作られる構成と、その警告。--desaを付けなければ何も書き込みません。\n    Claudeが動いていないタブは、アプリと同じく「ターミナルのみ」になります。Claudeをオンにすると、\n    ~/.config/warp-launchのテンプレートのオプションが使われます。\n    --desaは<フォルダ>に保存します。このフォルダには構成があってはならず、~/.config/warp-launchも不可です：\n    実際の構成はアプリからしか作成できません。";
+"warp-launch configuracio valida [--config <carpeta>]\n    Errors i avisos de la configuració (per defecte, la de ~/.config/warp-launch)." = "warp-launch configuracio valida [--config <フォルダ>]\n    構成のエラーと警告（デフォルトでは~/.config/warp-launchの構成）。";
+"warp-launch obre <nom o número de finestra> [--json] [--config <carpeta>] [--warp <warp.sqlite>]\n        [--sessions <carpeta>]\n    Mode de prova: què passaria si s'obrís la finestra a Warp (quines pestanyes ja són obertes, quines\n    s'obririen i com, i el fitxer i l'URL exactes). No escriu ni obre res, tampoc estat.json." = "warp-launch obre <ウインドウの名前または番号> [--json] [--config <フォルダ>] [--warp <warp.sqlite>]\n        [--sessions <フォルダ>]\n    テストモード：ウインドウをWarpで開いたらどうなるか（すでに開いているタブ、開くタブとその開きかた、\n    正確なファイルとURL）を表示します。何も書き込まず、何も開きません。estat.jsonも書き込みません。";
+"warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]\n    Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna\n    amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta." = "warp-launch obre <ウインドウの名前または番号> --obre [--config <フォルダ>]\n    アプリの「開く」ボタンと同じように、ウインドウをWarpで開きます：開いていないタブを、それぞれの\n    Claudeとともに開きます。Warpが閉じていれば、先に開きます。アプリが開いている場合は何もしません。";
+"warp-launch diagnostica [--json] [--anonimitza]\n    Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els\n    fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les\n    versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada\n    comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.\n    --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma)." = "warp-launch diagnostica [--json] [--anonimitza]\n    WarpとClaude Codeが、アプリが読み取る形式のままかどうかを確認します：Warpのターミナル、Claudeの\n    セッションファイルとトランスクリプト、~/.claude.json、warp.sqliteのテーブル、バージョン（テスト済みの\n    ものと比較）、同意とWarpのセッションの復元。各項目は正常、警告、エラーのいずれかです。レポートは\n    英語なので、GitHubのIssueにそのまま貼り付けられます。\n    --anonimitzaはユーザ名、ホームフォルダ、フォルダ名を取り除きます（形は残します）。";
+"Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de\nles transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,\ntambé l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,\nexcepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).\nCodis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot\nobert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna\ncomprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no\ns'obriria; 64 ús incorrecte." = "Warp（warp.sqliteは読み取り専用）と~/.claude/sessionsを読み取るだけです。obreとdiagnosticaでは、\n~/.claude/projectsのトランスクリプトの名前と、~/.claude.jsonの信頼済みフォルダも読み取ります。diagnosticaでは、\nwarp.sqliteのスキーマ、WarpのInfo.plist、~/.warp/settings.toml、preferencies.jsonも読み取ります。何も開閉しません。\nただし、obre --obreはウインドウを開き、estat.jsonとWarpの一時ファイルを書き込みます（一時ファイルは削除します）。\n終了コード：0 成功。1 読み取り、保存、または開くことができなかった（--obreでは、すべてが開いたことを確認\nできなかった。obreでは、Warpがない場合やWarp Previewのため何も開けない場合も。diagnosticaでは、いずれかの\n確認でエラーが出た）。2 構成（読み取ったもの、または読み込んだもの）にエラーがある、またはいずれかのタブが\n開かない。64 使いかたが正しくない。";
+
+/* OrdreCLI: errors d'ús */
+"ordre: «configuracio valida»" = "コマンド：「configuracio valida」";
+"ordre desconeguda «%@»" = "不明なコマンド「%@」";
+"opció desconeguda per a %@: «%@»" = "%@の不明なオプション：「%@」";
+"falta la ruta després de --warp" = "--warpのあとにパスがありません";
+"falta la carpeta després de --sessions" = "--sessionsのあとにフォルダがありません";
+"«--config» hi és més d'un cop" = "「--config」が複数回指定されています";
+"falta la carpeta després de «--config»" = "「--config」のあとにフォルダがありません";
+"la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «%@»" = "「--config」のフォルダは絶対パス（/または~/で始まる）でなければなりません：「%@」";
+"«--desa» necessita «--config <carpeta>»: la configuració real només es crea des de l'app" = "「--desa」には「--config <フォルダ>」が必要です：実際の構成はアプリからしか作成できません";
+"«--config» només serveix amb «--desa»" = "「--config」は「--desa」と一緒にしか使えません";
+"«--config» no pot ser la configuració real (%@), ni ser-hi a dins, ni passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app" = "「--config」には、実際の構成（%@）やその中のフォルダ、「..」や壊れたリンクを経由するパスは指定できません：実際の構成はアプリからしか作成できません";
+"falta la finestra: «warp-launch obre <nom o número de finestra>»" = "ウインドウが指定されていません：「warp-launch obre <ウインドウの名前または番号>」";
+"«--obre» només funciona amb la comanda «warp-launch» de debò" = "「--obre」は本物の「warp-launch」コマンドでしか使えません";
+"hi ha més d'una finestra «%@» (%@): tria-la pel número" = "「%@」というウインドウが複数あります（%@）：番号で選んでください";
+
+/* OrdreCLI: importa i configuracio valida */
+"no s'ha pogut generar el JSON" = "JSONを生成できませんでした";
+"«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "「warp-launch importa」はこの設定を変更せず、Warpにウインドウを保存させることもできません。実際の構成を使うアプリならできます：数秒間この設定をオンにしてWarpに保存させ、またオフに戻します。";
+"ja hi ha una configuració a %@; tria una carpeta buida" = "%@にはすでに構成があります。空のフォルダを選んでください";
+"Importació de Warp, desada a %@" = "Warpから読み込みました（%@に保存）";
+"Importació de Warp (vista prèvia: no s'ha desat res)" = "Warpからの読み込み（プレビュー：何も保存していません）";
+"Les pestanyes que no tenien Claude obert queden només terminal." = "Claudeが開いていなかったタブは「ターミナルのみ」になります。";
+"Notes de la importació:" = "読み込みのメモ：";
+"Avisos de la lectura:" = "読み取り時の警告：";
+"Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració)." = "テンプレート：権限をスキップしない安全なもの（まだ構成がありません）。";
+"Plantilla: la de %@." = "テンプレート：%@のもの。";
+"Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir %@: %@)." = "テンプレート：権限をスキップしない安全なもの（%@を読み取れませんでした：%@）。";
+"no hi ha cap configuració a %@" = "%@に構成がありません";
+"Configuració: %@" = "構成：%@";
+"Avisos del fitxer:" = "ファイルの警告：";
+"Ordres de Claude:" = "Claudeのコマンド：";
+"sense Claude" = "Claudeなし";
+"Claude, de la seva ordre" = "Claude（独自のコマンド）";
+
+/* OrdreCLI: obre i obre --obre */
+"la configuració ha canviat mentre s'obria Warp: torna-ho a provar" = "Warpを開いている間に構成が変更されました：もう一度試してください";
+"%@: %@; l'app no obriria res" = "%@：%@。アプリでも何も開きません";
+"l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. No s'ha obert res." = "Warp Launchアプリが開いています：アプリからウインドウを開くか、アプリを終了してから、もう一度試してください。何も開いていません。";
+"No s'ha obert res." = "何も開いていません。";
+"S'obre a Warp (--obre)." = "Warpで開きます（--obre）。";
+"no s'ha obert res: %@" = "何も開いていません：%@";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar. No s'ha obert res." = "Warpは閉じています。開くと、これらのタブをClaudeなしで復元します。Warpを開いてから、もう一度試してください。何も開いていません。";
+"Totes les pestanyes ja són obertes: no s'ha obert res." = "すべてのタブはすでに開いています：何も開いていません。";
+"No hi ha cap pestanya per obrir (%lld ja obertes, %lld no s'obriran): no s'ha obert res." = "開くタブがありません（すでに開いているもの%lld、開かないもの%lld）：何も開いていません。";
+"S'ha obert Warp, però cap finestra de la configuració." = "Warpを開きましたが、構成のウインドウは開いていません。";
+"En arrencar, Warp ha obert una finestra buida: la pots tancar." = "起動時にWarpが空のウインドウを開きました：閉じてかまいません。";
+"Warp és tancat: l'obro i n'espero l'arrencada (fins a %lld s)." = "Warpは閉じています：Warpを開いて起動を待ちます（最大%lld秒）。";
+"no s'ha pogut obrir Warp: %@" = "Warpを開けませんでした：%@";
+"Warp no ha arrencat en %lld s: mira'l i torna-ho a provar." = "Warpが%lld秒以内に起動しませんでした：Warpを確認して、もう一度試してください。";
+"Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar." = "Warpが起動中に終了しました：Warpを確認して、もう一度試してください。";
+"en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar." = "起動時にWarpが開く内容を変えました：もう一度試してください。";
+"No s'ha pogut esborrar el fitxer temporal: %@" = "一時ファイルを削除できませんでした：%@";
+"Tampoc no hi ha la base de Warp (%@)." = "Warpのデータベースもありません（%@）。";
+
+/* Informe: warp-launch llegeix */
+"La restauració de sessió és desactivada: Warp no desa les finestres, i l'app llegeix els processos." = "セッションの復元はオフです：Warpはウインドウを保存しないため、アプリはプロセスを読み取ります。";
+"Warp és obert." = "Warpは開いています。";
+"Warp és tancat: són les finestres que restaurarà en obrir-se." = "Warpは閉じています：Warpを開いたときに復元されるウインドウです。";
+"Warp és tancat." = "Warpは閉じています。";
+"Sessions de Claude en segon pla: %lld (%@)." = "バックグラウンドのClaudeセッション：%lld（%@）。";
+"Terminals:" = "ターミナル：";
+"pestanya %@" = "タブ%@";
+"pane %@" = "ペイン%@";
+"(sense títol)" = "（タイトルなし）";
+"historial" = "履歴";
+"no existeix" = "存在しません";
+"Sessions de Claude que no són a cap pestanya de Warp:" = "Warpのどのタブにも属さないClaudeセッション：";
+"Sessions de Claude:" = "Claudeセッション：";
+"fora de Warp" = "Warpの外";
+"pestanya no trobada a la base de Warp" = "Warpのデータベースにタブが見つかりません";
+"a Warp" = "Warp内";
+"Avisos:" = "警告：";
+
+/* InformeObertura: warp-launch obre */
+"Mode de prova: no s'ha escrit ni obert res." = "テストモード：何も書き込まず、何も開いていません。";
+"Finestra %@ de %@: «%@» (%@)" = "ウインドウ%@/%@：「%@」（%@）";
+"No s'obriria res." = "何も開きません。";
+"Warp és tancat: primer s'obriria Warp." = "Warpは閉じています：先にWarpを開きます。";
+"No se sap si Warp és obert." = "Warpが開いているかどうか分かりません。";
+"Ja obertes (%lld):" = "すでに開いている（%lld）：";
+"No s'obriran (%lld):" = "開かない（%lld）：";
+"S'obririen (%lld):" = "開く（%lld）：";
+"No es pot generar el fitxer per a Warp: %@" = "Warp用のファイルを生成できません：%@";
+"Fitxer per a Warp: %@ (en obrir de debò, l'id serà un altre)" = "Warp用のファイル：%@（実際に開くときはIDが変わります）";
+
+/* Resum: les xifres, els arguments de l'app i les opcions de Claude */
+"argument desconegut «%@»; per provar l'app: --config <carpeta>" = "不明な引数「%@」。アプリをテストするには：--config <フォルダ>";
+"Només terminal" = "ターミナルのみ";
+"Baix" = "低";
+"Mitjà" = "中";
+"Alt" = "高";
+"Molt alt" = "非常に高い";
+"Màxim" = "最大";
+"Accepta les edicions" = "編集を承認";
+"Automàtic" = "自動";
+"Sense cap permís" = "権限をバイパス";
+"Manual" = "手動";
+"No preguntis" = "確認しない";
+"Planifica" = "プラン";
+"sense nom" = "名前なし";
+"Altres" = "その他";
+
+/* WarpLaunch: les ordres dels menús que també surten als textos */
+"Actualitza l'estat de Warp" = "Warpの状態を更新";
+"Sobre l’app %@" = "%@について";
+"Surt de l’app %@" = "%@を終了";
+
+/* PlaObertura: on és oberta una pestanya, per què no s'obre i com s'obrirà */
+"oberta a Warp, amb Claude (%@)" = "Warpで開いています（Claudeあり、%@）";
+"oberta a Warp, amb Claude" = "Warpで開いています（Claudeあり）";
+"oberta a Warp (%@)" = "Warpで開いています（%@）";
+"oberta a Warp, sense Claude (%@)" = "Warpで開いています（Claudeなし、%@）";
+"oberta a Warp" = "Warpで開いています";
+"oberta a Warp, sense Claude" = "Warpで開いています（Claudeなし）";
+"la seva conversa és oberta a Warp (%@)" = "その会話はWarpで開いています（%@）";
+"la seva conversa és oberta fora de Warp" = "その会話はWarpの外で開いています";
+"la seva conversa és oberta a Warp" = "その会話はWarpで開いています";
+"una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)" = "別のタブがこの会話を再開したところです（そのClaudeはまだ確認されていません）";
+"la seva conversa és oberta en segon pla (%@)" = "その会話はバックグラウンドで開いています（%@）";
+"tancada fa menys d'1 minut: espera i torna-ho a provar" = "閉じてから1分経っていません：少し待ってから、もう一度試してください";
+"la carpeta no existeix" = "フォルダが存在しません";
+"no es pot generar l'ordre: %@" = "コマンドを生成できません：%@";
+"no es pot escriure per a Warp: %@" = "Warp用に書き込めません：%@";
+"només terminal" = "ターミナルのみ";
+"Claude, reprèn %@" = "Claude、%@を再開";
+"Claude, conversa nova" = "Claude、新しい会話";
+"finestra %@ › %@" = "ウインドウ%@ › %@";
+
+/* PlaObertura: els avisos del full d'obrir */
+"potser ja és oberta a Warp (%@): és a la mateixa carpeta" = "すでにWarpで開いている可能性があります（%@）：同じフォルダにあります";
+"potser ja és oberta a Warp: hi ha un Claude a la seva carpeta, que no és de cap pestanya de la configuració" = "すでにWarpで開いている可能性があります：このフォルダで、構成のどのタブにも属さないClaudeが動いています";
+"potser ja és oberta a Warp: hi ha un terminal a la seva carpeta, sense Claude" = "すでにWarpで開いている可能性があります：このフォルダに、Claudeなしのターミナルがあります";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer; si obres ara, la finestra quedarà partida" = "閉じたばかりなら、1分待ってから、もう一度試してください：取り消せるように、Warpはしばらくそれらを残しています。今開くと、ウインドウが分かれてしまいます";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer" = "閉じたばかりなら、1分待ってから、もう一度試してください：取り消せるように、Warpはしばらくそれらを残しています";
+"la conversa és d'una altra carpeta (%@); Claude la reprendrà en aquesta" = "会話は別のフォルダのものです（%@）。Claudeはこのフォルダで再開します";
+"una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova" = "別のタブがすでに同じ会話を再開します：このタブでは新しい会話を始めます";
+"reprèn la conversa més recent de la carpeta (%@)" = "フォルダ内の最新の会話を再開します（%@）";
+"no se'n sap la conversa: en començarà una de nova" = "会話が分かりません：新しい会話を始めます";
+"la conversa no té cap missatge desat: en començarà una de nova" = "会話に保存されたメッセージがありません：新しい会話を始めます";
+"Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla" = "Claudeがフォルダを信頼するか確認します：タブはキー入力を待ちます";
+"porta «--fork-session»: cada obertura farà una còpia de la conversa" = "「--fork-session」が付いています：開くたびに会話のコピーが作られます";
+"l'últim cop que es va obrir aquesta finestra (fa %lld min) no es va poder confirmar: mira Warp abans" = "前回このウインドウを開いたとき（%lld分前）、確認できませんでした：先にWarpを確認してください";
+"l'últim intent d'obrir aquesta finestra (fa %lld min) va fallar: si Warp n'ha obert res, mira-ho abans" = "前回このウインドウを開こうとしたとき（%lld分前）、失敗しました：Warpで何か開いていれば、先に確認してください";
+"%@: %@" = "%@：%@";
+"fa menys d'1 h" = "1時間以内";
+"fa %lld h" = "%lld時間前";
+
+/* PlaObertura: les xifres del full d'obrir */
+"No s'obrirà res." = "何も開きません。";
+"%lld amb Claude (%@)" = "Claudeあり%lld個（%@）";
+"%lld només terminal" = "ターミナルのみ%lld個";
+"unes %@ GB" = "約%@ GB";
+"ja obertes: %lld" = "すでに開いている：%lld";
+"no s'obriran: %lld" = "開かない：%lld";
+"Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: espera 1 minut i torna-ho a provar." = "このウインドウのタブが1分以内に閉じられ、そのClaudeがまだ動いています：1分待ってから、もう一度試してください。";
+
+/* ExecucioObertura: el resultat d'obrir */
+"En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "起動時にWarpが空のウインドウも開きました：閉じてかまいません。";
+"No s'ha pogut desar el llançament a «estat.json»: %@" = "起動の記録を「estat.json」に保存できませんでした：%@";
+"No s'ha pogut obrir «%@» a Warp: %@" = "「%@」をWarpで開けませんでした：%@";
+"Claude encara no ha arrencat a %@: mira-ho a Warp." = "%@でClaudeがまだ起動していません：Warpで確認してください。";
+"No s'ha pogut confirmar que s'hagi obert «%@»: mira si hi ha una finestra nova a Warp." = "「%@」が開いたことを確認できませんでした：Warpに新しいウインドウがあるか確認してください。";
+"El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app." = "一時ファイルを削除できませんでした：アプリを開いたときに、もう一度試します。";
+"«%@»" = "「%@」";
+
+/* LaunchConfigWarp, FitxersLaunchWarp i YAMLWarp: el fitxer temporal de Warp */
+"la carpeta «%@» no és una ruta absoluta" = "フォルダ「%@」は絶対パスではありません";
+"al títol, %@" = "タイトル内の%@";
+"a la carpeta, %@" = "フォルダ内の%@";
+"a l'ordre, %@" = "コマンド内の%@";
+"no hi ha cap pestanya per obrir" = "開くタブがありません";
+"pestanya %@: %@" = "タブ%@：%@";
+"Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, que no la creen" = "Warpにlaunch configurationsフォルダがなく、作成もされませんでした：Warpを一度も開いていない、パスがリンクやファイルを経由している、または--configやCLIによるテスト（これらはフォルダを作成しません）である可能性があります";
+"ja hi ha un fitxer amb aquest nom, i no se sobreescriu" = "同じ名前のファイルがすでにあるため、上書きしません";
+"no s'ha pogut escriure el fitxer: %@" = "ファイルを書き込めませんでした：%@";
+"no és un fitxer normal, i no s'esborra" = "通常のファイルではないため、削除しません";
+"no comença amb la marca de l'app, i no s'esborra" = "アプリのマークで始まっていないため、削除しません";
+"no s'ha pogut llegir: %@" = "読み取れませんでした：%@";
+"no s'ha pogut esborrar: %@" = "削除できませんでした：%@";
+"hi ha un caràcter que l'app no sap escriure per a Warp (U+%@)" = "アプリがWarp用に書き込めない文字があります（U+%@）";
+
+/* OrdreClaude: per què no es pot fer l'ordre de Claude */
+"ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer" = "ultracodeを「非常に高い」以外のエフォートで使うには「--settings」がJSONである必要がありますが、ここではファイルです";
+"«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode" = "「--settings」が有効なJSONでないか、重複したキーやアプリが読み取れない値がありますが、ultracodeを追加する必要があります";
+"«--settings» ja té «ultracode» amb un valor que no és true ni false" = "「--settings」にすでに「ultracode」があり、その値がtrueでもfalseでもありません";
+"falta la sessió que s'ha de reprendre" = "再開するセッションがありません";
+"«%@» és a les altres opcions, però té camp propi" = "「%@」がその他のオプションにありますが、専用の項目があります";
+"les altres opcions porten «%@», que Claude prendria pel primer missatge de cada obertura" = "その他のオプションに「%@」が含まれています：Claudeはこれを、開くたびに最初のメッセージとして受け取ります";
+
+/* AppWarp: Warp Preview i cap Warp */
+"Warp Preview encara no és compatible: cal Warp Stable." = "Warp Previewにはまだ対応していません：Warp Stableが必要です。";
+"En aquest Mac només hi ha Warp Preview." = "このMacにはWarp Previewしかありません。";
+"Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar." = "現在Warp Previewが開いていて、Warp Stableは開いていません：Warp Stableを開いて、もう一度試してください。";
+"No s'ha trobat Warp en aquest Mac: cal Warp Stable." = "このMacにWarpが見つかりません：Warp Stableが必要です。";
+
+/* AjustRestauracio: per què no es pot tocar l'ajust de Warp */
+"Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta «%@», i Warp Launch no la crea" = "このユーザではWarpが一度も開かれていません：「%@」フォルダがなく、Warp Launchはこのフォルダを作成しません";
+"no es pot mirar on és «%@»" = "「%@」の場所を確認できません";
+"«%@» és de només lectura" = "「%@」は読み取り専用です";
+"la carpeta temporal no és al mateix volum que «%@»" = "一時フォルダが「%@」と同じボリュームにありません";
+"no s'ha pogut escriure «%@»: %@" = "「%@」を書き込めませんでした：%@";
+"no s'ha pogut crear «%@»: %@" = "「%@」を作成できませんでした：%@";
+"no es pot mirar el fitxer preparat: %@" = "準備したファイルを確認できません：%@";
+"no s'ha pogut preparar el fitxer: %@" = "ファイルを準備できませんでした：%@";
+"no es pot mirar «%@»: %@" = "「%@」を確認できません：%@";
+"«%@» no és una carpeta" = "「%@」はフォルダではありません";
+"«%@» no és un fitxer normal" = "「%@」は通常のファイルではありません";
+"no es pot llegir «%@»" = "「%@」を読み取れません";
+"«restore_session» no hi és, i no s'hi pot afegir: %@" = "「restore_session」がなく、追加することもできません：%@";
+"«settings.toml» té salts de línia CRLF" = "「settings.toml」の改行がCRLFです";
+"«settings.toml» no acaba amb un salt de línia" = "「settings.toml」が改行で終わっていません";
+"«restore_session» no és una línia de la taula [general]" = "「restore_session」が[general]テーブルの行ではありません";
+"el valor de «restore_session» no és true ni false" = "「restore_session」の値がtrueでもfalseでもありません";
+"«settings.toml» té una marca d'ordre de bytes (BOM)" = "「settings.toml」にバイトオーダーマーク（BOM）があります";
+"«settings.toml» té textos de diverses línies («\"\"\"» o «'''»)" = "「settings.toml」に複数行の文字列（「\"\"\"」または「'''」）があります";
+"a la línia %@, «general» és una clau, no una taula [general]" = "%@行目で、「general」が[general]テーブルではなくキーになっています";
+"a la línia %@, la taula general té una forma que Warp Launch no sap llegir (entre cometes, amb un comentari o com a llista de taules)" = "%@行目のgeneralテーブルが、Warp Launchが読み取れない形式です（引用符付き、コメント付き、またはテーブルの配列）";
+"Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre." = "Warpは閉じています：前回Warpが保存したときのスナップショットで、古い可能性があります。動作中のセッションがないため、どこでClaudeが開いていたか分かりません：読み込むと、どのタブもコマンドを保持しません。";
+
+/* LectorWarp, LectorSessions, Lector i LecturaWarp: la lectura de Warp i de Claude */
+"no trobo la base de Warp: %@" = "Warpのデータベースが見つかりません：%@";
+"error de SQLite: %@" = "SQLiteエラー：%@";
+"macOS no deixa que Warp Launch llegeixi les dades de Warp; cal donar-li permís a Configuració del Sistema › Privacitat i seguretat" = "macOSがWarp LaunchにWarpのデータの読み取りを許可していません。システム設定 › プライバシーとセキュリティで許可してください";
+"no s'ha pogut obrir" = "開けませんでした";
+"no puc llegir la carpeta de sessions de Claude: %@" = "Claudeのセッションフォルダを読み取れません：%@";
+"fitxer de sessió il·legible: %@" = "読み取れないセッションファイル：%@";
+"la sessió %@ apunta al pid %@, que ja no existeix" = "セッション%@はpid %@を指していますが、そのプロセスはもう存在しません";
+"el pid %@ de la sessió %@ ara és un altre procés (%@)" = "セッション%@のpid %@は、現在は別のプロセスです（%@）";
+"dues sessions al mateix pane %@: es mostra la del pid %@, no la del %@" = "同じペイン%@に2つのセッションがあります：pid %@のものを表示し、pid %@のものは表示しません";
+"Warp no desa les finestres mentre la restauració de sessió està desactivada («general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen." = "セッションの復元がオフの間（「general.restore_session」）、Warpはウインドウを保存しません：アプリはどんなタブがあり、何という名前かを知ることができません。";
+"Warp encara no ha desat cap finestra en aquest usuari: si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons." = "このユーザではWarpがまだウインドウを保存していません：Warpを開いたばかりなら、数秒後にもう一度試してください。";
+"Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar." = "このユーザではWarpがまだウインドウを保存していません：一度Warpを開いてから、もう一度試してください。";
+
+/* Configuracio: el fitxer de la configuració */
+"el fitxer no és JSON vàlid (línia %@, columna %@)" = "ファイルが有効なJSONではありません（%@行、%@列）";
+"el fitxer no és JSON vàlid" = "ファイルが有効なJSONではありません";
+"el fitxer: %@" = "ファイル：%@";
+"falta el camp «versio»" = "「versio」項目がありません";
+"el fitxer és de la versió %@ del format, i aquesta app només entén fins a la %@: cal una versió més nova de Warp Launch" = "ファイルは形式のバージョン%@ですが、このアプリはバージョン%@までしか理解できません：新しいバージョンのWarp Launchが必要です";
+"versió del format desconeguda: %@" = "不明な形式のバージョン：%@";
+"%@: clau desconeguda; es perdrà en desar (la còpia la conserva)" = "%@：不明なキー。保存すると失われます（バックアップには残ります）";
+"%@: sense bloc «claude»; queda com a només terminal" = "%@：「claude」ブロックがありません。「ターミナルのみ」になります";
+"%@: id absent; se n'ha posat un de nou" = "%@：IDがありません。新しいIDを設定しました";
+"%@: id invalid; se n'ha posat un de nou" = "%@：IDが無効です。新しいIDを設定しました";
+"%@: id repetit; se n'ha posat un de nou" = "%@：IDが重複しています。新しいIDを設定しました";
+"falta la plantilla; es fan servir valors segurs (sense saltar permisos)" = "テンプレートがありません。安全な値（権限をスキップしない）を使います";
+"%@: la carpeta ha de ser una ruta absoluta (que comenci per / o ~/)" = "%@：フォルダは絶対パス（/または~/で始まる）でなければなりません";
+"el fitxer ha de ser text UTF-8" = "ファイルはUTF-8テキストでなければなりません";
+"ha de ser un objecte JSON" = "JSONオブジェクトでなければなりません";
+"clau «%@» repetida" = "キー「%@」が重複しています";
+"ha de ser un nombre enter" = "整数でなければなりません";
+"tipus incorrecte (s'esperava %@)" = "型が正しくありません（%@が必要です）";
+"falta el valor (s'esperava %@)" = "値がありません（%@が必要です）";
+"falta la clau" = "キーがありません";
+"text" = "テキスト";
+"true o false" = "trueまたはfalse";
+"nombre enter" = "整数";
+"una llista" = "リスト";
+"un objecte" = "オブジェクト";
+
+/* Validacio: els avisos de cada pestanya i finestra */
+"La carpeta ha de ser una ruta absoluta" = "フォルダは絶対パスでなければなりません";
+"Carpeta d'inici: probablement Warp l'ha perduda" = "ホームフォルダ：Warpがフォルダを見失った可能性があります";
+"La carpeta no existeix" = "フォルダが存在しません";
+"Claude és apagat en aquesta pestanya" = "このタブではClaudeがオフです";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Claude (comprova-ho)" = "Warpでは「%@」、Claudeは「%@」で動いています：Claudeのフォルダを使います（確認してください）";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Warp (comprova-ho)" = "Warpでは「%@」、Claudeは「%@」で動いています：Warpのフォルダを使います（確認してください）";
+"L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "このタブの前回のClaudeは、このフォルダではなく「%@」で動いていました（確認してください）";
+"Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "モデルがultracodeに対応していること、dynamic workflowsがオンになっていることを確認してください";
+"Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "不明なエフォート「%@」：Claudeはこれを無視し、デフォルトを使います";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claudeは起動しません：権限モード「%@」は存在しません（%@）";
+"Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "「権限をスキップ」がオンのとき、Claudeはモード「%@」を無視します";
+"Claude no arrencarà: els settings no són JSON vàlid" = "Claudeは起動しません：settingsが有効なJSONではありません";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "Claude %@は%@を知りません：理解できない可能性があります（新しいバージョンのものなら、オプション表を更新する必要があります）";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions). Si %@ no n'és el valor, Claude el prendria pel primer missatge i l'enviaria a cada obertura" = "Claude %@は%@を知りません：理解できない可能性があります（新しいバージョンのものなら、オプション表を更新する必要があります）。%@がその値でない場合、Claudeはこれを最初のメッセージとして受け取り、開くたびに送信します";
+"%@ és d'un sol ús: es tornaria a fer a cada obertura" = "%@は1回限りです：開くたびに繰り返されます";
+"No es pot generar l'ordre: %@" = "コマンドを生成できません：%@";
+"Hi ha més d'una finestra amb el nom «%@»" = "「%@」という名前のウインドウが複数あります";
+
+/* Importador: els noms per defecte, les notes i el resum de la importació */
+"Finestra %@" = "ウインドウ%@";
+"Pestanya %@" = "タブ%@";
+"%@: la sessió es va obrir amb el missatge «%@»; no es desa (s'enviaria a cada obertura)" = "%@：セッションはメッセージ「%@」付きで開かれました。保存しません（開くたびに送信されるため）";
+"%@: la sessió es va obrir amb «%@» (una conversa concreta); es desa només que continua" = "%@：セッションは「%@」（特定の会話）で開かれました。会話を続ける設定だけを保存します";
+"%@: Warp diu «%@», però Claude corre a «%@»; es fa servir la de Claude" = "%@：Warpでは「%@」ですが、Claudeは「%@」で動いています。Claudeのフォルダを使います";
+"%@: Warp diu «%@» i Claude «%@»; es fa servir la de Claude (comprova-ho)" = "%@：Warpでは「%@」、Claudeでは「%@」です。Claudeのフォルダを使います（確認してください）";
+"%@: Warp diu «%@» i Claude «%@», que és la carpeta d'inici; es queda la de Warp (comprova-ho)" = "%@：Warpでは「%@」、Claudeではホームフォルダの「%@」です。Warpのフォルダのままにします（確認してください）";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda la de Warp (comprova-ho)" = "%@：Warpでは「%@」、Claudeでは存在しない「%@」です。Warpのフォルダのままにします（確認してください）";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)" = "%@：Warpでは「%@」、Claudeでは存在しない「%@」です。ホームフォルダのまま、Claudeなしで、そのオプションを残します（確認してください）";
+"%@: pestanya dividida en %lld panes; només s'importa el principal" = "%@：タブが%lld個のペインに分割されています。メインのペインだけを読み込みます";
+"la seva pestanya no és a la base de Warp" = "そのタブがWarpのデータベースにありません";
+"corre fora de Warp, o dins de tmux" = "Warpの外、またはtmux内で動いています";
+"sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claudeセッション「%@」（フォルダ「%@」）：読み込みません（%@）";
+"sessió de Claude a «%@»: no s'importa (%@)" = "フォルダ「%@」のClaudeセッション：読み込みません（%@）";
+"a la mateixa carpeta hi ha %@, que queda només terminal" = "同じフォルダに%@があり、「ターミナルのみ」になります";
+"a la mateixa carpeta hi ha %@, que queden només terminal" = "同じフォルダに%@があり、どれも「ターミナルのみ」になります";
+"la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warpのウインドウ%@にターミナルのタブがありません：読み込みません";
+"0 amb Claude" = "Claudeあり0個";
+"%lld amb Claude, amb la seva ordre" = "Claudeあり%lld個（コマンドを保持）";
+"(%lld sense Claude obert)" = "（Claudeが開いていなかったもの%lld個）";
+
+/* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
+"no s'ha pogut generar el JSON: %@" = "JSONを生成できませんでした：%@";
+"el fitxer és només de lectura (%@)" = "ファイルは読み取り専用です（%@）";
+"«%@» és un enllaç a «%@», que no existeix" = "「%@」は存在しない「%@」へのリンクです";
+"la configuració ha canviat fora de l'app; no s'ha desat res" = "アプリの外で構成が変更されました。何も保存していません";
+"no s'ha pogut fer la còpia de seguretat, i no s'ha desat res: %@" = "バックアップを作成できなかったため、何も保存していません：%@";
+"no s'ha pogut llegir la configuració: %@" = "構成を読み取れませんでした：%@";
+"no s'ha pogut desar la configuració: %@" = "構成を保存できませんでした：%@";
+"la configuració generada no es podia tornar a llegir igual; no s'ha desat res" = "生成した構成を同じ内容で読み戻せなかったため、何も保存していません";
+"el JSON no es torna a llegir igual" = "JSONを同じ内容で読み戻せません";
+"«%@» és de la versió %@, més nova que aquesta app (%@)" = "「%@」はバージョン%@のもので、このアプリ（%@）より新しいです";
+"«%@» no es pot llegir: %@" = "「%@」を読み取れません：%@";
+"no s'ha pogut llegir «%@»: %@" = "「%@」を読み取れませんでした：%@";
+"no s'ha pogut desar «%@»: %@" = "「%@」を保存できませんでした：%@";
+"no és JSON o no té «versio»" = "JSONではないか、「versio」がありません";
+"«%@» no és l'id d'una pestanya" = "「%@」はタブのIDではありません";
+"«acceptat» sense «acceptatEl»" = "「acceptat」があり、「acceptatEl」がありません";
+"«retirat» sense «retiratEl»" = "「retirat」があり、「retiratEl」がありません";
+"«acceptatEl» només va amb «acceptat», i «retiratEl», amb «retirat»" = "「acceptatEl」は「acceptat」と、「retiratEl」は「retirat」とだけ使えます";
+"«%@» no és cap consentiment conegut" = "「%@」は既知の同意ではありません";
+
+/* EdicioConfiguracio: els noms de les finestres i les pestanyes noves */
+"%@ còpia" = "%@ のコピー";
+"Pestanya nova" = "新規タブ";
+
+/* PoliticaActualitzacions: per què l'app espera a reiniciar-se (després de «Ara no: ») i per què no s'actualitza */
+"no s'ha pogut desar la configuració" = "構成を保存できませんでした";
+"estàs canviant un nom" = "名前を変更中です";
+"s'estan obrint finestres a Warp" = "Warpでウインドウを開いています";
+"hi ha un full obert" = "シートが開いています";
+"encara s'estan reprenent converses a Warp" = "Warpでまだ会話を再開しています";
+"s'està llegint Warp" = "Warpを読み取っています";
+"falta desactivar la restauració de sessió de Warp" = "Warpのセッションの復元をまだオフにする必要があります";
+"hi ha una finestra de l'app oberta" = "アプリのウインドウが開いています";
+"hi ha canvis sense desar" = "保存されていない変更があります";
+"encara pots desfer l'últim canvi" = "最後の変更をまだ取り消せます";
+"l'app s'acaba d'obrir" = "アプリが開いたばかりです";
+"estàs fent servir el Mac" = "Macを使用中です";
+"aquesta versió no s'ha pogut instal·lar sola" = "このバージョンを自動でインストールできませんでした";
+"Amb una configuració de prova, l'app no s'actualitza." = "テスト用の構成では、アプリはアップデートされません。";
+"Sense configuració, l'app no s'actualitza." = "構成がないため、アプリはアップデートされません。";
+"Només s'actualitza l'app instal·lada." = "アップデートされるのは、インストールされたアプリだけです。";
+"Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a %@." = "自動でアップデートするには、アプリが「アプリケーション」フォルダにある必要があります。現在の場所：%@。";
+"Aquesta còpia no és una versió publicada i no s'actualitza sola." = "このコピーは公開されたバージョンではないため、自動ではアップデートされません。";
+"Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "このコピーは、このMacの別のユーザがインストールしたものです：そのユーザがアップデートする必要があります。";
+"Aquesta versió de l'actualitzador no és compatible." = "このバージョンのアップデータには互換性がありません。";
+
+/* WarpLaunchApp: el menú de la icona, l'alerta de sortir i la carpeta de la Configuració */
+"Amb una configuració de prova, l'app no s'obre sola." = "テスト用の構成では、ログイン時にアプリは開きません。";
+"Cap: %@" = "なし：%@";
+"No s'han pogut desar els canvis" = "変更を保存できませんでした";
+"%@. Si surts ara, es perdran." = "%@。今終了すると、変更は失われます。";
+"Cancel·la" = "キャンセル";
+"Surt sense desar" = "保存しないで終了";
+"Mostra Warp Launch" = "Warp Launchを表示";
+"Mostra l'editor" = "エディタを表示";
+"Finestres" = "ウインドウ";
+"Obre-ho tot a Warp…" = "すべてをWarpで開く…";
+"%@ — %@" = "%@ — %@";
+"Mostra a l'editor" = "エディタで表示";
+"Configuració de prova: %@" = "テスト用の構成：%@";
+"Sense configuració: %@" = "構成なし：%@";
+"Configuració…" = "設定…";
+
+/* ArrencadaSessio (l'app fora d'Aplicacions) i ServeiActualitzacions: per què no s'obre en iniciar sessió, i els errors per a Sparkle */
+"Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a %@." = "ログイン時に開くには、アプリが「アプリケーション」フォルダにある必要があります（scripts/instal·la.sh --aplica）。現在の場所：%@。";
+"no hi ha permís" = "許可がありません";
+"la versió publicada no té la forma esperada" = "公開されたバージョンが想定どおりの形式ではありません";
+
+/* ArrencadaSessio: obrir-se en iniciar sessió */
+"No disponible" = "利用できません";
+"No s'ha pogut activar: %@" = "オンにできませんでした：%@";
+"No s'ha pogut desactivar: %@" = "オフにできませんでした：%@";
+"No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "Warp Launchをログイン項目から削除できませんでした：%@。ほかは何も変更していません。";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més." = "macOSのログイン項目にまだWarp Launchがあります：システム設定 › 一般 › ログイン項目と機能拡張で削除してから、もう一度試してください。ほかは何も変更していません。";
+
+/* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
+"Per revisar" = "要確認";
+"El fitxer ha canviat fora de l'app" = "アプリの外でファイルが変更されました";
+"No s'ha pogut desar" = "保存できませんでした";
+"Res per revisar" = "要確認の項目なし";
+"no hi ha cap carpeta de configuració" = "構成フォルダがありません";
+"Torna a importar" = "読み込み直し";
+"Nova finestra" = "新規ウインドウ";
+"Finestra nova" = "新規ウインドウ";
+"Canvia el nom" = "名称変更";
+"Elimina la finestra" = "ウインドウを削除";
+"Duplica la finestra" = "ウインドウを複製";
+"Nova pestanya" = "新規タブ";
+"Duplica la pestanya" = "タブを複製";
+"Duplica les pestanyes" = "タブを複製";
+"Elimina la pestanya" = "タブを削除";
+"Elimina les pestanyes" = "タブを削除";
+"Retalla la pestanya" = "タブをカット";
+"Retalla les pestanyes" = "タブをカット";
+"Enganxa la pestanya" = "タブをペースト";
+"Enganxa les pestanyes" = "タブをペースト";
+"Mou la pestanya" = "タブを移動";
+"Mou les pestanyes" = "タブを移動";
+"Mou la finestra" = "ウインドウを移動";
+"Mou les finestres" = "ウインドウを移動";
+"Canvia la carpeta" = "フォルダを変更";
+"Activa Claude" = "Claudeをオンにする";
+"Desactiva Claude" = "Claudeをオフにする";
+
+/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (els d'un interruptor, «Activa «…»» i «Desactiva «…»»: al menú Edició són ordres, i l'interruptor és una etiqueta) */
+"Tria una pestanya per revisar-la" = "確認するタブを選択";
+"Cap finestra" = "ウインドウなし";
+"Tria una finestra" = "ウインドウを選択";
+"Canvia el model" = "モデルを変更";
+"Canvia l'esforç" = "エフォートを変更";
+"Canvia el mode de permisos" = "権限モードを変更";
+"%@ (desconegut)" = "%@（不明）";
+"Per defecte" = "デフォルト";
+"Valors diversos" = "複数の値";
+"Activa l'ultracode" = "ultracodeをオンにする";
+"Desactiva l'ultracode" = "ultracodeをオフにする";
+"Continua la conversa" = "会話を続ける";
+"Activa «Continua la conversa»" = "「会話を続ける」をオンにする";
+"Desactiva «Continua la conversa»" = "「会話を続ける」をオフにする";
+"Salta els permisos" = "権限をスキップ";
+"Activa «Salta els permisos»" = "「権限をスキップ」をオンにする";
+"Desactiva «Salta els permisos»" = "「権限をスキップ」をオフにする";
+"Canvia el nom de la sessió" = "セッション名を変更";
+
+/* EditorOrdres i EditorPlantilla: «Duplica», els avisos del menú de la icona i per què no es pot canviar la plantilla */
+"Duplica" = "複製";
+"La configuració té errors" = "構成にエラーがあります";
+"Es llegeix la configuració…" = "構成を読み取っています…";
+"Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb «%@»." = "まだ構成がありません。Warpから読み込むと、Claudeが開いていなかったタブは「ターミナルのみ」になります。追加したタブと、Claudeをオンにしたそれらのタブは、「%@」で開きます。";
+"No es pot canviar: %@" = "変更できません：%@";
+
+/* VistaEditor: els estats buits, la barra d'eines, la barra lateral, els menús contextuals i els bàners */
+"No es pot obrir la configuració" = "構成を開けません";
+"%@. No s'hi escriurà res fins que es pugui llegir." = "%@。読み取れるようになるまで、何も書き込みません。";
+"Torna a carregar" = "再読み込み";
+"Encara no hi ha cap configuració" = "まだ構成がありません";
+"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Warpで開いているウインドウを読み込むか、空の状態から始めてください。選択するまで何も書き込みません。";
+"Importa de Warp…" = "Warpから読み込む…";
+"Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Warpを読み取り、何かを作成する前に、読み込まれる内容を表示します";
+"Comença en blanc" = "空の状態から始める";
+"Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "このウインドウをWarpで開きます。先にシートで開く内容を表示し、確認を求めます";
+"Nova pestanya…" = "新規タブ…";
+"Nova pestanya: en tries la carpeta (⌘T)" = "選択したフォルダにタブを追加します（⌘T）";
+"Tria la carpeta de la pestanya nova" = "新しいタブのフォルダを選択";
+"Afegeix" = "追加";
+"Amaga l'inspector" = "インスペクタを非表示";
+"Mostra l'inspector" = "インスペクタを表示";
+"Mostra o amaga l'inspector (⌥⌘I)" = "インスペクタを表示または非表示にします（⌥⌘I）";
+"Pestanyes amb avisos de totes les finestres" = "すべてのウインドウの、警告があるタブ";
+"Mou amunt" = "上へ移動";
+"Mou avall" = "下へ移動";
+"Elimina" = "削除";
+"Prova: %@" = "テスト：%@";
+"Configuració de prova (--config): %@" = "テスト用の構成（--config）：%@";
+"Cap pestanya no té avisos." = "警告があるタブはありません。";
+"Finestra sense pestanyes" = "このウインドウにはタブがありません";
+"Afegeix-hi una pestanya: en tries la carpeta, i Claude hi tindrà les opcions de la plantilla." = "タブを追加してください：フォルダを選ぶと、Claudeはそこでテンプレートのオプションを使います。";
+"Una finestra de Warp agrupa pestanyes. Afegeix-ne una per començar." = "Warpのウインドウはタブをまとめたものです。タブを1つ追加して始めましょう。";
+"Enganxa" = "ペースト";
+"Mou a" = "移動先";
+"Retalla" = "カット";
+"Copia" = "コピー";
+"Copia l'ordre" = "コマンドをコピー";
+"Copia les ordres" = "コマンドをコピー";
+"Nom" = "名前";
+"Descarta els canvis d'aquí i llegeix el fitxer tal com és ara" = "ここでの変更を破棄し、ファイルを現在の状態で読み取ります";
+"Torna-ho a provar" = "再試行";
+"No s'ha pogut desar: %@" = "保存できませんでした：%@";
+"Mostra-les" = "表示";
+"D'acord" = "OK";
+
+/* VistaInspector: la finestra, la pestanya, el bloc de Claude i l'ordre */
+"Cada canvi s'aplica a totes." = "変更はすべてに適用されます。";
+"Finestra" = "ウインドウ";
+"Pestanyes" = "タブ";
+"Mostra quines pestanyes s'obririen a Warp, i amb quina conversa; no obre res fins que ho confirmis" = "Warpで開くタブと、その会話を表示します。確認するまで何も開きません";
+"Pestanya" = "タブ";
+"Carpeta" = "フォルダ";
+"Tria…" = "選択…";
+"Tria la carpeta al Finder" = "Finderでフォルダを選択します";
+"Altres opcions" = "その他のオプション";
+"L'editor no les canvia: es conserven tal com són." = "エディタでは変更せず、そのまま保持します。";
+"Ordre" = "コマンド";
+"Tria la carpeta de la pestanya" = "タブのフォルダを選択";
+"Tria" = "選択";
+"Obre Claude Code" = "Claude Codeを開く";
+"Obre Claude Code en aquesta pestanya" = "このタブでClaude Codeを開く";
+"Model" = "モデル";
+"Esforç" = "エフォート";
+"Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode" = "dynamic workflowsによるオーケストレーション。エフォートが「非常に高い」のとき、コマンドは--effort ultracodeを使います";
+"En obrir-la, la pestanya reprèn la conversa més recent de la seva carpeta en lloc de començar-ne una de nova" = "開いたとき、新しい会話を始めずに、フォルダ内の最新の会話を再開します";
+"Conversa" = "会話";
+"La conversa més recent de la seva carpeta. Si no n'hi ha cap, se'n començarà una de nova" = "フォルダ内の最新の会話。なければ新しい会話を始めます";
+"Nom de la sessió" = "セッション名";
+"Cap" = "なし";
+"Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "固定のセッション名（-n）：/resumeの選択画面とターミナルのタイトルに表示されます";
+"--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions：Claudeは何に対しても許可を求めません。claude --bgで直接開始する新しいジョブも同様です";
+"Mode de permisos" = "権限モード";
+"Amb «Salta els permisos», Claude no fa cas del mode" = "「権限をスキップ」がオンのとき、Claudeはモードを無視します";
+"Treu el mode de permisos" = "権限モードを削除";
+"reprèn %@" = "%@を再開";
+"nova" = "新規";
+"Només terminal: no s'hi obre Claude." = "ターミナルのみ：Claudeは開きません。";
+
+/* Ordres: els menús Arxiu, Pestanya i Visualització */
+"Torna a importar-ho tot de Warp…" = "Warpからすべてを読み込み直す…";
+"Lliga amb Warp…" = "Warpとリンク…";
+"Mostra el fitxer al Finder" = "ファイルをFinderに表示";
+"Cap altra finestra" = "ほかのウインドウはありません";
+
+/* VistaConfiguracio: les pestanyes de la Configuració, la plantilla, en iniciar sessió, el fitxer, les actualitzacions, el diagnòstic i deixar de fer servir l'app */
+"General" = "一般";
+"Pestanyes noves" = "新規タブ";
+"Actualitzacions" = "アップデート";
+"Obre Claude Code a les pestanyes noves" = "新しいタブでClaude Codeを開く";
+"En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova" = "開いたとき、タブは新しい会話を始めずに、その会話を再開します";
+"%@ (no s'aplica)" = "%@（適用されません）";
+"Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom" = "ファイルに書き込まれています：すべて同じ名前になるため、新しいタブにはコピーされません";
+"S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien." = "新しいタブと、Claudeセッションなしで読み込まれるタブに適用されます。既存のタブは変わりません。";
+"La Configuració no les canvia: es conserven tal com són." = "ここでは変更できず、そのまま保持します。";
+"Obre Warp Launch en iniciar sessió" = "ログイン時にWarp Launchを開く";
+"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions" = "macOSが開くには、ログイン項目と機能拡張での許可が必要です";
+"Mostra Ítems d’inici de sessió i extensions…" = "ログイン項目と機能拡張を表示…";
+"En iniciar sessió" = "ログイン時";
+"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions." = "Warpの準備ができると、足りないウインドウとともに「すべてをWarpで開く…」を表示します。クリックするまで何も開きません。システム設定 › 一般 › ログイン項目と機能拡張でもオフにできます。";
+"Fitxer" = "ファイル";
+"Carpeta de la configuració" = "構成フォルダ";
+"Mostra al Finder" = "Finderに表示";
+"Configuració de prova (--config)" = "テスト用の構成（--config）";
+"Versió" = "バージョン";
+"Estat" = "状態";
+"No s'ha pogut preparar l'actualització: %@" = "アップデートを準備できませんでした：%@";
+"Actualitza automàticament" = "自動的にアップデート";
+"Comprova ara" = "今すぐ確認";
+"Actualitza ara" = "今すぐアップデート";
+"Reinicia i actualitza" = "再起動してアップデート";
+"Mostra la finestra" = "ウインドウを表示";
+"Copia el diagnòstic" = "診断をコピー";
+"Copia el diagnòstic complet" = "完全な診断をコピー";
+"Informe per a una issue a GitHub" = "GitHubのIssue用レポート";
+"Diagnòstic" = "診断";
+"Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de les carpetes; el complet, sí." = "WarpとClaude Codeで、アプリが読み取る内容が変わっていないかを確認し、レポート（英語）をクリップボードにコピーします。何も開いたり変更したりしません。ユーザ名、ホームのパス、フォルダ名は含まれません。完全版には含まれます。";
+"Restaura Warp i surt…" = "Warpを元に戻して終了…";
+"Restaura Warp i surt" = "Warpを元に戻して終了";
+"Torna a deixar Warp com era" = "Warpを元の状態に戻す";
+"Deixar de fer servir Warp Launch" = "Warp Launchの使用をやめる";
+
+/* SelectorIdioma: la secció «Idioma» de la Configuració (F4) */
+"Idioma" = "言語";
+"Idioma de l'app" = "アプリの言語";
+"El del sistema (%@)" = "システムの言語（%@）";
+"L'idioma canviarà la propera vegada que obris l'app." = "言語は、次回アプリを開いたときに変わります。";
+
+/* Actualitzacions: l'estat, el peu, l'ítem del menú i el motiu d'esperar (amb el motiu de PoliticaActualitzacions a dins) */
+"la versió «%@» no té la forma que toca" = "バージョン「%@」の形式が正しくありません";
+"La %@ s'instal·larà quan l'app es pugui reiniciar." = "バージョン%@は、アプリを再起動できるときにインストールされます。";
+"Encara no s'ha comprovat" = "まだ確認していません";
+"Comprovant…" = "確認中…";
+"Hi ha la %@." = "バージョン%@があります。";
+"L'actualització a la %@ continua a la seva finestra." = "バージョン%@へのアップデートは、専用のウインドウで続いています。";
+"Baixant la %@…" = "バージョン%@をダウンロード中…";
+"La %@ és a punt: s'aplicarà sola quan no facis servir l'app." = "バージョン%@の準備ができました：アプリを使っていないときに、自動でインストールされます。";
+"La %@ és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»." = "バージョン%@の準備ができました：アプリを終了したとき、または「再起動してアップデート」でインストールされます。";
+"S'està actualitzant…" = "アップデート中…";
+"No s'ha pogut comprovar: %@." = "確認できませんでした：%@。";
+"No s'ha pogut baixar o preparar la %@." = "バージョン%@をダウンロードまたは準備できませんでした。";
+"Ara no: %@" = "今は行いません：%@";
+"La %@ no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la." = "バージョン%@を自動でインストールできませんでした。「再起動してアップデート」を試すか、再インストールしてください。";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen." = "1日に1回、アプリはGitHubで新しいバージョンを確認し、使っていないときに自動でアップデートします。GitHubからは、IPアドレスとアプリのバージョンが見えます。WarpとClaudeは終了しません。";
+"Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app." = "自動アップデートがオフのときは、アプリは自動で再起動しません：アップデートは、アプリを終了したときにインストールされます。";
+"L'actualització espera per reiniciar…" = "再起動待ちのアップデート…";
+"Reinicia i actualitza a la %@" = "再起動してバージョン%@にアップデート";
+"Mostra la finestra de l'actualització" = "アップデートのウインドウを表示";
+"Comprova si hi ha actualitzacions…" = "アップデートを確認…";
+"Última comprovació: fa menys d'1 min" = "最終確認：1分以内";
+"Última comprovació: fa %lld min" = "最終確認：%lld分前";
+"Última comprovació: fa %lld h" = "最終確認：%lld時間前";
+"Tens l'última versió. Comprovat el %@ a les %@." = "最新のバージョンです。%@の%@に確認しました。";
+"Tens l'última versió. Comprovat avui a les %@." = "最新のバージョンです。今日の%@に確認しました。";
+
+/* ConsentimentRestauracio i VistaConsentiment: la pantalla del permís i retirar-lo */
+"Mentrestant, «%@» ha canviat: torna-ho a provar." = "その間に「%@」が変更されました：もう一度試してください。";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració." = "1日に1回、アプリはGitHubで新しいバージョンを確認し、自動でアップデートします。設定でオフにできます。";
+"Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la tornes a obrir, te'l tornarà a demanar." = "Warp Launchは、確認時に伝えたとおりにWarpの設定を戻しました。もうこの設定を変更する許可はありません。もう一度開くと、改めて許可を求めます。";
+"Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar la propera vegada." = "この許可がないと、Warp Launchは使えません。終了しても何も保存されず、次回また確認します。";
+"%@. Mentre no l'arreglis o l'esborris, Warp Launch no es pot fer servir." = "%@。修正するか削除するまで、Warp Launchは使えません。";
+"%@. Mentre no l'arreglis o l'esborris (%@), Warp Launch no es pot fer servir." = "%@。修正するか削除する（%@）まで、Warp Launchは使えません。";
+"Sense carpeta de configuració, Warp Launch no ha tocat Warp." = "構成フォルダがないため、Warp LaunchはWarpに触れていません。";
+"Ja has deixat de fer servir Warp Launch." = "すでにWarp Launchの使用をやめています。";
+"Sense el teu permís, Warp Launch no ha tocat Warp." = "許可がないため、Warp LaunchはWarpに触れていません。";
+"Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res per tornar com era. Només es pot fer amb la configuració de debò." = "テスト用の構成（--config）では、Warp LaunchはWarpの設定に触れません：元に戻すものはありません。実際の構成でのみ実行できます。";
+"«%@» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch." = "「%@」に許可の記録がなくなりました：Warp Launchをもう一度開いてください。";
+"No s'ha pogut tornar l'ajust de Warp com era: %@. L'ajust i el permís no han canviat." = "Warpの設定を元に戻せませんでした：%@。設定と許可は変わっていません。";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp torna a quedar desactivat, i el permís no ha canviat." = "許可を取り消せませんでした：%@。Warpの設定は再びオフになり、許可は変わっていません。";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat." = "許可を取り消せませんでした：%@。Warpの設定は、デフォルトどおりオンのままです（Warpに「settings.toml」がありません）：Warpがタブ付きで開いているときに、Warp Launchがオフにします。許可は変わっていません。";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat." = "許可を取り消せませんでした：%@。Warpの設定はオンのままで、再びオフにできませんでした：Warp Launchが1分後にもう一度試します。許可は変わっていません。";
+"Has deixat de fer servir Warp Launch" = "Warp Launchの使用をやめました";
+"Warp Launch ha de desactivar un ajust de Warp" = "Warp LaunchはWarpの設定を1つオフにする必要があります";
+"Abans de començar, necessita el teu permís." = "始める前に、あなたの許可が必要です。";
+"Per què cal" = "必要な理由";
+"Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides." = "Warpは起動時に前回のタブを再び開くことがありますが、Claudeは開きません。Warp Launchはそれらを自分のタブと認識できず、ウインドウを開くとタブが重複してしまいます。";
+"Què canvia" = "変わること";
+"A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als teus altres Macs." = "Warpの設定「Restore windows, tabs, and panes on startup」がオフになります（一度も変更したことがなくても、Warp LaunchはWarpの設定ファイルに保存します）。Settings Syncを使っている場合は、ほかのMacでも同様です。";
+"Només quan li demanes que llegeixi les finestres de Warp (per exemple, en importar-les), Warp Launch l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "Warpのウインドウを読み取るよう指示したとき（たとえば読み込むとき）だけ、Warp Launchは数秒間この設定をオンにしてWarpに保存させ、またオフに戻します。";
+"Configuració de prova (%@): l'app no tocarà aquest ajust." = "テスト用の構成（%@）：アプリはこの設定に触れません。";
+"No s'ha pogut desar el permís: %@." = "許可を保存できませんでした：%@。";
+"Accepta" = "同意する";
+
+/* Desinstallacio: «Restaura Warp i surt…» i la seva confirmació */
+"Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt." = "Warp Launchはログイン時に開かなくなりました。元に戻すには、上のスイッチをオンにしてください。";
+"L'ajust de Warp %@ tornarà a estar activat, com el tenies abans de Warp Launch." = "Warpの設定%@は、Warp Launchを使う前と同じく、再びオンになります。";
+"L'ajust de Warp %@ es quedarà desactivat, com el tenies abans de Warp Launch." = "Warpの設定%@は、Warp Launchを使う前と同じく、オフのままです。";
+"No se sap com tenies l'ajust de Warp %@ abans de Warp Launch, perquè ja la feies servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp." = "許可を求める前からWarp Launchを使っていたため、Warp Launch以前のWarpの設定%@の状態は分かりません：Warpのデフォルトどおりオンになります。";
+"Warp Launch no ha canviat mai l'ajust de Warp %@: es queda com és." = "Warp LaunchはWarpの設定%@を一度も変更していません：そのままです。";
+"Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de sessió si hi és, i surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la Paperera." = "Warpの設定を元に戻し、Warp Launchの許可を取り消し、ログイン項目にあれば削除して、終了します。構成は削除しません。完全にアンインストールするには、そのあとアプリをゴミ箱にドラッグしてください。";
+"Vols deixar de fer servir Warp Launch?" = "Warp Launchの使用をやめますか？";
+"En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust també canviarà als teus altres Macs." = "起動時に、Warpは前回のタブをClaudeなしで再び開きます。Settings Syncを使っている場合は、ほかのMacの設定も変わります。";
+"Warp Launch deixarà de tenir permís per tocar l'ajust, sortirà dels ítems d'inici de sessió i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launchは設定を変更する許可を失い、ログイン項目から削除されて、終了します。構成は削除しません。もう一度開くと、改めて許可を求めます。";
+"Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launchは設定を変更する許可を失い、終了します。構成は削除しません。もう一度開くと、改めて許可を求めます。";
+
+/* RefrescWarp: per què no es pot tocar l'ajust de Warp, i les notes i els avisos del menú de la icona */
+"«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" = "Warpの「settings.toml」が変更されたばかりです（数秒後にもう一度試してください）";
+"Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)" = "Warpに「settings.toml」がありません。Warp Launchは、Warpが古い設定を先に移せるよう、Warpがタブ付きで開いているときにだけこのファイルを作成します（Warpを開いて、もう一度試してください）";
+"Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, Warp Launch hi desactivarà la restauració de sessió en menys d'un minut." = "Warpにはまだ設定ファイルがありません。Warpがタブ付きで開くと、Warp Launchが1分以内にセッションの復元をオフにします。";
+"Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la restauració de sessió en menys d'un minut." = "このユーザではWarpが一度も開かれていません：設定フォルダも、復元するウインドウもありません。Warpがフォルダを作成し、タブ付きで開くと、Warp Launchが1分以内にセッションの復元をオフにします。";
+"El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot desactivar la restauració de sessió. Ho continua provant cada minut." = "Warpの設定ファイルが変更され続けているため、Warp Launchはセッションの復元をオフにできません。1分ごとに試し続けます。";
+"No es pot mirar la restauració de sessió de Warp: %@" = "Warpのセッションの復元を確認できません：%@";
+"No es pot activar la restauració de sessió de Warp: %@" = "Warpのセッションの復元をオンにできません：%@";
+"No s'ha pogut desactivar la restauració de sessió de Warp: %@. Si Warp es tanca, restaurarà les finestres sense Claude." = "Warpのセッションの復元をオフにできませんでした：%@。Warpが終了すると、ウインドウをClaudeなしで復元します。";
+
+/* Obertura, ObreTot i Lligam: per què no s'obre o no es lliga, i el resultat d'«Obre-ho tot» */
+"No s'ha pogut obrir Warp: %@" = "Warpを開けませんでした：%@";
+"La finestra ja no és a la configuració, o no té pestanyes" = "ウインドウが構成にないか、タブがありません";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warpは閉じています。開くと、これらのタブをClaudeなしで復元します。Warpを開いてから、もう一度試してください。";
+"Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warpは閉じています：アプリが先にWarpを開きます。Warpは以前のウインドウもClaudeなしで復元します。";
+"Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warpは閉じています：アプリが先にWarpを開きます。起動時にWarpは空のウインドウも開きますが、閉じてかまいません。";
+"Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Warpを終了すると、Claudeのバックグラウンドジョブが途中で止まることがあり、タブを開き直しても再開しません。";
+"No s'ha pogut desar la configuració: %@" = "構成を保存できませんでした：%@";
+"No s'ha pogut desar la configuració" = "構成を保存できませんでした";
+"No s'ha pogut llegir Warp: %@" = "Warpを読み取れませんでした：%@";
+"tots els Claude s'engegaran alhora" = "すべてのClaudeセッションが同時に起動します";
+"«%@»: %@" = "「%@」：%@";
+"«%@»: no s'ha pogut obrir." = "「%@」：開けませんでした。";
+"Cap finestra de la configuració no té pestanyes" = "構成のどのウインドウにもタブがありません";
+"Les pestanyes amb Claude que obre l'app es lliguen soles." = "アプリが開くClaudeありのタブは、自動的にリンクされます。";
+
+/* FullObertura: el full d'«Obre a Warp…» i d'«Obre-ho tot a Warp…» */
+"Obre «%@» a Warp" = "「%@」をWarpで開く";
+"Llegint Warp i les sessions de Claude…" = "WarpとClaudeセッションを読み取っています…";
+"No es pot obrir" = "開けません";
+"No s'ha obert cap pestanya." = "開いたタブはありません。";
+"Obre-ho tot a Warp" = "すべてをWarpで開く";
+"Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir" = "シートを開いている間にWarpが変わりました：開く前に確認してください";
+"Totes les marcades s'obren alhora. Si una no s'obre, les altres continuen, i al final es diu què ha passat." = "チェックしたウインドウはすべて同時に開きます。開けないものがあってもほかは続行し、最後に結果を表示します。";
+"%@ › %@" = "%@ › %@";
+"Totes les pestanyes ja són obertes" = "すべてのタブはすでに開いています";
+"Comprovant que Warp no ha canviat…" = "Warpが変わっていないか確認中…";
+"Obrint Warp…" = "Warpを開いています…";
+"Esperant les finestres noves i els seus Claude (fins a 30 s)…" = "新しいウインドウとそのClaudeセッションを待っています（最大30秒）…";
+"No hi ha cap pestanya per obrir" = "開くタブがありません";
+"S'obriran (%lld)" = "開く（%lld）";
+"Avisos" = "警告";
+"Ja obertes (%lld): no s'obriran" = "すでに開いている（%lld）：開きません";
+"No es poden obrir (%lld)" = "開けない（%lld）";
+"Detalls" = "詳細";
+"versió desconeguda" = "不明なバージョン";
+"Fitxer temporal" = "一時ファイル";
+"L'app escriu aquest fitxer a la carpeta de launch configurations de Warp, li demana que l'obri, i l'esborra en quant veu que Warp l'ha obert (o als 30 s)." = "アプリはこのファイルをWarpのlaunch configurationsフォルダに書き込み、Warpに開くよう依頼し、Warpが開いたことを確認したら（または30秒後に）削除します。";
+"Obrint a Warp…" = "Warpで開いています…";
+"Esperant la finestra nova (fins a 30 s)…" = "新しいウインドウを待っています（最大30秒）…";
+"Esperant que arrenqui Claude a cada pestanya (fins a 30 s)…" = "各タブでClaudeが起動するのを待っています（最大30秒）…";
+"Obre Warp, escriu el fitxer temporal i li demana que obri la finestra" = "Warpを開き、一時ファイルを書き込んで、ウインドウを開くよう依頼します";
+"Escriu el fitxer temporal i demana a Warp que obri la finestra" = "一時ファイルを書き込み、Warpにウインドウを開くよう依頼します";
+"Escriu un fitxer temporal per finestra i demana a Warp que les obri totes alhora" = "ウインドウごとに一時ファイルを書き込み、Warpにすべて同時に開くよう依頼します";
+
+/* FullLligam: el full de «Lliga amb Warp…» */
+"Lliga amb Warp" = "Warpとリンク";
+"No es pot lligar amb Warp" = "Warpとリンクできません";
+"No s'ha desat res." = "何も保存していません。";
+"«Obre a Warp…» ja no tornarà a obrir les que són obertes, i l'app en recordarà la conversa de Claude." = "「Warpで開く…」は開いているタブを再び開かなくなり、アプリはそのClaudeの会話を記憶します。";
+"Per a cada pestanya de la configuració, la pestanya de Warp on ja és oberta. Les lligades no es tornaran a obrir mentre siguin obertes, i l'app en recordarà la conversa de Claude. No canvia la configuració, ni obre o tanca res de Warp." = "構成の各タブについて、すでに開いているWarpのタブを見つけます。リンクしたタブは開いている間は再び開かず、アプリはそのClaudeの会話を記憶します。構成は変更せず、Warpで何も開いたり閉じたりしません。";
+"Totes les pestanyes ja estan lligades amb Warp" = "すべてのタブはすでにWarpとリンクしています";
+"Cap pestanya sense lligam no té parella a Warp" = "未リンクのタブに、Warpで一致するものはありません";
+"Per finestra" = "ウインドウ別";
+"Comprova-les (%lld)" = "要確認（%lld）";
+"Desmarca les que no siguin la mateixa pestanya: quedaran sense lligar, i s'obriran si n'obres la finestra." = "同じタブでないものはチェックを外してください：未リンクのままになり、そのウインドウを開くと開きます。";
+"Sense parella (%lld): s'obriran si n'obres la finestra" = "一致なし（%lld）：そのウインドウを開くと開きます";
+"Les altres (%lld)" = "その他（%lld）";
+"Ja lligades: %lld" = "リンク済み：%lld";
+"%lld per la conversa de Claude" = "%lld個：Claudeの会話で一致";
+"%lld pel títol i la carpeta" = "%lld個：タイトルとフォルダで一致";
+"%lld només pel títol" = "%lld個：タイトルのみで一致";
+"%lld només per la carpeta" = "%lld個：フォルダのみで一致";
+"Ja lligades: %lld (no canvien)" = "リンク済み：%lld（変更なし）";
+"%lld de %lld" = "%lld/%lld";
+"%lld de %lld · finestra %@ de Warp" = "%lld/%lld · Warpのウインドウ%@";
+"%lld de %lld · finestres %@ de Warp" = "%lld/%lld · Warpのウインドウ%@";
+"%@: hi corre la seva conversa de Claude" = "%@：そのClaudeの会話が動いています";
+"%@, a %@: el títol coincideix, la carpeta no" = "%@（%@）：タイトルは一致、フォルダは不一致";
+"%@, a %@: la carpeta coincideix, el títol no" = "%@（%@）：フォルダは一致、タイトルは不一致";
+"Desa els lligams a «estat.json». No canvia la configuració ni toca Warp" = "リンクを「estat.json」に保存します。構成は変更せず、Warpにも触れません";
+
+/* FullImportacio i VistaImportacio: el full d'importar */
+"ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. Torna-ho a provar quan acabi." = "現在Warpでウインドウを開いているか、Warp Launchをアップデート中です。終わってから、もう一度試してください。";
+"Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes." = "ここで「空の状態から始める」を選び、タブを追加してください。";
+"La configuració no canvia." = "構成は変わりません。";
+"Si no, tria «Comença en blanc» i afegeix-hi les pestanyes." = "または、「空の状態から始める」を選び、タブを追加してください。";
+"No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes." = "読み込むものがありません：「空の状態から始める」を選び、タブを追加してください。";
+"No hi ha res per importar, i la configuració no canvia." = "読み込むものがなく、構成は変わりません。";
+"Importa de Warp" = "Warpから読み込む";
+"Torna a importar-ho tot de Warp" = "Warpからすべてを読み込み直す";
+"Crea" = "作成";
+"Substitueix" = "置き換える";
+"%lld amb Claude, amb l'ordre de la seva sessió" = "Claudeあり%lld個（セッションのコマンドを使用）";
+"%lld sense Claude obert" = "%lld個はClaudeが開いていなかった";
+"%lld a la carpeta d'inici" = "%lld個はホームフォルダ";
+"%lld amb una carpeta que ja no existeix" = "%lld個は存在しなくなったフォルダ";
+"%lld més" = "ほか%lld個";
+"%lld només terminal: %@" = "ターミナルのみ%lld個：%@";
+"Queda només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "「ターミナルのみ」のままです。Claudeを開くには、インスペクタで「このタブでClaude Codeを開く」をチェックしてください：このコマンドで開きます。";
+"Queden només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "どれも「ターミナルのみ」のままです。Claudeを開くには、インスペクタで「このタブでClaude Codeを開く」をチェックしてください：このコマンドで開きます。";
+"Es desarà la configuració a %@. No s'obre res de Warp ni de Claude." = "構成を%@に保存します。WarpやClaudeでは何も開きません。";
+"Es desarà la configuració. No s'obre res de Warp ni de Claude." = "構成を保存します。WarpやClaudeでは何も開きません。";
+"%@, per si hi has obert o tancat res" = "%@（何かを開いたり閉じたりした場合）";
+"Llegint Warp…" = "Warpを読み取っています…";
+"La plantilla ha canviat a la Configuració: prem «%@» per importar amb la nova" = "設定でテンプレートが変更されました：新しいテンプレートで読み込むには「%@」をクリックしてください";
+"Avisos de la lectura" = "読み取り時の警告";
+"Pestanyes que no tenien Claude obert" = "Claudeが開いていなかったタブ";
+"Notes" = "メモ";
+
+/* EstatWarp i EstatSessions: la línia de Warp al menú de la icona i per què no es pot obrir */
+"Warp: encara no s'ha llegit" = "Warp：まだ読み取っていません";
+"Warp: llegint…" = "Warp：読み取り中…";
+"Warp: no s'ha pogut llegir (%@)" = "Warp：読み取れませんでした（%@）";
+"Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "テスト用の構成（--config）では、アプリはこの設定に触れず、Warpにウインドウを保存させることもできません。実際の構成なら可能です：数秒間この設定をオンにしてWarpに保存させ、またオフに戻します。";
+"«estat.json» no es pot fer servir: %@" = "「estat.json」を使用できません：%@";
+"«estat.json» encara no s'ha llegit" = "「estat.json」はまだ読み取っていません";
