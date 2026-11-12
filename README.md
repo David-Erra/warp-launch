@@ -38,7 +38,8 @@ You need a Mac with Apple silicon (M1 or later) and macOS 26 or later, an admini
      doesn't see it will learn it from this README and from the release notes.
    - **Permission to read Warp's data:** macOS doesn't ask; the first time, the app can't read it and a notification appears
      (“Data Access Blocked”, with a “Manage” button). Turn it on in System Settings › Privacy & Security › Files & Folders ›
-     Warp Launch.app › “Data shared by Warp and affiliated apps”, and open the app again.
+     Warp Launch.app › “Data shared by Warp and affiliated apps”, and open the app again. Since 0.36.0, **Open System Settings**,
+     in the menu bar icon's menu or in the import sheet, takes you straight to that page.
 3. **Create the configuration:** in the editor, **Import from Warp…** with the windows you want already open in Warp.
    It's saved to `~/.config/warp-launch/`. The tabs where Claude was running keep the command it was opened with. The others
    stay terminal only (since 0.29.1; before, it opened `claude` in them): to open Claude in them, check “Open Claude Code in
@@ -47,6 +48,10 @@ You need a Mac with Apple silicon (M1 or later) and macOS 26 or later, an admini
 4. If you want it to open on its own at login: Settings (⌘,) › General › **Open Warp Launch at login**.
    If you have “Start Warp at login” turned on in Warp, turn it off, so that Warp doesn't open on its own (in one restart, with
    that option turned off, Warp opened anyway, and it isn't known why yet).
+5. **Language** (since 0.35.0): the app follows your Mac's language: Catalan, English, Spanish, French, German, Italian,
+   Brazilian Portuguese, Japanese, Simplified Chinese or Korean, and English for any other. To choose another one: Settings (⌘,) ›
+   General › **Language**; it applies the next time you open the app. The translations into languages other than Catalan and
+   English were made with AI: corrections are welcome (open an issue).
 
 **To update it:** `brew upgrade --cask warp-launch`. If the app is open, Homebrew quits it, puts the new version in place and
 opens it again. Since 0.33.0, the app updates itself: if you have 0.31.5 or earlier, do this one last time (see “Automatic

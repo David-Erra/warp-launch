@@ -36,7 +36,8 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
      pantalla també diu que l'app es connecta a GitHub un cop al dia. Qui no la vegi ho sabrà per aquest README i per les notes de la versió.
    - **Permís per llegir les dades de Warp:** macOS no pregunta; la primera vegada, l'app no les pot llegir i surt un avís
      («Accés a les dades bloquejat», amb el botó «Gestiona»). Activa-ho a Configuració del Sistema › Privacitat i seguretat ›
-     Arxius i carpetes › Warp Launch.app › «Dades compartides per l'app Warp i les apps afiliades», i torna a obrir l'app.
+     Arxius i carpetes › Warp Launch.app › «Dades compartides per l'app Warp i les apps afiliades», i torna a obrir l'app. Des de la
+     0.36.0, **Obre la configuració del sistema**, al menú de la icona o al full d'importar, et porta directament a aquesta pàgina.
 3. **Crea la configuració:** a l'editor, **Importa de Warp…** amb les finestres que vulguis ja obertes a Warp.
    Es desa a `~/.config/warp-launch/`. Les pestanyes on corria Claude conserven l'ordre amb què es va obrir. Les altres
    queden només terminal (des de la 0.29.1; abans hi obria `claude`): per obrir-hi Claude, marca «Obre Claude Code en aquesta
@@ -45,6 +46,10 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
 4. Si vols que s'obri sola en iniciar sessió: Configuració (⌘,) › General › **Obre Warp Launch en iniciar sessió**.
    Si a Warp tens activada «Start Warp at login», desactiva-la, perquè no s'obri pel seu compte (en un reinici, amb l'opció
    desactivada, Warp es va obrir igualment, i encara no se sap per què).
+5. **Idioma** (des de la 0.35.0): l'app segueix l'idioma del Mac: català, anglès, castellà, francès, alemany, italià, portuguès del
+   Brasil, japonès, xinès simplificat o coreà, i l'anglès per a qualsevol altre. Per triar-ne un altre: Configuració (⌘,) › General ›
+   **Idioma**; s'aplica la propera vegada que obris l'app. Les traduccions que no són ni el català ni l'anglès s'han fet amb IA: les
+   correccions són benvingudes (obre una issue).
 
 **Per actualitzar-la:** `brew upgrade --cask warp-launch`. Si l'app és oberta, Homebrew la tanca, hi posa la versió nova i
 la torna a obrir. Des de la 0.33.0, l'app s'actualitza sola: si tens la 0.31.5 o una d'anterior, fes-ho una última vegada (vegeu
