@@ -28,11 +28,15 @@ public struct VistaEditor: View {
     static let inspectorIdeal: CGFloat = 320
     static let inspectorMaxim: CGFloat = 460
 
-    public init(editor: Editor, warp: EstatWarp, inici: String, carpetaDeProva: String? = nil) {
+    /// El primer ús (0.36.0): l'enllaç de l'estat buit a Configuració › General. Sense, no hi és.
+    let primerUs: PrimerUs?
+
+    public init(editor: Editor, warp: EstatWarp, inici: String, carpetaDeProva: String? = nil, primerUs: PrimerUs? = nil) {
         self.editor = editor
         self.warp = warp
         self.inici = inici
         self.carpetaDeProva = carpetaDeProva
+        self.primerUs = primerUs
     }
 
     public var body: some View {
@@ -41,7 +45,7 @@ public struct VistaEditor: View {
             case .carregant:
                 ProgressView()
             case .senseConfiguracio:
-                SenseConfiguracio(editor: editor, carpetaDeProva: carpetaDeProva)
+                SenseConfiguracio(editor: editor, carpetaDeProva: carpetaDeProva, primerUs: primerUs)
             case let .error(missatge):
                 ContentUnavailableView {
                     Label(t("No es pot obrir la configuració"), systemImage: "exclamationmark.triangle")
@@ -64,15 +68,31 @@ public struct VistaEditor: View {
     }
 }
 
-private struct SenseConfiguracio: View {
+/// El primer ús (0.36.0, `PrimerUs`): què fa l'app, en tres passos, i els botons de sempre. Sense finestres noves: un
+/// `ContentUnavailableView`, com la resta d'estats buits (mac-design, «Pàgina buida»).
+struct SenseConfiguracio: View {
     let editor: Editor
     let carpetaDeProva: String?
+    let primerUs: PrimerUs?
+    @Environment(\.openSettings) private var openSettings
+
+    /// L'amplada dels passos, alineats a l'esquerra: a la finestra més estreta (`VistaEditor.ampladaMinima`) hi caben, i cada pas
+    /// fa com a molt dues línies en les 10 llengües (`AmpladesTests`).
+    static let ampladaPassos: CGFloat = 440
 
     var body: some View {
         ContentUnavailableView {
             Label(t("Encara no hi ha cap configuració"), systemImage: "macwindow.on.rectangle")
         } description: {
-            Text(t("Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res."))
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(PrimerUs.passos.enumerated()), id: \.offset) { posicio, pas in
+                    Label(pas, systemImage: "\(posicio + 1).circle")
+                }
+            }
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: Self.ampladaPassos, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            Text(t("Fins que no triïs, no s'escriu res."))
             if let carpetaDeProva {
                 Label(t("Configuració de prova: \(carpetaDeProva)"), systemImage: "testtube.2")
             }
@@ -82,6 +102,15 @@ private struct SenseConfiguracio: View {
                 .help(t("Llegeix Warp i mostra què se n'importaria, abans de crear res"))
                 .disabled(!editor.potImportar)
             Button(t("Comença en blanc")) { editor.comencaEnBlanc() }
+            // Només hi porta: l'interruptor de la Configuració l'activa l'usuari (D3, regla 3).
+            if let primerUs, primerUs.mostraEnllacInici {
+                Button(t("Fes que s'obri sola en iniciar sessió…")) {
+                    primerUs.mostraGeneral()
+                    openSettings()
+                }
+                .buttonStyle(.link)
+                .help(t("Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»"))
+            }
         }
     }
 }

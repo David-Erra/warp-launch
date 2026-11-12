@@ -454,10 +454,15 @@
 "%@. No s'hi escriurà res fins que es pugui llegir." = "%@。在能够读取之前，不会向其中写入任何内容。";
 "Torna a carregar" = "重新载入";
 "Encara no hi ha cap configuració" = "还没有配置";
-"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "导入你在Warp中打开的窗口，或从空白开始。在你做出选择之前，不会写入任何内容。";
+"Obre a Warp les finestres que vulguis recuperar." = "在Warp中打开你想恢复的窗口。";
+"Importa-les amb «Importa de Warp…»." = "使用“从Warp导入…”导入这些窗口。";
+"Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude." = "重新启动后，“在Warp中打开全部…”会重新打开这些窗口及其Claude会话。";
+"Fins que no triïs, no s'escriu res." = "在你做出选择之前，不会写入任何内容。";
 "Importa de Warp…" = "从Warp导入…";
 "Llegeix Warp i mostra què se n'importaria, abans de crear res" = "读取Warp并显示将导入的内容，然后再创建";
 "Comença en blanc" = "从空白开始";
+"Fes que s'obri sola en iniciar sessió…" = "登录时打开…";
+"Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»" = "显示“设置” › “通用”，你可以在此打开“登录时打开Warp Launch”";
 "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "在Warp中打开此窗口。表单会先显示将打开的内容，并请你确认";
 "Nova pestanya…" = "新建标签页…";
 "Nova pestanya: en tries la carpeta (⌘T)" = "在你选取的文件夹中添加标签页（⌘T）";

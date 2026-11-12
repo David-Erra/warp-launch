@@ -455,10 +455,15 @@
 "%@. No s'hi escriurà res fins que es pugui llegir." = "%@. No s'hi escriurà res fins que es pugui llegir.";
 "Torna a carregar" = "Torna a carregar";
 "Encara no hi ha cap configuració" = "Encara no hi ha cap configuració";
-"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res.";
+"Obre a Warp les finestres que vulguis recuperar." = "Obre a Warp les finestres que vulguis recuperar.";
+"Importa-les amb «Importa de Warp…»." = "Importa-les amb «Importa de Warp…».";
+"Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude." = "Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude.";
+"Fins que no triïs, no s'escriu res." = "Fins que no triïs, no s'escriu res.";
 "Importa de Warp…" = "Importa de Warp…";
 "Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Llegeix Warp i mostra què se n'importaria, abans de crear res";
 "Comença en blanc" = "Comença en blanc";
+"Fes que s'obri sola en iniciar sessió…" = "Fes que s'obri sola en iniciar sessió…";
+"Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»" = "Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»";
 "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació";
 "Nova pestanya…" = "Nova pestanya…";
 "Nova pestanya: en tries la carpeta (⌘T)" = "Nova pestanya: en tries la carpeta (⌘T)";

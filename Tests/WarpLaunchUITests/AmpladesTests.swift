@@ -225,7 +225,7 @@ struct Cas: Sendable {
     static func filaForm(_ amplada: CGFloat) -> CGFloat { amplada - 2 * Mides.margeForm }
 
     static var casos: [Cas] {
-        configuracio + inspector + fulls + barraLateral + llistaDePestanyes
+        configuracio + inspector + fulls + barraLateral + llistaDePestanyes + editorBuit
     }
 
     /// Les opcions d'un desplegable de Claude (model, esforç o mode de permisos), les de l'editor, amb «Valors diversos» si les
@@ -409,6 +409,20 @@ struct Cas: Sendable {
         ]
     }
 
+    /// L'estat buit de l'editor, el primer ús (0.36.0, `SenseConfiguracio`), a la finestra més estreta: cada pas, fins a dues
+    /// línies a l'amplada dels passos, al costat de la icona del número; i els botons, en una fila (el conjunt més ample, encara
+    /// que SwiftUI els posi un sota l'altre): «Importa de Warp…», «Comença en blanc» i l'enllaç, sense vores.
+    static var editorBuit: [Cas] {
+        let passos: [@MainActor @Sendable () -> String] = [{ PrimerUs.passos[0] }, { PrimerUs.passos[1] }, { PrimerUs.passos[2] }]
+        return passos.map {
+            Cas("Editor buit, pas", [.text($0, vores: Mides.icona)], disponible: SenseConfiguracio.ampladaPassos, regla: .linies(2))
+        } + [
+            Cas("Editor buit, botons", [
+                .boto { t("Importa de Warp…") }, .boto { t("Comença en blanc") }, .text { t("Fes que s'obri sola en iniciar sessió…") },
+            ], separacio: Mides.entreBotons, disponible: VistaEditor.ampladaMinima - 2 * Mides.margeFull),
+        ]
+    }
+
     /// La fila d'una pestanya a la llista (`lineLimit(1)`), amb la finestra a la mida per defecte (`VistaEditor.ampladaPerDefecte`)
     /// i les columnes a la seva amplada ideal: el nom, a l'esquerra, i el resum de Claude, a la dreta, no s'han de tallar amb els
     /// noms que posa l'app («Pestanya nova», «Pestanya 3») o un de curt («warp-launch»). La línia de sota (la carpeta o l'avís,
@@ -434,7 +448,7 @@ struct Cas: Sendable {
         #expect(llengues.count == 10)
         let casos = Self.casos
         // La taula sencera: si un lloc desapareix, es veu.
-        #expect(casos.count == 99, "\(casos.count) llocs")
+        #expect(casos.count == 103, "\(casos.count) llocs")
         let claus = Idioma.$deProva.withValue("ca") {
             casos.map { cas in cas.peces.map { "«\($0.amplada().text)»" }.joined(separator: " + ") }
         }

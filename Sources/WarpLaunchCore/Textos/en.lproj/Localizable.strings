@@ -454,10 +454,15 @@
 "%@. No s'hi escriurà res fins que es pugui llegir." = "%@. Nothing will be written to it until it can be read.";
 "Torna a carregar" = "Reload";
 "Encara no hi ha cap configuració" = "No Configuration Yet";
-"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Import the windows you have open in Warp, or start from scratch. Nothing is written until you choose.";
+"Obre a Warp les finestres que vulguis recuperar." = "Open the windows you want to get back in Warp.";
+"Importa-les amb «Importa de Warp…»." = "Import them with “Import from Warp…”.";
+"Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude." = "After a restart, “Open All in Warp…” reopens them with their Claude sessions.";
+"Fins que no triïs, no s'escriu res." = "Nothing is written until you choose.";
 "Importa de Warp…" = "Import from Warp…";
 "Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Reads Warp and shows what would be imported, before creating anything";
 "Comença en blanc" = "Start from Scratch";
+"Fes que s'obri sola en iniciar sessió…" = "Open at Login…";
+"Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»" = "Shows Settings › General, where you can turn on “Open Warp Launch at login”";
 "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "Opens this window in Warp. First, a sheet shows what will open and asks you to confirm";
 "Nova pestanya…" = "New Tab…";
 "Nova pestanya: en tries la carpeta (⌘T)" = "Adds a tab in the folder you choose (⌘T)";

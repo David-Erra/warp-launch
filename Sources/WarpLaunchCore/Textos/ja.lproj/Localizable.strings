@@ -454,10 +454,15 @@
 "%@. No s'hi escriurà res fins que es pugui llegir." = "%@。読み取れるようになるまで、何も書き込みません。";
 "Torna a carregar" = "再読み込み";
 "Encara no hi ha cap configuració" = "まだ構成がありません";
-"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Warpで開いているウインドウを読み込むか、空の状態から始めてください。選択するまで何も書き込みません。";
+"Obre a Warp les finestres que vulguis recuperar." = "復元したいウインドウをWarpで開きます。";
+"Importa-les amb «Importa de Warp…»." = "“Warpから読み込む…”で読み込みます。";
+"Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude." = "再起動後、“すべてをWarpで開く…”で、Claudeのセッションとともにもう一度開きます。";
+"Fins que no triïs, no s'escriu res." = "選択するまで何も書き込みません。";
 "Importa de Warp…" = "Warpから読み込む…";
 "Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Warpを読み取り、何かを作成する前に、読み込まれる内容を表示します";
 "Comença en blanc" = "空の状態から始める";
+"Fes que s'obri sola en iniciar sessió…" = "ログイン時に開く…";
+"Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»" = "設定 › 一般を表示します。ここで“ログイン時にWarp Launchを開く”をオンにできます";
 "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "このウインドウをWarpで開きます。先にシートで開く内容を表示し、確認を求めます";
 "Nova pestanya…" = "新規タブ…";
 "Nova pestanya: en tries la carpeta (⌘T)" = "選択したフォルダにタブを追加します（⌘T）";

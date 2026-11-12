@@ -21,7 +21,7 @@ struct WarpLaunchApp: App {
             PortaConsentiment(consentiment: aplicacio.consentiment, carpetaDeProva: aplicacio.carpetaDeProva,
                               surt: { NSApp.terminate(nil) }) {
                 VistaEditor(editor: aplicacio.editor, warp: aplicacio.warp, inici: aplicacio.inici,
-                            carpetaDeProva: aplicacio.carpetaDeProva)
+                            carpetaDeProva: aplicacio.carpetaDeProva, primerUs: aplicacio.primerUs)
             }
             .background(AccesFinestra { aplicacio.activacio.adopta($0) })
             // Les dates, els nombres i els plurals de SwiftUI, en la llengua dels textos (docs/disseny.md, secció 12).
@@ -277,6 +277,15 @@ final class Aplicacio {
 
     /// «Actualitza l'estat de Warp», la mateixa ordre al menú Arxiu i al de la icona.
     var actualitzaWarp: OrdreActualitzaWarp { OrdreActualitzaWarp(warp: warp, consentiment: consentiment, obertura: obertura) }
+
+    /// El primer ús (0.36.0): l'enllaç de l'estat buit de l'editor deixa la Configuració a «General», on hi ha l'interruptor
+    /// d'iniciar sessió, i la vista l'obre. No activa res.
+    var primerUs: PrimerUs {
+        PrimerUs(arrencada: arrencada, preparaGeneral: { [activacio, actualitzacions] in
+            activacio.posaAlDavant()
+            actualitzacions.pestanyaConfiguracio = .general
+        })
+    }
 
     /// Per a l'editor: la carpeta, si és de prova.
     var carpetaDeProva: String? {

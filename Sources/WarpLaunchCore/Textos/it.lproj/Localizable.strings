@@ -455,10 +455,15 @@
 "%@. No s'hi escriurà res fins que es pugui llegir." = "%@. Non vi verrà scritto nulla finché non si potrà leggere.";
 "Torna a carregar" = "Ricarica";
 "Encara no hi ha cap configuració" = "Ancora nessuna configurazione";
-"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Importa le finestre che hai aperte in Warp, oppure inizia da zero. Finché non scegli, non viene scritto nulla.";
+"Obre a Warp les finestres que vulguis recuperar." = "Apri in Warp le finestre che vuoi recuperare.";
+"Importa-les amb «Importa de Warp…»." = "Importale con “Importa da Warp…”.";
+"Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude." = "Dopo un riavvio, “Apri tutto in Warp…” le riapre con le loro sessioni di Claude.";
+"Fins que no triïs, no s'escriu res." = "Finché non scegli, non viene scritto nulla.";
 "Importa de Warp…" = "Importa da Warp…";
 "Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Legge Warp e mostra cosa verrebbe importato, prima di creare qualsiasi cosa";
 "Comença en blanc" = "Inizia da zero";
+"Fes que s'obri sola en iniciar sessió…" = "Apri al login…";
+"Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»" = "Mostra Impostazioni › Generali, dove puoi attivare “Apri Warp Launch al login”";
 "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "Apre questa finestra in Warp. Prima, una finestra di dialogo mostra cosa si aprirà e chiede conferma";
 "Nova pestanya…" = "Nuovo pannello…";
 "Nova pestanya: en tries la carpeta (⌘T)" = "Aggiunge un pannello nella cartella che scegli (⌘T)";

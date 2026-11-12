@@ -454,10 +454,15 @@
 "%@. No s'hi escriurà res fins que es pugui llegir." = "%@. 읽을 수 있을 때까지 아무것도 쓰지 않습니다.";
 "Torna a carregar" = "다시 불러오기";
 "Encara no hi ha cap configuració" = "아직 구성 없음";
-"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Warp에 열려 있는 윈도우를 가져오거나 처음부터 시작하십시오. 선택하기 전까지는 아무것도 쓰지 않습니다.";
+"Obre a Warp les finestres que vulguis recuperar." = "복원하려는 윈도우를 Warp에서 엽니다.";
+"Importa-les amb «Importa de Warp…»." = "‘Warp에서 가져오기…’로 가져옵니다.";
+"Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude." = "재시동 후 ‘모두 Warp에서 열기…’를 사용하면 Claude 세션과 함께 다시 열립니다.";
+"Fins que no triïs, no s'escriu res." = "선택하기 전까지는 아무것도 쓰지 않습니다.";
 "Importa de Warp…" = "Warp에서 가져오기…";
 "Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Warp를 읽고, 아무것도 생성하기 전에 가져올 항목을 보여 줍니다";
 "Comença en blanc" = "처음부터 시작";
+"Fes que s'obri sola en iniciar sessió…" = "로그인 시 열기…";
+"Mostra Configuració › General, on pots activar «Obre Warp Launch en iniciar sessió»" = "설정 › 일반을 표시합니다. 여기에서 ‘로그인 시 Warp Launch 열기’를 켤 수 있습니다";
 "Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "이 윈도우를 Warp에서 엽니다. 먼저 시트에서 열릴 항목을 보여 주고 확인을 요청합니다";
 "Nova pestanya…" = "새로운 탭…";
 "Nova pestanya: en tries la carpeta (⌘T)" = "선택한 폴더에 탭을 추가합니다(⌘T)";
