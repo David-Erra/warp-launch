@@ -2903,9 +2903,10 @@ Sense `\b` (`capGuardaFaServirElLimitDeParaula`). Cadascuna amb una línia de mo
 
 ## 12. Multidioma (0.35)
 
-La 1.0.0 surt en 10 llengües: ca, en, es, fr, de, it, pt-BR, ja, zh-Hans i ko. Per defecte, la del Mac; a la Configuració, un
-selector. La infraestructura (F1) és a la 0.34.1, sense cap canvi visible amb el Mac en català (en una altra llengua, els menús
-de macOS passen a l'anglès: vegeu «La llengua de reserva»).
+La 1.0.0 surt en 10 llengües: ca, en, es, fr, de, it, pt-BR, ja, zh-Hans i ko, triades per l'autor (11/11/2026). Per defecte, la
+del Mac; a la Configuració, un selector. La infraestructura (F1) és a la 0.34.1, sense cap canvi visible amb el Mac en català (en
+una altra llengua, els menús de macOS passen a l'anglès: vegeu «La llengua de reserva»). De F1 a F6, al codi de la 0.35.0; falta
+F7, la revisió visual de l'autor.
 
 **Format.** `.lproj/Localizable.strings` i `Localizable.stringsdict` (plurals). `.xcstrings` no: compilar-lo demana
 `xcstringstool`, que és d'Xcode, i el projecte es compila amb les Command Line Tools.
@@ -2962,9 +2963,9 @@ de les ordres del menú de macOS són els de SwiftUI en cada llengua (`lesOrdres
 | F2 | Els textos del Core (`WarpLaunchCore`: el CLI, els avisos, els errors…) amb `t`, i la guarda de F1 activada | 0.34.2 |
 | F3 | Els de la UI i l'app (`Text`, `Button`, menús…), i el diagnòstic sencer en anglès | 0.34.3 |
 | F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | 0.34.4 |
-| F5 | Les 8 llengües restants | |
-| F6 | Les amplades: una prova que mesura els textos amb `NSFont`, i una pseudolocalització | |
-| F7 | La revisió visual de l'autor | 0.35 |
+| F5 | Les 8 llengües restants, amb els noms de macOS 27 | 0.35.0 |
+| F6 | Les amplades: una prova que mesura els textos amb `NSFont`; les comes i els parèntesis de cada llengua; una pseudolocalització | 0.35.0 |
+| F7 | La revisió visual de l'autor | |
 
 **Per a F2 i F3:** la guarda de les claus demana que `en.lproj` tingui totes les del català des del primer text: cada clau nova
 hi va alhora. Fins a F4, qui no tingui el Mac en català veuria l'app barrejada, i des de F1 ja hi veu els menús de macOS en
@@ -3108,20 +3109,115 @@ restants també).
   («November 11, 2026»); el català, a `README.ca.md`, i a dalt de cadascun l'enllaç a l'altre. La guarda de les feines en segon
   pla mira la frase a tots dos, i `elReadmeEsEnAnglesIEnCatala`, els enllaços i que tinguin les mateixes seccions.
 
-**Per a F5 i F6:**
-- Els textos del Core que la UI compara o en què busca (`.contains`) han de ser les claus, no el text traduït: avui no n'hi ha cap.
-- **Els menús de macOS** (F5): la guarda compara cada llengua nova amb `MainMenu.loctable`, que no sempre és l'esperable:
-  en alemany, «Über „%@“», «„%@“ beenden» i «Einstellungen …» amb un espai que no es parteix (U+00A0); en castellà, «Acerca de %@»,
-  «Salir de %@» i «Ajustes…». I el menú «Arxiu» de l'avís del full d'obrir és el «File» de cada llengua («Ablage», «Archivo»).
-- **El català de macOS 15 i posteriors** diu «Ítems d’inici de sessió i extensions» (`LoginItems.appex`), i l'app, «Ítems d’inici
-  de sessió» (decisió oberta de l'autor: canviar-lo canvia les claus).
-- Les amplades, en alemany (F6 les ha de mesurar). Els que poden no cabre, d'una sola línia i amb un control al costat:
-  - a la Configuració (520 pt): «Torna a deixar Warp com era» amb el botó «Restaura Warp i surt…», «macOS no l'obrirà sola fins
-    que la permetis a Ítems d’inici de sessió» amb «Mostra Ítems d’inici de sessió…» (en anglès, ja més llarg: «Show Login Items &
-    Extensions…»), «Informe per a una issue a GitHub» amb el menú «Copia el diagnòstic», «Estat» amb «Reinicia i actualitza»,
-    «Mode de permisos» amb «Sense cap permís (bypassPermissions)», i «Idioma de l'app» amb «El del sistema (…)»;
-  - als fulls (560 i 600 pt): les capçaleres «Sense parella (3): s'obriran si n'obres la finestra» i «Ja obertes (3): no
-    s'obriran», el peu del full d'importar («Actualitza l'estat de Warp», «Cancel·la» i «Substitueix», a 560 pt) i el detall de
-    cada pestanya a la dreta («oberta a Warp, amb Claude (finestra 2 › Botiga)»);
-  - a l'inspector (280 pt): «Mode de permisos» amb «Sense cap permís (bypassPermissions)», la casella «Obre Claude Code en aquesta
-    pestanya», «Esforç» amb «Valors diversos» i «Treu el mode de permisos».
+**Per a F5 i després:** els textos del Core que la UI compara o en què busca (`.contains`) han de ser les claus, no el text
+traduït: avui no n'hi ha cap.
+
+**F5 (a la 0.35.0): les 8 llengües restants.** es, fr, de, it, pt-BR, ja, zh-Hans i ko, cadascuna amb els 666 textos i els 57
+plurals del català d'aleshores, i el seu `Recursos/<llengua>.lproj/InfoPlist.strings`. Els plurals, amb les categories de CLDR: `one` i
+`other` en alemany; `one`, `many` i `other` en castellà, francès, italià i portuguès (en francès i en portuguès, el 0 va amb `one`);
+i només `other` en japonès, xinès i coreà. Les frases on la llengua canvia l'ordre fan servir posicions (`%2$#@p@`, `%1$lld`).
+- **Els noms de macOS són els de les taules del sistema de macOS 27,** llegits en cada llengua: el menú de SwiftUI
+  (`MainMenu.loctable`: «Über „%@“», «Acerca de %@», «%@について», «设置…», l'«Arxiu» de cada llengua: «Ablage», «Archivo»,
+  «ファイル»), Configuració del Sistema i els seus taulers (`LoginItems.appex`, `GeneralSettings.appex`,
+  `SecurityPrivacyExtension.appex`: «Anmeldeobjekte & Erweiterungen», «Ouverture et extensions», «ログイン項目と機能拡張»,
+  «登录项与扩展»), el Desfés de Foundation (`Undo.loctable`), AppKit («Mehrere Werte», «複数の値») i el Finder («Papierkorb»,
+  «Corbeille»). La guarda dels menús (`lesOrdresDelMenuDeMacOSEsDiuenIgualEnCadaLlengua`) compara cada llengua amb
+  `MainMenu.loctable` (`pt_BR`, `zh_CN`).
+- **El català** diu «Ítems d’inici de sessió i extensions», com macOS 15 i posteriors (`LoginItems.appex`; abans, «Ítems d’inici
+  de sessió»).
+- **Decisions de l'agent integrador, totes com macOS:** en francès, l'espai que no es parteix (U+00A0) davant de «:», «;», «?» i
+  «!», dins de «« »» i entre una xifra i la unitat (abans, en alguns llocs, l'espai fi, U+202F); en japonès, les cometes
+  “” (abans, 「」); en alemany, el tracte de «du», el de macOS 27 (`LoginItems.appex`, TCC, AppKit).
+- Com macOS en cada llengua: en portuguès del Brasil, majúscula a cada paraula als menús, als botons i als títols («Abrir Tudo no
+  Warp…»); en italià, una pestanya és un «pannello», com al Terminal i al Safari; en coreà, el registre formal (-습니다).
+
+**F6 (0.35.0): les amplades, les comes i la pseudollengua.**
+- **La prova** (`AmpladesTests`, a les proves de la UI): en cada llengua (`Idioma.$deProva`), mesura amb `NSFont.systemFont` i
+  CoreText (amb les lletres de reserva del japonès, el xinès i el coreà: «ウインドウ12 のコピー» fa 128,3 pt, i a SwiftUI, 128,5) els
+  textos dels llocs d'amplada fixa, i els compara amb l'espai que hi ha. No obre l'app ni crea cap vista. Si un no hi cap, diu la
+  llengua, el lloc, la clau (en català), el text traduït, el que fa i el que hi ha: «de: Inspector, mode de permisos, clau «Mode de
+  permisos»: «Berechtigungsmodus» fa 128.8 pt al costat d'un desplegable de 333.2 pt, i en una fila de 280.0 pt n'hi caben 123.2
+  en una línia». Tres regles: una línia (les peces d'una fila, sense partir-se ni encongir-se), fins a `n` línies (el detall d'una
+  fila, un subtítol, una nota) i l'etiqueta d'un `Picker` amb un desplegable que no hi cap. `lesReglesDeMesura` les prova.
+- **Les mides de SwiftUI** (`Mides`), mesurades el 12/11/2026 a macOS 27.2 amb un programa a part que dibuixa les vistes sense
+  mostrar cap finestra (els marcs amb `onGeometryChange` i, per a les etiquetes, l'amplada on passen a dues línies): un `Form`
+  agrupat deixa 30 pt per banda (a l'inspector, 20); entre l'etiqueta i un botó o un menú, 12 pt (i un valor de text, 20,5; un
+  desplegable, 24); un botó fa el text i 24,5 pt; un botó amb menú, 48,5; un desplegable, l'opció més ampla i 48; una casella,
+  23,5; un interruptor petit, 48,5; un camp de text deixa a l'etiqueta la meitat de la fila. Amb un desplegable que no hi cap,
+  SwiftUI l'encongeix (en talla l'opció triada) i l'etiqueta fa una línia fins al 44 % de la fila (es parteix a 108, 117, 126,5,
+  145, 173 i 207 pt en files de 240, 260, 280, 320, 380 i 460). Les capçaleres de secció, en 13 pt seminegreta; els subtítols i els
+  peus, en 11.
+- **Els llocs** (99, la taula és a la prova, i cada amplada surt de la seva vista: `VistaConfiguracio.amplada`,
+  `VistaEditor.inspectorMinim`, `FullObertura.amplada`…):
+  - la Configuració (520 pt): les capçaleres; els interruptors; l'avís dels ítems d'inici (fins a dues línies) i el seu botó;
+    «Idioma de l'app» amb les 10 llengües i la del sistema; «Informe per a una issue a GitHub» i el subtítol de «Copiat (…)» amb
+    «Copia el diagnòstic»; «Torna a deixar Warp com era» amb «Restaura Warp i surt…»; «Estat» amb el botó més ample de les
+    actualitzacions («Reinicia i actualitza»); i, a «Pestanyes noves», els tres desplegables sencers, també «Sense cap permís
+    (bypassPermissions)»;
+  - l'inspector, a l'amplada mínima: les capçaleres, les caselles («Obre Claude Code en aquesta pestanya»), els botons («Treu el
+    mode de permisos»), les etiquetes dels camps de text, «Model» i «Esforç» amb «Valors diversos», sencers, i «Mode de permisos»
+    en una línia;
+  - els fulls d'obrir i de lligar (600 pt) i d'importar (560): les capçaleres («Sense parella (12): s'obriran si n'obres la
+    finestra»), els `DisclosureGroup`, el detall de cada pestanya a la dreta (fins a dues línies) i els botons del peu
+    («Actualitza l'estat de Warp», «Cancel·la» i «Substitueix»); i la pantalla del permís (560): el títol, en una línia, i els botons;
+  - la barra lateral (180 pt): «Per revisar» amb una insígnia de dues xifres, la capçalera i «Prova: …» (`lineLimit(1)`); els noms
+    que posa l'app («Finestra nova», «Finestra 3»), a l'amplada ideal (220): a la mínima, es tallen com qualsevol nom llarg;
+  - la fila d'una pestanya (`lineLimit(1)`), amb la finestra a la mida per defecte (900 pt): el nom («Pestanya nova»,
+    «warp-launch») i el resum de Claude («Sonnet · Molt alt · Ultracode»), sense tallar-se.
+  - No s'hi mesuren, i la prova diu per què: els noms de l'usuari i el de les còpies («X còpia»), la línia de sota de la fila d'una
+    pestanya (la carpeta o l'avís, en 11 pt: es talla pel mig, i l'avís sencer és a l'ajuda i a l'inspector), les notes i els peus
+    que ja fan diverses línies, i els menús.
+- **Què no hi cabia, i com s'ha arreglat** (el català i l'anglès, igual que abans):
+  - en totes les llengües, també en català, a l'inspector de 280 pt: «Obre Claude Code en aquesta pestanya» (en català, 263,5 pt de
+    240) i «Mode de permisos» al costat del desplegable (112,2 de 108). Disseny: l'inspector, de 320 pt com a mínim;
+  - en totes, a la Configuració, l'avís dels ítems d'inici amb el botó al costat (289 pt en català): l'avís feia tres línies i el
+    botó quedava tallat. Disseny: el botó, a sota;
+  - alemany: «Berechtigungsmodus» (128,8 pt de 123,2 a l'inspector; i a «Pestanyes noves», amb «Berechtigungen umgehen
+    (bypassPermissions)», 486 de 460) passa a «Berechtigungen»; el títol del permís, «Warp Launch muss eine Einstellung von Warp
+    deaktivieren» (472 de 454), a «… eine Warp-Einstellung deaktivieren»;
+  - francès: «Mode d’autorisations» (126,9) passa a «Mode d’autorisation», i les altres tres frases del mode, igual;
+  - italià: «Modalità dei permessi» (132,8) passa a «Modalità permessi», i les altres tres, igual;
+  - portuguès del Brasil: «Modo de permissões» (126,4) passa a «Modo de permissão», i les altres tres, igual;
+  - castellà, japonès, xinès i coreà: res, amb l'inspector de 320 (a 280, el castellà i l'italià tampoc no hi cabien a «Nom de la
+    sessió»).
+- **Els canvis de disseny** (cap amplada no creix més de 40 pt):
+  - l'inspector, de 280 a 320 pt com a mínim (`VistaEditor.inspectorMinim`). És la seva amplada ideal, que no canvia: s'obre igual,
+    però ja no es pot fer més estret;
+  - la finestra de l'editor, de 640 a 680 pt com a mínim (`VistaEditor.ampladaMinima`): amb la barra lateral (180) i l'inspector
+    (320), la llista conserva els 180 pt d'abans;
+  - a la Configuració, sense el permís de macOS per als ítems d'inici, l'avís i, a sota, el botó «Mostra Ítems d’inici de sessió i
+    extensions…» (un `VStack`), en lloc d'una fila.
+- **Les comes i els parèntesis de cada llengua** (`SeparadorsTests`):
+  - «6 amb Claude (4 reprenen la seva conversa, 2 en comencen una de nova)» (`XifresObertura.text`): la coma era `", "` al codi, i
+    en japonès i en xinès hi sortia una coma occidental. Ara és una frase sencera (clau nova, amb dos plurals), amb «、» en japonès
+    i «，» en xinès;
+  - les enumeracions que s'unien amb `", "`, amb `Idioma.llista`: els terminals de la mateixa carpeta d'una sessió sense pestanya
+    (`NotaImportacio`), les opcions de Claude i els modes de permisos que existeixen (`Validacio`), els números de les finestres que
+    es diuen igual (`warp-launch obre`) i, a `warp-launch llegeix`, els tipus de sessions en segon pla i les notes d'un pane. En
+    català, ««A» i «B»» en lloc de ««A», «B»»: quatre proves han canviat;
+  - el «; » d'aquesta nota i el parèntesi de «24 només terminal (18 sense Claude obert)», dins de la frase (claus noves): en francès,
+    amb U+00A0 davant del «;»; en japonès, «。» i el «（）» sense l'espai d'abans;
+  - el nom d'un mode amb el de Claude («Sense cap permís (bypassPermissions)») i, al CLI, una ruta amb les seves notes: «%@ (%@)»,
+    amb «（）» en japonès i en xinès, i sense l'espai en coreà;
+  - dues frases seguides, amb `Idioma.frases`: un espai, excepte en japonès i en xinès, que no en posen (18 llocs, abans `" "`);
+  - es queden: « · », que macOS fa servir igual en totes les llengües (35 textos de `FindMy.app` i els de Mail, Books, Podcasts i
+    Maps, amb « · » també en japonès, xinès i coreà, a les taules de macOS 27.2), «›» entre la finestra i la pestanya, i «ruta:
+    error» als errors del CLI.
+- **La pseudollengua** (`PseudollenguaTests`): una llengua falsa feta del català, en un paquet de textos temporal: cada text entre
+  ⟦…⟧, un 40 % més llarg, i amb totes les lletres i els signes «,;:()«»“”» canviats per uns altres que s'hi assemblen; els
+  especificadors, igual. S'activa amb un `@TaskLocal` (`Idioma.textosDeProva`, només a les proves; les llistes, amb les del
+  japonès). Amb aquesta llengua, 23 frases del Core no han de tenir cap lletra llatina ni cap d'aquests signes fora del que ve dels
+  valors i dels noms propis: el que no passa per `t(_:)` es veu. Amb el codi d'abans, hauria trobat la coma de `XifresObertura`, el
+  «; » i les comes de la nota de la importació i el parèntesi de `nomMode`. La guarda `nomesLesProvesCanvienLaLlenguaOElsTextos`:
+  al codi, només el diagnòstic fixa la llengua.
+- Ara, 667 textos i 58 plurals.
+
+**Per a F7, la revisió de l'autor a l'app** (cada llengua, amb el selector de la Configuració, i l'app tornada a obrir):
+- en alemany, francès, italià i portuguès, l'inspector a l'amplada mínima: «Mode de permisos» en una línia al costat del
+  desplegable (que talla «Sense cap permís (bypassPermissions)» si és el triat), i la casella «Obre Claude Code en aquesta pestanya»;
+- en alemany, Configuració › Pestanyes noves («Berechtigungen» amb el desplegable sencer) i la pantalla del permís (el títol);
+- en japonès i en xinès, el full d'obrir amb converses que es reprenen i noves («、», «，»), el full d'importar i les notes;
+- en francès, la barra lateral a 180 pt («Nouvelle fenêtre» amb insígnia es talla, i a 220 no);
+- en qualsevol llengua, la finestra de l'editor a la seva mida mínima (680 pt) amb l'inspector obert, i, si es pot provocar,
+  l'avís dels ítems d'inici sense el permís de macOS (el botó, a sota). Les mides de la prova són d'un programa a part: si a la
+  pantalla alguna cosa no quadra, es corregeix `Mides`.

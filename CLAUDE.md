@@ -21,7 +21,7 @@ Els requisits són a `docs/especificacio.md`.
 
 - **Fins a la 1.0.0 (decisió de l'autor, 11/11/2026; el detall, al seu pla privat, fora del repo):** 0.34, el nucli fiable (les pestanyes només de terminal
   es reconeixen i no es dupliquen; reinici, L2 i L5 amb l'OK; en publicar-la, la primera actualització automàtica real); 0.35, multidioma en 10 llengües (ca, en, es, fr, de, it, pt-BR, ja,
-  zh-Hans i ko; el del sistema per defecte i selector: la 1.0.0 ha d'acceptar multidioma); 0.36, Developer ID i notarització; 0.37, la candidata; beta amb pre-releases
+  zh-Hans i ko; el del sistema per defecte i selector: la 1.0.0 ha d'acceptar multidioma; al codi de la 0.35.0, de F1 a F6; falta F7, la revisió visual de l'autor); 0.36, Developer ID i notarització; 0.37, la candidata; beta amb pre-releases
   de GitHub i 1.0.0. Fora de la 1.0.0: D20, D9, les pestanyes fetes a mà a Warp i els extres de l'editor. D16 queda desmentida i acceptada.
   **Acord amb la sessió de ThingWorx (11/11/2026):** cap prova real d'aquest repo obre finestres amb repos `ot-*`; si cal obrir pestanyes reals, s'avisa abans.
 - **Repo:** `David-Erra/warp-launch` a GitHub, públic, amb llicència MIT (`LICENSE`). Comença amb un sol commit inicial,
@@ -189,6 +189,11 @@ Els requisits són a `docs/especificacio.md`.
   opcional; la versió del fitxer continua a 1, i la 0.33.0 el llegeix: `EstatAppTests`), només si no hi ha cap dubte. Mentre el shell sigui viu
   (mateix pid i mateixa hora), el pla la dona per oberta (`OnOberta.shellViu`) i no la torna a obrir. Amb la restauració activada mana la base.
   «Lliga» no en desa cap. **Prova real feta l'11/11/2026** amb el CLI: la segona vegada no obre res, i després de tancar la finestra les tornaria a obrir (`docs/fets-verificats.md`).
+- **0.35.0 (12/11/2026): l'app en 10 llengües** (triades per l'autor; `docs/disseny.md`, secció 12, de F1 a F6). Els textos, a
+  `Sources/WarpLaunchCore/Textos/<llengua>.lproj` (667 textos i 58 plurals; la clau és el català) amb `t(_:)`; els noms de macOS, de les taules de macOS 27.
+  `AmpladesTests` mesura amb `NSFont` que els textos de les amplades fixes hi caben en les 10 (l'inspector, de 320 pt com a mínim, i la finestra, de
+  680); les comes i els parèntesis, de la llengua (`Idioma.llista`, `Idioma.frases`); i una pseudollengua troba el que no passa per `t(_:)`.
+  Només proves i codi llegit: no s'ha vist a l'app (F7).
 - **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
