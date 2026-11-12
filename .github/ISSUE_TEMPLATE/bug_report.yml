@@ -1,0 +1,37 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please don't include private paths, repository names or conversation text you don't want to share:
+        the diagnostic below can be anonymized.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Warp Launch
+        2. …
+  - type: textarea
+    id: diagnostic
+    attributes:
+      label: Diagnostic
+      description: |
+        In the app: **Settings › General › Diagnostic › Copy Diagnostic** (tick "Anonymize"), then paste it here.
+        From the terminal: `warp-launch diagnostica --anonimitza`.
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Warp Launch, macOS, Warp and Claude Code (the diagnostic already includes them).
+      placeholder: Warp Launch 0.34.0 · macOS 27.2 · Warp 0.2026.11.04 · Claude Code 2.1.322

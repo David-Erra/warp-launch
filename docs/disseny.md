@@ -3232,3 +3232,45 @@ i només `other` en japonès, xinès i coreà. Les frases on la llengua canvia l
 - en qualsevol llengua, la finestra de l'editor a la seva mida mínima (680 pt) amb l'inspector obert, i, si es pot provocar,
   l'avís dels ítems d'inici sense el permís de macOS (el botó, a sota). Les mides de la prova són d'un programa a part: si a la
   pantalla alguna cosa no quadra, es corregeix `Mides`.
+
+## 13. Developer ID i notarització (0.36, pla de l'11/11/2026)
+
+**Per què:** amb «Warp Launch Dev», un certificat propi, l'app només s'obre sense avisos si arriba sense la marca de baixada
+(Homebrew i `instal·la.sh` la treuen). Baixada amb el navegador, macOS no l'obre. Amb Developer ID i notarització, s'obre com
+qualsevol app: és una condició de la 1.0.0 (decisió D-P1 de l'autor).
+
+**Ho fa l'autor, al seu Mac (cap agent no pot):**
+1. **Renovar l'Apple Developer Program** abans que caduqui (és anual; la data és al compte d'Apple), a l'app Apple Developer o a developer.apple.com.
+2. **Crear el certificat:** Xcode › Settings › Accounts › el seu Apple ID › Manage Certificates › «+» › **Developer ID Application**.
+   Queda al clauer. Exportar-ne una còpia (`.p12`, amb contrasenya) al gestor de contrasenyes, com la clau de Sparkle.
+3. **Les credencials de notarització:** una contrasenya específica d'app (account.apple.com › Inici de sessió i seguretat ›
+   Contrasenyes específiques d'apps). Després, al seu terminal, un sol cop:
+   `xcrun notarytool store-credentials warp-launch --apple-id <el seu correu d'Apple> --team-id <el seu Team ID>`.
+   Les desa al clauer amb el nom `warp-launch`; cap agent no les llegeix (com la regla 12).
+
+**Canvis al codi (els fa un agent, quan hi hagi el certificat):**
+- `build-app.sh`: si troba «Developer ID Application», signa-hi totes les peces, de dins cap a fora: `Autoupdate`, `Updater.app`, el
+  framework, el bundle dels textos i l'app. Amb `--options runtime` i `--timestamp` (el segell necessita xarxa), i sense
+  `entitlements`: l'app no va en sandbox. Si no el troba, com ara («Warp Launch Dev» o ad hoc).
+- `publica.sh`: després de compilar i signar, un zip per a Apple → `xcrun notarytool submit --keychain-profile warp-launch
+  --wait` → `xcrun stapler staple` a l'app → el zip definitiu → la signatura EdDSA, com ara. Si la notarització falla, no es publica res.
+- **El requisit** de `publica.sh` i `instal·la.sh` passa a ser el de Developer ID (`anchor apple generic`, l'identificador i
+  el Team ID). `instal·la.sh --versio` ha d'acceptar també el de «Warp Launch Dev», per poder instal·lar les versions d'abans.
+- **La recepta de Homebrew** ja no ha de treure la marca de baixada, a partir de la primera versió notaritzada.
+- **Proves:** les de `ScriptPublicaTests`, amb un `notarytool` i un `stapler` falsos. Els casos: notarització correcta, notarització
+  refusada (no es publica res) i requisit nou.
+
+**Què es comprova sense publicar (fet l'11/11/2026):** el «hardened runtime» no canvia la lectura dels processos
+(`docs/fets-verificats.md`, «Sparkle», secció 5).
+
+**Què passarà a cada Mac, una sola vegada, en arribar la 0.36:**
+- **Sparkle l'accepta:** canvia el certificat, però no la clau EdDSA (secció 11, apartat 5: mai tots dos alhora).
+- **macOS tornarà a demanar el permís d'Arxius i carpetes**, perquè l'app té una identitat nova. L'app ja mostra «Accés a les dades
+  bloquejat» amb el botó «Gestiona». Les notes de la versió i el README ho han de dir.
+- **Potser caldrà tornar a activar l'inici de sessió** (Configuració › General). No s'ha provat.
+
+**Decisió de l'autor (pendent), com es prova:**
+- **(a) Recomanada:** publicar la 0.36 i mirar que el Mac de l'autor i el dels provadors s'hi actualitzin sols. Abans del
+  llançament hi ha com a molt una desena de còpies, i totes es poden actualitzar a mà si falla (`brew upgrade` o l'ordre del README).
+- **(b)** Una ronda com la C abans de publicar, amb un servidor local i una clau d'un sol ús: una o dues hores, amb l'autor al
+  davant i dos reinicis de l'app.

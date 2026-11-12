@@ -952,6 +952,11 @@ sense Sparkle i les seves proves.
 
 ### 5. De «Warp Launch Dev» a Developer ID
 
+- **El «hardened runtime» no canvia la lectura dels processos (11/11/2026, provat):** el CLI de la 0.34.0 compilat en release i signat
+  ad hoc amb `--options runtime` (`flags=0x10002(adhoc,runtime)`) dona amb `llegeix --json` exactament el mateix JSON que sense: 75
+  terminals, tots amb pane, carpeta i Claude, 66 amb marca, i 74 sessions. `KERN_PROCARGS2`, `sysctl` i `proc_pidinfo` funcionen igual. No
+  s'ha provat l'app (Sparkle, el permís d'Arxius i carpetes) ni amb el certificat Developer ID.
+
 - **LLEGIT:** amb la mateixa clau EdDSA, el canvi d'identitat passa (`SUUpdateValidator.m:299,373`; `D/index.md:127`: «either your Apple code
   signing certificate or your EdDSA keys (but not both)»).
 - **LLEGIT:** si canvien totes dues, es refusa (`:379-416`).
