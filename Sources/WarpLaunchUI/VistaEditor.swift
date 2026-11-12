@@ -12,6 +12,22 @@ public struct VistaEditor: View {
     /// Si l'app s'ha obert amb `--config`: es diu a l'estat buit i a la barra lateral.
     let carpetaDeProva: String?
 
+    /// Les amplades de la finestra i de les columnes (docs/disseny.md, «Disposició»). La prova de les amplades (F6,
+    /// `AmpladesTests`) hi mesura els textos de la barra lateral, l'inspector i la llista.
+    ///
+    /// F6 (0.35.0): l'inspector no es pot fer més estret de 320 pt (abans, 280), la seva amplada ideal. A 280, ni en català no
+    /// hi cabien «Obre Claude Code en aquesta pestanya» (es partia) ni l'etiqueta «Mode de permisos» al costat del desplegable.
+    /// La finestra, de 640 a 680 pt, perquè la llista conservi el mínim d'abans (180 pt) amb la barra lateral i l'inspector.
+    static let ampladaMinima: CGFloat = 680
+    /// La de la finestra quan s'obre per primer cop (l'escena de l'app, `defaultSize`).
+    public static let ampladaPerDefecte: CGFloat = 900
+    static let barraLateralMinima: CGFloat = 180
+    static let barraLateralIdeal: CGFloat = 220
+    static let barraLateralMaxima: CGFloat = 320
+    static let inspectorMinim: CGFloat = 320
+    static let inspectorIdeal: CGFloat = 320
+    static let inspectorMaxim: CGFloat = 460
+
     public init(editor: Editor, warp: EstatWarp, inici: String, carpetaDeProva: String? = nil) {
         self.editor = editor
         self.warp = warp
@@ -38,7 +54,7 @@ public struct VistaEditor: View {
                 Disposicio(editor: editor, inici: inici, carpetaDeProva: carpetaDeProva)
             }
         }
-        .frame(minWidth: 640, minHeight: 360)
+        .frame(minWidth: Self.ampladaMinima, minHeight: 360)
         .focusedSceneValue(\.editor, editor)
         .sheet(isPresented: $editor.demanaImportacio) {
             if let full = FullImportacio(editor: editor, warp: warp) {
@@ -78,7 +94,8 @@ private struct Disposicio: View {
     var body: some View {
         NavigationSplitView {
             BarraLateral(editor: editor, carpetaDeProva: carpetaDeProva)
-                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 320)
+                .navigationSplitViewColumnWidth(min: VistaEditor.barraLateralMinima, ideal: VistaEditor.barraLateralIdeal,
+                                                max: VistaEditor.barraLateralMaxima)
                 // El full de «Lliga amb Warp…»: aquí, perquè la llista ja porta el d'obrir i `VistaEditor`, el d'importar.
                 .sheet(isPresented: Binding(get: { editor.lligam?.mostraFull == true },
                                             set: { if !$0 { editor.lligam?.cancela() } })) {
@@ -140,7 +157,7 @@ private struct Disposicio: View {
         }
         .inspector(isPresented: $editor.mostraInspector) {
             VistaInspector(editor: editor, inici: inici)
-                .inspectorColumnWidth(min: 280, ideal: 320, max: 460)
+                .inspectorColumnWidth(min: VistaEditor.inspectorMinim, ideal: VistaEditor.inspectorIdeal, max: VistaEditor.inspectorMaxim)
                 .toolbar {
                     ToolbarSpacer(.flexible)
                     ToolbarItem(placement: .primaryAction) {

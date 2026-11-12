@@ -9,6 +9,9 @@ struct VistaImportacio: View {
     private var estat: State<FullImportacio>
     @Environment(\.dismiss) private var tanca
 
+    /// També per a la prova de les amplades (F6, `AmpladesTests`).
+    static let amplada: CGFloat = 560
+
     init(full: FullImportacio) {
         estat = State(initialValue: full)
     }
@@ -41,7 +44,7 @@ struct VistaImportacio: View {
             }
             .padding(20)
         }
-        .frame(width: 560)
+        .frame(width: Self.amplada)
         .task { await full.llegeix() }
     }
 

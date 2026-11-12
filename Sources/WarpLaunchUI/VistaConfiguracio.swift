@@ -202,11 +202,13 @@ public struct VistaConfiguracio: View {
                 .controlSize(.mini)
                 .disabled(!arrencada.editable)
             if arrencada.estat == .perAprovar {
-                HStack {
+                // L'avís i, a sota, el botó (F6, 0.35.0). Al costat, el botó (289 pt en català) deixava l'avís en tres línies i
+                // en quedava tallat, en totes les llengües.
+                VStack(alignment: .leading, spacing: 8) {
                     Label(t("macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions"),
                           systemImage: "exclamationmark.triangle.fill")
                         .symbolRenderingMode(.multicolor)
-                    Spacer()
+                        .fixedSize(horizontal: false, vertical: true)
                     Button(t("Mostra Ítems d’inici de sessió i extensions…")) { arrencada.obreAjustos() }
                 }
             }

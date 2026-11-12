@@ -38,6 +38,9 @@ struct VistaConsentiment: View {
     let carpetaDeProva: String?
     let surt: () -> Void
 
+    /// També per a la prova de les amplades (F6, `AmpladesTests`).
+    static let amplada: CGFloat = 560
+
     var body: some View {
         if consentiment.estat == .retirat {
             retirat
@@ -64,7 +67,7 @@ struct VistaConsentiment: View {
         }
         .fixedSize(horizontal: false, vertical: true)
         .padding(28)
-        .frame(width: 560)
+        .frame(width: Self.amplada)
     }
 
     private var permis: some View {
@@ -140,7 +143,7 @@ struct VistaConsentiment: View {
         }
         .fixedSize(horizontal: false, vertical: true)
         .padding(28)
-        .frame(width: 560)
+        .frame(width: Self.amplada)
     }
 
     /// «Accepta» és el botó per defecte: Retorn el prem, si es pot acceptar (amb un `preferencies.json` que no es pot

@@ -7,6 +7,9 @@ struct FullLligam: View {
     let lligam: Lligam
     let inici: String
 
+    /// També per a la prova de les amplades (F6, `AmpladesTests`).
+    static let amplada: CGFloat = 600
+
     var body: some View {
         VStack(spacing: 0) {
             Form {
@@ -22,7 +25,7 @@ struct FullLligam: View {
             }
             .padding(20)
         }
-        .frame(width: 600)
+        .frame(width: Self.amplada)
     }
 
     // MARK: - Contingut

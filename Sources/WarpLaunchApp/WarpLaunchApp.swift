@@ -27,7 +27,7 @@ struct WarpLaunchApp: App {
             // Les dates, els nombres i els plurals de SwiftUI, en la llengua dels textos (docs/disseny.md, secció 12).
             .environment(\.locale, Idioma.locale)
         }
-        .defaultSize(width: 900, height: 560)
+        .defaultSize(width: VistaEditor.ampladaPerDefecte, height: 560)
         .restorationBehavior(.disabled)
         // Reoberta sola després d'actualitzar-se: l'editor no surt. Un clic al Finder l'obre igual (`obreEditor`).
         .defaultLaunchBehavior(aplicacio.reobertura == .automatica ? .suppressed : .automatic)
