@@ -2983,7 +2983,7 @@ de les ordres del menú de macOS són els de SwiftUI en cada llengua (`lesOrdres
 | F4 | L'anglès complet, el selector a la Configuració (amb l'excepció per a `AppleLanguages`) i els `InfoPlist.strings` | 0.34.4 |
 | F5 | Les 8 llengües restants, amb els noms de macOS 27 | 0.35.0 |
 | F6 | Les amplades: una prova que mesura els textos amb `NSFont`; les comes i els parèntesis de cada llengua; una pseudolocalització | 0.35.0 |
-| F7 | La revisió visual de l'autor | |
+| F7 | La revisió visual de l'autor | **Alemany, fet el 12/11/2026** amb `scripts/revisa-idioma.sh de` i la 1.0.0: «tot bé», segons l'autor (l'editor buit d'una configuració en blanc, «Keine Fenster»). Les altres llengües, no |
 
 **Per a F2 i F3:** la guarda de les claus demana que `en.lproj` tingui totes les del català des del primer text: cada clau nova
 hi va alhora. Fins a F4, qui no tingui el Mac en català veuria l'app barrejada, i des de F1 ja hi veu els menús de macOS en

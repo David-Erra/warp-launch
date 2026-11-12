@@ -201,7 +201,7 @@ Els requisits són a `docs/especificacio.md`.
   Porta la 0.34.0, la 0.35.0, la 0.36.0 i la notarització preparada (secció 13 de `docs/disseny.md`). **`publica.sh` no publica la 1.0.0 ni cap
   posterior sense Developer ID** (criteri de la 1.0.0, D-P1), tampoc amb `--promou`; com a `--beta` sí, per provar-la (`ScriptPublicaTests`).
   Per provar-la: `publica.sh --beta` (l'autor) i `instal·la.sh --github --versio 1.0.0`. Per publicar-la: el certificat, el `TEAM_ID` i `--promou`
-  o una publicació normal. Falten: la revisió visual (F7), el reinici amb la L5, la L2 i la beta amb 2-4 persones.
+  o una publicació normal. Falten: la revisió visual de les altres llengües (F7; l'alemany, «tot bé» segons l'autor el 12/11/2026), el reinici amb la L5, la L2 i la beta amb 2-4 persones.
 - **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
