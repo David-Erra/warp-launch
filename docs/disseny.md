@@ -3233,7 +3233,7 @@ i només `other` en japonès, xinès i coreà. Les frases on la llengua canvia l
   l'avís dels ítems d'inici sense el permís de macOS (el botó, a sota). Les mides de la prova són d'un programa a part: si a la
   pantalla alguna cosa no quadra, es corregeix `Mides`.
 
-## 13. Developer ID i notarització (0.36, pla de l'11/11/2026)
+## 13. Developer ID i notarització (0.37, pla de l'11/11/2026; la numeració es va canviar quan la candidata va passar a ser la 0.36)
 
 **Per què:** amb «Warp Launch Dev», un certificat propi, l'app només s'obre sense avisos si arriba sense la marca de baixada
 (Homebrew i `instal·la.sh` la treuen). Baixada amb el navegador, macOS no l'obre. Amb Developer ID i notarització, s'obre com
