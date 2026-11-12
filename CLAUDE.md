@@ -225,7 +225,7 @@ Els requisits són a `docs/especificacio.md`.
   - **Fet (11/11/2026): pas 12 i publicació.** Pujats `main` i la recepta del tap amb `auto_updates true` i `zap` (commit `d9581af` del tap). L'autor ha publicat la
     0.33.0 (v0.33.0; recepta, commit `7600cdf`). Comprovat des de fora: l'adreça de l'app (`releases/latest/download/appcast.xml`) dona la 0.33.0; el zip fa la mida de
     l'appcast i el sha256 de la recepta; la seva signatura quadra amb la clau pública (`scripts/verifica-signatura.swift`); l'app de dins porta l'adreça i la clau i passa
-    `codesign --verify --deep --strict` amb el requisit. La clau privada té còpia a 1Password (ho diu l'autor).
+    `codesign --verify --deep --strict` amb el requisit. La clau privada té còpia en un gestor de contrasenyes (ho diu l'autor).
   - **Falta:** la primera actualització real (una versió superior publicada, que les còpies 0.33.0 s'instal·lin soles), també amb Homebrew. Fins llavors, no s'anuncia.
   - **Les còpies d'abans (0.31.5 o anteriors) necessiten una última actualització a mà:** no porten res per actualitzar-se ni per
     avisar-ne. Com a molt 7 instal·lacions (baixades dels zips, API de GitHub, 09/11/2026: 1 de la 0.31.5, 4 de la 0.31.4 i 2 de la 0.28.0).
