@@ -3233,11 +3233,15 @@ i només `other` en japonès, xinès i coreà. Les frases on la llengua canvia l
   l'avís dels ítems d'inici sense el permís de macOS (el botó, a sota). Les mides de la prova són d'un programa a part: si a la
   pantalla alguna cosa no quadra, es corregeix `Mides`.
 
-## 13. Developer ID i notarització (0.37, pla de l'11/11/2026; la numeració es va canviar quan la candidata va passar a ser la 0.36)
+## 13. Developer ID i notarització (0.37, pla de l'11/11/2026; codi a punt el 12/11/2026, a l'espera del certificat)
 
 **Per què:** amb «Warp Launch Dev», un certificat propi, l'app només s'obre sense avisos si arriba sense la marca de baixada
 (Homebrew i `instal·la.sh` la treuen). Baixada amb el navegador, macOS no l'obre. Amb Developer ID i notarització, s'obre com
 qualsevol app: és una condició de la 1.0.0 (decisió D-P1 de l'autor).
+
+**Estat (12/11/2026):** el codi és fet i provat amb falsos, sense canviar `VERSION`. **Falten el certificat i les credencials**
+(passos 1 a 3 de sota, de l'autor) i, la primera vegada, un commit amb el Team ID (una línia) i la 0.37.0. Mentre no hi siguin, tot va
+com fins a la 0.36: «Warp Launch Dev», o ad hoc en un altre Mac, sense notaritzar.
 
 **Ho fa l'autor, al seu Mac (cap agent no pot):**
 1. **Renovar l'Apple Developer Program** abans que caduqui (és anual; la data és al compte d'Apple), a l'app Apple Developer o a developer.apple.com.
@@ -3248,30 +3252,113 @@ qualsevol app: és una condició de la 1.0.0 (decisió D-P1 de l'autor).
    `xcrun notarytool store-credentials warp-launch --apple-id <el seu correu d'Apple> --team-id <el seu Team ID>`.
    Les desa al clauer amb el nom `warp-launch`; cap agent no les llegeix (com la regla 12).
 
-**Canvis al codi (els fa un agent, quan hi hagi el certificat):**
-- `build-app.sh`: si troba «Developer ID Application», signa-hi totes les peces, de dins cap a fora: `Autoupdate`, `Updater.app`, el
-  framework, el bundle dels textos i l'app. Amb `--options runtime` i `--timestamp` (el segell necessita xarxa), i sense
-  `entitlements`: l'app no va en sandbox. Si no el troba, com ara («Warp Launch Dev» o ad hoc).
-- `publica.sh`: després de compilar i signar, un zip per a Apple → `xcrun notarytool submit --keychain-profile warp-launch
-  --wait` → `xcrun stapler staple` a l'app → el zip definitiu → la signatura EdDSA, com ara. Si la notarització falla, no es publica res.
-- **El requisit** de `publica.sh` i `instal·la.sh` passa a ser el de Developer ID (`anchor apple generic`, l'identificador i
-  el Team ID). `instal·la.sh --versio` ha d'acceptar també el de «Warp Launch Dev», per poder instal·lar les versions d'abans.
-- **La recepta de Homebrew** ja no ha de treure la marca de baixada, a partir de la primera versió notaritzada.
-- **Proves:** les de `ScriptPublicaTests`, amb un `notarytool` i un `stapler` falsos. Els casos: notarització correcta, notarització
-  refusada (no es publica res) i requisit nou.
+**Fet al codi (12/11/2026):**
+- **`build-app.sh` troba el certificat sol.** Busca entre les identitats vàlides (`security find-identity -v -p codesigning`) les
+  línies «Developer ID Application: … (EQUIP)». Una de caducada o revocada no hi surt; «Warp Launch Dev» tampoc, perquè macOS no s'hi
+  refia (en aquest Mac, el 12/11/2026: «Warp Launch Dev» amb `CSSMERR_TP_NOT_TRUSTED`, i 0 identitats vàlides). Per això
+  «Warp Launch Dev» es continua buscant entre totes, com fins ara.
+  - **Amb una,** totes les peces, de dins cap a fora (`Autoupdate`, `Updater.app`, el framework, el bundle dels textos i l'app):
+    `codesign --force --sign <SHA-1> --options runtime --timestamp`, sense entitlements (l'app no va en sandbox). Pel SHA-1 i no pel
+    nom, perquè un nom repetit seria ambigu. El mateix certificat vist en dos clauers compta com un. El segell de temps necessita xarxa.
+  - **Amb dues de diferents,** s'atura abans de compilar i les llista: «deixa'n només una».
+  - **Amb cap, com fins ara:** «Warp Launch Dev» (o ad hoc), amb `--timestamp=none` i sense «hardened runtime». `--amb-feed` continua
+    refusant-se sense cap dels dos certificats.
+  - Al final diu amb què ha signat («signada amb: …»). `WARP_LAUNCH_IDENTITAT` força una identitat pel nom, sense buscar el Developer
+    ID (per a una còpia de proves), i continua sense valer amb `--amb-feed`.
+- **`publica.sh` decideix per la signatura del paquet** (`codesign -dvv`: la primera `Authority` i el `TeamIdentifier`), no pel clauer.
+  Amb Developer ID i en mode real (també `--beta`), després de comprovar el paquet:
+  1. un zip per a Apple (`ditto -c -k --keepParent`, a la carpeta temporal);
+  2. `xcrun notarytool submit <zip> --keychain-profile warp-launch --wait --output-format json`: l'estat final ha de ser `Accepted`, i
+     el codi de sortida, 0 (amb `json`, notarytool només escriu en acabar: l'script avisa abans que sol trigar uns minuts);
+  3. `xcrun stapler staple` a l'app, i `xcrun stapler validate`;
+  4. el paquet es torna a comprovar, amb el tiquet;
+  5. el zip definitiu, i després la signatura EdDSA, l'appcast i la resta, com fins ara.
+  - **Si falla** (`Invalid`, `Rejected`, cap resposta, un codi que no és 0, el tiquet que no es grapa o no és vàlid), no es publica res:
+    ni es signa el zip, ni es crea la versió, ni es toca la recepta. Si se sap l'enviament, diu `xcrun notarytool log <id>
+    --keychain-profile warp-launch`; si no, `notarytool history`.
+  - **El mode de prova no parla amb Apple:** no crida `notarytool` ni `stapler`. Diu «És signada amb el Developer ID de l'equip …
+    Abans, la notaritzaria…», i el zip que deixa no porta el tiquet. `--promou` no torna a notaritzar: la versió de prova ja ho va ser.
+  - **Amb «Warp Launch Dev», com fins ara,** sense notaritzar. Cap d'aquestes eines no veu el token de GitHub.
+- **Els requisits** (les mateixes línies a `publica.sh` i a `instal·la.sh`; una prova ho comprova):
+  - `REQUISIT_DEV`, el de «Warp Launch Dev», com fins ara.
+  - `requisit_developer_id`, el que Apple posa a les apps signades amb Developer ID (`codesign -d -r-`): `identifier
+    "cat.davide.warp-launch" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate
+    leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "<Team ID>"`. És més estricte que `anchor apple generic`
+    amb l'equip sol: només un certificat «Developer ID Application» emès per l'autoritat de Developer ID, no un «Apple Development» del
+    mateix equip. **Comprovat el 12/11/2026, només llegint:** `csreq` l'accepta, i `codesign --verify -R=` amb aquesta forma i
+    l'identificador de Warp dona 0 a `/Applications/Warp.app` (Developer ID de l'equip `2BBY89MBSN`) i 3 amb un altre equip.
+  - Les peces de Sparkle, el mateix sense l'identificador (`${REQUISIT#* and }`), com fins ara.
+- **El Team ID, en un sol lloc: `TEAM_ID=""` a `scripts/instal·la.sh`,** que el necessita sense el repo. `publica.sh` el llegeix d'allà:
+  ha de ser exactament una línia, buida o amb deu lletres majúscules o xifres; si no, no compila ni publica res.
+  - **Buit:** `instal·la.sh --github` només accepta «Warp Launch Dev», i `publica.sh` refusa una app signada amb Developer ID («Posa-hi
+    TEAM_ID="…", fes-ne commit i push»), perquè `instal·la.sh` no la instal·laria.
+  - **Ple:** `instal·la.sh --github` prova primer el requisit de Developer ID d'aquest equip, i després el de «Warp Launch Dev» (les
+    versions d'abans, amb `--versio`, i també l'última si mai es torna enrere a una 0.36). `publica.sh` només publica amb aquest Developer
+    ID: refusa un altre equip, i una app sense Developer ID, perquè sense notaritzar, i un cop la recepta ja no tregui la marca, macOS no
+    l'obriria.
+  - `WARP_LAUNCH_TEAM_ID` el canvia a les proves d'`instal·la.sh`.
+- **La recepta de Homebrew:** `publica.sh` només hi canvia `version` i `sha256`, i no hi treu res. Amb Developer ID, si la recepta encara
+  porta `com.apple.quarantine`, ho recorda («Nota: … treu-ne a mà el bloc postflight_steps»). El canvi es fa a mà (vegeu sota).
+- **Proves,** amb `security`, `codesign`, `swift`, `otool`, `notarytool` i `stapler` falsos (cap no parla amb Apple ni llegeix el clauer):
+  - `ScriptBuildAppTests`, l'script de debò en un repo temporal: amb Developer ID, les cinc peces amb el SHA-1, runtime i segell
+    (també amb `--amb-feed`); sense, «Warp Launch Dev» amb `--timestamp=none`, també amb un Developer ID caducat; ad hoc; el mateix
+    certificat de dos clauers; dos de diferents (s'atura sense compilar); i `WARP_LAUNCH_IDENTITAT`.
+  - `ScriptPublicaTests`: notarització `Accepted`, també amb `--beta` (l'ordre de les crides; a Apple hi va l'app sense el tiquet, i el
+    zip que es signa i es puja el porta; els requisits de l'app i de les peces de Sparkle, abans i després del tiquet; cap token);
+    `Invalid`, `Rejected`, sense resposta, un codi diferent de 0 i el tiquet que falla (no es publica res); el mode de prova sense
+    `notarytool`; sense Developer ID, com fins ara; el Team ID buit, d'un altre equip, mal format o present amb una app sense Developer
+    ID; i el recordatori de la recepta.
+  - `ScriptInstallaTests`: accepta tots dos requisits, en aquest ordre, i cap altre; sense Team ID, només «Warp Launch Dev»; un Team ID
+    mal format s'atura abans de baixar res; el de debò té la forma bona.
+  - `GuardaTests`: el «hardened runtime» només a la branca de Developer ID, mai entitlements, i les dues crides a `security find-identity`.
+
+**El canvi a mà de la recepta** (`Casks/warp-launch.rb` de `David-Erra/homebrew-tap`), **després** de publicar la primera versió
+notaritzada, quan la recepta ja la diu: treure aquestes línies (hi són des de la 0.31.4; a la 0.33.0, el commit `7600cdf`):
+
+```ruby
+  # L'app encara no és notaritzada: sense això, macOS no la deixaria obrir. Quan ho sigui, es treu.
+  postflight_steps do
+    run "/usr/bin/xattr",
+        args:         ["-dr", "com.apple.quarantine", "{{appdir}}/Warp Launch.app"],
+        must_succeed: false
+  end
+```
+
+Abans no: la recepta instal·laria una 0.36 amb la marca, i macOS no l'obriria. Després, qui la instal·li amb Homebrew veurà un cop
+l'avís normal de macOS per a les apps baixades d'internet. També s'han de canviar les frases que expliquen la marca al README d'aquí i
+al del tap. `instal·la.sh` la continua traient: les versions d'abans la necessiten, i a una de notaritzada no li fa res.
+
+**La primera vegada, amb el certificat i les credencials:**
+1. `security find-identity -v -p codesigning`: hi ha d'haver una sola línia «Developer ID Application: … (XXXXXXXXXX)». Els deu
+   caràcters són el Team ID.
+2. Un agent (o l'autor) posa `TEAM_ID="XXXXXXXXXX"` a `scripts/instal·la.sh`, i `VERSION` i `WarpLaunch.versio` a 0.37.0; després,
+   `scripts/test.sh`, commit i push. Els subjectes dels commits van a les notes de la versió: un hi pot dir que macOS tornarà a demanar
+   el permís d'Arxius i carpetes.
+3. `scripts/build-app.sh`, sense publicar res: ha de dir «signada amb: «Developer ID Application: …» (Developer ID, amb «hardened
+   runtime» i segell de temps)». I `codesign -dvv "build/Warp Launch.app"`: `flags=0x10000(runtime)`, un `Timestamp=` i
+   `TeamIdentifier=XXXXXXXXXX`.
+4. `scripts/publica.sh` en mode de prova: ha de dir «És signada amb el Developer ID de l'equip XXXXXXXXXX. Abans, la notaritzaria…»
+   i, si la recepta encara treu la marca, la nota. Cap crida a Apple.
+5. Publicar (només l'autor, regles 3 i 12), com decideixi (a sota). Si Apple la refusa, l'script diu l'ordre del registre i no publica
+   res.
+6. Comprovar l'app publicada, instal·lada al Mac de l'autor: `spctl -a -vv -t exec "/Applications/Warp Launch.app"` ha de dir
+   `source=Notarized Developer ID`, i `xcrun stapler validate "/Applications/Warp Launch.app"`, que el tiquet hi és.
+7. Treure de la recepta el bloc de la marca (a dalt), i les frases dels README.
 
 **Què es comprova sense publicar (fet l'11/11/2026):** el «hardened runtime» no canvia la lectura dels processos
 (`docs/fets-verificats.md`, «Sparkle», secció 5).
 
-**Què passarà a cada Mac, una sola vegada, en arribar la 0.36:**
+**Què passarà a cada Mac, una sola vegada, en arribar la 0.37:**
 - **Sparkle l'accepta:** canvia el certificat, però no la clau EdDSA (secció 11, apartat 5: mai tots dos alhora).
 - **macOS tornarà a demanar el permís d'Arxius i carpetes**, perquè l'app té una identitat nova. L'app ja mostra «Accés a les dades
-  bloquejat» amb el botó «Gestiona». Les notes de la versió i el README ho han de dir.
+  bloquejat» amb el botó «Gestiona». Les notes de la versió i el README ho han de dir: `publica.sh` no ho afegeix sol.
 - **Potser caldrà tornar a activar l'inici de sessió** (Configuració › General). No s'ha provat.
 
 **Decisió de l'autor (pendent), com es prova:**
-- **(a) Recomanada:** publicar la 0.36 i mirar que el Mac de l'autor i el dels provadors s'hi actualitzin sols. Abans del
+- **(a) Recomanada:** publicar la 0.37 i mirar que el Mac de l'autor i el dels provadors s'hi actualitzin sols. Abans del
   llançament hi ha com a molt una desena de còpies, i totes es poden actualitzar a mà si falla (`brew upgrade` o l'ordre del README).
+  Una variant: primer com a versió de prova (`--beta`, que també es notaritza), instal·lada a mà amb `instal·la.sh --github --versio
+  0.37.0` i, si va bé, `--promou`, que no la torna a compilar ni a notaritzar.
 - **(b)** Una ronda com la C abans de publicar, amb un servidor local i una clau d'un sol ús: una o dues hores, amb l'autor al
   davant i dos reinicis de l'app.
 

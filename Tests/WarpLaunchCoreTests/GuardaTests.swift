@@ -3316,13 +3316,25 @@ extension GuardaTests {
     }
 
     @Test func elScriptDelPaquetSignaAmbElCertificatPropi() throws {
-        // D12: amb el certificat, el permís per llegir Warp no es perd a cada compilació; sense, ad hoc.
+        // D12: amb el certificat, el permís per llegir Warp no es perd a cada compilació; sense, ad hoc. Amb Developer ID (docs/disseny.md,
+        // secció 13), el «hardened runtime» i el segell de temps, només en aquesta branca; mai entitlements.
         let script = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
         #expect(script.contains("Warp Launch Dev"))
         #expect(script.contains(#"FIRMA="$IDENTITAT""#))
         #expect(script.contains(#"FIRMA="-""#))
-        #expect(script.contains(#"codesign --force --sign "$FIRMA" --timestamp=none "$1""#))
-        #expect(!script.contains("--options runtime\"") && !script.contains("--options=runtime"))
+        let signatures = script.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { $0.contains("codesign --force") }
+        #expect(signatures == [#"signa() { codesign --force --sign "$FIRMA" --options runtime --timestamp "$1"; }"#,
+                               #"signa() { codesign --force --sign "$FIRMA" --timestamp=none "$1"; }"#], "\(signatures)")
+        let branca = try #require(script.range(of: "if [[ \"$DEVELOPER_ID\" -eq 1 ]]; then\n"))
+        let runtime = try #require(script.range(of: "--options runtime --timestamp "))
+        let sino = try #require(script.range(of: "\nelse\n", range: branca.upperBound..<script.endIndex))
+        #expect(branca.upperBound < runtime.lowerBound && runtime.upperBound < sino.lowerBound)
+        #expect(script.components(separatedBy: "--options").count == 2)
+        #expect(!script.contains("--options=runtime") && !script.contains("-o runtime") && !script.contains("--entitlements"))
+        // Només una identitat «Developer ID Application» obre la branca.
+        #expect(script.contains(#"FORMA_DEVELOPER_ID='^Developer ID Application: .+ \(([A-Z0-9]{10})\)$'"#))
+        #expect(script.contains("if [[ \"$NOM_FIRMA\" =~ $FORMA_DEVELOPER_ID ]]; then\n    DEVELOPER_ID=1\nfi"))
+        #expect(script.components(separatedBy: "DEVELOPER_ID=1").count == 2)
     }
 
     // MARK: - Sparkle (docs/disseny.md, secció 11, 10)
@@ -3656,12 +3668,15 @@ extension GuardaTests {
         for ordre in [
             "security find-identity -p codesigning", "/usr/bin/security find-identity -p codesigning", "env security find-identity -p codesigning",
             "command security find-identity -v", "PATH=/usr/bin security find-identity -v", "scripts/build-app.sh", "scripts/build-app.sh release --amb-feed", "codesign -dv build/x.app",
+            "security find-identity -v -p codesigning", "codesign -dvv build/x.app",
         ] {
             #expect(!bloqueja(ordre), "\(ordre)")
         }
-        // L'ordre que porta de debò l'script ha de continuar sent la que no es bloqueja.
+        // Les ordres que porta de debò l'script (la del Developer ID, entre les vàlides) han de continuar sent les que no es bloquegen.
         let paquet = try String(contentsOf: arrel.appending(path: "scripts/build-app.sh"), encoding: .utf8)
         #expect(paquet.contains("$(security find-identity -p codesigning)"))
+        #expect(paquet.contains("$(security find-identity -v -p codesigning)"))
+        #expect(paquet.components(separatedBy: "security ").count == 3, "només aquestes dues crides a `security`")
     }
 
     /// Sense `--amb-feed` no hi ha res a demanar; amb, el que falta s'atura abans de compilar. Els arguments, sense compilar res.

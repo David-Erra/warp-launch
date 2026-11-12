@@ -1,7 +1,9 @@
 #!/bin/bash
-# Crea «build/Warp Launch.app» a partir del paquet SwiftPM i el signa: amb el certificat propi «Warp Launch Dev»
-# si és al clauer (D12 de docs/especificacio.md), i si no, ad hoc.
+# Crea «build/Warp Launch.app» a partir del paquet SwiftPM i el signa: amb el Developer ID de l'autor si al clauer n'hi ha un de vàlid
+# («Developer ID Application: … (EQUIP)», amb «hardened runtime» i segell de temps, per notaritzar-la: docs/disseny.md, secció 13); si
+# no, amb el certificat propi «Warp Launch Dev» si és al clauer (D12 de docs/especificacio.md), i si no, ad hoc.
 # Ús: scripts/build-app.sh [release|debug] [--amb-feed]   (per defecte, release i sense l'adreça de les actualitzacions)
+# WARP_LAUNCH_IDENTITAT força una identitat pel seu nom, sense buscar el Developer ID (no val amb --amb-feed).
 # --amb-feed hi posa l'adreça i la clau pública (Recursos/Actualitzacions.plist): només per publicar. Sense, la còpia no s'actualitza
 # mai sola (docs/disseny.md, secció 11, 2.4).
 # No instal·la res ni obre l'app.
@@ -49,16 +51,46 @@ fi
 # (llegir les dades de Warp) no es perden. Amb la signatura ad hoc, cada compilació és una app nova per a macOS.
 # La primera vegada, macOS pot demanar si `codesign` pot fer servir la clau: «Permet sempre».
 IDENTITAT="${WARP_LAUNCH_IDENTITAT:-Warp Launch Dev}"
-IDENTITATS="$(security find-identity -p codesigning)"
-if grep -qF "\"$IDENTITAT\"" <<< "$IDENTITATS"; then
-    FIRMA="$IDENTITAT"
-elif [[ "$AMB_FEED" -eq 1 ]]; then
-    echo "build-app: --amb-feed necessita el certificat «${IDENTITAT}», i no és al clauer." >&2
-    exit 1
-else
-    FIRMA="-"
-    echo "build-app: no hi ha el certificat «${IDENTITAT}» al clauer: signatura ad hoc." >&2
-    echo "build-app: macOS tornarà a bloquejar la lectura de Warp fins que hi tornis a donar permís (D12)." >&2
+FIRMA=""
+NOM_FIRMA=""
+# El Developer ID mana sobre «Warp Launch Dev». Només entre les identitats vàlides (`-v`): una de caducada o revocada, Apple no la
+# notaritzaria. «Warp Launch Dev» no hi surt mai (macOS no se'n refia, perquè és propi): per això es busca entre totes, com fins ara.
+# Una línia per certificat, «  1) <SHA-1> "Developer ID Application: Nom (EQUIP)"»; el mateix pot sortir de dos clauers. Es signa amb
+# el SHA-1: un nom repetit seria ambigu per a `codesign`.
+if [[ -z "${WARP_LAUNCH_IDENTITAT:-}" ]]; then
+    VALIDES="$(security find-identity -v -p codesigning)"
+    DEVELOPER_IDS="$(LC_ALL=C sed -nE 's/^ *[0-9]+\) ([0-9A-F]{40}) "(Developer ID Application: .+ \([A-Z0-9]{10}\))"$/\1 \2/p' <<< "$VALIDES" | LC_ALL=C sort -u)"
+    if [[ -n "$DEVELOPER_IDS" && "$(wc -l <<< "$DEVELOPER_IDS" | tr -d ' ')" -gt 1 ]]; then
+        echo "build-app: al clauer hi ha més d'un certificat «Developer ID Application» vàlid, i no sé amb quin signar:" >&2
+        sed 's/^/  /' <<< "$DEVELOPER_IDS" >&2
+        echo "build-app: deixa'n només un (Accés a Clauers). Per a una còpia de proves, WARP_LAUNCH_IDENTITAT=\"Warp Launch Dev\"." >&2
+        exit 1
+    fi
+    if [[ -n "$DEVELOPER_IDS" ]]; then
+        FIRMA="${DEVELOPER_IDS%% *}"
+        NOM_FIRMA="${DEVELOPER_IDS#* }"
+    fi
+fi
+if [[ -z "$FIRMA" ]]; then
+    IDENTITATS="$(security find-identity -p codesigning)"
+    if grep -qF "\"$IDENTITAT\"" <<< "$IDENTITATS"; then
+        FIRMA="$IDENTITAT"
+        NOM_FIRMA="$IDENTITAT"
+    elif [[ "$AMB_FEED" -eq 1 ]]; then
+        echo "build-app: --amb-feed necessita un certificat «Developer ID Application» vàlid o «${IDENTITAT}», i no n'hi ha cap al clauer." >&2
+        exit 1
+    else
+        FIRMA="-"
+        NOM_FIRMA="ad hoc"
+        echo "build-app: no hi ha el certificat «${IDENTITAT}» al clauer: signatura ad hoc." >&2
+        echo "build-app: macOS tornarà a bloquejar la lectura de Warp fins que hi tornis a donar permís (D12)." >&2
+    fi
+fi
+# Amb Developer ID, el «hardened runtime» i el segell de temps d'Apple, que la notarització demana. També amb WARP_LAUNCH_IDENTITAT.
+FORMA_DEVELOPER_ID='^Developer ID Application: .+ \(([A-Z0-9]{10})\)$'
+DEVELOPER_ID=0
+if [[ "$NOM_FIRMA" =~ $FORMA_DEVELOPER_ID ]]; then
+    DEVELOPER_ID=1
 fi
 
 # SwiftPM no hi posa la ruta on l'app trobarà el framework dins del paquet.
@@ -114,8 +146,17 @@ if ! otool -l "$APP/Contents/MacOS/WarpLaunch" | grep -qF "path $RPATH "; then
     exit 1
 fi
 
-# De dins cap a fora: una signatura de fora tanca les de dins. Sense `--options runtime` fins que hi hagi Developer ID.
-signa() { codesign --force --sign "$FIRMA" --timestamp=none "$1"; }
+# De dins cap a fora: una signatura de fora tanca les de dins.
+if [[ "$DEVELOPER_ID" -eq 1 ]]; then
+    # Totes les peces amb «hardened runtime» i el segell de temps d'Apple (necessita xarxa). Sense entitlements: l'app no va en sandbox
+    # i no en necessita cap (docs/disseny.md, secció 13).
+    signa() { codesign --force --sign "$FIRMA" --options runtime --timestamp "$1"; }
+    DESCRIPCIO_FIRMA="«${NOM_FIRMA}» (Developer ID, amb «hardened runtime» i segell de temps)"
+else
+    # «Warp Launch Dev» o ad hoc: sense «hardened runtime» ni segell de temps, com fins a la 0.36.
+    signa() { codesign --force --sign "$FIRMA" --timestamp=none "$1"; }
+    if [[ "$FIRMA" == "-" ]]; then DESCRIPCIO_FIRMA="ad hoc"; else DESCRIPCIO_FIRMA="«${NOM_FIRMA}»"; fi
+fi
 signa "$FW/Versions/B/Autoupdate"
 signa "$FW/Versions/B/Updater.app"
 signa "$FW"
@@ -125,4 +166,5 @@ signa "$APP"
 codesign --verify --deep --strict "$APP"
 
 echo "$APP ($VERSIO, $CONFIG; llengües: $(paste -sd' ' - <<< "$LLENGUES"))"
+echo "signada amb: $DESCRIPCIO_FIRMA"
 codesign -d -r- "$APP" 2>&1 | sed -n 's/^#* *designated => /identitat per a macOS: /p'

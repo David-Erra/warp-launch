@@ -14,7 +14,11 @@
 #                                 # sha256 del zip que hi ha publicat. No compila ni signa res: comprova el zip i l'appcast.xml que baixa.
 #
 # - Només publica el que hi ha a origin/main, sense canvis per fer commit, i una versió que encara no hi sigui.
-# - Només amb la signatura «Warp Launch Dev» (D12): una app signada ad hoc no es pot instal·lar amb --github.
+# - La signatura (docs/disseny.md, secció 13): mentre TEAM_ID de scripts/instal·la.sh és buit, només amb «Warp Launch Dev» (D12), sense
+#   notaritzar; una app signada ad hoc no es pot instal·lar amb --github. Quan build-app.sh troba un Developer ID, l'app en porta la signatura,
+#   i llavors cal que TEAM_ID en sigui l'equip: des d'aquí, només amb aquest Developer ID. Amb --aplica (també --beta), abans de signar el zip,
+#   la notaritza a Apple (`xcrun notarytool`, el perfil «warp-launch» del clauer, que crea l'autor), hi grapa el tiquet (`xcrun stapler`) i en
+#   torna a fer el zip. Si Apple no l'accepta, no es publica res. El mode de prova no parla amb Apple: només diu què faria.
 # - Abans de compilar llegeix la recepta (Casks/warp-launch.rb del tap) i refusa publicar si no s'hi pot arribar, si no té exactament
 #   una línia `  version "X.Y.Z"`, una `  sha256 "…"` i la `  url` amb `#{version}`, si ja va per davant de VERSION, o si falten
 #   git config user.name o user.email (l'autor del commit del tap). Amb --beta, no la llegeix.
@@ -28,6 +32,7 @@
 #   prova no es torna a publicar amb el mateix número: per fer-la normal, --promou.
 # - Proves: WARP_LAUNCH_REPO, WARP_LAUNCH_TAP, WARP_LAUNCH_REQUISIT i WARP_LAUNCH_REQUISIT_SPARKLE canvien el repo de GitHub, el tap i el
 #   requisit de la signatura de l'app i de les peces de Sparkle; WARP_LAUNCH_SIGN_UPDATE i WARP_LAUNCH_VERIFICA, les eines de signar i comprovar. Contra el repo de debò, aquestes quatre no valen.
+#   `codesign`, `xcrun` (notarytool i stapler) i la resta d'eines, les del PATH: les proves hi posen falses.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -35,10 +40,16 @@ IDENTIFICADOR="cat.davide.warp-launch"
 REPO="${WARP_LAUNCH_REPO:-David-Erra/warp-launch}"
 TAP="${WARP_LAUNCH_TAP:-David-Erra/homebrew-tap}"
 CAMI_RECEPTA="Casks/warp-launch.rb"
-# El mateix requisit que comprova `instal·la.sh --github`.
-REQUISIT="${WARP_LAUNCH_REQUISIT:-identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\"}"
-# Cada peça de Sparkle té el seu identificador: el que han de compartir amb l'app és el certificat.
-REQUISIT_SPARKLE="${WARP_LAUNCH_REQUISIT_SPARKLE:-${REQUISIT#* and }}"
+# Els mateixos requisits que comprova `instal·la.sh --github` (les mateixes línies). El de «Warp Launch Dev», fins a la 0.36:
+REQUISIT_DEV="identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\""
+# El de Developer ID, el que Apple posa a les apps que s'hi signen (`codesign -d -r-`): un certificat «Developer ID Application» (…6.1.13),
+# emès per l'autoritat de Developer ID (…6.2.6), de l'equip $1.
+requisit_developer_id() { printf 'identifier "%s" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "%s"' "$IDENTIFICADOR" "$1"; }
+# El Team ID és a instal·la.sh, que el necessita sense el repo: un sol lloc. Buit fins que hi hagi el certificat (docs/disseny.md, secció 13).
+INSTALLA="scripts/instal·la.sh"
+FORMA_TEAM_ID='^TEAM_ID="([A-Z0-9]{10})?"$'
+# El perfil de les credencials de notarització, al clauer de l'autor (`xcrun notarytool store-credentials warp-launch …`).
+PERFIL_NOTARI="warp-launch"
 APP="build/Warp Launch.app"
 INFO="$APP/Contents/Info.plist"
 # D'aquí surten l'adreça i la clau que porta la còpia publicada. L'adreça ha de ser la d'aquest repo: si no, cap còpia no trobaria les versions noves.
@@ -73,6 +84,14 @@ if [[ "$(tr '[:upper:]' '[:lower:]' <<< "$REPO")" == david-erra/warp-launch ]]; 
         fi
     done
 fi
+
+# Exactament una línia, buida o amb el Team ID: una altra forma voldria dir endevinar què accepta instal·la.sh.
+TEAM_ID_LINIA="$(grep '^TEAM_ID=' "$INSTALLA" 2> /dev/null || true)"
+if [[ ! "$TEAM_ID_LINIA" =~ $FORMA_TEAM_ID ]]; then
+    echo "publica: ${INSTALLA} ha de tenir exactament una línia TEAM_ID=\"\" (sense Developer ID) o TEAM_ID=\"XXXXXXXXXX\" (el Team ID: deu lletres majúscules o xifres). No s'ha publicat res." >&2
+    exit 1
+fi
+TEAM_ID="${BASH_REMATCH[1]}"
 
 if [[ "$MODE" == promou ]]; then
     # Les etiquetes de GitHub porten la «v» (v0.35.0): s'accepta amb i sense, com a instal·la.sh.
@@ -252,11 +271,49 @@ if [[ "$FEED_DEL_FITXER" != "$FEED_ESPERAT" || -z "$CLAU_DEL_FITXER" ]]; then
     exit 1
 fi
 
+# Qui ha signat el paquet: d'aquí surten el requisit i, amb --aplica, la notarització. Mentre TEAM_ID és buit, «Warp Launch Dev»; amb
+# TEAM_ID, només el Developer ID d'aquest equip: la recepta de Homebrew deixarà de treure la marca de baixada, i una app sense
+# notaritzar ja no s'obriria. El que diu `codesign -dvv` només tria el requisit: qui el compleix ho comprova `comprova_signatura`.
+DEVELOPER_ID=0
+tria_el_requisit() {
+    local DETALLS PRIMERA EQUIP_PAQUET
+    if ! DETALLS="$(codesign -dvv "$1" 2>&1)"; then
+        echo "publica: no s'ha pogut llegir la signatura de «${1}»: ${DETALLS} No s'ha publicat res." >&2
+        exit 1
+    fi
+    # La primera «Authority» és la del certificat que signa; les altres, les autoritats que l'emeten.
+    PRIMERA="$(sed -n '/^Authority=/{s/^Authority=//p;q;}' <<< "$DETALLS")"
+    EQUIP_PAQUET="$(sed -n '/^TeamIdentifier=/{s/^TeamIdentifier=//p;q;}' <<< "$DETALLS")"
+    if [[ "$PRIMERA" == "Developer ID Application: "* ]]; then
+        if [[ -z "$TEAM_ID" ]]; then
+            echo "publica: «${1}» és signada amb Developer ID («${PRIMERA}»), però ${INSTALLA} encara no en sap el Team ID, i \`instal·la.sh --github\` no la instal·laria. Posa-hi TEAM_ID=\"${EQUIP_PAQUET}\", fes-ne commit i push, i torna-ho a provar (docs/disseny.md, secció 13). No s'ha publicat res." >&2
+            exit 1
+        fi
+        if [[ "$EQUIP_PAQUET" != "$TEAM_ID" ]]; then
+            echo "publica: «${1}» és signada amb el Developer ID de l'equip ${EQUIP_PAQUET} («${PRIMERA}»), i ${INSTALLA} espera el de l'equip ${TEAM_ID}. No s'ha publicat res." >&2
+            exit 1
+        fi
+        DEVELOPER_ID=1
+        REQUISIT="${WARP_LAUNCH_REQUISIT:-$(requisit_developer_id "$TEAM_ID")}"
+        QUI_SIGNA="el Developer ID de l'equip ${TEAM_ID}"
+    else
+        if [[ -n "$TEAM_ID" ]]; then
+            echo "publica: «${1}» no és signada amb Developer ID (${PRIMERA:-ad hoc}), i ${INSTALLA} ja espera el de l'equip ${TEAM_ID}: sense notaritzar, macOS no l'obriria. Mira que el certificat sigui al clauer i vàlid: security find-identity -v -p codesigning. No s'ha publicat res." >&2
+            exit 1
+        fi
+        DEVELOPER_ID=0
+        REQUISIT="${WARP_LAUNCH_REQUISIT:-$REQUISIT_DEV}"
+        QUI_SIGNA="«Warp Launch Dev» (al clauer d'aquest Mac?)"
+    fi
+    # Cada peça de Sparkle té el seu identificador: el que han de compartir amb l'app és el certificat.
+    REQUISIT_SPARKLE="${WARP_LAUNCH_REQUISIT_SPARKLE:-${REQUISIT#* and }}"
+}
+
 comprova_signatura() {
     local CODI=0 ERROR
     ERROR="$(codesign --verify --deep --strict -R="$2" "$1" 2>&1)" || CODI=$?
     if [[ "$CODI" -eq 3 ]]; then
-        echo "publica: «${1}» no està signada amb «Warp Launch Dev» (al clauer d'aquest Mac?). No s'ha publicat res." >&2
+        echo "publica: «${1}» no està signada amb ${QUI_SIGNA}. No s'ha publicat res." >&2
         exit 1
     elif [[ "$CODI" -ne 0 ]]; then
         echo "publica: no s'ha pogut comprovar la signatura de «${1}» (codesign, codi ${CODI}): ${ERROR}" >&2
@@ -284,11 +341,49 @@ comprova_paquet() {
         echo "publica: «${PAQUET}» no porta Sparkle.framework. No s'ha publicat res." >&2
         exit 1
     fi
+    tria_el_requisit "$PAQUET"
     comprova_signatura "$PAQUET" "$REQUISIT"
     # `--deep` comprova que les peces de dins siguin vàlides, però no qui les signa.
     for PECA in "$FRAMEWORK/Versions/B/Autoupdate" "$FRAMEWORK/Versions/B/Updater.app" "$FRAMEWORK"; do
         comprova_signatura "$PECA" "$REQUISIT_SPARKLE"
     done
+}
+
+# Només amb Developer ID i --aplica: Apple ha d'acceptar l'app (notarytool) i el tiquet s'hi grapa (stapler), perquè macOS l'obri també
+# sense connexió. Si alguna cosa falla, no es publica res. Cap d'aquestes eines no veu el token de GitHub.
+FORMA_ID_NOTARI='^[0-9A-Fa-f-]{36}$'
+notaritza() {
+    local CARPETA="$TEMPORAL/notaritzacio" RESULTAT="" ESTAT_NOTARI="" ID_NOTARI="" CODI=0
+    local ZIP_APPLE="$CARPETA/$NOM_ZIP"
+    mkdir "$CARPETA"
+    # El zip que va a Apple: el definitiu es fa després, amb el tiquet grapat.
+    ditto -c -k --keepParent "$APP" "$ZIP_APPLE"
+    echo "Notarització: envio l'app a Apple, i n'espero la resposta (sol trigar uns minuts)…"
+    RESULTAT="$(env -u GH_TOKEN -u GITHUB_TOKEN xcrun notarytool submit "$ZIP_APPLE" --keychain-profile "$PERFIL_NOTARI" --wait --output-format json)" || CODI=$?
+    ESTAT_NOTARI="$(plutil -extract status raw -o - - <<< "$RESULTAT" 2> /dev/null || true)"
+    ID_NOTARI="$(plutil -extract id raw -o - - <<< "$RESULTAT" 2> /dev/null || true)"
+    # A l'ordre que es proposa només hi va un identificador d'Apple (un UUID).
+    [[ "$ID_NOTARI" =~ $FORMA_ID_NOTARI ]] || ID_NOTARI=""
+    if [[ "$CODI" -ne 0 || "$ESTAT_NOTARI" != Accepted ]]; then
+        {
+            echo "publica: Apple no ha acceptat la notarització (estat «${ESTAT_NOTARI:-cap}», notarytool ha acabat amb el codi ${CODI}). No s'ha publicat res."
+            if [[ -n "$ID_NOTARI" ]]; then
+                echo "Per veure'n el registre: xcrun notarytool log ${ID_NOTARI} --keychain-profile ${PERFIL_NOTARI}"
+            else
+                echo "Per veure els enviaments: xcrun notarytool history --keychain-profile ${PERFIL_NOTARI}; i el registre d'un: xcrun notarytool log <id> --keychain-profile ${PERFIL_NOTARI}"
+            fi
+        } >&2
+        exit 1
+    fi
+    echo "Notarització: Apple l'ha acceptada (${ID_NOTARI})."
+    if ! env -u GH_TOKEN -u GITHUB_TOKEN xcrun stapler staple "$APP"; then
+        echo "publica: Apple ha acceptat la notarització (${ID_NOTARI}), però no s'ha pogut grapar el tiquet a «${APP}» (xcrun stapler staple). No s'ha publicat res." >&2
+        exit 1
+    fi
+    if ! env -u GH_TOKEN -u GITHUB_TOKEN xcrun stapler validate "$APP"; then
+        echo "publica: el tiquet grapat a «${APP}» no és vàlid (xcrun stapler validate). No s'ha publicat res." >&2
+        exit 1
+    fi
 }
 
 if [[ "$MODE" == promou ]]; then
@@ -311,6 +406,11 @@ else
     # La compilació no necessita el token, i SwiftPM executa codi: que no el vegi.
     env -u GH_TOKEN -u GITHUB_TOKEN scripts/build-app.sh release --amb-feed
     comprova_paquet "$APP"
+    # Amb Developer ID, el zip que es publica porta l'app notaritzada, amb el tiquet: es torna a comprovar tal com quedarà.
+    if [[ "$DEVELOPER_ID" -eq 1 && "$APLICA" -eq 1 ]]; then
+        notaritza
+        comprova_paquet "$APP"
+    fi
     rm -f "$ZIP"
     ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 fi
@@ -440,6 +540,10 @@ CANVIS="$(if [[ -n "$BASE" ]]; then git diff --name-only "$BASE..$COMMIT"; fi)"
 if [[ -z "$BASE" ]] || grep -qFx -e Package.resolved -e Sources/WarpLaunchApp/ServeiActualitzacions.swift -e scripts/build-app.sh <<< "$CANVIS"; then
     echo "Avís: aquesta versió canvia l'actualitzador (Sparkle, ServeiActualitzacions.swift o build-app.sh). Si l'espatlla, les còpies que la rebin no s'arreglaran soles: com s'atura, docs/disseny.md, secció 11, apartat 7."
 fi
+# La recepta no es toca aquí (només la versió i el sha256): el pas que treu la marca de baixada es treu a mà, un cop publicada la primera notaritzada.
+if [[ "$MODE" != beta && "$DEVELOPER_ID" -eq 1 ]] && LC_ALL=C grep -aqF com.apple.quarantine "$RECEPTA"; then
+    echo "Nota: la recepta de Homebrew (${CAMI_RECEPTA} de ${TAP}) encara treu la marca de baixada (com.apple.quarantine). A una app notaritzada ja no li cal: un cop publicada, treu-ne a mà el bloc postflight_steps (docs/disseny.md, secció 13)."
+fi
 
 if [[ "$APLICA" -eq 0 ]]; then
     if [[ "$MODE" == promou ]]; then
@@ -454,6 +558,9 @@ if [[ "$APLICA" -eq 0 ]]; then
             echo "Amb --aplica, publicaria Warp Launch $VERSIO a $REPO com a ${ETIQUETA} (commit ${COMMIT:0:7}), amb $ZIP ($MIDA), com a versió de prova: una pre-release, que no és l'última i a la qual no arriba sola cap còpia."
         else
             echo "Amb --aplica, publicaria Warp Launch $VERSIO a $REPO com a ${ETIQUETA} (commit ${COMMIT:0:7}), amb $ZIP ($MIDA)."
+        fi
+        if [[ "$DEVELOPER_ID" -eq 1 ]]; then
+            echo "És signada amb ${QUI_SIGNA}. Abans, la notaritzaria a Apple (xcrun notarytool submit --wait, amb el perfil «${PERFIL_NOTARI}» del clauer), hi graparia el tiquet (xcrun stapler staple i validate) i en tornaria a fer el zip: el d'aquí no porta el tiquet. Si Apple no l'acceptés, no publicaria res."
         fi
         echo "I el seu appcast.xml, signat amb la clau del clauer (aquí, sense signar: $APPCAST_PROVA)."
     fi
