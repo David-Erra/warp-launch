@@ -36,7 +36,7 @@
 	<key>no hi ha cap finestra «%@»; n'hi ha %lld:</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>ウインドウ「%@」はありません。ウインドウは%#@n@あります：</string>
+		<string>ウインドウ“%@”はありません。ウインドウは%#@n@あります：</string>
 		<key>n</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -371,7 +371,7 @@
 	<key>S'ha obert «%@» a Warp: %lld pestanyes, %lld amb Claude.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>「%@」をWarpで開きました：%#@p@、Claudeあり%lld個。</string>
+		<string>“%@”をWarpで開きました：%#@p@、Claudeあり%lld個。</string>
 		<key>p</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -385,7 +385,7 @@
 	<key>No s'ha pogut reconèixer la finestra nova de «%@» (s'ha vist Claude a %lld de %lld pestanyes): mira-la a Warp abans de tornar-la a obrir.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>「%@」の新しいウインドウを認識できませんでした（Claudeを確認できたのは%lld/%#@p@）：もう一度開く前に、Warpで確認してください。</string>
+		<string>“%@”の新しいウインドウを認識できませんでした（Claudeを確認できたのは%lld/%#@p@）：もう一度開く前に、Warpで確認してください。</string>
 		<key>p</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -415,7 +415,7 @@
 	<key>«restore_session» hi surt %lld vegades, i n'hi hauria d'haver 1</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>「restore_session」が%#@v@出現しますが、1回だけのはずです</string>
+		<string>“restore_session”が%#@v@出現しますが、1回だけのはずです</string>
 		<key>v</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -429,7 +429,7 @@
 	<key>«settings.toml» té %lld capçaleres [general], i n'hi hauria d'haver 1</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>「settings.toml」に%#@c@ありますが、1つだけのはずです</string>
+		<string>“settings.toml”に%#@c@ありますが、1つだけのはずです</string>
 		<key>c</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -443,7 +443,7 @@
 	<key>Warp no ha desat les finestres: n'hi ha %lld pestanyes desades i %lld terminals vius. Pot ser antic: canvia de finestra a Warp i fes «%@».</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>Warpはウインドウを保存していません：%#@p@と%#@t@があります。古い可能性があります：Warpでウインドウを切り替えてから、「%@」を選んでください。</string>
+		<string>Warpはウインドウを保存していません：%#@p@と%#@t@があります。古い可能性があります：Warpでウインドウを切り替えてから、“%@”を選んでください。</string>
 		<key>p</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -914,7 +914,7 @@
 	<key>%lld pestanyes sortiran a «Per revisar»</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@n@が「要確認」に表示されます</string>
+		<string>%#@n@が“要確認”に表示されます</string>
 		<key>n</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -951,7 +951,7 @@
 	<key>Substitueix el que hi ha ara (%lld finestres i %lld pestanyes). Ara hi ha %lld pestanyes amb Claude i en quedaran %lld: les altres seran només terminal. Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>現在の内容（%#@f@と%#@p@）を置き換えます。現在Claudeありのタブは%#@a@で、そのうち%#@d@：ほかは「ターミナルのみ」になります。保存する前にコピーを作成し、⌘Zで取り消せます。テンプレートは変わりません。</string>
+		<string>現在の内容（%#@f@と%#@p@）を置き換えます。現在Claudeありのタブは%#@a@で、そのうち%#@d@：ほかは“ターミナルのみ”になります。保存する前にコピーを作成し、⌘Zで取り消せます。テンプレートは変わりません。</string>
 		<key>f</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
