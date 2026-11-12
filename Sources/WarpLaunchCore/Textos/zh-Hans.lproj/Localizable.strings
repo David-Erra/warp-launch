@@ -1,0 +1,756 @@
+/* Textos de Warp Launch en xinès simplificat (docs/disseny.md, secció 12). La clau és el text en català, i la referència de
+   la traducció, l'anglès (en.lproj). Els plurals són a Localizable.stringsdict. */
+
+/* Fase F1: la prova de la infraestructura (IdiomaTests); a F3, el menú */
+"Obre a Warp…" = "在Warp中打开…";
+
+/* OrdreCLI: l'ajuda del CLI (les ordres i les opcions no es tradueixen) */
+"Ús:" = "用法：";
+"warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <carpeta>]\n    Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya." = "warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <文件夹>]\n    Warp中打开的窗口和标签页，以及每个标签页的Claude会话。";
+"warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]\n    La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.\n    Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,\n    tenen les opcions de la plantilla de ~/.config/warp-launch.\n    --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:\n    la configuració real només es crea des de l'app." = "warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <文件夹>] [--desa --config <文件夹>]\n    现在从Warp会得到的配置，以及警告。不加--desa时不写入任何内容。\n    未运行Claude的标签页保持为仅终端，与App中相同；如果在其中启用Claude，\n    会使用~/.config/warp-launch中模板的选项。\n    --desa将其保存到<文件夹>，该文件夹中不能有任何配置，也不能是~/.config/warp-launch：\n    真正的配置只能在App中创建。";
+"warp-launch configuracio valida [--config <carpeta>]\n    Errors i avisos de la configuració (per defecte, la de ~/.config/warp-launch)." = "warp-launch configuracio valida [--config <文件夹>]\n    配置中的错误和警告（默认为~/.config/warp-launch中的配置）。";
+"warp-launch obre <nom o número de finestra> [--json] [--config <carpeta>] [--warp <warp.sqlite>]\n        [--sessions <carpeta>]\n    Mode de prova: què passaria si s'obrís la finestra a Warp (quines pestanyes ja són obertes, quines\n    s'obririen i com, i el fitxer i l'URL exactes). No escriu ni obre res, tampoc estat.json." = "warp-launch obre <窗口名称或编号> [--json] [--config <文件夹>] [--warp <warp.sqlite>]\n        [--sessions <文件夹>]\n    试运行：如果在Warp中打开该窗口会发生什么（哪些标签页已经打开，哪些会打开以及如何打开，\n    以及确切的文件和URL）。不写入也不打开任何内容，也不写入estat.json。";
+"warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]\n    Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna\n    amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta." = "warp-launch obre <窗口名称或编号> --obre [--config <文件夹>]\n    在Warp中打开该窗口，与App的“打开”按钮相同：打开尚未打开的标签页，每个都带有\n    自己的Claude。如果Warp已关闭，会先打开它。如果App已打开，则不执行任何操作。";
+"warp-launch diagnostica [--json] [--anonimitza]\n    Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els\n    fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les\n    versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada\n    comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.\n    --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma)." = "warp-launch diagnostica [--json] [--anonimitza]\n    检查Warp和Claude Code是否仍是App读取的形式：Warp的终端、Claude的会话文件和\n    对话记录、~/.claude.json、warp.sqlite的表、版本（与测试过的版本比较），以及Warp的会话恢复\n    和许可。每项检查的结果为正常、警告或错误。报告为英文，便于粘贴到GitHub Issue中。\n    --anonimitza会移除用户名、个人文件夹和文件夹名称（保留其形式）。";
+"Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de\nles transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,\ntambé l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,\nexcepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).\nCodis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot\nobert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna\ncomprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no\ns'obriria; 64 ús incorrecte." = "仅读取Warp（warp.sqlite为只读）和~/.claude/sessions；使用obre和diagnostica时，还会读取\n~/.claude/projects中对话记录的名称以及~/.claude.json中受信任的文件夹。使用diagnostica时，\n还会读取warp.sqlite的结构、Warp的Info.plist、~/.warp/settings.toml和preferencies.json。不打开也不关闭任何内容，\nobre --obre除外：它会打开窗口，并写入estat.json和Warp的临时文件（然后删除临时文件）。\n退出代码：0 成功；1 无法读取、保存或打开（使用--obre时，未确认全部已打开；\n使用obre时，也包括没有Warp或Warp Preview不允许打开任何内容的情况；使用diagnostica时，有检查\n出错）；2 配置（读取的或导入的）有错误，或有标签页无法打开；\n64 用法不正确。";
+
+/* OrdreCLI: errors d'ús */
+"ordre: «configuracio valida»" = "命令：“configuracio valida”";
+"ordre desconeguda «%@»" = "未知命令“%@”";
+"opció desconeguda per a %@: «%@»" = "%@的未知选项：“%@”";
+"falta la ruta després de --warp" = "--warp后缺少路径";
+"falta la carpeta després de --sessions" = "--sessions后缺少文件夹";
+"«--config» hi és més d'un cop" = "“--config”出现了多次";
+"falta la carpeta després de «--config»" = "“--config”后缺少文件夹";
+"la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «%@»" = "“--config”的文件夹必须是绝对路径（以/或~/开头）：“%@”";
+"«--desa» necessita «--config <carpeta>»: la configuració real només es crea des de l'app" = "“--desa”需要“--config <文件夹>”：真正的配置只能在App中创建";
+"«--config» només serveix amb «--desa»" = "“--config”只能与“--desa”一起使用";
+"«--config» no pot ser la configuració real (%@), ni ser-hi a dins, ni passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app" = "“--config”不能是真正的配置（%@），不能位于其中，也不能经过“..”或损坏的链接：真正的配置只能在App中创建";
+"falta la finestra: «warp-launch obre <nom o número de finestra>»" = "缺少窗口：“warp-launch obre <窗口名称或编号>”";
+"«--obre» només funciona amb la comanda «warp-launch» de debò" = "“--obre”只能用于真正的“warp-launch”命令";
+"hi ha més d'una finestra «%@» (%@): tria-la pel número" = "有多个名为“%@”的窗口（%@）：请按编号选择";
+
+/* OrdreCLI: importa i configuracio valida */
+"no s'ha pogut generar el JSON" = "无法生成JSON";
+"«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "“warp-launch importa”不会更改此设置，也无法让Warp保存窗口。使用真正配置的App可以：它会将该设置启用几秒钟让Warp保存，然后再停用。";
+"ja hi ha una configuració a %@; tria una carpeta buida" = "%@中已有配置；请选择一个空文件夹";
+"Importació de Warp, desada a %@" = "已从Warp导入，保存到%@";
+"Importació de Warp (vista prèvia: no s'ha desat res)" = "从Warp导入（预览：未保存任何内容）";
+"Les pestanyes que no tenien Claude obert queden només terminal." = "未打开Claude的标签页保持为仅终端。";
+"Notes de la importació:" = "导入备注：";
+"Avisos de la lectura:" = "读取时的警告：";
+"Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració)." = "模板：安全模板，不跳过权限（还没有配置）。";
+"Plantilla: la de %@." = "模板：%@中的模板。";
+"Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir %@: %@)." = "模板：安全模板，不跳过权限（无法读取%@：%@）。";
+"no hi ha cap configuració a %@" = "%@中没有配置";
+"Configuració: %@" = "配置：%@";
+"Avisos del fitxer:" = "文件警告：";
+"Ordres de Claude:" = "Claude命令：";
+"sense Claude" = "无Claude";
+"Claude, de la seva ordre" = "Claude，使用自己的命令";
+
+/* OrdreCLI: obre i obre --obre */
+"la configuració ha canviat mentre s'obria Warp: torna-ho a provar" = "打开Warp期间配置已更改：请重试";
+"%@: %@; l'app no obriria res" = "%@：%@；App也不会打开任何内容";
+"l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. No s'ha obert res." = "Warp Launch App已打开：请从App中打开窗口，或退出App后重试。未打开任何内容。";
+"No s'ha obert res." = "未打开任何内容。";
+"S'obre a Warp (--obre)." = "正在Warp中打开（--obre）。";
+"no s'ha obert res: %@" = "未打开任何内容：%@";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar. No s'ha obert res." = "Warp已关闭，打开时会恢复这些标签页，但不带Claude。请打开Warp后重试。未打开任何内容。";
+"Totes les pestanyes ja són obertes: no s'ha obert res." = "所有标签页均已打开：未打开任何内容。";
+"No hi ha cap pestanya per obrir (%lld ja obertes, %lld no s'obriran): no s'ha obert res." = "没有要打开的标签页（已打开%lld个，不会打开%lld个）：未打开任何内容。";
+"S'ha obert Warp, però cap finestra de la configuració." = "已打开Warp，但未打开配置中的任何窗口。";
+"En arrencar, Warp ha obert una finestra buida: la pots tancar." = "启动时，Warp打开了一个空窗口：你可以将其关闭。";
+"Warp és tancat: l'obro i n'espero l'arrencada (fins a %lld s)." = "Warp已关闭：正在打开它并等待启动（最多%lld秒）。";
+"no s'ha pogut obrir Warp: %@" = "无法打开Warp：%@";
+"Warp no ha arrencat en %lld s: mira'l i torna-ho a provar." = "Warp未在%lld秒内启动：请检查Warp后重试。";
+"Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar." = "Warp在启动时关闭了：请检查Warp后重试。";
+"en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar." = "启动时，Warp改变了将要打开的内容：请重试。";
+"No s'ha pogut esborrar el fitxer temporal: %@" = "无法删除临时文件：%@";
+"Tampoc no hi ha la base de Warp (%@)." = "Warp的数据库也不在（%@）。";
+
+/* Informe: warp-launch llegeix */
+"La restauració de sessió és desactivada: Warp no desa les finestres, i l'app llegeix els processos." = "会话恢复已停用：Warp不保存窗口，App会读取进程。";
+"Warp és obert." = "Warp已打开。";
+"Warp és tancat: són les finestres que restaurarà en obrir-se." = "Warp已关闭：以下是它打开时将恢复的窗口。";
+"Warp és tancat." = "Warp已关闭。";
+"Sessions de Claude en segon pla: %lld (%@)." = "后台Claude会话：%lld（%@）。";
+"Terminals:" = "终端：";
+"pestanya %@" = "标签页%@";
+"pane %@" = "窗格%@";
+"(sense títol)" = "（无标题）";
+"historial" = "历史记录";
+"no existeix" = "不存在";
+"Sessions de Claude que no són a cap pestanya de Warp:" = "不在任何Warp标签页中的Claude会话：";
+"Sessions de Claude:" = "Claude会话：";
+"fora de Warp" = "在Warp之外";
+"pestanya no trobada a la base de Warp" = "在Warp的数据库中找不到标签页";
+"a Warp" = "在Warp中";
+"Avisos:" = "警告：";
+
+/* InformeObertura: warp-launch obre */
+"Mode de prova: no s'ha escrit ni obert res." = "试运行：未写入或打开任何内容。";
+"Finestra %@ de %@: «%@» (%@)" = "窗口%@/%@：“%@”（%@）";
+"No s'obriria res." = "不会打开任何内容。";
+"Warp és tancat: primer s'obriria Warp." = "Warp已关闭：会先打开Warp。";
+"No se sap si Warp és obert." = "不确定Warp是否已打开。";
+"Ja obertes (%lld):" = "已打开（%lld）：";
+"No s'obriran (%lld):" = "不会打开（%lld）：";
+"S'obririen (%lld):" = "将打开（%lld）：";
+"No es pot generar el fitxer per a Warp: %@" = "无法为Warp生成文件：%@";
+"Fitxer per a Warp: %@ (en obrir de debò, l'id serà un altre)" = "Warp文件：%@（实际打开时，ID会不同）";
+
+/* Resum: les xifres, els arguments de l'app i les opcions de Claude */
+"argument desconegut «%@»; per provar l'app: --config <carpeta>" = "未知参数“%@”；要测试App：--config <文件夹>";
+"Només terminal" = "仅终端";
+"Baix" = "低";
+"Mitjà" = "中";
+"Alt" = "高";
+"Molt alt" = "超高";
+"Màxim" = "最大";
+"Accepta les edicions" = "接受编辑";
+"Automàtic" = "自动";
+"Sense cap permís" = "绕过权限";
+"Manual" = "手动";
+"No preguntis" = "不询问";
+"Planifica" = "计划";
+"sense nom" = "未命名";
+"Altres" = "其他";
+
+/* WarpLaunch: les ordres dels menús que també surten als textos */
+"Actualitza l'estat de Warp" = "刷新Warp状态";
+"Sobre l’app %@" = "关于%@";
+"Surt de l’app %@" = "退出%@";
+
+/* PlaObertura: on és oberta una pestanya, per què no s'obre i com s'obrirà */
+"oberta a Warp, amb Claude (%@)" = "已在Warp中打开，带Claude（%@）";
+"oberta a Warp, amb Claude" = "已在Warp中打开，带Claude";
+"oberta a Warp (%@)" = "已在Warp中打开（%@）";
+"oberta a Warp, sense Claude (%@)" = "已在Warp中打开，无Claude（%@）";
+"oberta a Warp" = "已在Warp中打开";
+"oberta a Warp, sense Claude" = "已在Warp中打开，无Claude";
+"la seva conversa és oberta a Warp (%@)" = "其对话已在Warp中打开（%@）";
+"la seva conversa és oberta fora de Warp" = "其对话已在Warp之外打开";
+"la seva conversa és oberta a Warp" = "其对话已在Warp中打开";
+"una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)" = "另一个标签页刚刚恢复了其对话（尚未看到该Claude）";
+"la seva conversa és oberta en segon pla (%@)" = "其对话已在后台打开（%@）";
+"tancada fa menys d'1 minut: espera i torna-ho a provar" = "关闭不到1分钟：请稍候再试";
+"la carpeta no existeix" = "文件夹不存在";
+"no es pot generar l'ordre: %@" = "无法生成命令：%@";
+"no es pot escriure per a Warp: %@" = "无法为Warp写入：%@";
+"només terminal" = "仅终端";
+"Claude, reprèn %@" = "Claude，恢复%@";
+"Claude, conversa nova" = "Claude，新对话";
+"finestra %@ › %@" = "窗口%@ › %@";
+
+/* PlaObertura: els avisos del full d'obrir */
+"potser ja és oberta a Warp (%@): és a la mateixa carpeta" = "可能已在Warp中打开（%@）：位于同一文件夹";
+"potser ja és oberta a Warp: hi ha un Claude a la seva carpeta, que no és de cap pestanya de la configuració" = "可能已在Warp中打开：其文件夹中有一个Claude，不属于配置中的任何标签页";
+"potser ja és oberta a Warp: hi ha un terminal a la seva carpeta, sense Claude" = "可能已在Warp中打开：其文件夹中有一个无Claude的终端";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer; si obres ara, la finestra quedarà partida" = "如果刚刚关闭了它们，请等待1分钟后重试：Warp会暂时保留它们以便撤销关闭；如果现在打开，窗口会被拆分";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer" = "如果刚刚关闭了它们，请等待1分钟后重试：Warp会暂时保留它们以便撤销关闭";
+"la conversa és d'una altra carpeta (%@); Claude la reprendrà en aquesta" = "该对话来自另一个文件夹（%@）；Claude会在此文件夹中恢复它";
+"una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova" = "另一个标签页已经恢复同一对话：此标签页将开始新对话";
+"reprèn la conversa més recent de la carpeta (%@)" = "恢复文件夹中最近的对话（%@）";
+"no se'n sap la conversa: en començarà una de nova" = "不知道其对话：将开始新对话";
+"la conversa no té cap missatge desat: en començarà una de nova" = "该对话没有保存的消息：将开始新对话";
+"Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla" = "Claude会询问你是否信任该文件夹：标签页会等待按键";
+"porta «--fork-session»: cada obertura farà una còpia de la conversa" = "带有“--fork-session”：每次打开都会复制一份对话";
+"l'últim cop que es va obrir aquesta finestra (fa %lld min) no es va poder confirmar: mira Warp abans" = "上次打开此窗口时（%lld分钟前）未能确认：请先检查Warp";
+"l'últim intent d'obrir aquesta finestra (fa %lld min) va fallar: si Warp n'ha obert res, mira-ho abans" = "上次尝试打开此窗口时（%lld分钟前）失败了：如果Warp打开了其中的内容，请先检查";
+"%@: %@" = "%@：%@";
+"fa menys d'1 h" = "不到1小时前";
+"fa %lld h" = "%lld小时前";
+
+/* PlaObertura: les xifres del full d'obrir */
+"No s'obrirà res." = "不会打开任何内容。";
+"%lld amb Claude (%@)" = "%lld个带Claude（%@）";
+"%lld només terminal" = "%lld个仅终端";
+"unes %@ GB" = "约%@ GB";
+"ja obertes: %lld" = "已打开：%lld";
+"no s'obriran: %lld" = "不会打开：%lld";
+"Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: espera 1 minut i torna-ho a provar." = "此窗口中有标签页在不到1分钟前关闭，其Claude仍在运行：请等待1分钟后重试。";
+
+/* ExecucioObertura: el resultat d'obrir */
+"En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "启动时，Warp还打开了一个空窗口：你可以将其关闭。";
+"No s'ha pogut desar el llançament a «estat.json»: %@" = "无法将启动记录保存到“estat.json”：%@";
+"No s'ha pogut obrir «%@» a Warp: %@" = "无法在Warp中打开“%@”：%@";
+"Claude encara no ha arrencat a %@: mira-ho a Warp." = "%@中的Claude尚未启动：请在Warp中检查。";
+"No s'ha pogut confirmar que s'hagi obert «%@»: mira si hi ha una finestra nova a Warp." = "无法确认“%@”已打开：请检查Warp中是否有新窗口。";
+"El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app." = "无法删除临时文件：打开App时会再次尝试。";
+"«%@»" = "“%@”";
+
+/* LaunchConfigWarp, FitxersLaunchWarp i YAMLWarp: el fitxer temporal de Warp */
+"la carpeta «%@» no és una ruta absoluta" = "文件夹“%@”不是绝对路径";
+"al títol, %@" = "标题中的%@";
+"a la carpeta, %@" = "文件夹中的%@";
+"a l'ordre, %@" = "命令中的%@";
+"no hi ha cap pestanya per obrir" = "没有要打开的标签页";
+"pestanya %@: %@" = "标签页%@：%@";
+"Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, que no la creen" = "Warp没有launch configurations文件夹，也未创建：可能是Warp从未打开过，路径经过链接或文件，或者是使用--config或CLI的测试（它们不会创建该文件夹）";
+"ja hi ha un fitxer amb aquest nom, i no se sobreescriu" = "已有同名文件，不会覆盖";
+"no s'ha pogut escriure el fitxer: %@" = "无法写入文件：%@";
+"no és un fitxer normal, i no s'esborra" = "不是普通文件，因此不会删除";
+"no comença amb la marca de l'app, i no s'esborra" = "开头没有App的标记，因此不会删除";
+"no s'ha pogut llegir: %@" = "无法读取：%@";
+"no s'ha pogut esborrar: %@" = "无法删除：%@";
+"hi ha un caràcter que l'app no sap escriure per a Warp (U+%@)" = "有一个App无法为Warp写入的字符（U+%@）";
+
+/* OrdreClaude: per què no es pot fer l'ordre de Claude */
+"ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer" = "ultracode搭配“超高”以外的努力程度时，需要“--settings”为JSON，而这里是文件";
+"«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode" = "“--settings”不是有效的JSON，或有重复的键或App无法读取的值，而需要向其中添加ultracode";
+"«--settings» ja té «ultracode» amb un valor que no és true ni false" = "“--settings”中已有“ultracode”，其值既不是true也不是false";
+"falta la sessió que s'ha de reprendre" = "缺少要恢复的会话";
+"«%@» és a les altres opcions, però té camp propi" = "“%@”在其他选项中，但它有专用字段";
+"les altres opcions porten «%@», que Claude prendria pel primer missatge de cada obertura" = "其他选项中包含“%@”，Claude会在每次打开时将其当作第一条消息";
+
+/* AppWarp: Warp Preview i cap Warp */
+"Warp Preview encara no és compatible: cal Warp Stable." = "尚不支持Warp Preview：需要Warp Stable。";
+"En aquest Mac només hi ha Warp Preview." = "这台Mac上只有Warp Preview。";
+"Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar." = "现在打开的是Warp Preview，而不是Warp Stable：请打开Warp Stable后重试。";
+"No s'ha trobat Warp en aquest Mac: cal Warp Stable." = "在这台Mac上找不到Warp：需要Warp Stable。";
+
+/* AjustRestauracio: per què no es pot tocar l'ajust de Warp */
+"Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta «%@», i Warp Launch no la crea" = "此用户从未打开过Warp：没有“%@”文件夹，Warp Launch不会创建它";
+"no es pot mirar on és «%@»" = "无法检查“%@”的位置";
+"«%@» és de només lectura" = "“%@”为只读";
+"la carpeta temporal no és al mateix volum que «%@»" = "临时文件夹与“%@”不在同一宗卷上";
+"no s'ha pogut escriure «%@»: %@" = "无法写入“%@”：%@";
+"no s'ha pogut crear «%@»: %@" = "无法创建“%@”：%@";
+"no es pot mirar el fitxer preparat: %@" = "无法检查准备好的文件：%@";
+"no s'ha pogut preparar el fitxer: %@" = "无法准备文件：%@";
+"no es pot mirar «%@»: %@" = "无法检查“%@”：%@";
+"«%@» no és una carpeta" = "“%@”不是文件夹";
+"«%@» no és un fitxer normal" = "“%@”不是普通文件";
+"no es pot llegir «%@»" = "无法读取“%@”";
+"«restore_session» no hi és, i no s'hi pot afegir: %@" = "“restore_session”不存在，且无法添加：%@";
+"«settings.toml» té salts de línia CRLF" = "“settings.toml”使用CRLF换行符";
+"«settings.toml» no acaba amb un salt de línia" = "“settings.toml”没有以换行符结尾";
+"«restore_session» no és una línia de la taula [general]" = "“restore_session”不是[general]表中的一行";
+"el valor de «restore_session» no és true ni false" = "“restore_session”的值既不是true也不是false";
+"«settings.toml» té una marca d'ordre de bytes (BOM)" = "“settings.toml”带有字节顺序标记（BOM）";
+"«settings.toml» té textos de diverses línies («\"\"\"» o «'''»)" = "“settings.toml”中有多行字符串（“\"\"\"”或“'''”）";
+"a la línia %@, «general» és una clau, no una taula [general]" = "第%@行中，“general”是一个键，而不是[general]表";
+"a la línia %@, la taula general té una forma que Warp Launch no sap llegir (entre cometes, amb un comentari o com a llista de taules)" = "第%@行中，general表的形式是Warp Launch无法读取的（带引号、带注释或为表数组）";
+"Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre." = "Warp已关闭：这是它上次保存时的快照，可能已过时。由于没有正在运行的会话，无法知道Claude曾在哪里打开：导入时，所有标签页都不会保留其命令。";
+
+/* LectorWarp, LectorSessions, Lector i LecturaWarp: la lectura de Warp i de Claude */
+"no trobo la base de Warp: %@" = "找不到Warp的数据库：%@";
+"error de SQLite: %@" = "SQLite错误：%@";
+"macOS no deixa que Warp Launch llegeixi les dades de Warp; cal donar-li permís a Configuració del Sistema › Privacitat i seguretat" = "macOS不允许Warp Launch读取Warp的数据；请在“系统设置” › “隐私与安全”中授予权限";
+"no s'ha pogut obrir" = "无法打开";
+"no puc llegir la carpeta de sessions de Claude: %@" = "无法读取Claude的会话文件夹：%@";
+"fitxer de sessió il·legible: %@" = "无法读取的会话文件：%@";
+"la sessió %@ apunta al pid %@, que ja no existeix" = "会话%@指向pid %@，该进程已不存在";
+"el pid %@ de la sessió %@ ara és un altre procés (%@)" = "会话%@的pid %@现在是另一个进程（%@）";
+"dues sessions al mateix pane %@: es mostra la del pid %@, no la del %@" = "同一窗格%@中有两个会话：显示pid %@的会话，而不是pid %@的会话";
+"Warp no desa les finestres mentre la restauració de sessió està desactivada («general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen." = "会话恢复停用期间（“general.restore_session”），Warp不保存窗口：App无法知道有哪些标签页以及它们的名称。";
+"Warp encara no ha desat cap finestra en aquest usuari: si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons." = "此用户的Warp尚未保存任何窗口：如果Warp刚刚打开，请几秒钟后重试。";
+"Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar." = "此用户的Warp尚未保存任何窗口：请打开一次Warp后重试。";
+
+/* Configuracio: el fitxer de la configuració */
+"el fitxer no és JSON vàlid (línia %@, columna %@)" = "文件不是有效的JSON（第%@行，第%@列）";
+"el fitxer no és JSON vàlid" = "文件不是有效的JSON";
+"el fitxer: %@" = "文件：%@";
+"falta el camp «versio»" = "缺少“versio”字段";
+"el fitxer és de la versió %@ del format, i aquesta app només entén fins a la %@: cal una versió més nova de Warp Launch" = "文件的格式版本为%@，而此App最多只能理解版本%@：需要更新版本的Warp Launch";
+"versió del format desconeguda: %@" = "未知的格式版本：%@";
+"%@: clau desconeguda; es perdrà en desar (la còpia la conserva)" = "%@：未知键；保存时会丢失（备份中会保留）";
+"%@: sense bloc «claude»; queda com a només terminal" = "%@：没有“claude”块；保持为仅终端";
+"%@: id absent; se n'ha posat un de nou" = "%@：缺少ID；已设置新ID";
+"%@: id invalid; se n'ha posat un de nou" = "%@：ID无效；已设置新ID";
+"%@: id repetit; se n'ha posat un de nou" = "%@：ID重复；已设置新ID";
+"falta la plantilla; es fan servir valors segurs (sense saltar permisos)" = "缺少模板；使用安全值（不跳过权限）";
+"%@: la carpeta ha de ser una ruta absoluta (que comenci per / o ~/)" = "%@：文件夹必须是绝对路径（以/或~/开头）";
+"el fitxer ha de ser text UTF-8" = "文件必须是UTF-8文本";
+"ha de ser un objecte JSON" = "必须是JSON对象";
+"clau «%@» repetida" = "键“%@”重复";
+"ha de ser un nombre enter" = "必须是整数";
+"tipus incorrecte (s'esperava %@)" = "类型错误（应为%@）";
+"falta el valor (s'esperava %@)" = "缺少值（应为%@）";
+"falta la clau" = "缺少键";
+"text" = "文本";
+"true o false" = "true或false";
+"nombre enter" = "整数";
+"una llista" = "列表";
+"un objecte" = "对象";
+
+/* Validacio: els avisos de cada pestanya i finestra */
+"La carpeta ha de ser una ruta absoluta" = "文件夹必须是绝对路径";
+"Carpeta d'inici: probablement Warp l'ha perduda" = "个人文件夹：Warp可能丢失了该文件夹";
+"La carpeta no existeix" = "文件夹不存在";
+"Claude és apagat en aquesta pestanya" = "此标签页中Claude已停用";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Claude (comprova-ho)" = "Warp显示“%@”，而Claude运行在“%@”：使用Claude的文件夹（请检查）";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Warp (comprova-ho)" = "Warp显示“%@”，而Claude运行在“%@”：使用Warp的文件夹（请检查）";
+"L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "此标签页上次的Claude运行在“%@”，而不是此文件夹（请检查）";
+"Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "请检查模型是否支持ultracode，以及是否已启用dynamic workflows";
+"Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "未知的努力程度“%@”：Claude会忽略它并使用默认值";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude无法启动：权限模式“%@”不存在（%@）";
+"Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "启用“跳过权限”时，Claude会忽略“%@”模式";
+"Claude no arrencarà: els settings no són JSON vàlid" = "Claude无法启动：settings不是有效的JSON";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "Claude %@不认识%@：可能无法理解（如果它来自新版本，需要更新选项表）";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions). Si %@ no n'és el valor, Claude el prendria pel primer missatge i l'enviaria a cada obertura" = "Claude %@不认识%@：可能无法理解（如果它来自新版本，需要更新选项表）。如果%@不是它的值，Claude会将其当作第一条消息，并在每次打开时发送";
+"%@ és d'un sol ús: es tornaria a fer a cada obertura" = "%@仅限一次使用：每次打开都会重复执行";
+"No es pot generar l'ordre: %@" = "无法生成命令：%@";
+"Hi ha més d'una finestra amb el nom «%@»" = "有多个名为“%@”的窗口";
+
+/* Importador: els noms per defecte, les notes i el resum de la importació */
+"Finestra %@" = "窗口%@";
+"Pestanya %@" = "标签页%@";
+"%@: la sessió es va obrir amb el missatge «%@»; no es desa (s'enviaria a cada obertura)" = "%@：会话是带消息“%@”打开的；不会保存（否则每次打开都会发送）";
+"%@: la sessió es va obrir amb «%@» (una conversa concreta); es desa només que continua" = "%@：会话是用“%@”（某个特定对话）打开的；只保存“继续对话”";
+"%@: Warp diu «%@», però Claude corre a «%@»; es fa servir la de Claude" = "%@：Warp显示“%@”，但Claude运行在“%@”；使用Claude的文件夹";
+"%@: Warp diu «%@» i Claude «%@»; es fa servir la de Claude (comprova-ho)" = "%@：Warp显示“%@”，Claude显示“%@”；使用Claude的文件夹（请检查）";
+"%@: Warp diu «%@» i Claude «%@», que és la carpeta d'inici; es queda la de Warp (comprova-ho)" = "%@：Warp显示“%@”，Claude显示“%@”，即个人文件夹；保留Warp的文件夹（请检查）";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda la de Warp (comprova-ho)" = "%@：Warp显示“%@”，Claude显示“%@”，该文件夹不存在；保留Warp的文件夹（请检查）";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)" = "%@：Warp显示“%@”，Claude显示“%@”，该文件夹不存在；保留在个人文件夹中，不带Claude，并保留其选项（请检查）";
+"%@: pestanya dividida en %lld panes; només s'importa el principal" = "%@：标签页拆分为%lld个窗格；只导入主窗格";
+"la seva pestanya no és a la base de Warp" = "其标签页不在Warp的数据库中";
+"corre fora de Warp, o dins de tmux" = "在Warp之外运行，或在tmux中运行";
+"sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claude会话“%@”（位于“%@”）：不导入（%@）";
+"sessió de Claude a «%@»: no s'importa (%@)" = "“%@”中的Claude会话：不导入（%@）";
+"a la mateixa carpeta hi ha %@, que queda només terminal" = "同一文件夹中有%@，它保持为仅终端";
+"a la mateixa carpeta hi ha %@, que queden només terminal" = "同一文件夹中有%@，它们保持为仅终端";
+"la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warp窗口%@中没有终端标签页：不导入";
+"0 amb Claude" = "0个带Claude";
+"%lld amb Claude, amb la seva ordre" = "%lld个带Claude，使用其命令";
+"(%lld sense Claude obert)" = "（%lld个未打开Claude）";
+
+/* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
+"no s'ha pogut generar el JSON: %@" = "无法生成JSON：%@";
+"el fitxer és només de lectura (%@)" = "文件为只读（%@）";
+"«%@» és un enllaç a «%@», que no existeix" = "“%@”是指向“%@”的链接，但后者不存在";
+"la configuració ha canviat fora de l'app; no s'ha desat res" = "配置在App之外被更改；未保存任何内容";
+"no s'ha pogut fer la còpia de seguretat, i no s'ha desat res: %@" = "无法创建备份，因此未保存任何内容：%@";
+"no s'ha pogut llegir la configuració: %@" = "无法读取配置：%@";
+"no s'ha pogut desar la configuració: %@" = "无法保存配置：%@";
+"la configuració generada no es podia tornar a llegir igual; no s'ha desat res" = "生成的配置无法原样读回；未保存任何内容";
+"el JSON no es torna a llegir igual" = "JSON无法原样读回";
+"«%@» és de la versió %@, més nova que aquesta app (%@)" = "“%@”来自版本%@，比此App（%@）更新";
+"«%@» no es pot llegir: %@" = "无法读取“%@”：%@";
+"no s'ha pogut llegir «%@»: %@" = "无法读取“%@”：%@";
+"no s'ha pogut desar «%@»: %@" = "无法保存“%@”：%@";
+"no és JSON o no té «versio»" = "不是JSON或没有“versio”";
+"«%@» no és l'id d'una pestanya" = "“%@”不是标签页的ID";
+"«acceptat» sense «acceptatEl»" = "有“acceptat”但没有“acceptatEl”";
+"«retirat» sense «retiratEl»" = "有“retirat”但没有“retiratEl”";
+"«acceptatEl» només va amb «acceptat», i «retiratEl», amb «retirat»" = "“acceptatEl”只能与“acceptat”一起使用，“retiratEl”只能与“retirat”一起使用";
+"«%@» no és cap consentiment conegut" = "“%@”不是已知的许可状态";
+
+/* EdicioConfiguracio: els noms de les finestres i les pestanyes noves */
+"%@ còpia" = "%@ 副本";
+"Pestanya nova" = "新建标签页";
+
+/* PoliticaActualitzacions: per què l'app espera a reiniciar-se (després de «Ara no: ») i per què no s'actualitza */
+"no s'ha pogut desar la configuració" = "无法保存配置";
+"estàs canviant un nom" = "你正在更改名称";
+"s'estan obrint finestres a Warp" = "正在Warp中打开窗口";
+"hi ha un full obert" = "有一个表单处于打开状态";
+"encara s'estan reprenent converses a Warp" = "仍在Warp中恢复对话";
+"s'està llegint Warp" = "正在读取Warp";
+"falta desactivar la restauració de sessió de Warp" = "仍需停用Warp的会话恢复";
+"hi ha una finestra de l'app oberta" = "有一个App窗口处于打开状态";
+"hi ha canvis sense desar" = "有未保存的更改";
+"encara pots desfer l'últim canvi" = "你仍可以撤销上一个更改";
+"l'app s'acaba d'obrir" = "App刚刚打开";
+"estàs fent servir el Mac" = "你正在使用这台Mac";
+"aquesta versió no s'ha pogut instal·lar sola" = "此版本无法自动安装";
+"Amb una configuració de prova, l'app no s'actualitza." = "使用测试配置时，App不会更新。";
+"Sense configuració, l'app no s'actualitza." = "没有配置时，App不会更新。";
+"Només s'actualitza l'app instal·lada." = "只有已安装的App才会更新。";
+"Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a %@." = "要自动更新，App必须位于“应用程序”文件夹中。它现在位于%@。";
+"Aquesta còpia no és una versió publicada i no s'actualitza sola." = "此副本不是已发布的版本，不会自动更新。";
+"Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "此副本是由这台Mac的另一位用户安装的：需要由该用户更新。";
+"Aquesta versió de l'actualitzador no és compatible." = "此版本的更新程序不兼容。";
+
+/* WarpLaunchApp: el menú de la icona, l'alerta de sortir i la carpeta de la Configuració */
+"Amb una configuració de prova, l'app no s'obre sola." = "使用测试配置时，App不会在登录时打开。";
+"Cap: %@" = "无：%@";
+"No s'han pogut desar els canvis" = "无法保存你的更改";
+"%@. Si surts ara, es perdran." = "%@。如果现在退出，更改将会丢失。";
+"Cancel·la" = "取消";
+"Surt sense desar" = "不保存并退出";
+"Mostra Warp Launch" = "显示Warp Launch";
+"Mostra l'editor" = "显示编辑器";
+"Finestres" = "窗口";
+"Obre-ho tot a Warp…" = "在Warp中打开全部…";
+"%@ — %@" = "%@ — %@";
+"Mostra a l'editor" = "在编辑器中显示";
+"Configuració de prova: %@" = "测试配置：%@";
+"Sense configuració: %@" = "无配置：%@";
+"Configuració…" = "设置…";
+
+/* ArrencadaSessio (l'app fora d'Aplicacions) i ServeiActualitzacions: per què no s'obre en iniciar sessió, i els errors per a Sparkle */
+"Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a %@." = "要在登录时打开，App必须位于“应用程序”文件夹中（scripts/instal·la.sh --aplica）。它现在位于%@。";
+"no hi ha permís" = "没有许可";
+"la versió publicada no té la forma esperada" = "已发布的版本格式不符合预期";
+
+/* ArrencadaSessio: obrir-se en iniciar sessió */
+"No disponible" = "不可用";
+"No s'ha pogut activar: %@" = "无法启用：%@";
+"No s'ha pogut desactivar: %@" = "无法停用：%@";
+"No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "无法将Warp Launch从你的登录项中移除：%@。未更改其他任何内容。";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més." = "macOS的登录项中仍有Warp Launch：请在“系统设置” › “通用” › “登录项与扩展”中将其移除，然后重试。未更改其他任何内容。";
+
+/* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
+"Per revisar" = "待复查";
+"El fitxer ha canviat fora de l'app" = "文件在App之外被更改";
+"No s'ha pogut desar" = "无法保存";
+"Res per revisar" = "没有需要复查的内容";
+"no hi ha cap carpeta de configuració" = "没有配置文件夹";
+"Torna a importar" = "重新导入";
+"Nova finestra" = "新建窗口";
+"Finestra nova" = "新建窗口";
+"Canvia el nom" = "重新命名";
+"Elimina la finestra" = "删除窗口";
+"Duplica la finestra" = "复制窗口";
+"Nova pestanya" = "新建标签页";
+"Duplica la pestanya" = "复制标签页";
+"Duplica les pestanyes" = "复制标签页";
+"Elimina la pestanya" = "删除标签页";
+"Elimina les pestanyes" = "删除标签页";
+"Retalla la pestanya" = "剪切标签页";
+"Retalla les pestanyes" = "剪切标签页";
+"Enganxa la pestanya" = "粘贴标签页";
+"Enganxa les pestanyes" = "粘贴标签页";
+"Mou la pestanya" = "移动标签页";
+"Mou les pestanyes" = "移动标签页";
+"Mou la finestra" = "移动窗口";
+"Mou les finestres" = "移动窗口";
+"Canvia la carpeta" = "更改文件夹";
+"Activa Claude" = "启用Claude";
+"Desactiva Claude" = "停用Claude";
+
+/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (els d'un interruptor, «Activa «…»» i «Desactiva «…»»: al menú Edició són ordres, i l'interruptor és una etiqueta) */
+"Tria una pestanya per revisar-la" = "选择要复查的标签页";
+"Cap finestra" = "没有窗口";
+"Tria una finestra" = "选择窗口";
+"Canvia el model" = "更改模型";
+"Canvia l'esforç" = "更改努力程度";
+"Canvia el mode de permisos" = "更改权限模式";
+"%@ (desconegut)" = "%@（未知）";
+"Per defecte" = "默认";
+"Valors diversos" = "多个值";
+"Activa l'ultracode" = "启用ultracode";
+"Desactiva l'ultracode" = "停用ultracode";
+"Continua la conversa" = "继续对话";
+"Activa «Continua la conversa»" = "启用“继续对话”";
+"Desactiva «Continua la conversa»" = "停用“继续对话”";
+"Salta els permisos" = "跳过权限";
+"Activa «Salta els permisos»" = "启用“跳过权限”";
+"Desactiva «Salta els permisos»" = "停用“跳过权限”";
+"Canvia el nom de la sessió" = "更改会话名称";
+
+/* EditorOrdres i EditorPlantilla: «Duplica», els avisos del menú de la icona i per què no es pot canviar la plantilla */
+"Duplica" = "复制";
+"La configuració té errors" = "配置有错误";
+"Es llegeix la configuració…" = "正在读取配置…";
+"Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb «%@»." = "还没有配置。如果从Warp导入，未打开Claude的标签页会保持为仅终端。你添加的标签页，以及在其中启用Claude的这些标签页，会以“%@”打开。";
+"No es pot canviar: %@" = "无法更改：%@";
+
+/* VistaEditor: els estats buits, la barra d'eines, la barra lateral, els menús contextuals i els bàners */
+"No es pot obrir la configuració" = "无法打开配置";
+"%@. No s'hi escriurà res fins que es pugui llegir." = "%@。在能够读取之前，不会向其中写入任何内容。";
+"Torna a carregar" = "重新载入";
+"Encara no hi ha cap configuració" = "还没有配置";
+"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "导入你在Warp中打开的窗口，或从空白开始。在你做出选择之前，不会写入任何内容。";
+"Importa de Warp…" = "从Warp导入…";
+"Llegeix Warp i mostra què se n'importaria, abans de crear res" = "读取Warp并显示将导入的内容，然后再创建";
+"Comença en blanc" = "从空白开始";
+"Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "在Warp中打开此窗口。表单会先显示将打开的内容，并请你确认";
+"Nova pestanya…" = "新建标签页…";
+"Nova pestanya: en tries la carpeta (⌘T)" = "在你选取的文件夹中添加标签页（⌘T）";
+"Tria la carpeta de la pestanya nova" = "选取新标签页的文件夹";
+"Afegeix" = "添加";
+"Amaga l'inspector" = "隐藏检查器";
+"Mostra l'inspector" = "显示检查器";
+"Mostra o amaga l'inspector (⌥⌘I)" = "显示或隐藏检查器（⌥⌘I）";
+"Pestanyes amb avisos de totes les finestres" = "所有窗口中有警告的标签页";
+"Mou amunt" = "上移";
+"Mou avall" = "下移";
+"Elimina" = "删除";
+"Prova: %@" = "测试：%@";
+"Configuració de prova (--config): %@" = "测试配置（--config）：%@";
+"Cap pestanya no té avisos." = "没有标签页有警告。";
+"Finestra sense pestanyes" = "此窗口中没有标签页";
+"Afegeix-hi una pestanya: en tries la carpeta, i Claude hi tindrà les opcions de la plantilla." = "添加一个标签页：选取其文件夹，Claude会在其中使用模板的选项。";
+"Una finestra de Warp agrupa pestanyes. Afegeix-ne una per començar." = "一个Warp窗口包含一组标签页。添加一个标签页即可开始。";
+"Enganxa" = "粘贴";
+"Mou a" = "移到";
+"Retalla" = "剪切";
+"Copia" = "拷贝";
+"Copia l'ordre" = "拷贝命令";
+"Copia les ordres" = "拷贝命令";
+"Nom" = "名称";
+"Descarta els canvis d'aquí i llegeix el fitxer tal com és ara" = "放弃此处的更改，按文件当前的内容读取";
+"Torna-ho a provar" = "重试";
+"No s'ha pogut desar: %@" = "无法保存：%@";
+"Mostra-les" = "显示";
+"D'acord" = "好";
+
+/* VistaInspector: la finestra, la pestanya, el bloc de Claude i l'ordre */
+"Cada canvi s'aplica a totes." = "每项更改都会应用到所有选中项。";
+"Finestra" = "窗口";
+"Pestanyes" = "标签页";
+"Mostra quines pestanyes s'obririen a Warp, i amb quina conversa; no obre res fins que ho confirmis" = "显示哪些标签页会在Warp中打开以及使用哪个对话；在你确认之前不会打开任何内容";
+"Pestanya" = "标签页";
+"Carpeta" = "文件夹";
+"Tria…" = "选取…";
+"Tria la carpeta al Finder" = "在访达中选取文件夹";
+"Altres opcions" = "其他选项";
+"L'editor no les canvia: es conserven tal com són." = "编辑器不会更改它们，会原样保留。";
+"Ordre" = "命令";
+"Tria la carpeta de la pestanya" = "选取标签页的文件夹";
+"Tria" = "选取";
+"Obre Claude Code" = "打开Claude Code";
+"Obre Claude Code en aquesta pestanya" = "在此标签页中打开Claude Code";
+"Model" = "模型";
+"Esforç" = "努力程度";
+"Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode" = "使用dynamic workflows进行编排。努力程度为“超高”时，命令使用--effort ultracode";
+"En obrir-la, la pestanya reprèn la conversa més recent de la seva carpeta en lloc de començar-ne una de nova" = "打开时，标签页会恢复其文件夹中最近的对话，而不是开始新对话";
+"Conversa" = "对话";
+"La conversa més recent de la seva carpeta. Si no n'hi ha cap, se'n començarà una de nova" = "其文件夹中最近的对话。如果没有，将开始新对话";
+"Nom de la sessió" = "会话名称";
+"Cap" = "无";
+"Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "固定的会话名称（-n）：显示在/resume选择器和终端标题中";
+"--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions：Claude不会为任何操作请求权限，它直接用claude --bg启动的新任务也是如此";
+"Mode de permisos" = "权限模式";
+"Amb «Salta els permisos», Claude no fa cas del mode" = "启用“跳过权限”时，Claude会忽略该模式";
+"Treu el mode de permisos" = "移除权限模式";
+"reprèn %@" = "恢复%@";
+"nova" = "新对话";
+"Només terminal: no s'hi obre Claude." = "仅终端：不会在其中打开Claude。";
+
+/* Ordres: els menús Arxiu, Pestanya i Visualització */
+"Torna a importar-ho tot de Warp…" = "从Warp重新导入全部…";
+"Lliga amb Warp…" = "与Warp关联…";
+"Mostra el fitxer al Finder" = "在访达中显示文件";
+"Cap altra finestra" = "没有其他窗口";
+
+/* VistaConfiguracio: les pestanyes de la Configuració, la plantilla, en iniciar sessió, el fitxer, les actualitzacions, el diagnòstic i deixar de fer servir l'app */
+"General" = "通用";
+"Pestanyes noves" = "新标签页";
+"Actualitzacions" = "更新";
+"Obre Claude Code a les pestanyes noves" = "在新标签页中打开Claude Code";
+"En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova" = "打开时，标签页会恢复其对话，而不是开始新对话";
+"%@ (no s'aplica)" = "%@（不适用）";
+"Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom" = "写在文件中：新标签页从不复制它，否则所有标签页都会同名";
+"S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien." = "应用于新标签页和导入时没有Claude会话的标签页。已有的标签页不会改变。";
+"La Configuració no les canvia: es conserven tal com són." = "此处无法更改它们，会原样保留。";
+"Obre Warp Launch en iniciar sessió" = "登录时打开Warp Launch";
+"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions" = "需要在“登录项与扩展”中允许，macOS才会打开它";
+"Mostra Ítems d’inici de sessió i extensions…" = "显示“登录项与扩展”…";
+"En iniciar sessió" = "登录时";
+"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions." = "Warp准备就绪后，显示“在Warp中打开全部…”及缺少的窗口。在你点按之前不会打开任何内容。也可以在“系统设置” › “通用” › “登录项与扩展”中关闭此功能。";
+"Fitxer" = "文件";
+"Carpeta de la configuració" = "配置文件夹";
+"Mostra al Finder" = "在访达中显示";
+"Configuració de prova (--config)" = "测试配置（--config）";
+"Versió" = "版本";
+"Estat" = "状态";
+"No s'ha pogut preparar l'actualització: %@" = "无法准备更新：%@";
+"Actualitza automàticament" = "自动更新";
+"Comprova ara" = "立即检查";
+"Actualitza ara" = "立即更新";
+"Reinicia i actualitza" = "重新启动并更新";
+"Mostra la finestra" = "显示窗口";
+"Copia el diagnòstic" = "拷贝诊断信息";
+"Copia el diagnòstic complet" = "拷贝完整诊断信息";
+"Informe per a una issue a GitHub" = "用于GitHub Issue的报告";
+"Diagnòstic" = "诊断";
+"Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de les carpetes; el complet, sí." = "检查Warp和Claude Code是否更改了App读取的内容，并将报告（英文）拷贝到剪贴板。不会打开或更改任何内容。报告不包含你的用户名、个人文件夹路径和文件夹名称；完整报告会包含。";
+"Restaura Warp i surt…" = "恢复Warp并退出…";
+"Restaura Warp i surt" = "恢复Warp并退出";
+"Torna a deixar Warp com era" = "将Warp恢复原样";
+"Deixar de fer servir Warp Launch" = "停止使用Warp Launch";
+
+/* SelectorIdioma: la secció «Idioma» de la Configuració (F4) */
+"Idioma" = "语言";
+"Idioma de l'app" = "App语言";
+"El del sistema (%@)" = "系统语言（%@）";
+"L'idioma canviarà la propera vegada que obris l'app." = "下次打开App时语言才会更改。";
+
+/* Actualitzacions: l'estat, el peu, l'ítem del menú i el motiu d'esperar (amb el motiu de PoliticaActualitzacions a dins) */
+"la versió «%@» no té la forma que toca" = "版本“%@”的格式不正确";
+"La %@ s'instal·larà quan l'app es pugui reiniciar." = "版本%@将在App可以重新启动时安装。";
+"Encara no s'ha comprovat" = "尚未检查";
+"Comprovant…" = "正在检查…";
+"Hi ha la %@." = "有可用的版本%@。";
+"L'actualització a la %@ continua a la seva finestra." = "更新到版本%@的过程在其窗口中继续。";
+"Baixant la %@…" = "正在下载版本%@…";
+"La %@ és a punt: s'aplicarà sola quan no facis servir l'app." = "版本%@已准备就绪：会在你不使用App时自动安装。";
+"La %@ és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»." = "版本%@已准备就绪：会在你退出App时安装，或点按“重新启动并更新”安装。";
+"S'està actualitzant…" = "正在更新…";
+"No s'ha pogut comprovar: %@." = "无法检查：%@。";
+"No s'ha pogut baixar o preparar la %@." = "无法下载或准备版本%@。";
+"Ara no: %@" = "暂不进行：%@";
+"La %@ no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la." = "版本%@无法自动安装。请尝试“重新启动并更新”，或重新安装。";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen." = "App每天在GitHub上检查一次新版本，并在你不使用时自动更新。GitHub会看到你的IP地址和App的版本。Warp和Claude不会被关闭。";
+"Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app." = "自动更新关闭时，App不会自行重新启动：更新会在你退出App时安装。";
+"L'actualització espera per reiniciar…" = "更新正在等待重新启动…";
+"Reinicia i actualitza a la %@" = "重新启动并更新到%@";
+"Mostra la finestra de l'actualització" = "显示更新窗口";
+"Comprova si hi ha actualitzacions…" = "检查更新…";
+"Última comprovació: fa menys d'1 min" = "上次检查：不到1分钟前";
+"Última comprovació: fa %lld min" = "上次检查：%lld分钟前";
+"Última comprovació: fa %lld h" = "上次检查：%lld小时前";
+"Tens l'última versió. Comprovat el %@ a les %@." = "你使用的是最新版本。检查于%@ %@。";
+"Tens l'última versió. Comprovat avui a les %@." = "你使用的是最新版本。检查于今天%@。";
+
+/* ConsentimentRestauracio i VistaConsentiment: la pantalla del permís i retirar-lo */
+"Mentrestant, «%@» ha canviat: torna-ho a provar." = "在此期间，“%@”已更改：请重试。";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració." = "App每天在GitHub上检查一次新版本，并自动更新。你可以在“设置”中关闭此功能。";
+"Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la tornes a obrir, te'l tornarà a demanar." = "Warp Launch已按你确认时所说的方式还原了Warp的设置，并且不再拥有更改该设置的许可。如果你再次打开它，它会重新请求许可。";
+"Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar la propera vegada." = "没有此许可，就无法使用Warp Launch。如果退出，不会保存任何内容，下次还会再询问你。";
+"%@. Mentre no l'arreglis o l'esborris, Warp Launch no es pot fer servir." = "%@。在你修复或删除它之前，无法使用Warp Launch。";
+"%@. Mentre no l'arreglis o l'esborris (%@), Warp Launch no es pot fer servir." = "%@。在你修复或删除它（%@）之前，无法使用Warp Launch。";
+"Sense carpeta de configuració, Warp Launch no ha tocat Warp." = "没有配置文件夹，Warp Launch未改动Warp。";
+"Ja has deixat de fer servir Warp Launch." = "你已经停止使用Warp Launch。";
+"Sense el teu permís, Warp Launch no ha tocat Warp." = "没有你的许可，Warp Launch未改动Warp。";
+"Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res per tornar com era. Només es pot fer amb la configuració de debò." = "使用测试配置（--config）时，Warp Launch不会改动Warp的设置：没有需要还原的内容。只能在真正的配置下执行。";
+"«%@» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch." = "“%@”中已不再显示你的许可：请重新打开Warp Launch。";
+"No s'ha pogut tornar l'ajust de Warp com era: %@. L'ajust i el permís no han canviat." = "无法将Warp的设置还原：%@。设置和许可均未改变。";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp torna a quedar desactivat, i el permís no ha canviat." = "无法撤回许可：%@。Warp的设置已重新停用，许可未改变。";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat." = "无法撤回许可：%@。Warp的设置保持启用，与默认相同（Warp没有“settings.toml”）：当Warp打开且有标签页时，Warp Launch会将其停用。许可未改变。";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat." = "无法撤回许可：%@。Warp的设置保持启用，且无法再次停用：Warp Launch会在一分钟后重试。许可未改变。";
+"Has deixat de fer servir Warp Launch" = "你已停止使用Warp Launch";
+"Warp Launch ha de desactivar un ajust de Warp" = "Warp Launch需要停用一项Warp设置";
+"Abans de començar, necessita el teu permís." = "开始之前，它需要你的许可。";
+"Per què cal" = "为什么需要";
+"Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides." = "Warp启动时可能会重新打开上次的标签页，但不带Claude。Warp Launch不会将它们识别为自己的标签页，打开你的窗口时，这些标签页会重复。";
+"Què canvia" = "会改变什么";
+"A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als teus altres Macs." = "在Warp中，“Restore windows, tabs, and panes on startup”设置会被停用（即使你从未更改过它，Warp Launch也会将其写入Warp的设置文件）。如果你使用Settings Sync，你的其他Mac上也会如此。";
+"Només quan li demanes que llegeixi les finestres de Warp (per exemple, en importar-les), Warp Launch l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "只有当你要求它读取Warp的窗口时（例如导入时），Warp Launch才会将该设置启用几秒钟，让Warp保存窗口，然后再停用。";
+"Configuració de prova (%@): l'app no tocarà aquest ajust." = "测试配置（%@）：App不会改动此设置。";
+"No s'ha pogut desar el permís: %@." = "无法保存许可：%@。";
+"Accepta" = "接受";
+
+/* Desinstallacio: «Restaura Warp i surt…» i la seva confirmació */
+"Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt." = "Warp Launch不会再在登录时打开。要重新开启，请使用上方的开关。";
+"L'ajust de Warp %@ tornarà a estar activat, com el tenies abans de Warp Launch." = "Warp的%@设置会重新启用，与你使用Warp Launch之前一样。";
+"L'ajust de Warp %@ es quedarà desactivat, com el tenies abans de Warp Launch." = "Warp的%@设置会保持停用，与你使用Warp Launch之前一样。";
+"No se sap com tenies l'ajust de Warp %@ abans de Warp Launch, perquè ja la feies servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp." = "无法知道你在使用Warp Launch之前如何设置Warp的%@，因为在它请求许可之前你就已经在使用它：该设置会被启用，与Warp的默认设置相同。";
+"Warp Launch no ha canviat mai l'ajust de Warp %@: es queda com és." = "Warp Launch从未更改过Warp的%@设置：保持原样。";
+"Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de sessió si hi és, i surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la Paperera." = "将Warp的设置还原，撤回Warp Launch的许可，如果它在你的登录项中则将其移除，然后退出。配置不会被删除。要完全卸载，请随后将它拖到废纸篓。";
+"Vols deixar de fer servir Warp Launch?" = "要停止使用Warp Launch吗？";
+"En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust també canviarà als teus altres Macs." = "Warp启动时，会重新打开上次的标签页，但不带Claude。如果你使用Settings Sync，你的其他Mac上的设置也会改变。";
+"Warp Launch deixarà de tenir permís per tocar l'ajust, sortirà dels ítems d'inici de sessió i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launch将不再拥有更改该设置的许可，会从登录项中移除，然后退出。配置不会被删除。如果你再次打开它，它会重新请求许可。";
+"Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launch将不再拥有更改该设置的许可，然后退出。配置不会被删除。如果你再次打开它，它会重新请求许可。";
+
+/* RefrescWarp: per què no es pot tocar l'ajust de Warp, i les notes i els avisos del menú de la icona */
+"«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" = "Warp的“settings.toml”刚刚更改（请几秒钟后重试）";
+"Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)" = "Warp没有“settings.toml”，而Warp Launch只会在Warp已打开且有标签页时创建它，以便Warp先将旧设置迁移进去（请打开Warp后重试）";
+"Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, Warp Launch hi desactivarà la restauració de sessió en menys d'un minut." = "Warp还没有设置文件。当Warp打开且有标签页时，Warp Launch会在一分钟内停用其会话恢复。";
+"Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la restauració de sessió en menys d'un minut." = "此用户从未打开过Warp：它没有设置文件夹，也没有要恢复的窗口。当Warp创建该文件夹并打开且有标签页时，Warp Launch会在一分钟内停用其会话恢复。";
+"El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot desactivar la restauració de sessió. Ho continua provant cada minut." = "Warp的设置文件不断变化，Warp Launch无法在其中停用会话恢复。它会每分钟继续尝试。";
+"No es pot mirar la restauració de sessió de Warp: %@" = "无法检查Warp的会话恢复：%@";
+"No es pot activar la restauració de sessió de Warp: %@" = "无法启用Warp的会话恢复：%@";
+"No s'ha pogut desactivar la restauració de sessió de Warp: %@. Si Warp es tanca, restaurarà les finestres sense Claude." = "无法停用Warp的会话恢复：%@。如果Warp退出，它会恢复窗口，但不带Claude。";
+
+/* Obertura, ObreTot i Lligam: per què no s'obre o no es lliga, i el resultat d'«Obre-ho tot» */
+"No s'ha pogut obrir Warp: %@" = "无法打开Warp：%@";
+"La finestra ja no és a la configuració, o no té pestanyes" = "该窗口已不在配置中，或没有标签页";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp已关闭，打开时会恢复这些标签页，但不带Claude。请打开Warp后重试。";
+"Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp已关闭：App会先打开它。Warp还会恢复之前的窗口，但不带Claude。";
+"Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp已关闭：App会先打开它。启动时，Warp还会打开一个空窗口，你可以将其关闭。";
+"Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "退出Warp可能会使Claude的后台任务中途停止，重新打开标签页也不会使其继续。";
+"No s'ha pogut desar la configuració: %@" = "无法保存配置：%@";
+"No s'ha pogut desar la configuració" = "无法保存配置";
+"No s'ha pogut llegir Warp: %@" = "无法读取Warp：%@";
+"tots els Claude s'engegaran alhora" = "所有Claude会话会同时启动";
+"«%@»: %@" = "“%@”：%@";
+"«%@»: no s'ha pogut obrir." = "“%@”：无法打开。";
+"Cap finestra de la configuració no té pestanyes" = "配置中没有任何窗口有标签页";
+"Les pestanyes amb Claude que obre l'app es lliguen soles." = "App打开的带Claude的标签页会自动关联。";
+
+/* FullObertura: el full d'«Obre a Warp…» i d'«Obre-ho tot a Warp…» */
+"Obre «%@» a Warp" = "在Warp中打开“%@”";
+"Llegint Warp i les sessions de Claude…" = "正在读取Warp和Claude会话…";
+"No es pot obrir" = "无法打开";
+"No s'ha obert cap pestanya." = "未打开任何标签页。";
+"Obre-ho tot a Warp" = "在Warp中打开全部";
+"Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir" = "表单打开期间Warp发生了变化：打开前请复查";
+"Totes les marcades s'obren alhora. Si una no s'obre, les altres continuen, i al final es diu què ha passat." = "所有勾选的窗口会同时打开。如果其中一个无法打开，其他窗口会继续，最后会显示结果。";
+"%@ › %@" = "%@ › %@";
+"Totes les pestanyes ja són obertes" = "所有标签页均已打开";
+"Comprovant que Warp no ha canviat…" = "正在检查Warp是否有变化…";
+"Obrint Warp…" = "正在打开Warp…";
+"Esperant les finestres noves i els seus Claude (fins a 30 s)…" = "正在等待新窗口及其Claude会话（最多30秒）…";
+"No hi ha cap pestanya per obrir" = "没有要打开的标签页";
+"S'obriran (%lld)" = "将打开（%lld）";
+"Avisos" = "警告";
+"Ja obertes (%lld): no s'obriran" = "已打开（%lld）：不会打开";
+"No es poden obrir (%lld)" = "无法打开（%lld）";
+"Detalls" = "详细信息";
+"versió desconeguda" = "未知版本";
+"Fitxer temporal" = "临时文件";
+"L'app escriu aquest fitxer a la carpeta de launch configurations de Warp, li demana que l'obri, i l'esborra en quant veu que Warp l'ha obert (o als 30 s)." = "App会将此文件写入Warp的launch configurations文件夹，请Warp打开它，并在看到Warp已打开后（或30秒后）将其删除。";
+"Obrint a Warp…" = "正在Warp中打开…";
+"Esperant la finestra nova (fins a 30 s)…" = "正在等待新窗口（最多30秒）…";
+"Esperant que arrenqui Claude a cada pestanya (fins a 30 s)…" = "正在等待Claude在每个标签页中启动（最多30秒）…";
+"Obre Warp, escriu el fitxer temporal i li demana que obri la finestra" = "打开Warp，写入临时文件，并请它打开窗口";
+"Escriu el fitxer temporal i demana a Warp que obri la finestra" = "写入临时文件，并请Warp打开窗口";
+"Escriu un fitxer temporal per finestra i demana a Warp que les obri totes alhora" = "为每个窗口写入一个临时文件，并请Warp同时打开它们";
+
+/* FullLligam: el full de «Lliga amb Warp…» */
+"Lliga amb Warp" = "与Warp关联";
+"No es pot lligar amb Warp" = "无法与Warp关联";
+"No s'ha desat res." = "未保存任何内容。";
+"«Obre a Warp…» ja no tornarà a obrir les que són obertes, i l'app en recordarà la conversa de Claude." = "“在Warp中打开…”将不再重新打开已打开的标签页，App会记住它们的Claude对话。";
+"Per a cada pestanya de la configuració, la pestanya de Warp on ja és oberta. Les lligades no es tornaran a obrir mentre siguin obertes, i l'app en recordarà la conversa de Claude. No canvia la configuració, ni obre o tanca res de Warp." = "为配置中的每个标签页找到它已在其中打开的Warp标签页。已关联的标签页在保持打开期间不会再次打开，App会记住它们的Claude对话。不会更改配置，也不会在Warp中打开或关闭任何内容。";
+"Totes les pestanyes ja estan lligades amb Warp" = "所有标签页均已与Warp关联";
+"Cap pestanya sense lligam no té parella a Warp" = "没有任何未关联的标签页在Warp中有匹配项";
+"Per finestra" = "按窗口";
+"Comprova-les (%lld)" = "待复查（%lld）";
+"Desmarca les que no siguin la mateixa pestanya: quedaran sense lligar, i s'obriran si n'obres la finestra." = "取消勾选不是同一标签页的项目：它们会保持未关联，打开其窗口时会打开它们。";
+"Sense parella (%lld): s'obriran si n'obres la finestra" = "无匹配项（%lld）：打开其窗口时会打开它们";
+"Les altres (%lld)" = "其他（%lld）";
+"Ja lligades: %lld" = "已关联：%lld";
+"%lld per la conversa de Claude" = "%lld个按Claude对话匹配";
+"%lld pel títol i la carpeta" = "%lld个按标题和文件夹匹配";
+"%lld només pel títol" = "%lld个仅按标题匹配";
+"%lld només per la carpeta" = "%lld个仅按文件夹匹配";
+"Ja lligades: %lld (no canvien)" = "已关联：%lld（不变）";
+"%lld de %lld" = "%lld/%lld";
+"%lld de %lld · finestra %@ de Warp" = "%lld/%lld · Warp窗口%@";
+"%lld de %lld · finestres %@ de Warp" = "%lld/%lld · Warp窗口%@";
+"%@: hi corre la seva conversa de Claude" = "%@：其Claude对话在此运行";
+"%@, a %@: el títol coincideix, la carpeta no" = "%@，位于%@：标题匹配，文件夹不匹配";
+"%@, a %@: la carpeta coincideix, el títol no" = "%@，位于%@：文件夹匹配，标题不匹配";
+"Desa els lligams a «estat.json». No canvia la configuració ni toca Warp" = "将关联保存到“estat.json”。不会更改配置，也不会改动Warp";
+
+/* FullImportacio i VistaImportacio: el full d'importar */
+"ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. Torna-ho a provar quan acabi." = "现在正在Warp中打开窗口，或Warp Launch正在更新。请在完成后重试。";
+"Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes." = "请在此处选择“从空白开始”，然后添加标签页。";
+"La configuració no canvia." = "配置不会改变。";
+"Si no, tria «Comença en blanc» i afegeix-hi les pestanyes." = "否则，请选择“从空白开始”，然后添加标签页。";
+"No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes." = "没有可导入的内容：请选择“从空白开始”，然后添加标签页。";
+"No hi ha res per importar, i la configuració no canvia." = "没有可导入的内容，配置不会改变。";
+"Importa de Warp" = "从Warp导入";
+"Torna a importar-ho tot de Warp" = "从Warp重新导入全部";
+"Crea" = "创建";
+"Substitueix" = "替换";
+"%lld amb Claude, amb l'ordre de la seva sessió" = "%lld个带Claude，使用其会话的命令";
+"%lld sense Claude obert" = "%lld个未打开Claude";
+"%lld a la carpeta d'inici" = "%lld个在个人文件夹中";
+"%lld amb una carpeta que ja no existeix" = "%lld个的文件夹已不存在";
+"%lld més" = "另外%lld个";
+"%lld només terminal: %@" = "%lld个仅终端：%@";
+"Queda només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "保持为仅终端。要在其中打开Claude，请在检查器中勾选“在此标签页中打开Claude Code”：它会以此命令打开。";
+"Queden només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "保持为仅终端。要在其中打开Claude，请在检查器中勾选“在此标签页中打开Claude Code”：它们会以此命令打开。";
+"Es desarà la configuració a %@. No s'obre res de Warp ni de Claude." = "配置将保存到%@。不会打开Warp或Claude中的任何内容。";
+"Es desarà la configuració. No s'obre res de Warp ni de Claude." = "配置将被保存。不会打开Warp或Claude中的任何内容。";
+"%@, per si hi has obert o tancat res" = "%@，以防你打开或关闭了某些内容";
+"Llegint Warp…" = "正在读取Warp…";
+"La plantilla ha canviat a la Configuració: prem «%@» per importar amb la nova" = "模板已在“设置”中更改：点按“%@”以使用新模板导入";
+"Avisos de la lectura" = "读取时的警告";
+"Pestanyes que no tenien Claude obert" = "未打开Claude的标签页";
+"Notes" = "备注";
+
+/* EstatWarp i EstatSessions: la línia de Warp al menú de la icona i per què no es pot obrir */
+"Warp: encara no s'ha llegit" = "Warp：尚未读取";
+"Warp: llegint…" = "Warp：正在读取…";
+"Warp: no s'ha pogut llegir (%@)" = "Warp：无法读取（%@）";
+"Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "使用测试配置（--config）时，App不会改动此设置，也无法让Warp保存窗口。使用真正的配置则可以：它会将该设置启用几秒钟让Warp保存，然后再停用。";
+"«estat.json» no es pot fer servir: %@" = "“estat.json”无法使用：%@";
+"«estat.json» encara no s'ha llegit" = "“estat.json”尚未读取";
