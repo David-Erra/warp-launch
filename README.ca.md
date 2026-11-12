@@ -99,6 +99,9 @@ del tap). És la que instal·len `brew` i la comanda de «Sense Homebrew».
 Només publica el que hi ha a `origin/main`, sense canvis per fer commit, i una versió que encara no hi sigui. Si la recepta no
 es pot escriure, la versió no s'esborra, i l'script diu què cal canviar a mà.
 
+- **Versions de prova, `--beta`:** publica la de `VERSION`, amb les mateixes comprovacions i el zip signat, com a *pre-release* de GitHub, que mai no és l'última: no hi arriba sola cap còpia i la recepta no es toca. Ha de ser posterior a l'última normal i sense sufix (`0.35.0`, no `0.35.0-beta`). Els provadors la instal·len amb `instal·la.sh --github --versio X.Y.Z` (l'ordre és a les notes).
+- **`--promou X.Y.Z`:** passa aquesta versió de prova a l'última (arriba sola a tots els Macs) i posa a la recepta el sha256 del zip que ja hi ha publicat, sense compilar ni signar res; abans comprova el zip baixat i el seu `appcast.xml` amb la clau pública. [`docs/disseny.md`](docs/disseny.md), secció 11, «Betes».
+
 **La 0.33.0 (11/11/2026) és la primera publicada així,** amb l'appcast signat i la recepta amb `auto_updates true`. La 0.31.5 es va
 publicar amb l'script d'aquella versió, sense actualitzacions automàtiques.
 **Des de la 0.33.0, publicar ja no es desfà:** la versió arriba sola, en un dia, a tots els Macs que tinguin la 0.33.0 o posterior. Com

@@ -102,6 +102,14 @@ in the cask (`Casks/warp-launch.rb` in the tap). That's the one that `brew` and 
 It only publishes what's in `origin/main`, with nothing left to commit, and a version that isn't there yet. If the cask can't be
 written, the version isn't deleted, and the script says what to change by hand.
 
+- **Test versions, `--beta`:** publishes the version in `VERSION`, with the same checks and the signed zip, as a GitHub
+  *pre-release*, which is never the latest: no copy gets it on its own and the cask isn't touched. It must be newer than the
+  latest normal version and have no suffix (`0.35.0`, not `0.35.0-beta`). Testers install it with
+  `instal·la.sh --github --versio X.Y.Z` (the command is in the release notes).
+- **`--promou X.Y.Z`:** makes that test version the latest (it reaches every Mac on its own) and writes to the cask the sha256 of
+  the zip already published, without building or signing anything; first it checks the downloaded zip and its `appcast.xml`
+  with the public key. [`docs/disseny.md`](docs/disseny.md), section 11, “Betes”.
+
 **0.33.0 (November 11, 2026) is the first one published this way,** with the signed appcast and the cask with `auto_updates true`.
 0.31.5 was published with that version's script, without automatic updates.
 **Since 0.33.0, publishing can't be undone:** the version reaches every Mac with 0.33.0 or later on its own, within a day. How to
