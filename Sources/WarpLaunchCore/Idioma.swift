@@ -31,15 +31,29 @@ public enum Idioma {
     /// es comparteix a les incidències de GitHub, hi compon els motius que pren del Core (`Diagnostic.executa`).
     @TaskLocal static var fixada: String?
 
+    /// Només per a les proves (F6, `PseudollenguaTests`): uns textos que no són els del paquet, en una llengua que no existeix
+    /// (una pseudollengua feta del català), amb el `locale` de les llistes. Per sobre de `deProva`.
+    @TaskLocal static var textosDeProva: TextosDeProva?
+
+    struct TextosDeProva: Sendable {
+        let textos: Textos
+        let llengua: String
+        let locale: Locale
+    }
+
     /// La llengua dels textos, entre les que en tenen (`ca`, `en`, `pt-BR`…).
     public static var efectiva: String {
         if let fixada { return tria(disponibles: disponibles, preferencies: [fixada]) }
+        if let textosDeProva { return textosDeProva.llengua }
         if let deProva { return tria(disponibles: disponibles, preferencies: [deProva]) }
         return delProces
     }
 
     /// El `locale` de la llengua dels textos: els plurals i les xifres la segueixen a ella, no la regió del Mac.
-    public static var locale: Locale { Locale(identifier: efectiva) }
+    public static var locale: Locale {
+        if fixada == nil, let textosDeProva { return textosDeProva.locale }
+        return Locale(identifier: efectiva)
+    }
 
     /// Una enumeració, amb la conjunció i les comes de la llengua dels textos: «A i B», «A, B i C» (en anglès, «A, B, and C»;
     /// en japonès, «A、B、C»).
@@ -130,7 +144,8 @@ public enum Idioma {
 /// El text en la llengua de l'app. La clau és el text en català, i pot portar valors (`t("\(n) finestres")`, amb la clau
 /// «%lld finestres»): els plurals són al `.stringsdict`.
 public func t(_ clau: String.LocalizationValue) -> String {
-    Idioma.text(clau, textos: Idioma.textos, llengua: Idioma.efectiva)
+    let textos = Idioma.fixada == nil ? Idioma.textosDeProva?.textos ?? Idioma.textos : Idioma.textos
+    return Idioma.text(clau, textos: textos, llengua: Idioma.efectiva)
 }
 
 /// Els textos d'un bundle de recursos: una carpeta `.lproj` per llengua.

@@ -2254,6 +2254,27 @@ extension GuardaTests {
         }
     }
 
+    /// Les llengües de prova (`Idioma.deProva`) i la pseudollengua (`Idioma.textosDeProva`, F6) només les fixen les proves: al
+    /// codi, cap bloc no canvia la llengua ni els textos, fora del diagnòstic, que es compon en anglès (`Idioma.$fixada`). Una
+    /// línia de documentació (`///`) les pot esmentar.
+    @Test func nomesLesProvesCanvienLaLlenguaOElsTextos() throws {
+        let deProva = [#"\$deProva"#, #"\$textosDeProva"#, #"textosDeProva\s*="#]
+        let codi = try fitxers("Sources").map { fitxer in
+            (ruta: fitxer.ruta, text: fitxer.text.split(separator: "\n", omittingEmptySubsequences: false)
+                .map { $0.trimmingCharacters(in: .whitespaces).hasPrefix("///") ? "" : String($0) }.joined(separator: "\n"))
+        }
+        let trobades = try aparicions(de: deProva, a: codi)
+        #expect(trobades.isEmpty, "\(trobades.joined(separator: "\n"))")
+        // `$fixada`, només al diagnòstic.
+        let fixada = try aparicions(de: [#"\$fixada"#], a: codi)
+        #expect(fixada.allSatisfy { $0.hasPrefix("Sources/WarpLaunchCore/Diagnostic.swift:") }, "\(fixada)")
+        #expect(fixada.count == 1, "\(fixada)")
+        // La mostra: cada expressió veu el que ha de veure.
+        for mostra in ["Idioma.$deProva.withValue(\"en\") { x }", "Idioma.$textosDeProva.withValue(p) { x }"] {
+            #expect(!(try aparicions(de: deProva, a: [(ruta: "mostra", text: mostra)])).isEmpty, "\(mostra)")
+        }
+    }
+
     /// Cada `t("…")` del codi és al català (fase F2): la clau, com la fa el compilador, és al `.strings` o al `.stringsdict` del
     /// català. Un text que no hi és sortiria en català en totes les llengües, sense dir res. Una interpolació fa la clau amb
     /// l'especificador del tipus del valor (`%@` per a un text, `%lld` per a un `Int`…), que no surt del codi font: n'hi ha prou que
