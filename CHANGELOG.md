@@ -3,30 +3,26 @@
 Published versions of Warp Launch. Versions in between were never published: their changes are listed under the next
 published one. Dates are when the version was published on GitHub.
 
-## 0.36.0
+## 1.0.0
 
+- **Signed with Developer ID and notarized by Apple:** download it with your browser and open it like any other app. macOS asks once
+  again for the Files & Folders permission, because the app's signature changes.
+- **10 languages:** Catalan, English, Spanish, French, German, Italian, Brazilian Portuguese, Japanese, Simplified Chinese
+  and Korean. The app follows the language of your Mac; **Settings › General › Language** picks another one (it applies the next
+  time you open the app). When your Mac's language isn't one of them, the app is in English. The names of macOS menus and
+  settings are the ones macOS itself uses in each language.
+- **Tabs without Claude are no longer opened twice.** A terminal-only tab opened by Warp Launch is recognized while
+  its shell is alive, so opening the window again doesn't duplicate it. After a restart, or once you close it, it opens
+  again as before.
 - **A guided first run.** With no configuration yet, the editor explains in three steps what the app does: open in Warp the
   windows you want to get back, import them, and after a restart **Open All in Warp…** reopens them with their Claude
   sessions. If the app doesn't open at login yet, a link takes you to **Settings › General**.
 - **Open System Settings.** When macOS doesn't let the app read Warp's data, the menu bar menu and the import sheet offer
   **Open System Settings**, which goes straight to **Privacy & Security › Files & Folders**. It's the only System Settings
   page the app can open.
-- Tested with Warp 0.2026.11.04 and Claude Code up to 2.1.322: the diagnostic no longer warns about them.
-
-## 0.35.0
-
-- **10 languages:** Catalan, English, Spanish, French, German, Italian, Brazilian Portuguese, Japanese, Simplified Chinese
-  and Korean. The app follows the language of your Mac; **Settings › General › Language** picks another one (it applies the next
-  time you open the app). When your Mac's language isn't one of them, the app is in English. The names of macOS menus and
-  settings are the ones macOS itself uses in each language.
 - The inspector is at least 320 pt wide and the editor window at least 680 pt, so every language fits.
 - The diagnostic is always in English, ready to paste into a GitHub issue.
-
-## 0.34.0
-
-- **Tabs without Claude are no longer opened twice.** A terminal-only tab opened by Warp Launch is recognized while
-  its shell is alive, so opening the window again doesn't duplicate it. After a restart, or once you close it, it opens
-  again as before.
+- Tested with Warp 0.2026.11.04 and Claude Code up to 2.1.322: the diagnostic no longer warns about them.
 - `warp-launch obre <window> --obre` has been tested with real windows.
 
 ## 0.33.0 — 2026-11-11

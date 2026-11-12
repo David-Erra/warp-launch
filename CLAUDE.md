@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (11/11/2026, 0.34.0 al codi; publicada, 0.33.0)
+## Estat (12/11/2026, 1.0.0 al codi, sense publicar; publicada, 0.33.0)
 
 - **Fins a la 1.0.0 (decisió de l'autor, 11/11/2026; el detall, al seu pla privat, fora del repo):** 0.34, el nucli fiable (les pestanyes només de terminal
   es reconeixen i no es dupliquen; reinici, L2 i L5 amb l'OK; en publicar-la, la primera actualització automàtica real); 0.35, multidioma en 10 llengües (ca, en, es, fr, de, it, pt-BR, ja,
@@ -197,6 +197,11 @@ Els requisits són a `docs/especificacio.md`.
 - **0.36.0 (12/11/2026, `docs/disseny.md`, secció 14):** el primer ús guiat (l'estat buit de l'editor, en tres passos, i un enllaç a Configuració › General);
   «Obre la configuració del sistema» obre Arxius i carpetes quan macOS no deixa llegir Warp (decisió 8: només `ServeiPermis`, amb una adreça d'una llista fixa,
   llegida a `tccd` de macOS 27.2); i les versions provades, Warp 0.2026.11.04 i Claude Code fins a la 2.1.322. Només proves i codi llegit: no s'ha vist a l'app.
+- **1.0.0 (12/11/2026, al codi): tot el pla de la 1.0.0, sense proves a l'app** (l'autor: «Desenvolupa fins a v1 sense demanar-me proves. Provarem la v1»).
+  Porta la 0.34.0, la 0.35.0, la 0.36.0 i la notarització preparada (secció 13 de `docs/disseny.md`). **`publica.sh` no publica la 1.0.0 ni cap
+  posterior sense Developer ID** (criteri de la 1.0.0, D-P1), tampoc amb `--promou`; com a `--beta` sí, per provar-la (`ScriptPublicaTests`).
+  Per provar-la: `publica.sh --beta` (l'autor) i `instal·la.sh --github --versio 1.0.0`. Per publicar-la: el certificat, el `TEAM_ID` i `--promou`
+  o una publicació normal. Falten: la revisió visual (F7), el reinici amb la L5, la L2 i la beta amb 2-4 persones.
 - **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».
