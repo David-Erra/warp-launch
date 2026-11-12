@@ -643,7 +643,7 @@ Llegit al registre de l'app (`log show`, procés `WarpLaunch`), a `~/Library/Log
 ## Pestanyes de terminal reconegudes pel shell, i `obre --obre` (11/11/2026, 0.34.0)
 
 Amb l'OK d'en David, l'app tancada i `restore_session = false`. Configuració temporal (`/tmp/warp-launch-prova034`, esborrada després) amb
-1 finestra de 2 pestanyes només de terminal (la carpeta del repo i `~/GitHub-Personal`), cap amb Claude.
+1 finestra de 2 pestanyes només de terminal (la carpeta del repo i la seva carpeta pare), cap amb Claude.
 - **`warp-launch obre «Prova 0.34» --obre --config …`** (primera vegada que s'executa de debò): obre la finestra a les 20:56:58
   («2 pestanyes, 0 amb Claude») i desa a `estat.json` el shell de cada pestanya (`-zsh`, pids 27259 i 27262), cadascun a la seva
   carpeta (comprovat amb `lsof -d cwd`) i amb l'hora d'inici de `ps`. Cap fitxer temporal no queda a `launch_configurations`.
