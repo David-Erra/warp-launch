@@ -1,0 +1,756 @@
+/* Textos de Warp Launch en coreà (docs/disseny.md, secció 12). La clau és el text en català; la referència de cada
+   traducció és en.lproj. Els plurals són a Localizable.stringsdict. */
+
+/* Fase F1: la prova de la infraestructura (IdiomaTests); a F3, el menú */
+"Obre a Warp…" = "Warp에서 열기…";
+
+/* OrdreCLI: l'ajuda del CLI (les ordres i les opcions no es tradueixen) */
+"Ús:" = "사용법:";
+"warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <carpeta>]\n    Finestres i pestanyes obertes a Warp, i la sessió de Claude de cada pestanya." = "warp-launch llegeix [--json] [--warp <warp.sqlite>] [--sessions <폴더>]\n    Warp에 열려 있는 윈도우와 탭, 그리고 각 탭의 Claude 세션.";
+"warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <carpeta>] [--desa --config <carpeta>]\n    La configuració que sortiria de Warp ara, amb els avisos. Sense --desa no escriu res.\n    Les pestanyes on no corre Claude queden només terminal, com a l'app; si s'hi activa Claude,\n    tenen les opcions de la plantilla de ~/.config/warp-launch.\n    --desa la desa a <carpeta>, que no pot tenir cap configuració ni ser ~/.config/warp-launch:\n    la configuració real només es crea des de l'app." = "warp-launch importa [--json] [--warp <warp.sqlite>] [--sessions <폴더>] [--desa --config <폴더>]\n    지금 Warp에서 가져올 구성과 경고. --desa가 없으면 아무것도 쓰지 않습니다.\n    Claude가 실행 중이지 않은 탭은 앱에서와 같이 터미널만 사용합니다. 해당 탭에서 Claude를 켜면\n    ~/.config/warp-launch에 있는 템플릿의 옵션을 사용합니다.\n    --desa는 <폴더>에 저장합니다. 이 폴더에는 구성이 없어야 하며 ~/.config/warp-launch일 수 없습니다.\n    실제 구성은 앱에서만 생성됩니다.";
+"warp-launch configuracio valida [--config <carpeta>]\n    Errors i avisos de la configuració (per defecte, la de ~/.config/warp-launch)." = "warp-launch configuracio valida [--config <폴더>]\n    구성의 오류와 경고(기본값: ~/.config/warp-launch의 구성).";
+"warp-launch obre <nom o número de finestra> [--json] [--config <carpeta>] [--warp <warp.sqlite>]\n        [--sessions <carpeta>]\n    Mode de prova: què passaria si s'obrís la finestra a Warp (quines pestanyes ja són obertes, quines\n    s'obririen i com, i el fitxer i l'URL exactes). No escriu ni obre res, tampoc estat.json." = "warp-launch obre <윈도우 이름 또는 번호> [--json] [--config <폴더>] [--warp <warp.sqlite>]\n        [--sessions <폴더>]\n    테스트 모드: 윈도우를 Warp에서 열면 어떻게 되는지 보여 줍니다(이미 열려 있는 탭, 열릴 탭과\n    여는 방법, 정확한 파일과 URL). estat.json을 포함해 아무것도 쓰거나 열지 않습니다.";
+"warp-launch obre <nom o número de finestra> --obre [--config <carpeta>]\n    Obre la finestra a Warp, com el botó «Obre» de l'app: les pestanyes que no són obertes, cadascuna\n    amb el seu Claude. Si Warp és tancat, primer l'obre. No fa res si l'app és oberta." = "warp-launch obre <윈도우 이름 또는 번호> --obre [--config <폴더>]\n    앱의 ‘열기’ 버튼처럼 윈도우를 Warp에서 엽니다. 열려 있지 않은 탭을 각각의 Claude와 함께\n    엽니다. Warp가 닫혀 있으면 먼저 Warp를 엽니다. 앱이 열려 있으면 아무것도 하지 않습니다.";
+"warp-launch diagnostica [--json] [--anonimitza]\n    Comprova si Warp i Claude Code encara tenen la forma que l'app llegeix: els terminals de Warp, els\n    fitxers de sessió i les transcripcions de Claude, ~/.claude.json, les taules de warp.sqlite, les\n    versions (comparades amb les provades) i la restauració de sessió de Warp amb el consentiment. Cada\n    comprovació diu bé, avís o error. L'informe és en anglès, per enganxar-lo en una issue de GitHub.\n    --anonimitza treu el nom d'usuari, la carpeta d'inici i els noms de carpeta (en deixa la forma)." = "warp-launch diagnostica [--json] [--anonimitza]\n    Warp와 Claude Code가 여전히 앱이 읽는 형식인지 확인합니다: Warp의 터미널, Claude의\n    세션 파일과 대화 기록, ~/.claude.json, warp.sqlite 테이블, 버전(테스트된 버전과 비교),\n    동의 상태와 함께 Warp의 세션 복원. 각 확인 항목은 정상, 경고 또는 오류로 표시됩니다.\n    보고서는 GitHub 이슈에 붙여넣을 수 있도록 영어로 작성됩니다.\n    --anonimitza는 사용자 이름, 홈 폴더, 폴더 이름을 제거합니다(형식은 유지).";
+"Només llegeix Warp (warp.sqlite en només lectura), ~/.claude/sessions i, amb obre i diagnostica, el nom de\nles transcripcions de ~/.claude/projects i les carpetes de confiança de ~/.claude.json. Amb diagnostica,\ntambé l'esquema de warp.sqlite, l'Info.plist de Warp, ~/.warp/settings.toml i preferencies.json. No obre ni tanca res,\nexcepte obre --obre, que obre la finestra i escriu estat.json i el fitxer temporal de Warp (i l'esborra).\nCodis de sortida: 0 correcte; 1 no s'ha pogut llegir, desar o obrir (o, amb --obre, no s'ha vist tot\nobert; amb obre, també si no hi ha cap Warp o Warp Preview no deixa obrir res; amb diagnostica, alguna\ncomprovació ha donat error); 2 la configuració (llegida o importada) té errors, o alguna pestanya no\ns'obriria; 64 ús incorrecte." = "Warp(warp.sqlite, 읽기 전용), ~/.claude/sessions, 그리고 obre와 diagnostica에서는 ~/.claude/projects의\n대화 기록 이름과 ~/.claude.json의 신뢰하는 폴더만 읽습니다. diagnostica에서는\nwarp.sqlite 스키마, Warp의 Info.plist, ~/.warp/settings.toml, preferencies.json도 읽습니다. 아무것도 열거나 닫지 않습니다.\n단, obre --obre는 윈도우를 열고 estat.json과 Warp의 임시 파일을 씁니다(임시 파일은 삭제함).\n종료 코드: 0 성공; 1 읽기, 저장 또는 열기 실패(--obre에서는 모두 열린 것을 확인하지 못한 경우,\nobre에서는 Warp가 없거나 Warp Preview 때문에 열 수 없는 경우, diagnostica에서는 확인 항목 중\n오류가 있는 경우도 포함); 2 구성(읽은 구성 또는 가져온 구성)에 오류가 있거나 열리지 않을 탭이 있음;\n64 잘못된 사용법.";
+
+/* OrdreCLI: errors d'ús */
+"ordre: «configuracio valida»" = "명령: ‘configuracio valida’";
+"ordre desconeguda «%@»" = "알 수 없는 명령 ‘%@’";
+"opció desconeguda per a %@: «%@»" = "%@에 대한 알 수 없는 옵션: ‘%@’";
+"falta la ruta després de --warp" = "--warp 뒤에 경로가 없습니다";
+"falta la carpeta després de --sessions" = "--sessions 뒤에 폴더가 없습니다";
+"«--config» hi és més d'un cop" = "‘--config’가 두 번 이상 있습니다";
+"falta la carpeta després de «--config»" = "‘--config’ 뒤에 폴더가 없습니다";
+"la carpeta de «--config» ha de ser una ruta absoluta (que comenci per / o ~/): «%@»" = "‘--config’ 폴더는 절대 경로여야 합니다(/ 또는 ~/로 시작): ‘%@’";
+"«--desa» necessita «--config <carpeta>»: la configuració real només es crea des de l'app" = "‘--desa’에는 ‘--config <폴더>’가 필요합니다: 실제 구성은 앱에서만 생성됩니다";
+"«--config» només serveix amb «--desa»" = "‘--config’는 ‘--desa’와 함께만 사용할 수 있습니다";
+"«--config» no pot ser la configuració real (%@), ni ser-hi a dins, ni passar per «..» o un enllaç trencat: la configuració real només es crea des de l'app" = "‘--config’는 실제 구성(%@)이거나 그 안에 있거나 ‘..’ 또는 끊어진 링크를 거칠 수 없습니다: 실제 구성은 앱에서만 생성됩니다";
+"falta la finestra: «warp-launch obre <nom o número de finestra>»" = "윈도우가 없습니다: ‘warp-launch obre <윈도우 이름 또는 번호>’";
+"«--obre» només funciona amb la comanda «warp-launch» de debò" = "‘--obre’는 실제 ‘warp-launch’ 명령에서만 작동합니다";
+"hi ha més d'una finestra «%@» (%@): tria-la pel número" = "‘%@’ 윈도우가 두 개 이상 있습니다(%@): 번호로 선택하십시오";
+
+/* OrdreCLI: importa i configuracio valida */
+"no s'ha pogut generar el JSON" = "JSON을 생성할 수 없습니다";
+"«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "‘warp-launch importa’는 이 설정을 변경하지 않으며 Warp에 윈도우를 저장하도록 요청할 수 없습니다. 실제 구성을 사용하는 앱은 가능합니다: Warp가 윈도우를 저장하도록 몇 초 동안 설정을 켰다가 다시 끕니다.";
+"ja hi ha una configuració a %@; tria una carpeta buida" = "%@에 이미 구성이 있습니다. 빈 폴더를 선택하십시오";
+"Importació de Warp, desada a %@" = "Warp에서 가져옴, %@에 저장됨";
+"Importació de Warp (vista prèvia: no s'ha desat res)" = "Warp에서 가져옴(미리 보기: 아무것도 저장하지 않음)";
+"Les pestanyes que no tenien Claude obert queden només terminal." = "Claude가 열려 있지 않던 탭은 터미널만 사용합니다.";
+"Notes de la importació:" = "가져오기 메모:";
+"Avisos de la lectura:" = "읽는 중 경고:";
+"Plantilla: la segura, sense saltar els permisos (encara no hi ha cap configuració)." = "템플릿: 안전한 템플릿, 권한 건너뛰기 없음(아직 구성이 없음).";
+"Plantilla: la de %@." = "템플릿: %@의 템플릿.";
+"Plantilla: la segura, sense saltar els permisos (no s'ha pogut llegir %@: %@)." = "템플릿: 안전한 템플릿, 권한 건너뛰기 없음(%@을(를) 읽을 수 없음: %@).";
+"no hi ha cap configuració a %@" = "%@에 구성이 없습니다";
+"Configuració: %@" = "구성: %@";
+"Avisos del fitxer:" = "파일 경고:";
+"Ordres de Claude:" = "Claude 명령:";
+"sense Claude" = "Claude 없음";
+"Claude, de la seva ordre" = "Claude, 자체 명령 사용";
+
+/* OrdreCLI: obre i obre --obre */
+"la configuració ha canviat mentre s'obria Warp: torna-ho a provar" = "Warp가 열리는 동안 구성이 변경되었습니다: 다시 시도하십시오";
+"%@: %@; l'app no obriria res" = "%@: %@. 앱이 아무것도 열지 않습니다";
+"l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. No s'ha obert res." = "Warp Launch 앱이 열려 있습니다: 앱에서 윈도우를 열거나, 앱을 종료하고 다시 시도하십시오. 아무것도 열지 않았습니다.";
+"No s'ha obert res." = "아무것도 열지 않았습니다.";
+"S'obre a Warp (--obre)." = "Warp에서 여는 중(--obre).";
+"no s'ha obert res: %@" = "아무것도 열지 않았습니다: %@";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar. No s'ha obert res." = "Warp가 닫혀 있으며, 열리면 이 탭들을 Claude 없이 복원합니다. Warp를 열고 다시 시도하십시오. 아무것도 열지 않았습니다.";
+"Totes les pestanyes ja són obertes: no s'ha obert res." = "모든 탭이 이미 열려 있습니다: 아무것도 열지 않았습니다.";
+"No hi ha cap pestanya per obrir (%lld ja obertes, %lld no s'obriran): no s'ha obert res." = "열 탭이 없습니다(이미 열림 %lld개, 열리지 않음 %lld개): 아무것도 열지 않았습니다.";
+"S'ha obert Warp, però cap finestra de la configuració." = "Warp를 열었지만 구성의 윈도우는 열리지 않았습니다.";
+"En arrencar, Warp ha obert una finestra buida: la pots tancar." = "시작할 때 Warp가 빈 윈도우를 열었습니다: 닫아도 됩니다.";
+"Warp és tancat: l'obro i n'espero l'arrencada (fins a %lld s)." = "Warp가 닫혀 있습니다: Warp를 열고 시작될 때까지 기다리는 중(최대 %lld초).";
+"no s'ha pogut obrir Warp: %@" = "Warp를 열 수 없습니다: %@";
+"Warp no ha arrencat en %lld s: mira'l i torna-ho a provar." = "Warp가 %lld초 안에 시작되지 않았습니다: 확인하고 다시 시도하십시오.";
+"Warp s'ha tancat mentre arrencava: mira'l i torna-ho a provar." = "Warp가 시작하는 동안 닫혔습니다: 확인하고 다시 시도하십시오.";
+"en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar." = "시작하는 동안 Warp가 열릴 항목을 변경했습니다: 다시 시도하십시오.";
+"No s'ha pogut esborrar el fitxer temporal: %@" = "임시 파일을 삭제할 수 없습니다: %@";
+"Tampoc no hi ha la base de Warp (%@)." = "Warp 데이터베이스도 없습니다(%@).";
+
+/* Informe: warp-launch llegeix */
+"La restauració de sessió és desactivada: Warp no desa les finestres, i l'app llegeix els processos." = "세션 복원이 꺼져 있습니다: Warp가 윈도우를 저장하지 않으며, 앱은 프로세스를 읽습니다.";
+"Warp és obert." = "Warp가 열려 있습니다.";
+"Warp és tancat: són les finestres que restaurarà en obrir-se." = "Warp가 닫혀 있습니다: 열릴 때 Warp가 복원할 윈도우입니다.";
+"Warp és tancat." = "Warp가 닫혀 있습니다.";
+"Sessions de Claude en segon pla: %lld (%@)." = "백그라운드의 Claude 세션: %lld개(%@).";
+"Terminals:" = "터미널:";
+"pestanya %@" = "탭 %@";
+"pane %@" = "pane %@";
+"(sense títol)" = "(제목 없음)";
+"historial" = "기록";
+"no existeix" = "존재하지 않음";
+"Sessions de Claude que no són a cap pestanya de Warp:" = "어떤 Warp 탭에도 없는 Claude 세션:";
+"Sessions de Claude:" = "Claude 세션:";
+"fora de Warp" = "Warp 외부";
+"pestanya no trobada a la base de Warp" = "Warp 데이터베이스에서 탭을 찾을 수 없음";
+"a Warp" = "Warp에서";
+"Avisos:" = "경고:";
+
+/* InformeObertura: warp-launch obre */
+"Mode de prova: no s'ha escrit ni obert res." = "테스트 모드: 아무것도 쓰거나 열지 않았습니다.";
+"Finestra %@ de %@: «%@» (%@)" = "윈도우 %@/%@: ‘%@’(%@)";
+"No s'obriria res." = "아무것도 열리지 않습니다.";
+"Warp és tancat: primer s'obriria Warp." = "Warp가 닫혀 있습니다: 먼저 Warp를 엽니다.";
+"No se sap si Warp és obert." = "Warp가 열려 있는지 알 수 없습니다.";
+"Ja obertes (%lld):" = "이미 열림(%lld):";
+"No s'obriran (%lld):" = "열리지 않음(%lld):";
+"S'obririen (%lld):" = "열릴 항목(%lld):";
+"No es pot generar el fitxer per a Warp: %@" = "Warp용 파일을 생성할 수 없습니다: %@";
+"Fitxer per a Warp: %@ (en obrir de debò, l'id serà un altre)" = "Warp용 파일: %@(실제로 열 때는 id가 달라집니다)";
+
+/* Resum: les xifres, els arguments de l'app i les opcions de Claude */
+"argument desconegut «%@»; per provar l'app: --config <carpeta>" = "알 수 없는 인수 ‘%@’. 앱을 테스트하려면: --config <폴더>";
+"Només terminal" = "터미널만";
+"Baix" = "낮음";
+"Mitjà" = "중간";
+"Alt" = "높음";
+"Molt alt" = "매우 높음";
+"Màxim" = "최대";
+"Accepta les edicions" = "편집 수락";
+"Automàtic" = "자동";
+"Sense cap permís" = "권한 우회";
+"Manual" = "수동";
+"No preguntis" = "묻지 않음";
+"Planifica" = "계획";
+"sense nom" = "이름 없음";
+"Altres" = "기타";
+
+/* WarpLaunch: les ordres dels menús que també surten als textos */
+"Actualitza l'estat de Warp" = "Warp 상태 새로 고침";
+"Sobre l’app %@" = "%@에 관하여";
+"Surt de l’app %@" = "%@ 종료";
+
+/* PlaObertura: on és oberta una pestanya, per què no s'obre i com s'obrirà */
+"oberta a Warp, amb Claude (%@)" = "Warp에서 열림, Claude 실행 중(%@)";
+"oberta a Warp, amb Claude" = "Warp에서 열림, Claude 실행 중";
+"oberta a Warp (%@)" = "Warp에서 열림(%@)";
+"oberta a Warp, sense Claude (%@)" = "Warp에서 열림, Claude 없음(%@)";
+"oberta a Warp" = "Warp에서 열림";
+"oberta a Warp, sense Claude" = "Warp에서 열림, Claude 없음";
+"la seva conversa és oberta a Warp (%@)" = "대화가 Warp에서 열려 있음(%@)";
+"la seva conversa és oberta fora de Warp" = "대화가 Warp 외부에서 열려 있음";
+"la seva conversa és oberta a Warp" = "대화가 Warp에서 열려 있음";
+"una altra pestanya acaba de reprendre la seva conversa (el Claude encara no s'ha vist)" = "다른 탭에서 방금 이 대화를 재개했습니다(해당 Claude가 아직 확인되지 않음)";
+"la seva conversa és oberta en segon pla (%@)" = "대화가 백그라운드에서 열려 있음(%@)";
+"tancada fa menys d'1 minut: espera i torna-ho a provar" = "1분 이내에 닫힘: 기다렸다가 다시 시도하십시오";
+"la carpeta no existeix" = "폴더가 존재하지 않음";
+"no es pot generar l'ordre: %@" = "명령을 생성할 수 없음: %@";
+"no es pot escriure per a Warp: %@" = "Warp용으로 쓸 수 없음: %@";
+"només terminal" = "터미널만";
+"Claude, reprèn %@" = "Claude, %@ 재개";
+"Claude, conversa nova" = "Claude, 새 대화";
+"finestra %@ › %@" = "윈도우 %@ › %@";
+
+/* PlaObertura: els avisos del full d'obrir */
+"potser ja és oberta a Warp (%@): és a la mateixa carpeta" = "Warp에서 이미 열려 있을 수 있음(%@): 같은 폴더에 있음";
+"potser ja és oberta a Warp: hi ha un Claude a la seva carpeta, que no és de cap pestanya de la configuració" = "Warp에서 이미 열려 있을 수 있음: 해당 폴더에 구성의 어떤 탭에도 속하지 않는 Claude가 있음";
+"potser ja és oberta a Warp: hi ha un terminal a la seva carpeta, sense Claude" = "Warp에서 이미 열려 있을 수 있음: 해당 폴더에 Claude 없는 터미널이 있음";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer; si obres ara, la finestra quedarà partida" = "방금 닫았다면 1분 기다렸다가 다시 시도하십시오: Warp는 닫기를 실행 취소할 수 있도록 탭을 유지합니다. 지금 열면 윈도우가 나뉩니다";
+"si les acabes de tancar, espera 1 minut i torna-ho a provar: Warp les manté vives per poder-les desfer" = "방금 닫았다면 1분 기다렸다가 다시 시도하십시오: Warp는 닫기를 실행 취소할 수 있도록 탭을 유지합니다";
+"la conversa és d'una altra carpeta (%@); Claude la reprendrà en aquesta" = "대화가 다른 폴더(%@)에 있습니다. Claude는 이 폴더에서 대화를 재개합니다";
+"una altra pestanya ja reprèn la mateixa conversa: aquesta en començarà una de nova" = "다른 탭에서 이미 같은 대화를 재개합니다: 이 탭은 새 대화를 시작합니다";
+"reprèn la conversa més recent de la carpeta (%@)" = "폴더의 가장 최근 대화를 재개합니다(%@)";
+"no se'n sap la conversa: en començarà una de nova" = "대화를 알 수 없음: 새 대화를 시작합니다";
+"la conversa no té cap missatge desat: en començarà una de nova" = "대화에 저장된 메시지가 없음: 새 대화를 시작합니다";
+"Claude preguntarà si confies en la carpeta: la pestanya esperarà una tecla" = "Claude가 폴더를 신뢰하는지 묻습니다: 탭이 키 입력을 기다립니다";
+"porta «--fork-session»: cada obertura farà una còpia de la conversa" = "‘--fork-session’ 포함: 열 때마다 대화의 사본을 만듭니다";
+"l'últim cop que es va obrir aquesta finestra (fa %lld min) no es va poder confirmar: mira Warp abans" = "이 윈도우를 마지막으로 열었을 때(%lld분 전) 확인할 수 없었습니다: 먼저 Warp를 확인하십시오";
+"l'últim intent d'obrir aquesta finestra (fa %lld min) va fallar: si Warp n'ha obert res, mira-ho abans" = "이 윈도우를 마지막으로 열려고 했을 때(%lld분 전) 실패했습니다: Warp가 일부를 열었다면 먼저 확인하십시오";
+"%@: %@" = "%@: %@";
+"fa menys d'1 h" = "1시간 이내";
+"fa %lld h" = "%lld시간 전";
+
+/* PlaObertura: les xifres del full d'obrir */
+"No s'obrirà res." = "아무것도 열리지 않습니다.";
+"%lld amb Claude (%@)" = "Claude 사용 %lld개(%@)";
+"%lld només terminal" = "터미널만 %lld개";
+"unes %@ GB" = "약 %@GB";
+"ja obertes: %lld" = "이미 열림: %lld개";
+"no s'obriran: %lld" = "열리지 않음: %lld개";
+"Alguna pestanya d'aquesta finestra s'ha tancat fa menys d'1 minut i el seu Claude encara és viu: espera 1 minut i torna-ho a provar." = "이 윈도우의 탭 중 하나가 1분 이내에 닫혔으며 해당 Claude가 아직 실행 중입니다: 1분 기다렸다가 다시 시도하십시오.";
+
+/* ExecucioObertura: el resultat d'obrir */
+"En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "시작할 때 Warp가 빈 윈도우도 열었습니다: 닫아도 됩니다.";
+"No s'ha pogut desar el llançament a «estat.json»: %@" = "실행 정보를 ‘estat.json’에 저장할 수 없습니다: %@";
+"No s'ha pogut obrir «%@» a Warp: %@" = "‘%@’ 윈도우를 Warp에서 열 수 없습니다: %@";
+"Claude encara no ha arrencat a %@: mira-ho a Warp." = "%@에서 Claude가 아직 시작되지 않았습니다: Warp에서 확인하십시오.";
+"No s'ha pogut confirmar que s'hagi obert «%@»: mira si hi ha una finestra nova a Warp." = "‘%@’ 윈도우가 열렸는지 확인할 수 없습니다: Warp에 새로운 윈도우가 있는지 확인하십시오.";
+"El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app." = "임시 파일을 삭제할 수 없습니다: 앱을 열 때 다시 시도합니다.";
+"«%@»" = "‘%@’";
+
+/* LaunchConfigWarp, FitxersLaunchWarp i YAMLWarp: el fitxer temporal de Warp */
+"la carpeta «%@» no és una ruta absoluta" = "‘%@’ 폴더는 절대 경로가 아닙니다";
+"al títol, %@" = "제목에 %@";
+"a la carpeta, %@" = "폴더에 %@";
+"a l'ordre, %@" = "명령에 %@";
+"no hi ha cap pestanya per obrir" = "열 탭이 없습니다";
+"pestanya %@: %@" = "탭 %@: %@";
+"Warp no té la carpeta de launch configurations, i no s'ha creat: pot ser que Warp encara no s'hagi obert mai, que el camí passi per un enllaç o un fitxer, o que sigui una prova amb --config o el CLI, que no la creen" = "Warp에 launch configurations 폴더가 없으며 생성되지 않았습니다: Warp를 한 번도 열지 않았거나, 경로가 링크나 파일을 거치거나, 폴더를 생성하지 않는 --config 또는 CLI를 사용한 테스트일 수 있습니다";
+"ja hi ha un fitxer amb aquest nom, i no se sobreescriu" = "이 이름의 파일이 이미 있으며, 덮어쓰지 않습니다";
+"no s'ha pogut escriure el fitxer: %@" = "파일을 쓸 수 없습니다: %@";
+"no és un fitxer normal, i no s'esborra" = "일반 파일이 아니므로 삭제하지 않습니다";
+"no comença amb la marca de l'app, i no s'esborra" = "앱의 표시로 시작하지 않으므로 삭제하지 않습니다";
+"no s'ha pogut llegir: %@" = "읽을 수 없습니다: %@";
+"no s'ha pogut esborrar: %@" = "삭제할 수 없습니다: %@";
+"hi ha un caràcter que l'app no sap escriure per a Warp (U+%@)" = "앱이 Warp용으로 쓸 수 없는 문자가 있습니다(U+%@)";
+
+/* OrdreClaude: per què no es pot fer l'ordre de Claude */
+"ultracode amb un esforç que no és «Molt alt» necessita «--settings» en JSON, i aquí és un fitxer" = "‘매우 높음’이 아닌 노력 수준의 ultracode에는 JSON 형식의 ‘--settings’가 필요하지만 여기서는 파일입니다";
+"«--settings» no és un JSON vàlid, té claus repetides o valors que l'app no sap llegir, i s'hi ha d'afegir ultracode" = "‘--settings’가 유효한 JSON이 아니거나 중복된 키나 앱이 읽을 수 없는 값이 있으며, 여기에 ultracode를 추가해야 합니다";
+"«--settings» ja té «ultracode» amb un valor que no és true ni false" = "‘--settings’에 이미 true나 false가 아닌 값의 ‘ultracode’가 있습니다";
+"falta la sessió que s'ha de reprendre" = "재개할 세션이 없습니다";
+"«%@» és a les altres opcions, però té camp propi" = "‘%@’ 옵션이 기타 옵션에 있지만 전용 필드가 있습니다";
+"les altres opcions porten «%@», que Claude prendria pel primer missatge de cada obertura" = "기타 옵션에 ‘%@’ 항목이 있습니다: Claude는 열 때마다 이를 첫 번째 메시지로 받아들입니다";
+
+/* AppWarp: Warp Preview i cap Warp */
+"Warp Preview encara no és compatible: cal Warp Stable." = "Warp Preview는 아직 지원되지 않습니다: Warp Stable이 필요합니다.";
+"En aquest Mac només hi ha Warp Preview." = "이 Mac에는 Warp Preview만 있습니다.";
+"Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar." = "현재 Warp Preview는 열려 있지만 Warp Stable은 열려 있지 않습니다: Warp Stable을 열고 다시 시도하십시오.";
+"No s'ha trobat Warp en aquest Mac: cal Warp Stable." = "이 Mac에서 Warp를 찾을 수 없습니다: Warp Stable이 필요합니다.";
+
+/* AjustRestauracio: per què no es pot tocar l'ajust de Warp */
+"Warp encara no s'ha obert mai en aquest usuari: no hi ha la carpeta «%@», i Warp Launch no la crea" = "이 사용자에서 Warp를 한 번도 연 적이 없습니다: ‘%@’ 폴더가 없으며, Warp Launch는 이 폴더를 생성하지 않습니다";
+"no es pot mirar on és «%@»" = "‘%@’의 위치를 확인할 수 없습니다";
+"«%@» és de només lectura" = "‘%@’은(는) 읽기 전용입니다";
+"la carpeta temporal no és al mateix volum que «%@»" = "임시 폴더가 ‘%@’과(와) 같은 볼륨에 있지 않습니다";
+"no s'ha pogut escriure «%@»: %@" = "‘%@’을(를) 쓸 수 없습니다: %@";
+"no s'ha pogut crear «%@»: %@" = "‘%@’을(를) 생성할 수 없습니다: %@";
+"no es pot mirar el fitxer preparat: %@" = "준비된 파일을 확인할 수 없습니다: %@";
+"no s'ha pogut preparar el fitxer: %@" = "파일을 준비할 수 없습니다: %@";
+"no es pot mirar «%@»: %@" = "‘%@’을(를) 확인할 수 없습니다: %@";
+"«%@» no és una carpeta" = "‘%@’은(는) 폴더가 아닙니다";
+"«%@» no és un fitxer normal" = "‘%@’은(는) 일반 파일이 아닙니다";
+"no es pot llegir «%@»" = "‘%@’을(를) 읽을 수 없습니다";
+"«restore_session» no hi és, i no s'hi pot afegir: %@" = "‘restore_session’이 없으며 추가할 수 없습니다: %@";
+"«settings.toml» té salts de línia CRLF" = "‘settings.toml’에 CRLF 줄 바꿈이 있습니다";
+"«settings.toml» no acaba amb un salt de línia" = "‘settings.toml’이 줄 바꿈으로 끝나지 않습니다";
+"«restore_session» no és una línia de la taula [general]" = "‘restore_session’이 [general] 테이블의 줄이 아닙니다";
+"el valor de «restore_session» no és true ni false" = "‘restore_session’의 값이 true나 false가 아닙니다";
+"«settings.toml» té una marca d'ordre de bytes (BOM)" = "‘settings.toml’에 바이트 순서 표시(BOM)가 있습니다";
+"«settings.toml» té textos de diverses línies («\"\"\"» o «'''»)" = "‘settings.toml’에 여러 줄 문자열이 있습니다(‘\"\"\"’ 또는 ‘'''’)";
+"a la línia %@, «general» és una clau, no una taula [general]" = "%@번째 줄에서 ‘general’은 [general] 테이블이 아니라 키입니다";
+"a la línia %@, la taula general té una forma que Warp Launch no sap llegir (entre cometes, amb un comentari o com a llista de taules)" = "%@번째 줄에서 general 테이블이 Warp Launch가 읽을 수 없는 형식입니다(따옴표 안, 주석 포함 또는 테이블 배열)";
+"Warp és tancat: és la foto de l'última vegada que va desar, potser antiga. Sense sessions vives, no se sap on hi havia Claude obert: en importar, cap pestanya conserva la seva ordre." = "Warp가 닫혀 있습니다: 마지막으로 저장했을 때의 스냅샷이며 오래되었을 수 있습니다. 실행 중인 세션이 없으므로 Claude가 어디에서 열려 있었는지 알 수 없습니다: 가져올 때 어떤 탭도 명령을 유지하지 않습니다.";
+
+/* LectorWarp, LectorSessions, Lector i LecturaWarp: la lectura de Warp i de Claude */
+"no trobo la base de Warp: %@" = "Warp 데이터베이스를 찾을 수 없습니다: %@";
+"error de SQLite: %@" = "SQLite 오류: %@";
+"macOS no deixa que Warp Launch llegeixi les dades de Warp; cal donar-li permís a Configuració del Sistema › Privacitat i seguretat" = "macOS가 Warp Launch에서 Warp 데이터를 읽는 것을 허용하지 않습니다. 시스템 설정 › 개인정보 보호 및 보안에서 권한을 부여하십시오";
+"no s'ha pogut obrir" = "열 수 없습니다";
+"no puc llegir la carpeta de sessions de Claude: %@" = "Claude 세션 폴더를 읽을 수 없습니다: %@";
+"fitxer de sessió il·legible: %@" = "읽을 수 없는 세션 파일: %@";
+"la sessió %@ apunta al pid %@, que ja no existeix" = "세션 %@의 pid %@은(는) 더 이상 존재하지 않습니다";
+"el pid %@ de la sessió %@ ara és un altre procés (%@)" = "세션 %2$@의 pid %1$@은(는) 이제 다른 프로세스입니다(%3$@)";
+"dues sessions al mateix pane %@: es mostra la del pid %@, no la del %@" = "같은 pane %@에 세션이 두 개 있습니다: pid %@의 세션을 표시하며, pid %@의 세션은 표시하지 않습니다";
+"Warp no desa les finestres mentre la restauració de sessió està desactivada («general.restore_session»): l'app no pot saber quines pestanyes hi ha ni com es diuen." = "세션 복원이 꺼져 있는 동안(‘general.restore_session’) Warp는 윈도우를 저장하지 않습니다: 앱은 어떤 탭이 있는지, 탭의 이름이 무엇인지 알 수 없습니다.";
+"Warp encara no ha desat cap finestra en aquest usuari: si Warp s'acaba d'obrir, torna-ho a provar d'aquí a uns segons." = "이 사용자에서 Warp가 아직 윈도우를 저장하지 않았습니다: Warp를 방금 열었다면 몇 초 후에 다시 시도하십시오.";
+"Warp encara no ha desat cap finestra en aquest usuari: obre'l un cop i torna-ho a provar." = "이 사용자에서 Warp가 아직 윈도우를 저장하지 않았습니다: Warp를 한 번 열고 다시 시도하십시오.";
+
+/* Configuracio: el fitxer de la configuració */
+"el fitxer no és JSON vàlid (línia %@, columna %@)" = "파일이 유효한 JSON이 아닙니다(%@번째 줄, %@번째 열)";
+"el fitxer no és JSON vàlid" = "파일이 유효한 JSON이 아닙니다";
+"el fitxer: %@" = "파일: %@";
+"falta el camp «versio»" = "‘versio’ 필드가 없습니다";
+"el fitxer és de la versió %@ del format, i aquesta app només entén fins a la %@: cal una versió més nova de Warp Launch" = "파일이 형식 버전 %@이며, 이 앱은 버전 %@까지만 이해합니다: 더 새로운 버전의 Warp Launch가 필요합니다";
+"versió del format desconeguda: %@" = "알 수 없는 형식 버전: %@";
+"%@: clau desconeguda; es perdrà en desar (la còpia la conserva)" = "%@: 알 수 없는 키. 저장하면 사라집니다(사본에는 보존됨)";
+"%@: sense bloc «claude»; queda com a només terminal" = "%@: ‘claude’ 블록 없음. 터미널만 사용합니다";
+"%@: id absent; se n'ha posat un de nou" = "%@: id 없음. 새 id를 설정했습니다";
+"%@: id invalid; se n'ha posat un de nou" = "%@: 유효하지 않은 id. 새 id를 설정했습니다";
+"%@: id repetit; se n'ha posat un de nou" = "%@: 중복된 id. 새 id를 설정했습니다";
+"falta la plantilla; es fan servir valors segurs (sense saltar permisos)" = "템플릿이 없습니다. 안전한 값을 사용합니다(권한 건너뛰기 없음)";
+"%@: la carpeta ha de ser una ruta absoluta (que comenci per / o ~/)" = "%@: 폴더는 절대 경로여야 합니다(/ 또는 ~/로 시작)";
+"el fitxer ha de ser text UTF-8" = "파일은 UTF-8 텍스트여야 합니다";
+"ha de ser un objecte JSON" = "JSON 객체여야 합니다";
+"clau «%@» repetida" = "중복된 키 ‘%@’";
+"ha de ser un nombre enter" = "정수여야 합니다";
+"tipus incorrecte (s'esperava %@)" = "잘못된 유형(예상: %@)";
+"falta el valor (s'esperava %@)" = "값 없음(예상: %@)";
+"falta la clau" = "키 없음";
+"text" = "텍스트";
+"true o false" = "true 또는 false";
+"nombre enter" = "정수";
+"una llista" = "목록";
+"un objecte" = "객체";
+
+/* Validacio: els avisos de cada pestanya i finestra */
+"La carpeta ha de ser una ruta absoluta" = "폴더는 절대 경로여야 합니다";
+"Carpeta d'inici: probablement Warp l'ha perduda" = "홈 폴더: Warp가 폴더를 잃어버렸을 수 있습니다";
+"La carpeta no existeix" = "폴더가 존재하지 않습니다";
+"Claude és apagat en aquesta pestanya" = "이 탭에서 Claude가 꺼져 있습니다";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Claude (comprova-ho)" = "Warp는 ‘%@’, Claude는 ‘%@’에서 실행됩니다: Claude의 폴더를 사용합니다(확인하십시오)";
+"Warp diu «%@» i Claude corre a «%@»: es fa servir la de Warp (comprova-ho)" = "Warp는 ‘%@’, Claude는 ‘%@’에서 실행됩니다: Warp의 폴더를 사용합니다(확인하십시오)";
+"L'últim Claude d'aquesta pestanya corria a «%@», no a aquesta carpeta (comprova-ho)" = "이 탭의 마지막 Claude는 이 폴더가 아닌 ‘%@’에서 실행되었습니다(확인하십시오)";
+"Comprova que el model admet ultracode i que tens els dynamic workflows activats" = "모델이 ultracode를 지원하고 dynamic workflows가 켜져 있는지 확인하십시오";
+"Esforç «%@» desconegut: Claude el deixa córrer i fa servir el de per defecte" = "알 수 없는 노력 수준 ‘%@’: Claude는 이를 무시하고 기본값을 사용합니다";
+"Claude no arrencarà: el mode de permisos «%@» no existeix (%@)" = "Claude가 시작되지 않습니다: 권한 모드 ‘%@’은(는) 존재하지 않습니다(%@)";
+"Amb «Salta els permisos», Claude no fa cas del mode «%@»" = "‘권한 건너뛰기’를 사용하면 Claude는 ‘%@’ 모드를 무시합니다";
+"Claude no arrencarà: els settings no són JSON vàlid" = "Claude가 시작되지 않습니다: settings가 유효한 JSON이 아닙니다";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions)" = "Claude %@에서 알 수 없는 옵션 %@: 이해하지 못할 수 있습니다(새 버전의 옵션이라면 옵션 표를 업데이트해야 합니다)";
+"Claude %@ no coneix %@: potser no l'entén (si és d'una versió nova, cal posar al dia la taula d'opcions). Si %@ no n'és el valor, Claude el prendria pel primer missatge i l'enviaria a cada obertura" = "Claude %@에서 알 수 없는 옵션 %@: 이해하지 못할 수 있습니다(새 버전의 옵션이라면 옵션 표를 업데이트해야 합니다). %@이(가) 해당 옵션의 값이 아니라면 Claude는 이를 첫 번째 메시지로 받아들여 열 때마다 보냅니다";
+"%@ és d'un sol ús: es tornaria a fer a cada obertura" = "%@은(는) 일회용입니다: 열 때마다 반복됩니다";
+"No es pot generar l'ordre: %@" = "명령을 생성할 수 없습니다: %@";
+"Hi ha més d'una finestra amb el nom «%@»" = "이름이 ‘%@’인 윈도우가 두 개 이상 있습니다";
+
+/* Importador: els noms per defecte, les notes i el resum de la importació */
+"Finestra %@" = "윈도우 %@";
+"Pestanya %@" = "탭 %@";
+"%@: la sessió es va obrir amb el missatge «%@»; no es desa (s'enviaria a cada obertura)" = "%@: 세션이 ‘%@’ 메시지와 함께 열렸습니다. 저장하지 않습니다(열 때마다 전송됨)";
+"%@: la sessió es va obrir amb «%@» (una conversa concreta); es desa només que continua" = "%@: 세션이 ‘%@’(특정 대화)와 함께 열렸습니다. ‘대화 계속하기’만 저장합니다";
+"%@: Warp diu «%@», però Claude corre a «%@»; es fa servir la de Claude" = "%@: Warp는 ‘%@’(이)라고 하지만 Claude는 ‘%@’에서 실행됩니다. Claude의 폴더를 사용합니다";
+"%@: Warp diu «%@» i Claude «%@»; es fa servir la de Claude (comprova-ho)" = "%@: Warp는 ‘%@’, Claude는 ‘%@’. Claude의 폴더를 사용합니다(확인하십시오)";
+"%@: Warp diu «%@» i Claude «%@», que és la carpeta d'inici; es queda la de Warp (comprova-ho)" = "%@: Warp는 ‘%@’, Claude는 홈 폴더인 ‘%@’. Warp의 폴더를 유지합니다(확인하십시오)";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda la de Warp (comprova-ho)" = "%@: Warp는 ‘%@’, Claude는 존재하지 않는 ‘%@’. Warp의 폴더를 유지합니다(확인하십시오)";
+"%@: Warp diu «%@» i Claude «%@», que no existeix; es queda a la carpeta d'inici, sense Claude i amb les seves opcions (comprova-ho)" = "%@: Warp는 ‘%@’, Claude는 존재하지 않는 ‘%@’. 홈 폴더에 Claude 없이 해당 옵션과 함께 남습니다(확인하십시오)";
+"%@: pestanya dividida en %lld panes; només s'importa el principal" = "%@: 탭이 pane %lld개로 나뉘어 있습니다. 주 pane만 가져옵니다";
+"la seva pestanya no és a la base de Warp" = "해당 탭이 Warp 데이터베이스에 없습니다";
+"corre fora de Warp, o dins de tmux" = "Warp 외부 또는 tmux 안에서 실행됩니다";
+"sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claude 세션 ‘%@’, 위치 ‘%@’: 가져오지 않습니다(%@)";
+"sessió de Claude a «%@»: no s'importa (%@)" = "‘%@’의 Claude 세션: 가져오지 않습니다(%@)";
+"a la mateixa carpeta hi ha %@, que queda només terminal" = "같은 폴더에 있는 %@ 탭은 터미널만 사용합니다";
+"a la mateixa carpeta hi ha %@, que queden només terminal" = "같은 폴더에 있는 %@ 탭은 터미널만 사용합니다";
+"la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warp 윈도우 %@에 터미널 탭이 없습니다: 가져오지 않습니다";
+"0 amb Claude" = "Claude 사용 0개";
+"%lld amb Claude, amb la seva ordre" = "Claude 사용 %lld개, 자체 명령 사용";
+"(%lld sense Claude obert)" = "(Claude가 열려 있지 않음 %lld개)";
+
+/* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
+"no s'ha pogut generar el JSON: %@" = "JSON을 생성할 수 없습니다: %@";
+"el fitxer és només de lectura (%@)" = "파일이 읽기 전용입니다(%@)";
+"«%@» és un enllaç a «%@», que no existeix" = "‘%@’은(는) 존재하지 않는 ‘%@’에 대한 링크입니다";
+"la configuració ha canviat fora de l'app; no s'ha desat res" = "앱 외부에서 구성이 변경되었습니다. 아무것도 저장하지 않았습니다";
+"no s'ha pogut fer la còpia de seguretat, i no s'ha desat res: %@" = "백업을 만들 수 없어 아무것도 저장하지 않았습니다: %@";
+"no s'ha pogut llegir la configuració: %@" = "구성을 읽을 수 없습니다: %@";
+"no s'ha pogut desar la configuració: %@" = "구성을 저장할 수 없습니다: %@";
+"la configuració generada no es podia tornar a llegir igual; no s'ha desat res" = "생성된 구성을 동일하게 다시 읽을 수 없습니다. 아무것도 저장하지 않았습니다";
+"el JSON no es torna a llegir igual" = "JSON을 동일하게 다시 읽을 수 없습니다";
+"«%@» és de la versió %@, més nova que aquesta app (%@)" = "‘%1$@’은(는) 이 앱(%3$@)보다 새로운 버전 %2$@의 파일입니다";
+"«%@» no es pot llegir: %@" = "‘%@’을(를) 읽을 수 없습니다: %@";
+"no s'ha pogut llegir «%@»: %@" = "‘%@’을(를) 읽을 수 없습니다: %@";
+"no s'ha pogut desar «%@»: %@" = "‘%@’을(를) 저장할 수 없습니다: %@";
+"no és JSON o no té «versio»" = "JSON이 아니거나 ‘versio’가 없습니다";
+"«%@» no és l'id d'una pestanya" = "‘%@’은(는) 탭 id가 아닙니다";
+"«acceptat» sense «acceptatEl»" = "‘acceptatEl’ 없이 ‘acceptat’가 있습니다";
+"«retirat» sense «retiratEl»" = "‘retiratEl’ 없이 ‘retirat’가 있습니다";
+"«acceptatEl» només va amb «acceptat», i «retiratEl», amb «retirat»" = "‘acceptatEl’은 ‘acceptat’와 함께, ‘retiratEl’은 ‘retirat’와 함께만 사용됩니다";
+"«%@» no és cap consentiment conegut" = "‘%@’은(는) 알려진 동의가 아닙니다";
+
+/* EdicioConfiguracio: els noms de les finestres i les pestanyes noves */
+"%@ còpia" = "%@ 복사본";
+"Pestanya nova" = "새로운 탭";
+
+/* PoliticaActualitzacions: per què l'app espera a reiniciar-se (després de «Ara no: ») i per què no s'actualitza */
+"no s'ha pogut desar la configuració" = "구성을 저장하지 못함";
+"estàs canviant un nom" = "이름을 변경하는 중";
+"s'estan obrint finestres a Warp" = "Warp에서 윈도우를 여는 중";
+"hi ha un full obert" = "시트가 열려 있음";
+"encara s'estan reprenent converses a Warp" = "Warp에서 아직 대화를 재개하는 중";
+"s'està llegint Warp" = "Warp를 읽는 중";
+"falta desactivar la restauració de sessió de Warp" = "Warp의 세션 복원을 아직 꺼야 함";
+"hi ha una finestra de l'app oberta" = "앱 윈도우가 열려 있음";
+"hi ha canvis sense desar" = "저장하지 않은 변경 사항이 있음";
+"encara pots desfer l'últim canvi" = "아직 마지막 변경 사항을 실행 취소할 수 있음";
+"l'app s'acaba d'obrir" = "앱이 방금 열림";
+"estàs fent servir el Mac" = "Mac을 사용 중";
+"aquesta versió no s'ha pogut instal·lar sola" = "이 버전을 자동으로 설치할 수 없었음";
+"Amb una configuració de prova, l'app no s'actualitza." = "테스트 구성에서는 앱이 업데이트되지 않습니다.";
+"Sense configuració, l'app no s'actualitza." = "구성이 없으면 앱이 업데이트되지 않습니다.";
+"Només s'actualitza l'app instal·lada." = "설치된 앱만 업데이트됩니다.";
+"Per actualitzar-se sola, l'app ha de ser a Aplicacions. Ara és a %@." = "자동으로 업데이트하려면 앱이 응용 프로그램 폴더에 있어야 합니다. 현재 위치: %@.";
+"Aquesta còpia no és una versió publicada i no s'actualitza sola." = "이 사본은 게시된 버전이 아니므로 자동으로 업데이트되지 않습니다.";
+"Aquesta còpia la va instal·lar un altre usuari del Mac: l'ha d'actualitzar ell." = "이 Mac의 다른 사용자가 이 사본을 설치했습니다: 해당 사용자가 업데이트해야 합니다.";
+"Aquesta versió de l'actualitzador no és compatible." = "이 버전의 업데이트 프로그램은 호환되지 않습니다.";
+
+/* WarpLaunchApp: el menú de la icona, l'alerta de sortir i la carpeta de la Configuració */
+"Amb una configuració de prova, l'app no s'obre sola." = "테스트 구성에서는 로그인 시 앱이 열리지 않습니다.";
+"Cap: %@" = "없음: %@";
+"No s'han pogut desar els canvis" = "변경 사항을 저장할 수 없습니다";
+"%@. Si surts ara, es perdran." = "%@. 지금 종료하면 변경 사항이 손실됩니다.";
+"Cancel·la" = "취소";
+"Surt sense desar" = "저장하지 않고 종료";
+"Mostra Warp Launch" = "Warp Launch 보기";
+"Mostra l'editor" = "편집기 보기";
+"Finestres" = "윈도우";
+"Obre-ho tot a Warp…" = "모두 Warp에서 열기…";
+"%@ — %@" = "%@ — %@";
+"Mostra a l'editor" = "편집기에서 보기";
+"Configuració de prova: %@" = "테스트 구성: %@";
+"Sense configuració: %@" = "구성 없음: %@";
+"Configuració…" = "설정…";
+
+/* ArrencadaSessio (l'app fora d'Aplicacions) i ServeiActualitzacions: per què no s'obre en iniciar sessió, i els errors per a Sparkle */
+"Per obrir-se en iniciar sessió, l'app ha de ser a Aplicacions (scripts/instal·la.sh --aplica). Ara és a %@." = "로그인 시 열리려면 앱이 응용 프로그램 폴더에 있어야 합니다(scripts/instal·la.sh --aplica). 현재 위치: %@.";
+"no hi ha permís" = "권한이 없습니다";
+"la versió publicada no té la forma esperada" = "게시된 버전이 예상한 형식이 아닙니다";
+
+/* ArrencadaSessio: obrir-se en iniciar sessió */
+"No disponible" = "사용할 수 없음";
+"No s'ha pogut activar: %@" = "켤 수 없습니다: %@";
+"No s'ha pogut desactivar: %@" = "끌 수 없습니다: %@";
+"No s'ha pogut treure Warp Launch dels ítems d'inici de sessió: %@. No s'ha canviat res més." = "로그인 항목에서 Warp Launch를 제거할 수 없습니다: %@. 다른 항목은 변경하지 않았습니다.";
+"macOS encara té Warp Launch als ítems d'inici de sessió: treu-la a Configuració del Sistema › General › Ítems d’inici de sessió i extensions, i torna-ho a provar. No s'ha canviat res més." = "macOS의 로그인 항목에 아직 Warp Launch가 있습니다: 시스템 설정 › 일반 › 로그인 항목 및 확장 프로그램에서 제거한 다음 다시 시도하십시오. 다른 항목은 변경하지 않았습니다.";
+
+/* Editor: el títol i el subtítol de la finestra, els noms per defecte i els noms de Desfés */
+"Per revisar" = "검토 필요";
+"El fitxer ha canviat fora de l'app" = "앱 외부에서 파일이 변경되었습니다";
+"No s'ha pogut desar" = "저장할 수 없음";
+"Res per revisar" = "검토할 항목 없음";
+"no hi ha cap carpeta de configuració" = "구성 폴더가 없습니다";
+"Torna a importar" = "다시 가져오기";
+"Nova finestra" = "새로운 윈도우";
+"Finestra nova" = "새로운 윈도우";
+"Canvia el nom" = "이름 변경";
+"Elimina la finestra" = "윈도우 삭제";
+"Duplica la finestra" = "윈도우 복제";
+"Nova pestanya" = "새로운 탭";
+"Duplica la pestanya" = "탭 복제";
+"Duplica les pestanyes" = "탭 복제";
+"Elimina la pestanya" = "탭 삭제";
+"Elimina les pestanyes" = "탭 삭제";
+"Retalla la pestanya" = "탭 오려두기";
+"Retalla les pestanyes" = "탭 오려두기";
+"Enganxa la pestanya" = "탭 붙여넣기";
+"Enganxa les pestanyes" = "탭 붙여넣기";
+"Mou la pestanya" = "탭 이동";
+"Mou les pestanyes" = "탭 이동";
+"Mou la finestra" = "윈도우 이동";
+"Mou les finestres" = "윈도우 이동";
+"Canvia la carpeta" = "폴더 변경";
+"Activa Claude" = "Claude 켜기";
+"Desactiva Claude" = "Claude 끄기";
+
+/* EditorInspector: l'inspector buit, els valors dels camps i els noms de Desfés (els d'un interruptor, «Activa «…»» i «Desactiva «…»»: al menú Edició són ordres, i l'interruptor és una etiqueta) */
+"Tria una pestanya per revisar-la" = "검토할 탭 선택";
+"Cap finestra" = "윈도우 없음";
+"Tria una finestra" = "윈도우 선택";
+"Canvia el model" = "모델 변경";
+"Canvia l'esforç" = "노력 수준 변경";
+"Canvia el mode de permisos" = "권한 모드 변경";
+"%@ (desconegut)" = "%@(알 수 없음)";
+"Per defecte" = "기본값";
+"Valors diversos" = "여러 값";
+"Activa l'ultracode" = "ultracode 켜기";
+"Desactiva l'ultracode" = "ultracode 끄기";
+"Continua la conversa" = "대화 계속하기";
+"Activa «Continua la conversa»" = "‘대화 계속하기’ 켜기";
+"Desactiva «Continua la conversa»" = "‘대화 계속하기’ 끄기";
+"Salta els permisos" = "권한 건너뛰기";
+"Activa «Salta els permisos»" = "‘권한 건너뛰기’ 켜기";
+"Desactiva «Salta els permisos»" = "‘권한 건너뛰기’ 끄기";
+"Canvia el nom de la sessió" = "세션 이름 변경";
+
+/* EditorOrdres i EditorPlantilla: «Duplica», els avisos del menú de la icona i per què no es pot canviar la plantilla */
+"Duplica" = "복제";
+"La configuració té errors" = "구성에 오류가 있습니다";
+"Es llegeix la configuració…" = "구성을 읽는 중…";
+"Encara no hi ha cap configuració. Si importes de Warp, les pestanyes que no tenien Claude obert queden només terminal. Les pestanyes que afegeixis, i aquestes si hi actives Claude, s'obriran amb «%@»." = "아직 구성이 없습니다. Warp에서 가져오면 Claude가 열려 있지 않던 탭은 터미널만 사용합니다. 추가하는 탭과, Claude를 켠 해당 탭은 ‘%@’ 명령으로 열립니다.";
+"No es pot canviar: %@" = "변경할 수 없습니다: %@";
+
+/* VistaEditor: els estats buits, la barra d'eines, la barra lateral, els menús contextuals i els bàners */
+"No es pot obrir la configuració" = "구성을 열 수 없음";
+"%@. No s'hi escriurà res fins que es pugui llegir." = "%@. 읽을 수 있을 때까지 아무것도 쓰지 않습니다.";
+"Torna a carregar" = "다시 불러오기";
+"Encara no hi ha cap configuració" = "아직 구성 없음";
+"Importa les finestres que tens obertes a Warp, o comença en blanc. Fins que no triïs, no s'escriu res." = "Warp에 열려 있는 윈도우를 가져오거나 처음부터 시작하십시오. 선택하기 전까지는 아무것도 쓰지 않습니다.";
+"Importa de Warp…" = "Warp에서 가져오기…";
+"Llegeix Warp i mostra què se n'importaria, abans de crear res" = "Warp를 읽고, 아무것도 생성하기 전에 가져올 항목을 보여 줍니다";
+"Comença en blanc" = "처음부터 시작";
+"Obre aquesta finestra a Warp: abans, el full diu què s'obrirà i demana confirmació" = "이 윈도우를 Warp에서 엽니다. 먼저 시트에서 열릴 항목을 보여 주고 확인을 요청합니다";
+"Nova pestanya…" = "새로운 탭…";
+"Nova pestanya: en tries la carpeta (⌘T)" = "선택한 폴더에 탭을 추가합니다(⌘T)";
+"Tria la carpeta de la pestanya nova" = "새로운 탭의 폴더 선택";
+"Afegeix" = "추가";
+"Amaga l'inspector" = "인스펙터 가리기";
+"Mostra l'inspector" = "인스펙터 보기";
+"Mostra o amaga l'inspector (⌥⌘I)" = "인스펙터를 보거나 가립니다(⌥⌘I)";
+"Pestanyes amb avisos de totes les finestres" = "모든 윈도우에서 경고가 있는 탭";
+"Mou amunt" = "위로 이동";
+"Mou avall" = "아래로 이동";
+"Elimina" = "삭제";
+"Prova: %@" = "테스트: %@";
+"Configuració de prova (--config): %@" = "테스트 구성(--config): %@";
+"Cap pestanya no té avisos." = "경고가 있는 탭이 없습니다.";
+"Finestra sense pestanyes" = "이 윈도우에 탭 없음";
+"Afegeix-hi una pestanya: en tries la carpeta, i Claude hi tindrà les opcions de la plantilla." = "탭을 추가하십시오: 폴더를 선택하면 Claude가 해당 탭에서 템플릿의 옵션을 사용합니다.";
+"Una finestra de Warp agrupa pestanyes. Afegeix-ne una per començar." = "Warp 윈도우는 탭을 묶습니다. 시작하려면 탭을 추가하십시오.";
+"Enganxa" = "붙여넣기";
+"Mou a" = "다음으로 이동";
+"Retalla" = "오려두기";
+"Copia" = "복사";
+"Copia l'ordre" = "명령 복사";
+"Copia les ordres" = "명령 복사";
+"Nom" = "이름";
+"Descarta els canvis d'aquí i llegeix el fitxer tal com és ara" = "여기서 변경한 내용을 버리고 현재 상태의 파일을 읽습니다";
+"Torna-ho a provar" = "다시 시도";
+"No s'ha pogut desar: %@" = "저장할 수 없음: %@";
+"Mostra-les" = "보기";
+"D'acord" = "확인";
+
+/* VistaInspector: la finestra, la pestanya, el bloc de Claude i l'ordre */
+"Cada canvi s'aplica a totes." = "각 변경 사항은 모든 항목에 적용됩니다.";
+"Finestra" = "윈도우";
+"Pestanyes" = "탭";
+"Mostra quines pestanyes s'obririen a Warp, i amb quina conversa; no obre res fins que ho confirmis" = "Warp에서 열릴 탭과 사용할 대화를 보여 줍니다. 확인할 때까지 아무것도 열지 않습니다";
+"Pestanya" = "탭";
+"Carpeta" = "폴더";
+"Tria…" = "선택…";
+"Tria la carpeta al Finder" = "Finder에서 폴더를 선택합니다";
+"Altres opcions" = "기타 옵션";
+"L'editor no les canvia: es conserven tal com són." = "편집기는 이 옵션을 변경하지 않으며, 그대로 보존됩니다.";
+"Ordre" = "명령";
+"Tria la carpeta de la pestanya" = "탭의 폴더 선택";
+"Tria" = "선택";
+"Obre Claude Code" = "Claude Code 열기";
+"Obre Claude Code en aquesta pestanya" = "이 탭에서 Claude Code 열기";
+"Model" = "모델";
+"Esforç" = "노력 수준";
+"Orquestració amb dynamic workflows. Amb l'esforç «Molt alt», l'ordre fa servir --effort ultracode" = "dynamic workflows를 사용한 오케스트레이션. ‘매우 높음’ 노력 수준에서는 명령에 --effort ultracode를 사용합니다";
+"En obrir-la, la pestanya reprèn la conversa més recent de la seva carpeta en lloc de començar-ne una de nova" = "탭을 열 때 새 대화를 시작하는 대신 폴더의 가장 최근 대화를 재개합니다";
+"Conversa" = "대화";
+"La conversa més recent de la seva carpeta. Si no n'hi ha cap, se'n començarà una de nova" = "폴더의 가장 최근 대화. 대화가 없으면 새 대화를 시작합니다";
+"Nom de la sessió" = "세션 이름";
+"Cap" = "없음";
+"Nom fix de la sessió (-n): surt al selector de /resume i al títol del terminal" = "고정 세션 이름(-n): /resume 선택기와 터미널 제목에 표시됩니다";
+"--dangerously-skip-permissions: Claude no demana permís per a res, ni les feines noves que engegui directament amb claude --bg" = "--dangerously-skip-permissions: Claude가 어떤 작업에도 권한을 요청하지 않으며, claude --bg로 직접 시작하는 새 작업도 마찬가지입니다";
+"Mode de permisos" = "권한 모드";
+"Amb «Salta els permisos», Claude no fa cas del mode" = "‘권한 건너뛰기’를 사용하면 Claude는 모드를 무시합니다";
+"Treu el mode de permisos" = "권한 모드 제거";
+"reprèn %@" = "%@ 재개";
+"nova" = "새 대화";
+"Només terminal: no s'hi obre Claude." = "터미널만: 이 탭에서는 Claude를 열지 않습니다.";
+
+/* Ordres: els menús Arxiu, Pestanya i Visualització */
+"Torna a importar-ho tot de Warp…" = "모두 Warp에서 다시 가져오기…";
+"Lliga amb Warp…" = "Warp와 연결…";
+"Mostra el fitxer al Finder" = "Finder에서 파일 보기";
+"Cap altra finestra" = "다른 윈도우 없음";
+
+/* VistaConfiguracio: les pestanyes de la Configuració, la plantilla, en iniciar sessió, el fitxer, les actualitzacions, el diagnòstic i deixar de fer servir l'app */
+"General" = "일반";
+"Pestanyes noves" = "새로운 탭";
+"Actualitzacions" = "업데이트";
+"Obre Claude Code a les pestanyes noves" = "새로운 탭에서 Claude Code 열기";
+"En obrir-les, les pestanyes reprenen la seva conversa en lloc de començar-ne una de nova" = "탭을 열 때 새 대화를 시작하는 대신 해당 대화를 재개합니다";
+"%@ (no s'aplica)" = "%@(적용 안 됨)";
+"Escrit al fitxer: les pestanyes noves no el copien mai, perquè totes tindrien el mateix nom" = "파일에 기록됨: 모든 탭의 이름이 같아지므로 새로운 탭에는 복사하지 않습니다";
+"S'aplica a les pestanyes noves i a les que s'importen sense sessió de Claude. Les que ja hi són no canvien." = "새로운 탭과 Claude 세션 없이 가져온 탭에 적용됩니다. 기존 탭은 변경되지 않습니다.";
+"La Configuració no les canvia: es conserven tal com són." = "여기서는 변경할 수 없으며, 그대로 보존됩니다.";
+"Obre Warp Launch en iniciar sessió" = "로그인 시 Warp Launch 열기";
+"macOS no l'obrirà sola fins que la permetis a Ítems d’inici de sessió i extensions" = "로그인 항목 및 확장 프로그램에서 허용할 때까지 macOS가 앱을 열지 않습니다";
+"Mostra Ítems d’inici de sessió i extensions…" = "로그인 항목 및 확장 프로그램 보기…";
+"En iniciar sessió" = "로그인 시";
+"Quan Warp és a punt, mostra «Obre-ho tot a Warp…» amb les finestres que falten. No obre res fins que hi fas clic. També es desactiva a Configuració del Sistema › General › Ítems d’inici de sessió i extensions." = "Warp가 준비되면 누락된 윈도우와 함께 ‘모두 Warp에서 열기…’를 표시합니다. 클릭할 때까지 아무것도 열지 않습니다. 시스템 설정 › 일반 › 로그인 항목 및 확장 프로그램에서도 끌 수 있습니다.";
+"Fitxer" = "파일";
+"Carpeta de la configuració" = "구성 폴더";
+"Mostra al Finder" = "Finder에서 보기";
+"Configuració de prova (--config)" = "테스트 구성(--config)";
+"Versió" = "버전";
+"Estat" = "상태";
+"No s'ha pogut preparar l'actualització: %@" = "업데이트를 준비할 수 없습니다: %@";
+"Actualitza automàticament" = "자동으로 업데이트";
+"Comprova ara" = "지금 확인";
+"Actualitza ara" = "지금 업데이트";
+"Reinicia i actualitza" = "재시작 및 업데이트";
+"Mostra la finestra" = "윈도우 보기";
+"Copia el diagnòstic" = "진단 정보 복사";
+"Copia el diagnòstic complet" = "전체 진단 정보 복사";
+"Informe per a una issue a GitHub" = "GitHub 이슈용 보고서";
+"Diagnòstic" = "진단";
+"Comprova si Warp i Claude Code han canviat el que l'app llegeix, i en copia l'informe (en anglès) al porta-retalls. No obre ni canvia res. No porta el teu nom d'usuari, ni les rutes de casa, ni els noms de les carpetes; el complet, sí." = "Warp와 Claude Code가 앱이 읽는 내용을 변경했는지 확인하고, 보고서(영어)를 클립보드에 복사합니다. 아무것도 열거나 변경하지 않습니다. 사용자 이름, 홈 경로, 폴더 이름은 포함하지 않으며, 전체 보고서에는 포함됩니다.";
+"Restaura Warp i surt…" = "Warp 복원 후 종료…";
+"Restaura Warp i surt" = "Warp 복원 후 종료";
+"Torna a deixar Warp com era" = "Warp를 원래대로 되돌리기";
+"Deixar de fer servir Warp Launch" = "Warp Launch 사용 중단";
+
+/* SelectorIdioma: la secció «Idioma» de la Configuració (F4) */
+"Idioma" = "언어";
+"Idioma de l'app" = "앱 언어";
+"El del sistema (%@)" = "시스템 언어(%@)";
+"L'idioma canviarà la propera vegada que obris l'app." = "다음에 앱을 열 때 언어가 변경됩니다.";
+
+/* Actualitzacions: l'estat, el peu, l'ítem del menú i el motiu d'esperar (amb el motiu de PoliticaActualitzacions a dins) */
+"la versió «%@» no té la forma que toca" = "버전 ‘%@’의 형식이 올바르지 않습니다";
+"La %@ s'instal·larà quan l'app es pugui reiniciar." = "앱을 재시작할 수 있을 때 %@ 버전이 설치됩니다.";
+"Encara no s'ha comprovat" = "아직 확인하지 않음";
+"Comprovant…" = "확인 중…";
+"Hi ha la %@." = "%@ 버전을 사용할 수 있습니다.";
+"L'actualització a la %@ continua a la seva finestra." = "%@ 버전으로의 업데이트가 해당 윈도우에서 계속됩니다.";
+"Baixant la %@…" = "%@ 버전 다운로드 중…";
+"La %@ és a punt: s'aplicarà sola quan no facis servir l'app." = "%@ 버전이 준비되었습니다: 앱을 사용하지 않을 때 자동으로 설치됩니다.";
+"La %@ és a punt: s'instal·larà quan surtis de l'app, o amb «Reinicia i actualitza»." = "%@ 버전이 준비되었습니다: 앱을 종료하거나 ‘재시작 및 업데이트’를 클릭하면 설치됩니다.";
+"S'està actualitzant…" = "업데이트 중…";
+"No s'ha pogut comprovar: %@." = "확인할 수 없습니다: %@.";
+"No s'ha pogut baixar o preparar la %@." = "%@ 버전을 다운로드하거나 준비할 수 없습니다.";
+"Ara no: %@" = "지금은 안 됨: %@";
+"La %@ no s'ha pogut instal·lar sola. Prova «Reinicia i actualitza», o reinstal·la-la." = "%@ 버전을 자동으로 설치할 수 없습니다. ‘재시작 및 업데이트’를 시도하거나 다시 설치하십시오.";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola quan no la fas servir. GitHub veu la teva adreça IP i la versió de l'app. Warp i Claude no es tanquen." = "하루에 한 번 앱이 GitHub에서 새 버전을 확인하고, 앱을 사용하지 않을 때 자동으로 업데이트합니다. GitHub는 사용자의 IP 주소와 앱 버전을 볼 수 있습니다. Warp와 Claude는 닫히지 않습니다.";
+"Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app." = "자동 업데이트가 꺼져 있으면 앱이 자동으로 재시작하지 않습니다: 앱을 종료할 때 업데이트가 설치됩니다.";
+"L'actualització espera per reiniciar…" = "재시작을 기다리는 업데이트…";
+"Reinicia i actualitza a la %@" = "재시작 및 %@ 버전으로 업데이트";
+"Mostra la finestra de l'actualització" = "업데이트 윈도우 보기";
+"Comprova si hi ha actualitzacions…" = "업데이트 확인…";
+"Última comprovació: fa menys d'1 min" = "마지막 확인: 1분 이내";
+"Última comprovació: fa %lld min" = "마지막 확인: %lld분 전";
+"Última comprovació: fa %lld h" = "마지막 확인: %lld시간 전";
+"Tens l'última versió. Comprovat el %@ a les %@." = "최신 버전입니다. %@ %@에 확인했습니다.";
+"Tens l'última versió. Comprovat avui a les %@." = "최신 버전입니다. 오늘 %@에 확인했습니다.";
+
+/* ConsentimentRestauracio i VistaConsentiment: la pantalla del permís i retirar-lo */
+"Mentrestant, «%@» ha canviat: torna-ho a provar." = "그동안 ‘%@’ 파일이 변경되었습니다: 다시 시도하십시오.";
+"Un cop al dia, l'app mira a GitHub si hi ha una versió nova i s'hi actualitza sola. Ho pots apagar a la Configuració." = "하루에 한 번 앱이 GitHub에서 새 버전을 확인하고 자동으로 업데이트합니다. 설정에서 끌 수 있습니다.";
+"Warp Launch ha deixat l'ajust de Warp com t'ha dit en confirmar-ho, i ja no té permís per tocar-lo. Si la tornes a obrir, te'l tornarà a demanar." = "Warp Launch가 확인 시 안내한 대로 Warp 설정을 되돌렸으며, 더 이상 설정을 변경할 권한이 없습니다. 앱을 다시 열면 권한을 다시 요청합니다.";
+"Sense aquest permís, Warp Launch no es pot fer servir. Si surts, no es desa res, i t'ho tornarà a preguntar la propera vegada." = "이 권한이 없으면 Warp Launch를 사용할 수 없습니다. 종료하면 아무것도 저장되지 않으며, 다음에 다시 묻습니다.";
+"%@. Mentre no l'arreglis o l'esborris, Warp Launch no es pot fer servir." = "%@. 수정하거나 삭제할 때까지 Warp Launch를 사용할 수 없습니다.";
+"%@. Mentre no l'arreglis o l'esborris (%@), Warp Launch no es pot fer servir." = "%@. 수정하거나 삭제할 때까지(%@) Warp Launch를 사용할 수 없습니다.";
+"Sense carpeta de configuració, Warp Launch no ha tocat Warp." = "구성 폴더가 없어 Warp Launch가 Warp를 변경하지 않았습니다.";
+"Ja has deixat de fer servir Warp Launch." = "이미 Warp Launch 사용을 중단했습니다.";
+"Sense el teu permís, Warp Launch no ha tocat Warp." = "사용자의 권한이 없어 Warp Launch가 Warp를 변경하지 않았습니다.";
+"Amb una configuració de prova (--config), Warp Launch no toca l'ajust de Warp: no hi ha res per tornar com era. Només es pot fer amb la configuració de debò." = "테스트 구성(--config)에서는 Warp Launch가 Warp 설정을 변경하지 않습니다: 되돌릴 것이 없습니다. 실제 구성에서만 할 수 있습니다.";
+"«%@» ja no diu que hi hagi el teu permís: torna a obrir Warp Launch." = "‘%@’에 더 이상 권한을 부여했다는 기록이 없습니다: Warp Launch를 다시 여십시오.";
+"No s'ha pogut tornar l'ajust de Warp com era: %@. L'ajust i el permís no han canviat." = "Warp 설정을 원래대로 되돌릴 수 없습니다: %@. 설정과 권한은 변경되지 않았습니다.";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp torna a quedar desactivat, i el permís no ha canviat." = "권한을 철회할 수 없습니다: %@. Warp 설정이 다시 꺼졌으며, 권한은 변경되지 않았습니다.";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, com ve de sèrie (Warp no té «settings.toml»): Warp Launch el desactivarà quan Warp sigui obert amb alguna pestanya. El permís no ha canviat." = "권한을 철회할 수 없습니다: %@. Warp 설정이 기본값대로 켜진 상태입니다(Warp에 ‘settings.toml’이 없음): Warp가 탭과 함께 열리면 Warp Launch가 설정을 끕니다. 권한은 변경되지 않았습니다.";
+"No s'ha pogut retirar el permís: %@. L'ajust de Warp ha quedat activat, i no s'ha pogut tornar a desactivar: Warp Launch ho tornarà a provar d'aquí a un minut. El permís no ha canviat." = "권한을 철회할 수 없습니다: %@. Warp 설정이 켜진 상태이며 다시 끌 수 없었습니다: Warp Launch가 1분 후에 다시 시도합니다. 권한은 변경되지 않았습니다.";
+"Has deixat de fer servir Warp Launch" = "Warp Launch 사용을 중단함";
+"Warp Launch ha de desactivar un ajust de Warp" = "Warp Launch에서 Warp 설정 하나를 꺼야 함";
+"Abans de començar, necessita el teu permís." = "시작하기 전에 사용자의 권한이 필요합니다.";
+"Per què cal" = "필요한 이유";
+"Quan Warp arrenca, pot tornar a obrir les pestanyes de l'última vegada, però sense Claude. Warp Launch no les reconeixeria com a seves i, en obrir les teves finestres, les pestanyes quedarien repetides." = "Warp는 시작할 때 지난번 탭을 다시 열 수 있지만 Claude는 열지 않습니다. Warp Launch는 이 탭을 자신의 탭으로 인식하지 못하며, 윈도우를 열면 탭이 중복됩니다.";
+"Què canvia" = "변경되는 내용";
+"A Warp, l'ajust «Restore windows, tabs, and panes on startup» queda desactivat (Warp Launch el desa al fitxer d'ajustos de Warp, encara que no l'hagis canviat mai). Si tens Settings Sync, també als teus altres Macs." = "Warp에서 ‘Restore windows, tabs, and panes on startup’ 설정이 꺼집니다(설정을 변경한 적이 없더라도 Warp Launch가 Warp 설정 파일에 저장합니다). Settings Sync를 사용하는 경우 다른 Mac에도 적용됩니다.";
+"Només quan li demanes que llegeixi les finestres de Warp (per exemple, en importar-les), Warp Launch l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "Warp의 윈도우를 읽도록 요청할 때만(예: 가져올 때) Warp Launch가 Warp가 윈도우를 저장하도록 몇 초 동안 설정을 켰다가 다시 끕니다.";
+"Configuració de prova (%@): l'app no tocarà aquest ajust." = "테스트 구성(%@): 앱이 이 설정을 변경하지 않습니다.";
+"No s'ha pogut desar el permís: %@." = "권한을 저장할 수 없습니다: %@.";
+"Accepta" = "수락";
+
+/* Desinstallacio: «Restaura Warp i surt…» i la seva confirmació */
+"Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt." = "이제 Warp Launch가 로그인 시 열리지 않습니다. 다시 켜려면 위의 스위치를 사용하십시오.";
+"L'ajust de Warp %@ tornarà a estar activat, com el tenies abans de Warp Launch." = "Warp의 %@ 설정이 Warp Launch 이전처럼 다시 켜집니다.";
+"L'ajust de Warp %@ es quedarà desactivat, com el tenies abans de Warp Launch." = "Warp의 %@ 설정이 Warp Launch 이전처럼 꺼진 상태로 유지됩니다.";
+"No se sap com tenies l'ajust de Warp %@ abans de Warp Launch, perquè ja la feies servir abans que demanés permís: quedarà activat, com ve de sèrie a Warp." = "Warp Launch가 권한을 요청하기 전부터 사용하고 있었으므로 Warp Launch 이전의 Warp %@ 설정을 알 수 없습니다: Warp 기본값대로 켜집니다.";
+"Warp Launch no ha canviat mai l'ajust de Warp %@: es queda com és." = "Warp Launch는 Warp의 %@ 설정을 변경한 적이 없습니다: 그대로 유지됩니다.";
+"Torna l'ajust de Warp com era, retira el permís de Warp Launch, la treu dels ítems d'inici de sessió si hi és, i surt. La configuració no s'esborra. Per desinstal·lar-la del tot, després arrossega-la a la Paperera." = "Warp 설정을 원래대로 되돌리고, Warp Launch의 권한을 철회하고, 로그인 항목에 있으면 제거한 다음 종료합니다. 구성은 삭제되지 않습니다. 완전히 제거하려면 그런 다음 앱을 휴지통으로 드래그하십시오.";
+"Vols deixar de fer servir Warp Launch?" = "Warp Launch 사용을 중단하겠습니까?";
+"En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust també canviarà als teus altres Macs." = "Warp는 시작할 때 지난번 탭을 Claude 없이 다시 엽니다. Settings Sync를 사용하는 경우 다른 Mac에서도 설정이 변경됩니다.";
+"Warp Launch deixarà de tenir permís per tocar l'ajust, sortirà dels ítems d'inici de sessió i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launch는 더 이상 설정을 변경할 권한이 없게 되며, 로그인 항목에서 제거되고 종료됩니다. 구성은 삭제되지 않습니다. 다시 열면 권한을 다시 요청합니다.";
+"Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a obrir, et tornarà a demanar permís." = "Warp Launch는 더 이상 설정을 변경할 권한이 없게 되며 종료됩니다. 구성은 삭제되지 않습니다. 다시 열면 권한을 다시 요청합니다.";
+
+/* RefrescWarp: per què no es pot tocar l'ajust de Warp, i les notes i els avisos del menú de la icona */
+"«settings.toml» de Warp acaba de canviar (torna-ho a provar d'aquí a uns segons)" = "Warp의 ‘settings.toml’이 방금 변경되었습니다(몇 초 후에 다시 시도하십시오)";
+"Warp no té «settings.toml», i Warp Launch només el crea amb Warp obert i amb alguna pestanya, perquè Warp hi pugui passar abans els seus ajustos antics (obre Warp i torna-ho a provar)" = "Warp에 ‘settings.toml’이 없으며, Warp Launch는 Warp가 이전 설정을 먼저 옮길 수 있도록 Warp가 탭과 함께 열려 있을 때만 이 파일을 생성합니다(Warp를 열고 다시 시도하십시오)";
+"Warp encara no té fitxer d'ajustos. Quan Warp sigui obert amb alguna pestanya, Warp Launch hi desactivarà la restauració de sessió en menys d'un minut." = "Warp에 아직 설정 파일이 없습니다. Warp가 탭과 함께 열리면 Warp Launch가 1분 이내에 세션 복원을 끕니다.";
+"Warp encara no s'ha obert mai en aquest usuari: no té la seva carpeta d'ajustos, ni cap finestra per restaurar. Quan Warp la creï i sigui obert amb alguna pestanya, Warp Launch en desactivarà la restauració de sessió en menys d'un minut." = "이 사용자에서 Warp를 한 번도 연 적이 없습니다: 설정 폴더도, 복원할 윈도우도 없습니다. Warp가 폴더를 생성하고 탭과 함께 열리면 Warp Launch가 1분 이내에 세션 복원을 끕니다.";
+"El fitxer d'ajustos de Warp no para de canviar, i Warp Launch no hi pot desactivar la restauració de sessió. Ho continua provant cada minut." = "Warp 설정 파일이 계속 변경되어 Warp Launch가 세션 복원을 끌 수 없습니다. 1분마다 계속 시도합니다.";
+"No es pot mirar la restauració de sessió de Warp: %@" = "Warp의 세션 복원을 확인할 수 없습니다: %@";
+"No es pot activar la restauració de sessió de Warp: %@" = "Warp의 세션 복원을 켤 수 없습니다: %@";
+"No s'ha pogut desactivar la restauració de sessió de Warp: %@. Si Warp es tanca, restaurarà les finestres sense Claude." = "Warp의 세션 복원을 끌 수 없습니다: %@. Warp가 종료되면 Claude 없이 윈도우를 복원합니다.";
+
+/* Obertura, ObreTot i Lligam: per què no s'obre o no es lliga, i el resultat d'«Obre-ho tot» */
+"No s'ha pogut obrir Warp: %@" = "Warp를 열 수 없습니다: %@";
+"La finestra ja no és a la configuració, o no té pestanyes" = "윈도우가 더 이상 구성에 없거나 탭이 없습니다";
+"Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp가 닫혀 있으며, 열리면 이 탭들을 Claude 없이 복원합니다. Warp를 열고 다시 시도하십시오.";
+"Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp가 닫혀 있습니다: 앱이 먼저 Warp를 엽니다. Warp는 이전 윈도우도 Claude 없이 복원합니다.";
+"Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp가 닫혀 있습니다: 앱이 먼저 Warp를 엽니다. 시작할 때 Warp가 빈 윈도우도 여는데, 닫아도 됩니다.";
+"Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Warp를 종료하면 Claude의 백그라운드 작업이 중간에 멈출 수 있으며, 탭을 다시 열어도 작업이 재개되지 않습니다.";
+"No s'ha pogut desar la configuració: %@" = "구성을 저장할 수 없습니다: %@";
+"No s'ha pogut desar la configuració" = "구성을 저장할 수 없습니다";
+"No s'ha pogut llegir Warp: %@" = "Warp를 읽을 수 없습니다: %@";
+"tots els Claude s'engegaran alhora" = "모든 Claude 세션이 동시에 시작됩니다";
+"«%@»: %@" = "‘%@’: %@";
+"«%@»: no s'ha pogut obrir." = "‘%@’: 열 수 없습니다.";
+"Cap finestra de la configuració no té pestanyes" = "구성의 어떤 윈도우에도 탭이 없습니다";
+"Les pestanyes amb Claude que obre l'app es lliguen soles." = "앱이 여는 Claude 사용 탭은 자동으로 연결됩니다.";
+
+/* FullObertura: el full d'«Obre a Warp…» i d'«Obre-ho tot a Warp…» */
+"Obre «%@» a Warp" = "Warp에서 ‘%@’ 열기";
+"Llegint Warp i les sessions de Claude…" = "Warp와 Claude 세션을 읽는 중…";
+"No es pot obrir" = "열 수 없음";
+"No s'ha obert cap pestanya." = "열린 탭이 없습니다.";
+"Obre-ho tot a Warp" = "모두 Warp에서 열기";
+"Warp ha canviat mentre el full era obert: revisa-ho abans d'obrir" = "시트가 열려 있는 동안 Warp가 변경되었습니다: 열기 전에 검토하십시오";
+"Totes les marcades s'obren alhora. Si una no s'obre, les altres continuen, i al final es diu què ha passat." = "선택한 윈도우가 모두 동시에 열립니다. 하나가 실패해도 나머지는 계속되며, 마지막에 결과를 보여 줍니다.";
+"%@ › %@" = "%@ › %@";
+"Totes les pestanyes ja són obertes" = "모든 탭이 이미 열려 있음";
+"Comprovant que Warp no ha canviat…" = "Warp가 변경되지 않았는지 확인하는 중…";
+"Obrint Warp…" = "Warp 여는 중…";
+"Esperant les finestres noves i els seus Claude (fins a 30 s)…" = "새로운 윈도우와 해당 Claude 세션을 기다리는 중(최대 30초)…";
+"No hi ha cap pestanya per obrir" = "열 탭이 없음";
+"S'obriran (%lld)" = "열릴 항목(%lld)";
+"Avisos" = "경고";
+"Ja obertes (%lld): no s'obriran" = "이미 열림(%lld): 열리지 않음";
+"No es poden obrir (%lld)" = "열 수 없음(%lld)";
+"Detalls" = "세부사항";
+"versió desconeguda" = "알 수 없는 버전";
+"Fitxer temporal" = "임시 파일";
+"L'app escriu aquest fitxer a la carpeta de launch configurations de Warp, li demana que l'obri, i l'esborra en quant veu que Warp l'ha obert (o als 30 s)." = "앱이 이 파일을 Warp의 launch configurations 폴더에 쓰고, Warp에 열도록 요청한 다음, Warp가 연 것을 확인하는 즉시(또는 30초 후) 삭제합니다.";
+"Obrint a Warp…" = "Warp에서 여는 중…";
+"Esperant la finestra nova (fins a 30 s)…" = "새로운 윈도우를 기다리는 중(최대 30초)…";
+"Esperant que arrenqui Claude a cada pestanya (fins a 30 s)…" = "각 탭에서 Claude가 시작되기를 기다리는 중(최대 30초)…";
+"Obre Warp, escriu el fitxer temporal i li demana que obri la finestra" = "Warp를 열고, 임시 파일을 쓴 다음, Warp에 윈도우를 열도록 요청합니다";
+"Escriu el fitxer temporal i demana a Warp que obri la finestra" = "임시 파일을 쓰고 Warp에 윈도우를 열도록 요청합니다";
+"Escriu un fitxer temporal per finestra i demana a Warp que les obri totes alhora" = "윈도우마다 임시 파일을 하나씩 쓰고 Warp에 모두 동시에 열도록 요청합니다";
+
+/* FullLligam: el full de «Lliga amb Warp…» */
+"Lliga amb Warp" = "Warp와 연결";
+"No es pot lligar amb Warp" = "Warp와 연결할 수 없음";
+"No s'ha desat res." = "아무것도 저장하지 않았습니다.";
+"«Obre a Warp…» ja no tornarà a obrir les que són obertes, i l'app en recordarà la conversa de Claude." = "‘Warp에서 열기…’가 이미 열려 있는 탭을 다시 열지 않으며, 앱이 해당 Claude 대화를 기억합니다.";
+"Per a cada pestanya de la configuració, la pestanya de Warp on ja és oberta. Les lligades no es tornaran a obrir mentre siguin obertes, i l'app en recordarà la conversa de Claude. No canvia la configuració, ni obre o tanca res de Warp." = "구성의 각 탭이 이미 열려 있는 Warp 탭을 찾습니다. 연결된 탭은 열려 있는 동안 다시 열리지 않으며, 앱이 해당 Claude 대화를 기억합니다. 구성을 변경하거나 Warp에서 아무것도 열거나 닫지 않습니다.";
+"Totes les pestanyes ja estan lligades amb Warp" = "모든 탭이 이미 Warp와 연결되어 있음";
+"Cap pestanya sense lligam no té parella a Warp" = "연결되지 않은 탭 중 Warp에 일치 항목이 있는 탭이 없음";
+"Per finestra" = "윈도우별";
+"Comprova-les (%lld)" = "검토 대상(%lld)";
+"Desmarca les que no siguin la mateixa pestanya: quedaran sense lligar, i s'obriran si n'obres la finestra." = "같은 탭이 아닌 항목은 선택 해제하십시오: 연결되지 않은 상태로 남으며, 해당 윈도우를 열면 열립니다.";
+"Sense parella (%lld): s'obriran si n'obres la finestra" = "일치 항목 없음(%lld): 윈도우를 열면 열림";
+"Les altres (%lld)" = "기타(%lld)";
+"Ja lligades: %lld" = "이미 연결됨: %lld개";
+"%lld per la conversa de Claude" = "Claude 대화로 %lld개";
+"%lld pel títol i la carpeta" = "제목과 폴더로 %lld개";
+"%lld només pel títol" = "제목으로만 %lld개";
+"%lld només per la carpeta" = "폴더로만 %lld개";
+"Ja lligades: %lld (no canvien)" = "이미 연결됨: %lld개(변경 안 됨)";
+"%lld de %lld" = "%2$lld개 중 %1$lld개";
+"%lld de %lld · finestra %@ de Warp" = "%2$lld개 중 %1$lld개 · Warp 윈도우 %3$@";
+"%lld de %lld · finestres %@ de Warp" = "%2$lld개 중 %1$lld개 · Warp 윈도우 %3$@";
+"%@: hi corre la seva conversa de Claude" = "%@: 해당 Claude 대화가 실행 중";
+"%@, a %@: el títol coincideix, la carpeta no" = "%@, 위치 %@: 제목은 일치하고 폴더는 일치하지 않음";
+"%@, a %@: la carpeta coincideix, el títol no" = "%@, 위치 %@: 폴더는 일치하고 제목은 일치하지 않음";
+"Desa els lligams a «estat.json». No canvia la configuració ni toca Warp" = "연결 정보를 ‘estat.json’에 저장합니다. 구성을 변경하거나 Warp를 건드리지 않습니다";
+
+/* FullImportacio i VistaImportacio: el full d'importar */
+"ara mateix s'està obrint alguna finestra a Warp, o Warp Launch s'està actualitzant. Torna-ho a provar quan acabi." = "지금 Warp에서 윈도우가 열리고 있거나 Warp Launch가 업데이트 중입니다. 완료되면 다시 시도하십시오.";
+"Aquí, tria «Comença en blanc» i afegeix-hi les pestanyes." = "여기에서 ‘처음부터 시작’을 선택하고 탭을 추가하십시오.";
+"La configuració no canvia." = "구성은 변경되지 않습니다.";
+"Si no, tria «Comença en blanc» i afegeix-hi les pestanyes." = "그렇지 않으면 ‘처음부터 시작’을 선택하고 탭을 추가하십시오.";
+"No hi ha res per importar: tria «Comença en blanc» i afegeix-hi les pestanyes." = "가져올 항목이 없습니다: ‘처음부터 시작’을 선택하고 탭을 추가하십시오.";
+"No hi ha res per importar, i la configuració no canvia." = "가져올 항목이 없으며, 구성은 변경되지 않습니다.";
+"Importa de Warp" = "Warp에서 가져오기";
+"Torna a importar-ho tot de Warp" = "모두 Warp에서 다시 가져오기";
+"Crea" = "생성";
+"Substitueix" = "대치";
+"%lld amb Claude, amb l'ordre de la seva sessió" = "Claude 사용 %lld개, 해당 세션의 명령 사용";
+"%lld sense Claude obert" = "Claude가 열려 있지 않음 %lld개";
+"%lld a la carpeta d'inici" = "홈 폴더 %lld개";
+"%lld amb una carpeta que ja no existeix" = "더 이상 존재하지 않는 폴더 %lld개";
+"%lld més" = "외 %lld개";
+"%lld només terminal: %@" = "터미널만 %lld개: %@";
+"Queda només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "터미널만 사용합니다. 이 탭에서 Claude를 열려면 인스펙터에서 ‘이 탭에서 Claude Code 열기’를 선택하십시오: 이 명령으로 열립니다.";
+"Queden només terminal. Per obrir-hi Claude, marca «Obre Claude Code en aquesta pestanya» a l'inspector: s'hi obrirà amb aquesta ordre." = "터미널만 사용합니다. 이 탭들에서 Claude를 열려면 인스펙터에서 ‘이 탭에서 Claude Code 열기’를 선택하십시오: 이 명령으로 열립니다.";
+"Es desarà la configuració a %@. No s'obre res de Warp ni de Claude." = "구성이 %@에 저장됩니다. Warp나 Claude에서 아무것도 열지 않습니다.";
+"Es desarà la configuració. No s'obre res de Warp ni de Claude." = "구성이 저장됩니다. Warp나 Claude에서 아무것도 열지 않습니다.";
+"%@, per si hi has obert o tancat res" = "%@(무언가를 열거나 닫은 경우)";
+"Llegint Warp…" = "Warp 읽는 중…";
+"La plantilla ha canviat a la Configuració: prem «%@» per importar amb la nova" = "설정에서 템플릿이 변경되었습니다: 새 템플릿으로 가져오려면 ‘%@’을(를) 클릭하십시오";
+"Avisos de la lectura" = "읽는 중 경고";
+"Pestanyes que no tenien Claude obert" = "Claude가 열려 있지 않던 탭";
+"Notes" = "메모";
+
+/* EstatWarp i EstatSessions: la línia de Warp al menú de la icona i per què no es pot obrir */
+"Warp: encara no s'ha llegit" = "Warp: 아직 읽지 않음";
+"Warp: llegint…" = "Warp: 읽는 중…";
+"Warp: no s'ha pogut llegir (%@)" = "Warp: 읽을 수 없음(%@)";
+"Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "테스트 구성(--config)에서는 앱이 이 설정을 변경하지 않으며 Warp에 윈도우를 저장하도록 요청할 수 없습니다. 실제 구성에서는 가능합니다: Warp가 윈도우를 저장하도록 몇 초 동안 설정을 켰다가 다시 끕니다.";
+"«estat.json» no es pot fer servir: %@" = "‘estat.json’을 사용할 수 없습니다: %@";
+"«estat.json» encara no s'ha llegit" = "‘estat.json’을 아직 읽지 않았습니다";
