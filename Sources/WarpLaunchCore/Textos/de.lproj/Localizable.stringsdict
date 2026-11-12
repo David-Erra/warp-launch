@@ -1,0 +1,1145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Plurals en alemany (docs/disseny.md, secció 12): la clau és el text en català amb l'especificador. -->
+<plist version="1.0">
+<dict>
+	<!-- Fase F1: la prova de la infraestructura (IdiomaTests) -->
+	<key>%lld finestres</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@finestres@</string>
+		<key>finestres</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+	</dict>
+	<!-- OrdreCLI: errors d'ús -->
+	<key>no hi ha cap finestra número %@; n'hi ha %lld:</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>es gibt kein Fenster Nummer %@; es gibt %#@n@:</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+	</dict>
+	<key>no hi ha cap finestra «%@»; n'hi ha %lld:</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>es gibt kein Fenster „%@“; es gibt %#@n@:</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+	</dict>
+	<!-- OrdreCLI: importa i configuracio valida -->
+	<key>%lld pestanyes salten els permisos (--dangerously-skip-permissions).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ die Berechtigungen (--dangerously-skip-permissions).</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab überspringt</string>
+			<key>other</key>
+			<string>%lld Tabs überspringen</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes no s'obririen com diu la configuració (✗).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ nicht so öffnen, wie es die Konfiguration vorgibt (✗).</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab würde sich</string>
+			<key>other</key>
+			<string>%lld Tabs würden sich</string>
+		</dict>
+	</dict>
+	<key>%lld finestres · %lld pestanyes · %lld amb Claude · %lld només terminal</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ · %#@p@ · %lld mit Claude · %lld nur Terminal</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>Resultat: %lld errors, %lld avisos.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ergebnis: %#@e@, %#@a@.</string>
+		<key>e</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fehler</string>
+			<key>other</key>
+			<string>%lld Fehler</string>
+		</dict>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Warnung</string>
+			<key>other</key>
+			<string>%lld Warnungen</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense ordre (vegeu els errors)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ ohne Befehl (siehe die Fehler)</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- Informe: warp-launch llegeix -->
+	<key>Warp: %lld finestres, %lld pestanyes de terminal, %lld amb Claude. Sessions de Claude fora de cap pestanya: %lld.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@f@, %#@p@, %lld mit Claude. Claude-Sitzungen außerhalb von Tabs: %lld.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Terminal-Tab</string>
+			<key>other</key>
+			<string>%lld Terminal-Tabs</string>
+		</dict>
+	</dict>
+	<key>Carpetes: %lld recuperades de l'historial, %lld que ja no existeixen, %lld a la carpeta d'inici (~).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ordner: %#@h@, %#@n@, %lld im Benutzerordner (~).</string>
+		<key>h</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld aus dem Verlauf wiederhergestellt</string>
+			<key>other</key>
+			<string>%lld aus dem Verlauf wiederhergestellt</string>
+		</dict>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld nicht mehr vorhanden</string>
+			<key>other</key>
+			<string>%lld nicht mehr vorhanden</string>
+		</dict>
+	</dict>
+	<key>Warp: %lld terminals vius, %lld amb Claude. Sessions de Claude fora de Warp: %lld.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@t@, %lld mit Claude. Claude-Sitzungen außerhalb von Warp: %lld.</string>
+		<key>t</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld laufendes Terminal</string>
+			<key>other</key>
+			<string>%lld laufende Terminals</string>
+		</dict>
+	</dict>
+	<key>Finestra %@ · %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Fenster %@ · %#@p@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- Resum: les xifres, els arguments de l'app i les opcions de Claude -->
+	<key>Warp: %lld terminals · %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@t@ · %#@s@</string>
+		<key>t</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Terminal</string>
+			<key>other</key>
+			<string>%lld Terminals</string>
+		</dict>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude-Sitzung</string>
+			<key>other</key>
+			<string>%lld Claude-Sitzungen</string>
+		</dict>
+	</dict>
+	<key>Warp: %lld finestres · %lld pestanyes · %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp: %#@f@ · %#@p@ · %#@s@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude-Sitzung</string>
+			<key>other</key>
+			<string>%lld Claude-Sitzungen</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes · %lld amb Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ · %lld mit Claude</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- PlaObertura: els avisos del full d'obrir -->
+	<key>la conversa és en %lld projectes de Claude i cap no és el d'aquesta carpeta: en començarà una de nova</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>die Konversation ist in %#@p@, und keines gehört zu diesem Ordner: Der Tab beginnt eine neue</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude-Projekt</string>
+			<key>other</key>
+			<string>%lld Claude-Projekten</string>
+		</dict>
+	</dict>
+	<key>s'engegaran %lld sessions de Claude alhora</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@s@ gleichzeitig</string>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude-Sitzung startet</string>
+			<key>other</key>
+			<string>%lld Claude-Sitzungen starten</string>
+		</dict>
+	</dict>
+	<key>fa %lld dies</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@d@</string>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>vor %lld Tag</string>
+			<key>other</key>
+			<string>vor %lld Tagen</string>
+		</dict>
+	</dict>
+	<!-- PlaObertura: les xifres del full d'obrir -->
+	<key>%lld reprenen la seva conversa</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@r@</string>
+		<key>r</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld setzt seine Konversation fort</string>
+			<key>other</key>
+			<string>%lld setzen ihre Konversation fort</string>
+		</dict>
+	</dict>
+	<key>%lld en comencen una de nova</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld beginnt eine neue</string>
+			<key>other</key>
+			<string>%lld beginnen eine neue</string>
+		</dict>
+	</dict>
+	<key>S'obrirà 1 finestra nova de Warp amb %lld pestanyes: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>1 neues Warp-Fenster wird mit %#@p@ geöffnet: %@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- ExecucioObertura: el resultat d'obrir -->
+	<key>S'ha obert «%@» a Warp: %lld pestanyes, %lld amb Claude.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>„%@“ in Warp geöffnet: %#@p@, %lld mit Claude.</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>No s'ha pogut reconèixer la finestra nova de «%@» (s'ha vist Claude a %lld de %lld pestanyes): mira-la a Warp abans de tornar-la a obrir.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Das neue Fenster von „%@“ wurde nicht erkannt (Claude in %lld von %#@p@ gesehen): Sieh es dir in Warp an, bevor du es erneut öffnest.</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- LaunchConfigWarp, FitxersLaunchWarp i YAMLWarp: el fitxer temporal de Warp -->
+	<key>fa %lld bytes i se n'havien escrit %lld: algú l'ha canviat, i no s'esborra</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>sie hat %#@b@, geschrieben wurden %lld: Jemand hat sie geändert, daher wird sie nicht gelöscht</string>
+		<key>b</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Byte</string>
+			<key>other</key>
+			<string>%lld Bytes</string>
+		</dict>
+	</dict>
+	<!-- AjustRestauracio: per què no es pot tocar l'ajust de Warp -->
+	<key>«restore_session» hi surt %lld vegades, i n'hi hauria d'haver 1</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>„restore_session“ kommt %#@v@ vor, sollte aber genau einmal vorkommen</string>
+		<key>v</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld-mal</string>
+			<key>other</key>
+			<string>%lld-mal</string>
+		</dict>
+	</dict>
+	<key>«settings.toml» té %lld capçaleres [general], i n'hi hauria d'haver 1</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>„settings.toml“ hat %#@c@, sollte aber genau 1 haben</string>
+		<key>c</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Kopfzeile [general]</string>
+			<key>other</key>
+			<string>%lld Kopfzeilen [general]</string>
+		</dict>
+	</dict>
+	<key>Warp no ha desat les finestres: n'hi ha %lld pestanyes desades i %lld terminals vius. Pot ser antic: canvia de finestra a Warp i fes «%@».</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp hat die Fenster nicht gesichert: Es gibt %#@p@ und %#@t@. Das kann veraltet sein: Wechsle in Warp das Fenster und wähle „%@“.</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld gesicherten Tab</string>
+			<key>other</key>
+			<string>%lld gesicherte Tabs</string>
+		</dict>
+		<key>t</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld laufendes Terminal</string>
+			<key>other</key>
+			<string>%lld laufende Terminals</string>
+		</dict>
+	</dict>
+	<!-- Importador: els noms per defecte, les notes i el resum de la importació -->
+	<key>%@: pestanya dividida en %lld panes; només s'importa el principal, i es perd %lld sessions de Claude</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%@: Tab in %lld Panes geteilt; nur das Haupt-Pane wird importiert, und %#@s@</string>
+		<key>s</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Claude-Sitzung geht verloren</string>
+			<key>other</key>
+			<string>%lld Claude-Sitzungen gehen verloren</string>
+		</dict>
+	</dict>
+	<key>%lld finestres · %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ · %#@p@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- Editor: el subtítol de la finestra -->
+	<key>%lld pestanyes per revisar</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ zu prüfen</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes · %lld amb Claude · %lld avisos</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ · %lld mit Claude · %#@a@</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Warnung</string>
+			<key>other</key>
+			<string>%lld Warnungen</string>
+		</dict>
+	</dict>
+	<!-- VistaEditor i VistaInspector -->
+	<key>En llegir el fitxer s'han corregit %lld coses. Abans de desar se'n fa una còpia.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Beim Lesen der Datei %#@n@. Vor dem Sichern wird eine Kopie erstellt.</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>wurde %lld Stelle korrigiert</string>
+			<key>other</key>
+			<string>wurden %lld Stellen korrigiert</string>
+		</dict>
+	</dict>
+	<key>Claude Code a %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Claude Code in %#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- Actualitzacions i CopiaDiagnostic -->
+	<key>Reinicia i actualitza a la %@ (fa %lld dies)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Neu starten und auf %@ aktualisieren (seit %#@d@ bereit)</string>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tag</string>
+			<key>other</key>
+			<string>%lld Tagen</string>
+		</dict>
+	</dict>
+	<key>Última comprovació: fa %lld dies</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Zuletzt geprüft: vor %#@d@</string>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tag</string>
+			<key>other</key>
+			<string>%lld Tagen</string>
+		</dict>
+	</dict>
+	<key>Copiat (anonimitzat): %lld bé, %lld avisos, %lld errors.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Kopiert (anonymisiert): %lld OK, %#@a@, %#@e@.</string>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Warnung</string>
+			<key>other</key>
+			<string>%lld Warnungen</string>
+		</dict>
+		<key>e</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fehler</string>
+			<key>other</key>
+			<string>%lld Fehler</string>
+		</dict>
+	</dict>
+	<key>Copiat (complet): %lld bé, %lld avisos, %lld errors.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Kopiert (vollständig): %lld OK, %#@a@, %#@e@.</string>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Warnung</string>
+			<key>other</key>
+			<string>%lld Warnungen</string>
+		</dict>
+		<key>e</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fehler</string>
+			<key>other</key>
+			<string>%lld Fehler</string>
+		</dict>
+	</dict>
+	<!-- ObreTot i FullObertura: «Obre-ho tot» i els botons d'obrir -->
+	<key>S'obriran %lld finestres noves de Warp amb %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ mit %#@p@ geöffnet</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld neues Warp-Fenster wird</string>
+			<key>other</key>
+			<string>%lld neue Warp-Fenster werden</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>S'obriran %lld finestres noves de Warp amb %lld pestanyes: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ mit %#@p@ geöffnet: %@</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld neues Warp-Fenster wird</string>
+			<key>other</key>
+			<string>%lld neue Warp-Fenster werden</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>S'han obert %lld finestres a Warp, amb %lld pestanyes, %lld amb Claude.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ in Warp geöffnet, mit %#@p@, davon %lld mit Claude.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>S'han obert bé %lld de %lld finestres a Warp.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>In Warp korrekt geöffnet: %lld von %#@f@.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenstern</string>
+		</dict>
+	</dict>
+	<key>Obrint %lld finestres a Warp…</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ in Warp geöffnet …</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster wird</string>
+			<key>other</key>
+			<string>%lld Fenster werden</string>
+		</dict>
+	</dict>
+	<key>%lld avisos</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@a@</string>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Warnung</string>
+			<key>other</key>
+			<string>%lld Warnungen</string>
+		</dict>
+	</dict>
+	<key>Obre %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ öffnen</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>Obre %lld finestres</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@f@ öffnen</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense lligam potser ja són obertes a Warp: si ho són, cancel·la i fes Arxiu › Lliga amb Warp… abans d'obrir.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld nicht verknüpfter Tab ist vielleicht schon in Warp offen: Wenn ja, brich ab und wähle vor dem Öffnen Ablage › Mit Warp verknüpfen …</string>
+			<key>other</key>
+			<string>%lld nicht verknüpfte Tabs sind vielleicht schon in Warp offen: Wenn ja, brich ab und wähle vor dem Öffnen Ablage › Mit Warp verknüpfen …</string>
+		</dict>
+	</dict>
+	<key>Warp ja té %lld pestanyes que l'app no reconeix (potser les ha restaurat Warp, sense Claude). Si obres, quedaran repetides: tanca-les abans si no les vols.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Warp hat schon %#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab, den die App nicht erkennt (vielleicht hat Warp ihn ohne Claude wiederhergestellt). Wenn du öffnest, ist er doppelt: Schließe ihn vorher, wenn du ihn nicht willst.</string>
+			<key>other</key>
+			<string>%lld Tabs, die die App nicht erkennt (vielleicht hat Warp sie ohne Claude wiederhergestellt). Wenn du öffnest, sind sie doppelt: Schließe sie vorher, wenn du sie nicht willst.</string>
+		</dict>
+	</dict>
+	<!-- FullLligam -->
+	<key>S'han lligat %lld pestanyes amb Warp.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ mit Warp verknüpft.</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense lligam: %lld amb parella a Warp</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@: %lld mit Gegenstück in Warp</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld unverknüpfter Tab</string>
+			<key>other</key>
+			<string>%lld unverknüpfte Tabs</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sense lligam: %lld amb parella a Warp, %lld sense</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@: %lld mit Gegenstück in Warp, %lld ohne</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld unverknüpfter Tab</string>
+			<key>other</key>
+			<string>%lld unverknüpfte Tabs</string>
+		</dict>
+	</dict>
+	<key>%lld amb Claude obert: se'n recordarà la conversa</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld mit offenem Claude: Die App merkt sich seine Konversation</string>
+			<key>other</key>
+			<string>%lld mit offenem Claude: Die App merkt sich ihre Konversationen</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes de Warp no són de cap pestanya de la configuració</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ zu keinem Tab der Konfiguration</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Warp-Tab gehört</string>
+			<key>other</key>
+			<string>%lld Warp-Tabs gehören</string>
+		</dict>
+	</dict>
+	<key>Lliga %lld pestanyes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@p@ verknüpfen</string>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<!-- FullImportacio -->
+	<key>%lld salten els permisos (--dangerously-skip-permissions)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ die Berechtigungen (--dangerously-skip-permissions)</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld überspringt</string>
+			<key>other</key>
+			<string>%lld überspringen</string>
+		</dict>
+	</dict>
+	<key>%lld pestanyes sortiran a «Per revisar»</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ in „Zu prüfen“</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab erscheint</string>
+			<key>other</key>
+			<string>%lld Tabs erscheinen</string>
+		</dict>
+	</dict>
+	<key>Substitueix el que hi ha ara (%lld finestres i %lld pestanyes). Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ersetzt den aktuellen Inhalt (%#@f@ und %#@p@). Vor dem Sichern wird eine Kopie erstellt, und mit ⌘Z lässt es sich widerrufen. Die Vorlage ändert sich nicht.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+	</dict>
+	<key>Substitueix el que hi ha ara (%lld finestres i %lld pestanyes). Ara hi ha %lld pestanyes amb Claude i en quedaran %lld: les altres seran només terminal. Abans de desar se'n fa una còpia, i es pot desfer amb ⌘Z. La plantilla no canvia.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ersetzt den aktuellen Inhalt (%#@f@ und %#@p@). Jetzt %#@a@ Claude, und %#@d@: Die anderen werden reine Terminal-Tabs. Vor dem Sichern wird eine Kopie erstellt, und mit ⌘Z lässt es sich widerrufen. Die Vorlage ändert sich nicht.</string>
+		<key>f</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Fenster</string>
+			<key>other</key>
+			<string>%lld Fenster</string>
+		</dict>
+		<key>p</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Tab</string>
+			<key>other</key>
+			<string>%lld Tabs</string>
+		</dict>
+		<key>a</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>hat %lld Tab</string>
+			<key>other</key>
+			<string>haben %lld Tabs</string>
+		</dict>
+		<key>d</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld behält es</string>
+			<key>other</key>
+			<string>%lld behalten es</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
