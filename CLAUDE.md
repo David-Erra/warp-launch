@@ -194,6 +194,9 @@ Els requisits són a `docs/especificacio.md`.
   `AmpladesTests` mesura amb `NSFont` que els textos de les amplades fixes hi caben en les 10 (l'inspector, de 320 pt com a mínim, i la finestra, de
   680); les comes i els parèntesis, de la llengua (`Idioma.llista`, `Idioma.frases`); i una pseudollengua troba el que no passa per `t(_:)`.
   Només proves i codi llegit: no s'ha vist a l'app (F7).
+- **0.36.0 (12/11/2026, `docs/disseny.md`, secció 14):** el primer ús guiat (l'estat buit de l'editor, en tres passos, i un enllaç a Configuració › General);
+  «Obre la configuració del sistema» obre Arxius i carpetes quan macOS no deixa llegir Warp (decisió 8: només `ServeiPermis`, amb una adreça d'una llista fixa,
+  llegida a `tccd` de macOS 27.2); i les versions provades, Warp 0.2026.11.04 i Claude Code fins a la 2.1.322. Només proves i codi llegit: no s'ha vist a l'app.
 - **Actualització automàtica amb Sparkle 2.10.1 (al codi de la 0.32.0 a la 0.32.5, 09/11/2026; publicada amb la 0.33.0, 11/11/2026).** Les 13 decisions
   de l'autor són a `docs/especificacio.md`; el disseny, els passos, les proves reals i com s'atura una versió dolenta, a
   `docs/disseny.md`, secció 11; els fets, a `docs/fets-verificats.md`, «Sparkle».

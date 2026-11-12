@@ -3,6 +3,16 @@
 Published versions of Warp Launch. Versions in between were never published: their changes are listed under the next
 published one. Dates are when the version was published on GitHub.
 
+## 0.36.0
+
+- **A guided first run.** With no configuration yet, the editor explains in three steps what the app does: open in Warp the
+  windows you want to get back, import them, and after a restart **Open All in Warp…** reopens them with their Claude
+  sessions. If the app doesn't open at login yet, a link takes you to **Settings › General**.
+- **Open System Settings.** When macOS doesn't let the app read Warp's data, the menu bar menu and the import sheet offer
+  **Open System Settings**, which goes straight to **Privacy & Security › Files & Folders**. It's the only System Settings
+  page the app can open.
+- Tested with Warp 0.2026.11.04 and Claude Code up to 2.1.322: the diagnostic no longer warns about them.
+
 ## 0.35.0
 
 - **10 languages:** Catalan, English, Spanish, French, German, Italian, Brazilian Portuguese, Japanese, Simplified Chinese

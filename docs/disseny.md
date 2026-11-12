@@ -3274,3 +3274,64 @@ qualsevol app: és una condició de la 1.0.0 (decisió D-P1 de l'autor).
   llançament hi ha com a molt una desena de còpies, i totes es poden actualitzar a mà si falla (`brew upgrade` o l'ordre del README).
 - **(b)** Una ronda com la C abans de publicar, amb un servidor local i una clau d'un sol ús: una o dues hores, amb l'autor al
   davant i dos reinicis de l'app.
+
+## 14. La candidata (0.36.0)
+
+Tres canvis (12/11/2026), cap de format: la configuració, `estat.json` i `preferencies.json` no canvien. Developer ID i
+notarització (secció 13) no hi són: depenen del certificat de l'autor.
+
+**El primer ús** (`PrimerUs`, `SenseConfiguracio` de `VistaEditor`). Sense configuració, l'estat buit de l'editor, el mateix
+`ContentUnavailableView` d'abans (mac-design: un estat buit convida a la primera acció; cap visita guiada), diu en tres passos
+què fa l'app i què cal fer, i a sota, «Fins que no triïs, no s'escriu res.» i els botons de sempre:
+1. «Obre a Warp les finestres que vulguis recuperar.»
+2. «Importa-les amb «Importa de Warp…».»
+3. «Després d'un reinici, «Obre-ho tot a Warp…» les torna a obrir amb les seves sessions de Claude.»
+
+Si l'interruptor «Obre Warp Launch en iniciar sessió» es pot activar i no ho és (la configuració de debò, l'app a Aplicacions),
+un enllaç, «Fes que s'obri sola en iniciar sessió…», obre la Configuració a «General». No activa res (regla 3). El text no
+comença per «Obre»: la guarda dels botons «Obre…» (`elsBotonsDObrirNomesDemanenElFull`) els tracta com a botons que obren Warp.
+Els passos, alineats a l'esquerra, fan com a molt 440 pt (`SenseConfiguracio.ampladaPassos`).
+
+**La pàgina del permís** (decisió 8 de la fila del 07/11/2026). Quan macOS no deixa llegir les dades de Warp
+(`ErrorLectura.macOSNoDeixaLlegir`), el menú de la icona, sota «Warp: no s'ha pogut llegir (…)», i el full d'importar, sota
+l'error, ofereixen «Obre la configuració del sistema» (el text de macOS 27 en cada llengua, de `SystemPolicy.framework`: «Open
+System Settings»), que obre Privacitat i seguretat › Arxius i carpetes. L'avís «Accés a les dades bloquejat» és de macOS: no s'hi
+pot afegir res. Es decideix pel cas de l'error (`EstatWarp.ErrorLectura.calPermis`), no pel text, que és traduït.
+- **L'adreça:** `x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders`. Comprovat llegint, sense obrir
+  res, a macOS 27.2 (12/11/2026):
+  - és la que porta `tccd`, al costat de les d'Accessibilitat i de Gestió d'apps: els tres serveis que avisen amb «Gestiona»
+    (`NOTIFY_BUTTON_…` de `TCC.framework`). L'avís «Accés a les dades bloquejat» és el de `kTCCServiceSystemPolicyAppDataDetailed`,
+    i diu que es gestiona a «Files & Folders»;
+  - `SecurityPrivacyExtension.appex` declara `legacyBundleIdentifier = com.apple.preference.security` i
+    `allowsXAppleSystemPreferencesURLScheme`, i el seu binari porta l'àncora `Privacy_FilesAndFolders` (amb les de les carpetes i
+    `Privacy_AppContainer`, que són files del mateix tauler);
+  - Configuració del Sistema declara l'esquema `x-apple.systempreferences` i té la ruta dels taulers antics
+    (`LegacyPrefPaneURLRoute`), i les biblioteques de macOS fan servir totes dues formes (`com.apple.preference.security?Privacy_…`
+    i `com.apple.settings.PrivacySecurity.extension?Privacy_…`).
+  - **No comprovat:** macOS 26 (en aquest Mac només hi ha el 27.2), i que el clic obri el tauler i no només Configuració del
+    Sistema: s'ha de veure a l'app.
+- **La guarda** (`nomesElServeiDelPermisObreConfiguracioDelSistema`, `laPaginaDelPermisNomesLaObreElClic`): la crida només a
+  `ServeiPermis.swift` (`WarpLaunchApp`), amb tres línies fixes, i l'adreça, d'una llista fixa (`adrecesDelPermis`, d'una), és
+  l'únic text del fitxer. Enlloc més de `Sources`, ni en un comentari, ni a les proves, cap nom de Configuració del Sistema
+  (`x-apple.systempreferences`, `settings-navigation`, `com.apple.systempreferences`, `com.apple.preference.`,
+  `com.apple.settings.`, els paquets: a `prohibidesCodi`, amb l'excepció del servei); `NSWorkspace.shared.open(`, només a
+  l'obridor de Warp i al servei. La mostra fa fallar la guarda amb la crida en set altres fitxers, i al servei amb una altra
+  adreça, un altre text, la crida dues vegades o una altra crida. L'app connecta el servei en un sol lloc
+  (`EstatWarp.obrePaginaPermis`), i només el criden els dos botons; a les proves, una crida falsa (`PermisTests`). El botó
+  comença per «Obre»: `elsBotonsDObrirNomesDemanenElFull` el compta a part (2), i ha de cridar `obrePermis()`.
+
+**Les versions provades** (`VersionsProvades`; fets de l'11/11/2026, en aquest Mac): Warp 0.2026.10.21 i 0.2026.11.04
+(`0.2026.11.04.08.17.01`: la lectura completa de 75 terminals i 74 sessions, i la prova real de la 0.34.0), i Claude Code de la
+2.1.317 a la 2.1.322 (hi corrien sessions de la 2.1.319, la 2.1.321 i la 2.1.322). Els dos README, «Provat l'11/11/2026…».
+
+**Textos i amplades:** 8 claus noves a les 10 llengües, i la de l'estat buit d'abans, fora: ara, 674 textos i 58 plurals.
+`AmpladesTests`, 104 llocs (abans, 99): els tres passos (fins a dues línies, al costat de la icona del número), els botons de
+l'estat buit en una fila a la finestra més estreta, i el del permís al full d'importar.
+
+**Per a l'autor, a l'app:**
+- l'estat buit, amb una carpeta de prova buida (`--config`): els passos, alineats, i els botons, sense l'enllaç (amb una de prova,
+  l'app no s'obre sola); en alemany i en japonès, que els passos no es tallin;
+- l'enllaç, en un usuari de macOS nou (la configuració de debò sense fitxer, l'interruptor apagat i l'app a Aplicacions): obre la
+  Configuració a «General»;
+- el permís, si es pot provocar (una còpia que encara no el té): el botó al menú de la icona i al full d'importar, i que el clic
+  obri Arxius i carpetes.
