@@ -26,7 +26,7 @@ body:
     attributes:
       label: Diagnostic
       description: |
-        In the app: **Settings › General › Diagnostic › Copy Diagnostic** (tick "Anonymize"), then paste it here.
+        In the app: **Settings › General › Diagnostics › Copy Diagnostics** (anonymized by default), then paste it here.
         From the terminal: `warp-launch diagnostica --anonimitza`.
       render: text
   - type: input

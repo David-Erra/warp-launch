@@ -3,11 +3,14 @@
 Published versions of Warp Launch. Versions in between were never published: their changes are listed under the next
 published one. Dates are when the version was published on GitHub.
 
-## Unreleased
+## 0.35.0
 
-- The app speaks 10 languages: Catalan, English, Spanish, French, German, Italian, Brazilian Portuguese, Japanese,
-  Simplified Chinese and Korean. It follows the language of your Mac, and you can choose another one in Settings.
-  English is used when your Mac's language isn't one of them. (In progress.)
+- **10 languages:** Catalan, English, Spanish, French, German, Italian, Brazilian Portuguese, Japanese, Simplified Chinese
+  and Korean. The app follows the language of your Mac; **Settings › General › Language** picks another one (it applies the next
+  time you open the app). When your Mac's language isn't one of them, the app is in English. The names of macOS menus and
+  settings are the ones macOS itself uses in each language.
+- The inspector is at least 320 pt wide and the editor window at least 680 pt, so every language fits.
+- The diagnostic is always in English, ready to paste into a GitHub issue.
 
 ## 0.34.0
 
