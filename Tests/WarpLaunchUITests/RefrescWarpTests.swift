@@ -364,8 +364,10 @@ private actor Porta {
         var entorn = mon.entorn
         entorn.llegeixBase = { throw ErrorLectura.macOSNoDeixaLlegir }
         let resultat = await RefrescWarp(entorn: entorn).refresca()
-        guard case .failure = resultat else { Issue.record("havia de fallar"); return }
+        guard case let .failure(error) = resultat else { Issue.record("havia de fallar"); return }
         #expect(mon.canvis.isEmpty && mon.esperes == 0)
+        // Decisió 8 (0.36.0): l'error diu que és el del permís, perquè el full d'importar n'ofereixi la pàgina.
+        #expect(error.calPermis)
     }
 
     /// Una alerta pot aturar la sortida: mentrestant, cap refresc activa l'ajust; si es cancel·la, tornen.

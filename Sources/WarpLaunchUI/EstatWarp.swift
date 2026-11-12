@@ -31,6 +31,38 @@ public final class EstatWarp {
     /// Per què no s'ha pogut llegir Warp (sovint, el permís de Privacitat i seguretat).
     public struct ErrorLectura: Error, Equatable, CustomStringConvertible {
         public var description: String
+        /// macOS no deixa llegir les dades de Warp (`WarpLaunchCore.ErrorLectura.macOSNoDeixaLlegir`): falta el permís
+        /// d'Arxius i carpetes, i es pot oferir la pàgina del permís (`EstatWarp.obrePermis`, decisió 8).
+        public var calPermis: Bool
+
+        public init(description: String, calPermis: Bool = false) {
+            self.description = description
+            self.calPermis = calPermis
+        }
+
+        /// L'error d'una lectura: el text, i si és el del permís. Es decideix pel cas de l'error, no pel text, que és traduït.
+        public init(_ error: any Error) {
+            self.init(description: String(describing: error),
+                      calPermis: (error as? WarpLaunchCore.ErrorLectura) == .macOSNoDeixaLlegir)
+        }
+    }
+
+    /// La darrera lectura ha fallat perquè macOS no deixa llegir les dades de Warp (`ErrorLectura.calPermis`). Dura fins a la
+    /// lectura següent.
+    public private(set) var calPermis = false
+
+    /// Obre la pàgina del permís a Configuració del Sistema (decisió 8 de l'autor): l'app hi posa `ServeiPermis`, l'única crida que
+    /// l'obre, i les proves, una de falsa. Sense, cap botó.
+    @ObservationIgnored public var obrePaginaPermis: (@MainActor () -> Void)?
+
+    /// Si es mostra «Obre la configuració del sistema» (el menú de la icona): la lectura ha fallat pel permís, i hi ha com obrir-ne
+    /// la pàgina.
+    public var potObrirPermis: Bool { calPermis && obrePaginaPermis != nil }
+
+    /// El clic a «Obre la configuració del sistema». Si ara no cal, res.
+    public func obrePermis() {
+        guard potObrirPermis else { return }
+        obrePaginaPermis?()
     }
 
     /// - Parameter lector: la lectura; l'app hi passa `Lector(…).llegeixDeLApp`, i les proves, una de falsa.
@@ -59,12 +91,13 @@ public final class EstatWarp {
             do {
                 return .success(try lector())
             } catch {
-                return .failure(ErrorLectura(description: String(describing: error)))
+                return .failure(ErrorLectura(error))
             }
         }
         enCurs = tasca
         let resultat = await tasca.value
         enCurs = nil
+        calPermis = resultat.permis
         switch resultat {
         case let .success(lectura):
             estat = .llegit(ResumWarp(lectura))
@@ -86,6 +119,7 @@ public final class EstatWarp {
         guard let refresc else { return await llegeix() }
         estat = .llegint
         let resultat = await refresc.refresca()
+        calPermis = resultat.permis
         switch resultat {
         case let .success(lectura):
             estat = .llegit(ResumWarp(lectura))
@@ -141,5 +175,12 @@ enum MotiuSenseFinestres: Equatable {
                 """))
         case .restauracioDesactivada: LecturaWarp.senseFinestres
         }
+    }
+}
+
+extension Result<LecturaWarp, EstatWarp.ErrorLectura> {
+    /// La lectura ha fallat pel permís d'Arxius i carpetes (`EstatWarp.ErrorLectura.calPermis`).
+    var permis: Bool {
+        if case let .failure(error) = self { error.calPermis } else { false }
     }
 }

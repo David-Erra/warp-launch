@@ -395,7 +395,7 @@ public final class RefrescWarp {
             do {
                 return .success(try lector())
             } catch {
-                return .failure(EstatWarp.ErrorLectura(description: String(describing: error)))
+                return .failure(EstatWarp.ErrorLectura(error))
             }
         }.value
     }

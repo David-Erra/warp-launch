@@ -63,6 +63,11 @@ struct VistaImportacio: View {
                 Label(t("No s'ha pogut llegir Warp: \(motiu)"), systemImage: "exclamationmark.triangle.fill")
                     .symbolRenderingMode(.multicolor)
                     .textSelection(.enabled)
+                // Decisió 8: la pàgina del permís a Configuració del Sistema, i res més (`ServeiPermis`).
+                if full.potObrirPermis {
+                    Button(t("Obre la configuració del sistema")) { full.obrePermis() }
+                        .help(t("Obre Privacitat i seguretat › Arxius i carpetes, on pots donar permís a Warp Launch per llegir les dades de Warp"))
+                }
                 Button(t("Torna-ho a provar")) { Task { await full.llegeix() } }
                     .disabled(!full.potLlegir)
             }

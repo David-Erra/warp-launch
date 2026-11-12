@@ -231,16 +231,18 @@ private let escapada = [#"cancelAction"#, #"\.escape(?![A-Za-z0-9_])"#, #"onExit
                         #"\\u\{1[bB]\}"#]
 
 /// El codi no obre res ni tanca res (regles 1 a 4 de CLAUDE.md). De `NSWorkspace`, només «Mostra al Finder»
-/// (`activateFileViewerSelecting`, a `Finder.swift`), que selecciona el fitxer en una finestra del Finder, i l'obridor
-/// de la fase 3.1 (`ObreWarp`, vegeu `nomesLObridorObreWarp`). De les URL de Warp, només la de llançament (D5), i en un
-/// sol lloc (`nomesHiHaLURLDeLlancament`).
+/// (`activateFileViewerSelecting`, a `Finder.swift`), que selecciona el fitxer en una finestra del Finder, l'obridor
+/// de la fase 3.1 (`ObreWarp`, vegeu `nomesLObridorObreWarp`) i, des de la 0.36.0, la pàgina del permís a Configuració del
+/// Sistema (`ServeiPermis`, decisió 8: `nomesElServeiDelPermisObreConfiguracioDelSistema`). De les URL de Warp, només la de
+/// llançament (D5), i en un sol lloc (`nomesHiHaLURLDeLlancament`). Cap adreça ni cap nom de Configuració del Sistema
+/// (`configuracioDelSistema`), fora del servei del permís.
 private let workspace = #"NSWorkspace(?!\.shared\.(activateFileViewerSelecting|open|openApplication)\(|\.OpenConfiguration\(\))"#
 private let prohibidesCodi = [
     #"warp://(?!launch/")"#, paraulaProcess,
     workspace, #"openURL"#,
     #"NSAppleScript"#, #"posix_spawn"#, #"(^|[^.\w])system\("#, paraulaExec, tascaUsuari,
     #"SMAppService"#, #"LaunchAgents"#, #"UserDefaults"#,
-    #"@AppStorage"#, #"CFPreferences"#,
+    #"@AppStorage"#, #"CFPreferences"#, configuracioDelSistema,
     // Tancar o matar Warp o Claude (regla 2), o obrir apps. La paraula `openApplication` només pot ser a l'obridor, per
     // obrir Warp si és tancat (`nomesLObridorObreWarp`).
     #"NSRunningApplication"#, #"forceTerminate"#, #"launchApplication"#, paraulaKill,
@@ -307,13 +309,61 @@ private let workspaceTrobaWarp = #"NSWorkspace(?!\.shared\.(activateFileViewerSe
 /// Decisió 4 (0.31.1): el Warp de macOS sense mirar quin corre (`Lector.installacio()`). Ningú no el fa servir.
 private let senseInstallacio = #"lector\.warp(?![A-Za-z0-9_])"#
 
+/// Decisió 8 de l'autor (07/11/2026; 0.36.0, docs/disseny.md, secció 14): obrir la pàgina del permís a Configuració del Sistema,
+/// Privacitat i seguretat › Arxius i carpetes, només a `ServeiPermis`, i només aquesta. Les adreces, en una llista fixa: l'única és
+/// la que fa servir macOS al botó «Gestiona» de l'avís «Accés a les dades bloquejat» (`tccd` de macOS 27.2). A la resta de
+/// `Sources`, cap nom de Configuració del Sistema (`configuracioDelSistema`, també en un comentari) ni cap `NSWorkspace.shared.open(`
+/// fora de l'obridor de Warp (`permisForaDeLloc`, `nomesLObridorObreWarp`).
+private let serveiPermis = "Sources/WarpLaunchApp/ServeiPermis.swift"
+private let adrecesDelPermis = ["x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders"]
+/// Les maneres de nomenar Configuració del Sistema per obrir-ne una pàgina: l'esquema de les adreces i el privat, els
+/// identificadors de l'app i dels taulers (`com.apple.preference.…`, els antics; `com.apple.settings.…`, els de macOS 13 i
+/// posteriors) i els paquets.
+private let configuracioDelSistema = #"x-apple\.systempreferences|settings-navigation|com\.apple\.systempreferences|com\.apple\.preference\.|com\.apple\.settings\.|System Settings\.app|System Preferences\.app"#
+/// Les tres línies del servei, cadascuna un sol cop: l'adreça (l'únic text del fitxer), la URL i la crida.
+private let liniesAlServeiPermis = [
+    "private static let adreca = \"\(adrecesDelPermis[0])\"",
+    "guard let url = URL(string: adreca) else { return }",
+    "NSWorkspace.shared.open(url)",
+]
+
+/// Les línies de `Sources` que obren o nomenen una pàgina de Configuració del Sistema fora de l'excepció. A qualsevol altre
+/// fitxer, les que la nomenen (també en un comentari, com `prohibidesCodi`) i les que criden `NSWorkspace.shared.open(`, fora de
+/// l'obridor de Warp. Al servei, fora dels comentaris, les que porten el que podria obrir res (`NSWorkspace`, `open`, `URL` o
+/// `url`, `adreca`, un text o un nom de Configuració del Sistema) i no són de `liniesAlServeiPermis` (cadascuna, un sol cop), i
+/// les que porten un text que no és una adreça de la llista.
+private func permisForaDeLloc(_ codi: [(ruta: String, text: String)]) throws -> [String] {
+    let nomena = try Regex(configuracioDelSistema)
+    let podriaObrir = try Regex(#"NSWorkspace|openURL|Link\(|"|(^|[^A-Za-z0-9_])(open|URL|url|adreca)(?![A-Za-z0-9_])"#)
+    let literal = try Regex(#""(?:[^"\\]|\\.)*""#)
+    let adreces = Set(adrecesDelPermis.map { "\"\($0)\"" })
+    return codi.flatMap { f -> [String] in
+        let linies = f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        guard f.ruta == serveiPermis else {
+            let obridor = f.ruta == "Sources/WarpLaunchObridor/ObreWarp.swift"
+            return linies.filter { $0.contains(nomena) || (!obridor && $0.contains("NSWorkspace.shared.open(")) }
+                .map { "\(f.ruta): \($0)" }
+        }
+        var permeses = liniesAlServeiPermis
+        return linies.filter { !$0.hasPrefix("//") }.filter { linia in
+            if linia.contains(podriaObrir) || linia.contains(nomena) {
+                guard let i = permeses.firstIndex(of: linia) else { return true }
+                permeses.remove(at: i)
+            }
+            return linia.matches(of: literal).contains { !adreces.contains(String(linia[$0.range])) }
+        }.map { "\(f.ruta): \($0)" }
+    }
+}
+
 /// Les expressions de `prohibidesCodi` que valen per a un fitxer de `Sources`: totes, menys les excepcions, cadascuna en
-/// un sol fitxer. `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`), i `UserDefaults`, només a
-/// la llengua de l'app (F4, `nomesElServeiDIdiomaFaServirLesPreferencies`).
+/// un sol fitxer. `SMAppService`, només als ítems d'inici (D3, `nomesLInterruptorRegistraLArrencada`); `UserDefaults`, només a
+/// la llengua de l'app (F4, `nomesElServeiDIdiomaFaServirLesPreferencies`); i el nom de Configuració del Sistema, només a la
+/// pàgina del permís (decisió 8, `nomesElServeiDelPermisObreConfiguracioDelSistema`).
 private func prohibidesCodi(a ruta: String) -> [String] {
     switch ruta {
     case serveiArrencada: prohibidesCodi.filter { $0 != #"SMAppService"# }
     case serveiIdioma: prohibidesCodi.filter { $0 != #"UserDefaults"# }
+    case serveiPermis: prohibidesCodi.filter { $0 != configuracioDelSistema }
     case trobaWarp: prohibidesCodi.map { $0 == workspace ? workspaceTrobaWarp : $0 }
     case serveiActualitzacions: prohibidesCodi.map { $0 == #"launchApplication"# ? obrirAppAlServei : $0 }
     default: prohibidesCodi
@@ -783,6 +833,100 @@ private let prohibidesArrossegar = [
             #expect(try !ambServei(mostra).isEmpty, "\(mostra)")
         }
         #expect(try ambServei(servei + "\n/// " + #"`UserDefaults.standard.set(x, forKey: "Altra")`"#).isEmpty)
+    }
+
+    /// Decisió 8 de l'autor (07/11/2026; 0.36.0): una pàgina de Configuració del Sistema només l'obre `ServeiPermis`, amb les seves
+    /// tres línies i una adreça de la llista fixa. La mostra: la guarda falla amb la crida o l'adreça en un altre fitxer (també en
+    /// un comentari), i, al servei, amb una altra adreça, un altre text, la crida dues vegades o una altra crida.
+    @Test func nomesElServeiDelPermisObreConfiguracioDelSistema() throws {
+        let codi = try fitxers("Sources")
+        let fora = try permisForaDeLloc(codi)
+        #expect(fora.isEmpty, "\(fora.joined(separator: "\n"))")
+        let servei = try #require(codi.first { $0.ruta == serveiPermis }).text
+        let linies = servei.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        for permesa in liniesAlServeiPermis {
+            #expect(linies.filter { $0 == permesa }.count == 1, "\(permesa)")
+        }
+        // La URL i la crida, seguides, dins de la mateixa funció.
+        #expect(servei.contains("""
+                static func obreArxiusICarpetes() {
+                    \(liniesAlServeiPermis[1])
+                    \(liniesAlServeiPermis[2])
+                }
+            """))
+        // A la resta de la llista, el servei hi continua: l'excepció només hi treu el nom de Configuració del Sistema.
+        #expect(Set(prohibidesCodi).subtracting(prohibidesCodi(a: serveiPermis)) == [configuracioDelSistema])
+        #expect(prohibidesCodi(a: serveiPermis).count == prohibidesCodi.count - 1)
+        #expect(try obrenOTanquen([(ruta: serveiPermis, text: servei)]).isEmpty)
+
+        // En un altre fitxer, la crida i l'adreça surten a totes dues guardes, i la crida sola, a la del permís.
+        let crida = "guard let url = URL(string: \"\(adrecesDelPermis[0])\") else { return }\nNSWorkspace.shared.open(url)"
+        for ruta in [serveiIdioma, serveiArrencada, rutaAppPrincipal, trobaWarp, "Sources/WarpLaunchUI/Finder.swift",
+                     "Sources/WarpLaunchUI/Altre.swift", "ServeiPermis.swift"] {
+            #expect(try permisForaDeLloc(codi + [(ruta: ruta, text: crida)])
+                        == crida.split(separator: "\n").map { "\(ruta): \($0)" }, "\(ruta)")
+            #expect(try obrenOTanquen([(ruta: ruta, text: crida)]) == ["\(ruta):1: «\(configuracioDelSistema)»"], "\(ruta)")
+            #expect(try permisForaDeLloc([(ruta: ruta, text: "NSWorkspace.shared.open(desti)")]).count == 1, "\(ruta)")
+        }
+        let altre = "Sources/WarpLaunchUI/Altre.swift"
+        let noms = ["/// \(adrecesDelPermis[0])", #"let a = "settings-navigation:x""#,
+                    #"let b = "com.apple.settings.PrivacySecurity.extension""#, #"let c = "System Settings.app""#,
+                    #"let d = "com.apple.systempreferences""#]
+        for nom in noms {
+            #expect(try permisForaDeLloc([(ruta: altre, text: nom)]).count == 1, "\(nom)")
+            #expect(try obrenOTanquen([(ruta: altre, text: nom)]).count == 1, "\(nom)")
+        }
+
+        // Al servei: una altra pàgina, una altra adreça, un altre text, la crida dues vegades o una altra crida. Un comentari, no.
+        let altres = codi.filter { $0.ruta != serveiPermis }
+        func ambServei(_ text: String) throws -> [String] {
+            try permisForaDeLloc(altres + [(ruta: serveiPermis, text: text)])
+        }
+        #expect(try ambServei(servei).isEmpty)
+        let mostres = [
+            servei.replacingOccurrences(of: "Privacy_FilesAndFolders", with: "Privacy_AllFiles"),
+            servei.replacingOccurrences(of: "com.apple.preference.security", with: "com.apple.LoginItems-Settings.extension"),
+            servei.replacingOccurrences(of: adrecesDelPermis[0], with: "file:///tmp/prova"),
+            servei + "\n" + #"private static let altra = "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles""#,
+            servei + "\n" + #"let nom = "Warp""#,
+            servei + "\nNSWorkspace.shared.open(url)",
+            servei.replacingOccurrences(of: "NSWorkspace.shared.open(url)", with: "NSWorkspace.shared.open(URL(string: adreca)!)"),
+            servei + "\nNSWorkspace.shared.openApplication(at: url, configuration: c)",
+            servei + "\nstatic func obre(_ url: URL) {}",
+            servei + "\nlet desti = URL(fileURLWithPath: carpeta)",
+            servei + "\nadreca = altra",
+            servei + "\nopenURL(desti)",
+            servei + "\nLink(destination: desti) {}",
+        ]
+        for mostra in mostres {
+            #expect(try !ambServei(mostra).isEmpty, "\(mostra)")
+        }
+        #expect(try ambServei(servei + "\n/// `NSWorkspace.shared.open(URL(string: \"x\")!)`").isEmpty)
+    }
+
+    /// Decisió 8: la pàgina del permís només l'obre el clic a «Obre la configuració del sistema», al menú de la icona i al full
+    /// d'importar. L'app connecta el servei, en un sol lloc, i el model només el crida des de la seva acció.
+    @Test func laPaginaDelPermisNomesLaObreElClic() throws {
+        let codi = try fitxers("Sources")
+        func linies(_ text: String) -> [String] {
+            codi.flatMap { f in
+                f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { $0.contains(text) && !$0.hasPrefix("//") }.map { "\(f.ruta): \($0)" }
+            }.sorted()
+        }
+        #expect(linies("ServeiPermis") == [
+            "\(rutaAppPrincipal): warp.obrePaginaPermis = ServeiPermis.obreArxiusICarpetes",
+            "\(serveiPermis): enum ServeiPermis {",
+        ].sorted())
+        #expect(linies("obrePaginaPermis =") == ["\(rutaAppPrincipal): warp.obrePaginaPermis = ServeiPermis.obreArxiusICarpetes"])
+        #expect(linies("obrePaginaPermis?(") == [
+            "Sources/WarpLaunchUI/EstatWarp.swift: obrePaginaPermis?()",
+            "Sources/WarpLaunchUI/FullImportacio.swift: warp.obrePaginaPermis?()",
+        ])
+        #expect(linies(".obrePermis()") == [
+            #"\#(rutaAppPrincipal): Button(t("Obre la configuració del sistema")) { aplicacio.warp.obrePermis() }"#,
+            #"Sources/WarpLaunchUI/VistaImportacio.swift: Button(t("Obre la configuració del sistema")) { full.obrePermis() }"#,
+        ])
     }
 
     /// Decisió 3 (0.31.0): «Deixa de fer servir Warp Launch» (vegeu `retirada`). Cada pas, al seu fitxer i amb la seva línia,
@@ -1424,6 +1568,8 @@ private let prohibidesArrossegar = [
             #"\.claude\.json"#, #"\.claude/projects"#,
             // D-P12: on és Warp de debò. `troba` només amb una carpeta temporal; la instal·lació per omissió no es llegeix.
             #"TrobaWarp"#, #"urlForApplication"#, trobaProves, #"perOmissio\.app(?![A-Za-z0-9_])"#,
+            // Decisió 8: la pàgina del permís de debò. A les proves, una crida falsa (`EstatWarp.obrePaginaPermis`).
+            #"ServeiPermis"#, configuracioDelSistema,
             // Pla A4 (diagnòstic): els lectors de Claude, sempre amb una ruta de prova, i «Copia el diagnòstic», sempre amb un
             // porta-retalls fals (a la mateixa línia).
             lectorTranscripcions, lectorConfianca, copiaDiagnostic,
@@ -1922,7 +2068,7 @@ private let prohibidesArrossegar = [
             + ["mostra.swift:10: «\(onDrag)»"])
         // Obrir o tancar: cada línia, la seva expressió; «Mostra al Finder», cap; `kill` i `Process` com a part d'un nom, cap,
         // però sense cridar-los o amb `.init`, sí. De Warp, totes les URL menys la de llançament. `NSWorkspace.shared.open(`
-        // passa aquesta expressió, però `nomesLObridorObreWarp` el deixa en un sol lloc.
+        // passa aquesta expressió, però `nomesLObridorObreWarp` el deixa a l'obridor i a la pàgina del permís.
         let obrir = [(ruta: "mostra.swift", text: """
             NSWorkspace.shared.open(url)
             NSRunningApplication.current
@@ -2715,7 +2861,8 @@ extension GuardaTests {
         let cli = "Sources/WarpLaunchCLI/main.swift"
         let ordre = "Sources/WarpLaunchCore/OrdreCLI.swift"
         let execucio = "Sources/WarpLaunchCore/ExecucioObertura.swift"
-        #expect(llocs("NSWorkspace.shared.open(") == ["Sources/WarpLaunchObridor/ObreWarp.swift"])
+        // I, a part, la pàgina del permís (decisió 8, `nomesElServeiDelPermisObreConfiguracioDelSistema`), que no obre res de Warp.
+        #expect(llocs("NSWorkspace.shared.open(").sorted() == [serveiPermis, "Sources/WarpLaunchObridor/ObreWarp.swift"])
         // Obrir Warp, si és tancat (0.22.0): també només l'obridor.
         // Qualsevol aparició de la paraula, amb qualsevol objecte, també en un comentari.
         #expect(llocs("openApplication") == ["Sources/WarpLaunchObridor/ObreWarp.swift"])
@@ -2750,10 +2897,18 @@ extension GuardaTests {
     @Test func elsBotonsDObrirNomesDemanenElFull() throws {
         let codi = try fitxers("Sources")
         var trobats = 0
+        var permis = 0
         for fitxer in codi {
             let linies = fitxer.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
             // Amb el títol per traduir (`t`, fase F3 del multidioma) o, abans, escrit directament.
             for (n, linia) in linies.enumerated() where linia.contains(#"Button(t("Obre"#) || linia.contains(#"Button("Obre"#) {
+                // Decisió 8 (0.36.0): «Obre la configuració del sistema» no obre res de Warp: només demana la pàgina del permís,
+                // a la mateixa línia (`laPaginaDelPermisNomesLaObreElClic`).
+                if linia.contains(#"Button(t("Obre la configuració del sistema"))"#) {
+                    permis += 1
+                    #expect(linia.hasSuffix(".obrePermis() }"), "\(fitxer.ruta):\(n + 1)")
+                    continue
+                }
                 trobats += 1
                 let seguents = linies[n..<min(linies.count, n + 6)].joined(separator: "\n")
                 if fitxer.ruta.hasSuffix("/FullObertura.swift") {
@@ -2772,6 +2927,8 @@ extension GuardaTests {
         // Menú Fitxer, inspector, menú de la icona, barra d'eines i menú contextual de l'editor, i el full; i «Obre-ho tot»
         // al menú Fitxer, al menú de la icona i al seu full.
         #expect(trobats == 9)
+        // La pàgina del permís: el menú de la icona i el full d'importar.
+        #expect(permis == 2)
     }
 
     /// Fase 3.1: només `FitxersLaunchWarp` sap on és la carpeta de Warp, i dins seu només esborra una crida (`treu`), a

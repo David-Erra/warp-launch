@@ -757,6 +757,8 @@
 "Warp: encara no s'ha llegit" = "Warp：まだ読み取っていません";
 "Warp: llegint…" = "Warp：読み取り中…";
 "Warp: no s'ha pogut llegir (%@)" = "Warp：読み取れませんでした（%@）";
+"Obre la configuració del sistema" = "システム設定を開く";
+"Obre Privacitat i seguretat › Arxius i carpetes, on pots donar permís a Warp Launch per llegir les dades de Warp" = "プライバシーとセキュリティ › ファイルとフォルダを開きます。ここでWarp LaunchにWarpのデータの読み取りを許可できます";
 "Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "テスト用の構成（--config）では、アプリはこの設定に触れず、Warpにウインドウを保存させることもできません。実際の構成なら可能です：数秒間この設定をオンにしてWarpに保存させ、またオフに戻します。";
 "«estat.json» no es pot fer servir: %@" = "“estat.json”を使用できません：%@";
 "«estat.json» encara no s'ha llegit" = "“estat.json”はまだ読み取っていません";

@@ -757,6 +757,8 @@
 "Warp: encara no s'ha llegit" = "Warp: 아직 읽지 않음";
 "Warp: llegint…" = "Warp: 읽는 중…";
 "Warp: no s'ha pogut llegir (%@)" = "Warp: 읽을 수 없음(%@)";
+"Obre la configuració del sistema" = "시스템 설정 열기";
+"Obre Privacitat i seguretat › Arxius i carpetes, on pots donar permís a Warp Launch per llegir les dades de Warp" = "개인정보 보호 및 보안 › 파일 및 폴더를 엽니다. 여기에서 Warp Launch가 Warp 데이터를 읽도록 허용할 수 있습니다";
 "Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "테스트 구성(--config)에서는 앱이 이 설정을 변경하지 않으며 Warp에 윈도우를 저장하도록 요청할 수 없습니다. 실제 구성에서는 가능합니다: Warp가 윈도우를 저장하도록 몇 초 동안 설정을 켰다가 다시 끕니다.";
 "«estat.json» no es pot fer servir: %@" = "‘estat.json’을 사용할 수 없습니다: %@";
 "«estat.json» encara no s'ha llegit" = "‘estat.json’을 아직 읽지 않았습니다";

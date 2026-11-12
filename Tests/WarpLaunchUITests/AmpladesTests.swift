@@ -376,6 +376,8 @@ struct Cas: Sendable {
                 Cas("Full de lligar, per finestra", [
                     .text { t("\(12) de \(12) · finestres \(Idioma.llista(["1", "2", "4"])) de Warp") }, .text { "warp-launch" },
                 ], separacio: Mides.separacioValor, disponible: lligar, regla: .linies(2)),
+                // Sense el permís d'Arxius i carpetes (decisió 8, 0.36.0): el botó de la pàgina del permís, en una fila.
+                Cas("Full d'importar, permís", [.boto { t("Obre la configuració del sistema") }], disponible: importar),
                 // Els botons del peu.
                 Cas("Full d'importar, botons", [
                     .boto { WarpLaunch.ordreActualitzaEstat }, .boto { t("Cancel·la") }, .botons { [t("Crea"), t("Substitueix")] },
@@ -448,7 +450,7 @@ struct Cas: Sendable {
         #expect(llengues.count == 10)
         let casos = Self.casos
         // La taula sencera: si un lloc desapareix, es veu.
-        #expect(casos.count == 103, "\(casos.count) llocs")
+        #expect(casos.count == 104, "\(casos.count) llocs")
         let claus = Idioma.$deProva.withValue("ca") {
             casos.map { cas in cas.peces.map { "«\($0.amplada().text)»" }.joined(separator: " + ") }
         }

@@ -757,6 +757,8 @@
 "Warp: encara no s'ha llegit" = "Warp: noch nicht gelesen";
 "Warp: llegint…" = "Warp: wird gelesen …";
 "Warp: no s'ha pogut llegir (%@)" = "Warp: konnte nicht gelesen werden (%@)";
+"Obre la configuració del sistema" = "Systemeinstellungen öffnen";
+"Obre Privacitat i seguretat › Arxius i carpetes, on pots donar permís a Warp Launch per llegir les dades de Warp" = "Öffnet Datenschutz & Sicherheit › Dateien & Ordner, wo du Warp Launch erlauben kannst, die Daten von Warp zu lesen";
 "Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "Mit einer Testkonfiguration (--config) ändert die App diese Einstellung nicht und kann Warp nicht bitten, die Fenster zu sichern. Mit der echten Konfiguration schon: Sie aktiviert die Einstellung einige Sekunden lang, damit Warp die Fenster sichert, und deaktiviert sie dann wieder.";
 "«estat.json» no es pot fer servir: %@" = "„estat.json“ kann nicht verwendet werden: %@";
 "«estat.json» encara no s'ha llegit" = "„estat.json“ wurde noch nicht gelesen";

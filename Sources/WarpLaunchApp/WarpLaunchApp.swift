@@ -165,6 +165,9 @@ final class Aplicacio {
         let base: BaseWarp = creaEntornRefresc == nil ? .segonsAjust : .mai
         // Sense cap Warp ni la seva base, també amb una carpeta de prova: que no hi ha Warp, com amb la de debò.
         let warp = EstatWarp(lector: { try lector.llegeixDeLApp(base: base) })
+        // Decisió 8: «Obre la configuració del sistema», quan macOS no deixa llegir les dades de Warp. L'única connexió amb
+        // `ServeiPermis`.
+        warp.obrePaginaPermis = ServeiPermis.obreArxiusICarpetes
         self.warp = warp
         if case .incorrecta = arguments.carpeta {
             obertura = nil
@@ -486,6 +489,10 @@ private struct MenuIcona: View {
 
         Section {
             Text(aplicacio.warp.descripcio)
+            // Decisió 8: sense el permís d'Arxius i carpetes, la pàgina del permís a Configuració del Sistema, i res més.
+            if aplicacio.warp.potObrirPermis {
+                Button(t("Obre la configuració del sistema")) { aplicacio.warp.obrePermis() }
+            }
             ItemActualitzaWarp(ordre: aplicacio.actualitzaWarp)
             if let avis = aplicacio.warp.avisFoto {
                 Label(avis, systemImage: "exclamationmark.triangle")

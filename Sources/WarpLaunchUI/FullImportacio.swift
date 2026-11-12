@@ -30,6 +30,9 @@ public final class FullImportacio {
     /// La plantilla amb què s'ha previsualitzat. Si després canvia a la Configuració (o s'hi desfà), les pestanyes de
     /// la previsualització la porten vella: «Substitueix» queda desactivat fins a tornar a llegir.
     public private(set) var plantillaPrevista: ClaudePestanya?
+    /// L'error de la lectura és el del permís d'Arxius i carpetes (`EstatWarp.ErrorLectura.calPermis`): el full ofereix la pàgina
+    /// del permís (decisió 8).
+    public private(set) var calPermis = false
     @ObservationIgnored private let editor: Editor
     @ObservationIgnored private let warp: EstatWarp
 
@@ -62,6 +65,7 @@ public final class FullImportacio {
         }
         estat = .llegint
         avisosLectura = []
+        calPermis = false
         switch await warp.llegeixAmbFinestres() {
         case let .success(lectura):
             if let motiu = MotiuSenseFinestres(lectura, ambRefresc: warp.refresc != nil) {
@@ -73,8 +77,21 @@ public final class FullImportacio {
             plantillaPrevista = editor.plantillaPerImportar.normalitzada()
             estat = .llest(editor.previsualitza(lectura))
         case let .failure(error):
+            calPermis = error.calPermis
             estat = .error(error.description)
         }
+    }
+
+    /// Si es mostra «Obre la configuració del sistema»: la lectura ha fallat pel permís, i l'app sap obrir-ne la pàgina
+    /// (`EstatWarp.obrePaginaPermis`).
+    public var potObrirPermis: Bool {
+        if case .error = estat { calPermis && warp.obrePaginaPermis != nil } else { false }
+    }
+
+    /// El clic a «Obre la configuració del sistema». Si ara no cal, res.
+    public func obrePermis() {
+        guard potObrirPermis else { return }
+        warp.obrePaginaPermis?()
     }
 
     /// Què fer quan no hi ha finestres per importar, després del motiu (`MotiuSenseFinestres`, el mateix que «Lliga amb

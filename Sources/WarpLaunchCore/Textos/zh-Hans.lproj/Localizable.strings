@@ -757,6 +757,8 @@
 "Warp: encara no s'ha llegit" = "Warp：尚未读取";
 "Warp: llegint…" = "Warp：正在读取…";
 "Warp: no s'ha pogut llegir (%@)" = "Warp：无法读取（%@）";
+"Obre la configuració del sistema" = "打开系统设置";
+"Obre Privacitat i seguretat › Arxius i carpetes, on pots donar permís a Warp Launch per llegir les dades de Warp" = "打开“隐私与安全” › “文件与文件夹”，你可以在此允许Warp Launch读取Warp的数据";
 "Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar." = "使用测试配置（--config）时，App不会改动此设置，也无法让Warp保存窗口。使用真正的配置则可以：它会将该设置启用几秒钟让Warp保存，然后再停用。";
 "«estat.json» no es pot fer servir: %@" = "“estat.json”无法使用：%@";
 "«estat.json» encara no s'ha llegit" = "“estat.json”尚未读取";
