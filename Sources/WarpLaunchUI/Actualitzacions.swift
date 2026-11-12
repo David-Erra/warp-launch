@@ -508,7 +508,7 @@ public final class Actualitzacions {
     public var textPeu: String {
         if case let .noDisponible(motiu) = estat { return motiu }
         guard case .aPunt = estat, !automatiques else { return Self.textPeuBase }
-        return Self.textPeuBase + " " + t("Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app.")
+        return Idioma.frases(Self.textPeuBase, t("Amb l'interruptor apagat, no es reinicia sola: s'instal·la quan surts de l'app."))
     }
 
     public var boto: Boto {

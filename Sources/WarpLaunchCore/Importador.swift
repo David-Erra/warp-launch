@@ -265,10 +265,11 @@ public enum NotaImportacio: Sendable, Equatable, CustomStringConvertible {
             let principal = nom.map { t("sessió de Claude «\($0)» a «\(carpeta)»: no s'importa (\(on))") }
                 ?? t("sessió de Claude a «\(carpeta)»: no s'importa (\(on))")
             guard !terminals.isEmpty else { return principal }
-            // El nombre de pestanyes no surt al text: decideix la concordança («queda», «queden»).
-            let llista = terminals.map { t("«\($0)»") }.joined(separator: ", ")
-            return principal + "; " + (terminals.count == 1 ? t("a la mateixa carpeta hi ha \(llista), que queda només terminal")
-                : t("a la mateixa carpeta hi ha \(llista), que queden només terminal"))
+            // El nombre de pestanyes no surt al text: decideix la concordança («queda», «queden»). F6: la llista i el «;», de
+            // la llengua (en francès, amb l'espai no separable; en japonès, «。»).
+            let llista = Idioma.llista(terminals.map { t("«\($0)»") })
+            return terminals.count == 1 ? t("\(principal); a la mateixa carpeta hi ha \(llista), que queda només terminal")
+                : t("\(principal); a la mateixa carpeta hi ha \(llista), que queden només terminal")
         case let .finestraSensePestanyes(numero):
             return t("la finestra \(String(numero)) de Warp no té cap pestanya de terminal: no s'importa")
         }
@@ -302,6 +303,7 @@ public struct ResumImportacio: Sendable, Equatable {
     public var descripcio: String {
         let finestresIPestanyes = t("\(finestres) finestres · \(pestanyes) pestanyes")
         return finestresIPestanyes + " · " + (ambSessio == 0 ? t("0 amb Claude") : t("\(ambSessio) amb Claude, amb la seva ordre"))
-            + " · " + t("\(senseClaude) només terminal") + (senseClaudeObert > 0 ? " " + t("(\(senseClaudeObert) sense Claude obert)") : "")
+            + " · " + (senseClaudeObert > 0 ? t("\(senseClaude) només terminal (\(senseClaudeObert) sense Claude obert)")
+                : t("\(senseClaude) només terminal"))
     }
 }

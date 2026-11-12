@@ -135,10 +135,10 @@ enum MotiuSenseFinestres: Equatable {
         case let .senseWarp(preview): preview.text
         case let .senseBase(warpObert): LecturaWarp.senseBase(warpObert: warpObert)
         case .deProva:
-            LecturaWarp.senseFinestres + " " + t("""
+            Idioma.frases(LecturaWarp.senseFinestres, t("""
                 Amb una configuració de prova (--config), l'app no toca aquest ajust i no pot demanar a Warp que les desi. Amb \
                 la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar.
-                """)
+                """))
         case .restauracioDesactivada: LecturaWarp.senseFinestres
         }
     }

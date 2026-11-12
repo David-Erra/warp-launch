@@ -29,7 +29,7 @@ public enum Informe {
         }
         if let preview = lectura.warpPreview { linies.append("⚠ \(preview.text)") }
         if !lectura.sessionsNoInteractives.isEmpty {
-            let tipus = Set(lectura.sessionsNoInteractives.map(\.tipus)).sorted().joined(separator: ", ")
+            let tipus = Idioma.llista(Set(lectura.sessionsNoInteractives.map(\.tipus)).sorted())
             linies.append(t("Sessions de Claude en segon pla: \(lectura.sessionsNoInteractives.count) (\(tipus))."))
         }
 
@@ -55,9 +55,10 @@ public enum Informe {
                 for (n, pane) in pestanya.panes.enumerated() {
                     let marques = [pane.origenCarpeta == .historial ? t("historial") : nil,
                                    pane.carpetaExisteix ? nil : t("no existeix")].compactMap { $0 }
-                    let notes = marques.isEmpty ? "" : " (" + marques.joined(separator: ", ") + ")"
+                    let ruta = carpeta(pane.carpeta)
+                    let ambNotes = marques.isEmpty ? ruta : t("\(ruta) (\(Idioma.llista(marques)))")
                     let capcalera = n == 0 ? "\(numero)\(activa) \(titol)" : "     └ " + t("pane \(String(n + 1))")
-                    linies.append("\(capcalera) · \(carpeta(pane.carpeta))\(notes)")
+                    linies.append("\(capcalera) · \(ambNotes)")
                     if let claude = pane.claude {
                         linies.append("       \(ordre(claude.ordre))  [\(descripcio(claude))]")
                     }

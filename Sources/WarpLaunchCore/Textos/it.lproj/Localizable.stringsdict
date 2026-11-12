@@ -461,6 +461,37 @@
 			<string>%lld ne iniziano una nuova</string>
 		</dict>
 	</dict>
+	<key>%lld reprenen la seva conversa, %lld en comencen una de nova</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@r@, %#@n@</string>
+		<key>r</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld riprende la sua conversazione</string>
+			<key>many</key>
+			<string>%lld riprendono la loro conversazione</string>
+			<key>other</key>
+			<string>%lld riprendono la loro conversazione</string>
+		</dict>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld ne inizia una nuova</string>
+			<key>many</key>
+			<string>%lld ne iniziano una nuova</string>
+			<key>other</key>
+			<string>%lld ne iniziano una nuova</string>
+		</dict>
+	</dict>
 	<key>S'obrirà 1 finestra nova de Warp amb %lld pestanyes: %@</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

@@ -494,11 +494,11 @@ private func lecturaGran() -> LecturaWarp {
                                             nouId: IdsDeProva().nou)
         #expect(importacio.notes.map(\.description) == [
             "sessió de Claude a «/Users/prova»: no s'importa (la seva pestanya no és a la base de Warp); a la mateixa "
-                + "carpeta hi ha «Finestra 1 › Títol», «Finestra 1 › Títol», que queden només terminal",
+                + "carpeta hi ha «Finestra 1 › Títol» i «Finestra 1 › Títol», que queden només terminal",
             "sessió de Claude a «/Users/prova/a»: no s'importa (la seva pestanya no és a la base de Warp); a la mateixa "
-                + "carpeta hi ha «Finestra 1 › Títol», «Finestra 1 › Títol», que queden només terminal",
+                + "carpeta hi ha «Finestra 1 › Títol» i «Finestra 1 › Títol», que queden només terminal",
             "sessió de Claude a «/Users/prova/c»: no s'importa (la seva pestanya no és a la base de Warp); a la mateixa "
-                + "carpeta hi ha «Finestra 1 › Títol», «Finestra 1 › Títol», que queden només terminal",
+                + "carpeta hi ha «Finestra 1 › Títol» i «Finestra 1 › Títol», que queden només terminal",
         ])
     }
 

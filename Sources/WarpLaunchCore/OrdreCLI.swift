@@ -273,7 +273,7 @@ public enum OrdreCLI {
         let lectura = try llegeixWarp(lector, entorn: entorn)
         // El CLI no toca mai l'ajust (D19 només és de l'app): no és que Warp no tingui res obert.
         if lectura.warpDesaFinestres == false {
-            throw .fallida(LecturaWarp.senseFinestres + " " + t("«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar."))
+            throw .fallida(Idioma.frases(LecturaWarp.senseFinestres, t("«warp-launch importa» no toca aquest ajust i no pot demanar a Warp que les desi. L'app, amb la configuració de debò, sí: l'activa uns segons perquè Warp les desi, i el torna a desactivar.")))
         }
         let inici = Rutes.canonica(entorn.inici)
         let plantilla = plantillaPerImportar(entorn, inici: inici)
@@ -535,7 +535,7 @@ public enum OrdreCLI {
             throw .fallida(t("l'app Warp Launch és oberta: obre la finestra des de l'app, o surt-ne i torna-ho a provar. No s'ha obert res."))
         }
         // D-P12: amb Warp Preview, o sense cap Warp (0.31.1), ni s'obre Warp ni s'escriu res.
-        if let preview = p.lectura.warpPreview { throw .fallida(preview.text + " " + t("No s'ha obert res.")) }
+        if let preview = p.lectura.warpPreview { throw .fallida(Idioma.frases(preview.text, t("No s'ha obert res."))) }
         let id = p.pla.finestra.id
         func dades(_ p: PlaCLI, fitxer: FitxerLaunch?) -> InformeObertura.Dades {
             InformeObertura.Dades(pla: p.pla, numero: p.numero, finestres: p.configuracio.finestres.count,
@@ -569,8 +569,8 @@ public enum OrdreCLI {
         /// El final dels errors: si s'ha obert Warp, no és cert que no s'hagi obert res.
         func res(_ p: PlaCLI) -> String {
             guard warpTancat else { return t("No s'ha obert res.") }
-            return t("S'ha obert Warp, però cap finestra de la configuració.")
-                + (p.lectura.warpDesaFinestres == false ? " " + t("En arrencar, Warp ha obert una finestra buida: la pots tancar.") : "")
+            return Idioma.frases(t("S'ha obert Warp, però cap finestra de la configuració."),
+                                 p.lectura.warpDesaFinestres == false ? t("En arrencar, Warp ha obert una finestra buida: la pots tancar.") : "")
         }
 
         // Warp és tancat: l'obre, n'espera l'arrencada i torna a calcular. Si el que s'obriria ha canviat, no obre res.
@@ -600,7 +600,7 @@ public enum OrdreCLI {
             }
             guard p.pla.aObrir == abans, p.pla.motiuEspera == nil else {
                 sortida.text += InformeObertura.text(dades(p, fitxer: nil))
-                throw .fallida(t("en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar.") + " " + res(p))
+                throw .fallida(Idioma.frases(t("en arrencar, Warp ha canviat el que s'obriria: torna-ho a provar."), res(p)))
             }
         }
         let fitxer: FitxerLaunch
@@ -685,7 +685,7 @@ public enum OrdreCLI {
         case 1: return (trobades[0].offset + 1, trobades[0].element)
         case 0: throw .us(t("no hi ha cap finestra «\(valor)»; n'hi ha \(finestres.count):") + "\n" + llista)
         default:
-            let numeros = trobades.map { String($0.offset + 1) }.joined(separator: ", ")
+            let numeros = Idioma.llista(trobades.map { String($0.offset + 1) })
             throw .us(t("hi ha més d'una finestra «\(valor)» (\(numeros)): tria-la pel número"))
         }
     }
@@ -698,7 +698,7 @@ public enum OrdreCLI {
             // 0.31.1: on no s'ha instal·lat mai Warp Stable, tampoc no hi ha la base. Es diu per què (cap Warp, o només
             // Warp Preview), com ho diria la lectura, i no només que no es troba la base.
             if let motiu = lector.senseWarpStable() {
-                throw .fallida(motiu.text + " " + t("Tampoc no hi ha la base de Warp (\(ruta))."))
+                throw .fallida(Idioma.frases(motiu.text, t("Tampoc no hi ha la base de Warp (\(ruta)).")))
             }
             // Amb Warp Stable, Warp encara no hi ha desat res: el text de l'app (`LecturaWarp.senseBase`). Una base triada
             // a mà que no hi és, l'error de sempre: no és que Warp no hi hagi desat res. Amb Warp Preview obert i Warp Stable

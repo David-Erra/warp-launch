@@ -140,7 +140,7 @@ struct LectorTests {
         #expect(pane.origenCarpeta == .historial)
         #expect(!pane.carpetaExisteix)
         let text = Informe.text(lectura, inici: inici)
-        #expect(text.contains("Web · ~/GitHub/web-moguda (historial, no existeix)"))
+        #expect(text.contains("Web · ~/GitHub/web-moguda (historial i no existeix)"))
         #expect(text.contains("Carpetes: 1 recuperada de l'historial, 1 que ja no existeix, 0 a la carpeta d'inici"))
     }
 

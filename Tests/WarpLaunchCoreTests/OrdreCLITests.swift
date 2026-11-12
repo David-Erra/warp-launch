@@ -398,7 +398,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(codi == 2)
         #expect(sortida.text.contains("""
                1  P · ~/GitHub/projectes/a · Claude
-                  ✗ Claude no arrencarà: el mode de permisos «yolo» no existeix (acceptEdits, auto, bypassPermissions, manual, dontAsk, plan)
+                  ✗ Claude no arrencarà: el mode de permisos «yolo» no existeix (acceptEdits, auto, bypassPermissions, manual, dontAsk i plan)
                   ⚠ Amb «Salta els permisos», Claude no fa cas del mode «yolo»
             """))
         #expect(sortida.text.hasSuffix("\nResultat: 1 error, 1 avís.\n"))
@@ -420,7 +420,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
         #expect(sortida.text.contains("""
             A · 1 tab · 1 with Claude
                1  P · ~/GitHub/projectes/a · Claude
-                  ✗ Claude won't start: the permission mode “yolo” doesn't exist (acceptEdits, auto, bypassPermissions, manual, dontAsk, plan)
+                  ✗ Claude won't start: the permission mode “yolo” doesn't exist (acceptEdits, auto, bypassPermissions, manual, dontAsk, and plan)
                   ⚠ With “Skip permissions”, Claude ignores the “yolo” mode
             """), "\(sortida.text)")
         #expect(sortida.text.hasSuffix("\nResult: 1 error, 1 warning.\n"))
@@ -613,7 +613,7 @@ private let binariPreview = "/Applications/WarpPreview.app/Contents/MacOS/previe
             (["obre", "--config", carpeta.path], "falta la finestra"),
             (["obre", "4", "--config", carpeta.path], "no hi ha cap finestra número 4; n'hi ha 3:\n  1. Feina\n  2. Altres"),
             (["obre", "Prova", "--config", carpeta.path], "no hi ha cap finestra «Prova»"),
-            (["obre", "ALTRES", "--config", carpeta.path], "hi ha més d'una finestra «ALTRES» (2, 3): tria-la pel número"),
+            (["obre", "ALTRES", "--config", carpeta.path], "hi ha més d'una finestra «ALTRES» (2 i 3): tria-la pel número"),
             (["obre", "1", "--obre", "--config", carpeta.path], "«--obre» només funciona amb la comanda «warp-launch» de debò"),
             (["obre", "1", "--desa", "--config", carpeta.path], "opció desconeguda per a obre: «--desa»"),
         ] {

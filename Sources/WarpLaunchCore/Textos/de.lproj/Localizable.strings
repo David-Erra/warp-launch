@@ -114,6 +114,7 @@
 "Manual" = "Manuell";
 "No preguntis" = "Nicht fragen";
 "Planifica" = "Planen";
+"%@ (%@)" = "%@ (%@)";
 "sense nom" = "ohne Namen";
 "Altres" = "Andere";
 
@@ -309,12 +310,12 @@
 "corre fora de Warp, o dins de tmux" = "läuft außerhalb von Warp oder in tmux";
 "sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claude-Sitzung „%@“ in „%@“: wird nicht importiert (%@)";
 "sessió de Claude a «%@»: no s'importa (%@)" = "Claude-Sitzung in „%@“: wird nicht importiert (%@)";
-"a la mateixa carpeta hi ha %@, que queda només terminal" = "im selben Ordner gibt es %@, der ein reiner Terminal-Tab bleibt";
-"a la mateixa carpeta hi ha %@, que queden només terminal" = "im selben Ordner gibt es %@, die reine Terminal-Tabs bleiben";
+"%@; a la mateixa carpeta hi ha %@, que queda només terminal" = "%@; im selben Ordner gibt es %@, der ein reiner Terminal-Tab bleibt";
+"%@; a la mateixa carpeta hi ha %@, que queden només terminal" = "%@; im selben Ordner gibt es %@, die reine Terminal-Tabs bleiben";
 "la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "das Warp-Fenster %@ hat keinen Terminal-Tab: wird nicht importiert";
 "0 amb Claude" = "0 mit Claude";
 "%lld amb Claude, amb la seva ordre" = "%lld mit Claude, mit ihrem Befehl";
-"(%lld sense Claude obert)" = "(%lld ohne offenes Claude)";
+"%lld només terminal (%lld sense Claude obert)" = "%lld nur Terminal (%lld ohne offenes Claude)";
 
 /* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
 "no s'ha pogut generar el JSON: %@" = "JSON konnte nicht erzeugt werden: %@";

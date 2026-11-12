@@ -114,6 +114,7 @@
 "Manual" = "手动";
 "No preguntis" = "不询问";
 "Planifica" = "计划";
+"%@ (%@)" = "%@（%@）";
 "sense nom" = "未命名";
 "Altres" = "其他";
 
@@ -309,12 +310,12 @@
 "corre fora de Warp, o dins de tmux" = "在Warp之外运行，或在tmux中运行";
 "sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claude会话“%@”（位于“%@”）：不导入（%@）";
 "sessió de Claude a «%@»: no s'importa (%@)" = "“%@”中的Claude会话：不导入（%@）";
-"a la mateixa carpeta hi ha %@, que queda només terminal" = "同一文件夹中有%@，它保持为仅终端";
-"a la mateixa carpeta hi ha %@, que queden només terminal" = "同一文件夹中有%@，它们保持为仅终端";
+"%@; a la mateixa carpeta hi ha %@, que queda només terminal" = "%@；同一文件夹中有%@，它保持为仅终端";
+"%@; a la mateixa carpeta hi ha %@, que queden només terminal" = "%@；同一文件夹中有%@，它们保持为仅终端";
 "la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warp窗口%@中没有终端标签页：不导入";
 "0 amb Claude" = "0个带Claude";
 "%lld amb Claude, amb la seva ordre" = "%lld个带Claude，使用其命令";
-"(%lld sense Claude obert)" = "（%lld个未打开Claude）";
+"%lld només terminal (%lld sense Claude obert)" = "%lld个仅终端（%lld个未打开Claude）";
 
 /* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
 "no s'ha pogut generar el JSON: %@" = "无法生成JSON：%@";

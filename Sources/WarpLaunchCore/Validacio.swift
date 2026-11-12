@@ -185,7 +185,7 @@ public struct Avis: Sendable, Equatable, CustomStringConvertible {
         case let .esforcDesconegut(esforc):
             t("Esforç «\(esforc)» desconegut: Claude el deixa córrer i fa servir el de per defecte")
         case let .modePermisosDesconegut(mode):
-            t("Claude no arrencarà: el mode de permisos «\(mode)» no existeix (\(ClaudePestanya.modesPermisos.joined(separator: ", ")))")
+            t("Claude no arrencarà: el mode de permisos «\(mode)» no existeix (\(Idioma.llista(ClaudePestanya.modesPermisos)))")
         case let .saltaPermisosAmbMode(mode): t("Amb «Salta els permisos», Claude no fa cas del mode «\(mode)»")
         case .settingsNoJSON: t("Claude no arrencarà: els settings no són JSON vàlid")
         case let .opcionsDesconegudes(opcions, textos):
@@ -200,7 +200,7 @@ public struct Avis: Sendable, Equatable, CustomStringConvertible {
 
     private func llista(_ opcions: [String]) -> String {
         var vistes = Set<String>()
-        return opcions.filter { vistes.insert($0).inserted }.map { t("«\($0)»") }.joined(separator: ", ")
+        return Idioma.llista(opcions.filter { vistes.insert($0).inserted }.map { t("«\($0)»") })
     }
 }
 

@@ -169,7 +169,8 @@ extension ClaudePestanya {
         case "plan": t("Planifica")
         default: nil
         }
-        return nom.map { "\($0) (\(mode))" } ?? mode
+        // Els parèntesis, els de la llengua («（）» en japonès i en xinès).
+        return nom.map { t("\($0) (\(mode))") } ?? mode
     }
 
     /// Les opcions que l'inspector no edita, per mostrar-les en només lectura: `--settings`, `--remote-control` i les

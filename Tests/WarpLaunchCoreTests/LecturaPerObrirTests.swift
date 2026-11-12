@@ -49,7 +49,7 @@ private let marca = UUID(uuidString: "9F4B2C7E-6D1A-4E8B-B3C5-2A7D9E0F1B62")!
         ])
         #expect(lectura.finestres[0].pestanyes[0].panes[0].claude?.pid == 101)
         #expect(lectura.avisos.count == 3, "\(lectura.avisos)")
-        #expect(Informe.text(lectura, inici: e.inici).contains("Sessions de Claude en segon pla: 2 (bg, daemon-worker)."))
+        #expect(Informe.text(lectura, inici: e.inici).contains("Sessions de Claude en segon pla: 2 (bg i daemon-worker)."))
     }
 }
 

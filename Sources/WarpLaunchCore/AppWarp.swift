@@ -147,8 +147,8 @@ public enum WarpPreview: String, Codable, Sendable, Equatable {
 
     public var text: String {
         switch self {
-        case .nomesPreview: Self.noCompatible + " " + t("En aquest Mac només hi ha Warp Preview.")
-        case .obert: Self.noCompatible + " " + t("Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar.")
+        case .nomesPreview: Idioma.frases(Self.noCompatible, t("En aquest Mac només hi ha Warp Preview."))
+        case .obert: Idioma.frases(Self.noCompatible, t("Ara és obert Warp Preview, i Warp Stable no: obre Warp Stable i torna-ho a provar."))
         case .capWarp: t("No s'ha trobat Warp en aquest Mac: cal Warp Stable.")
         }
     }

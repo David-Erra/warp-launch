@@ -82,8 +82,8 @@ public final class Desinstallacio {
             try consentiment.retira(retorn)
         } catch {
             // Els ítems d'inici, en canvi, ja s'han tret: l'interruptor de dalt ho mostra.
-            self.error = error.description + (eraALInici
-                ? " " + t("Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt.") : "")
+            self.error = Idioma.frases(error.description, eraALInici
+                ? t("Warp Launch ja no s'obre en iniciar sessió: si vols, torna a activar l'interruptor de dalt.") : "")
             actualitza()
             return
         }
@@ -125,7 +125,7 @@ public final class Desinstallacio {
         guard case let .disponible(retorn) = retirada, let textAjust else { return peu }
         // Com la pantalla del permís: Settings Sync porta l'ajust als altres Macs (regla 7; revisió de la 0.31.0).
         let restaura = retorn.valor == true
-            ? " " + t("""
+            ? t("""
                 En arrencar, Warp tornarà a obrir les pestanyes de l'última vegada, sense Claude. Si tens Settings Sync, l'ajust \
                 també canviarà als teus altres Macs.
                 """) : ""
@@ -138,6 +138,6 @@ public final class Desinstallacio {
                 Warp Launch deixarà de tenir permís per tocar l'ajust i es tancarà. La configuració no s'esborra. Si la tornes a \
                 obrir, et tornarà a demanar permís.
                 """)
-        return textAjust + restaura + " " + tancament
+        return Idioma.frases(textAjust, restaura, tancament)
     }
 }

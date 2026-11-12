@@ -114,6 +114,7 @@
 "Manual" = "手動";
 "No preguntis" = "確認しない";
 "Planifica" = "プラン";
+"%@ (%@)" = "%@（%@）";
 "sense nom" = "名前なし";
 "Altres" = "その他";
 
@@ -309,12 +310,12 @@
 "corre fora de Warp, o dins de tmux" = "Warpの外、またはtmux内で動いています";
 "sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claudeセッション“%@”（フォルダ“%@”）：読み込みません（%@）";
 "sessió de Claude a «%@»: no s'importa (%@)" = "フォルダ“%@”のClaudeセッション：読み込みません（%@）";
-"a la mateixa carpeta hi ha %@, que queda només terminal" = "同じフォルダに%@があり、“ターミナルのみ”になります";
-"a la mateixa carpeta hi ha %@, que queden només terminal" = "同じフォルダに%@があり、どれも“ターミナルのみ”になります";
+"%@; a la mateixa carpeta hi ha %@, que queda només terminal" = "%@。同じフォルダに%@があり、“ターミナルのみ”になります";
+"%@; a la mateixa carpeta hi ha %@, que queden només terminal" = "%@。同じフォルダに%@があり、どれも“ターミナルのみ”になります";
 "la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warpのウインドウ%@にターミナルのタブがありません：読み込みません";
 "0 amb Claude" = "Claudeあり0個";
 "%lld amb Claude, amb la seva ordre" = "Claudeあり%lld個（コマンドを保持）";
-"(%lld sense Claude obert)" = "（Claudeが開いていなかったもの%lld個）";
+"%lld només terminal (%lld sense Claude obert)" = "ターミナルのみ%lld個（Claudeが開いていなかったもの%lld個）";
 
 /* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
 "no s'ha pogut generar el JSON: %@" = "JSONを生成できませんでした：%@";

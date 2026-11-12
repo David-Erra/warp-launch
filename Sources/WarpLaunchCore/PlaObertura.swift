@@ -264,10 +264,13 @@ public struct XifresObertura: Sendable, Equatable {
         guard pestanyes > 0 else { return t("No s'obrirà res.") + resta }
         var parts: [String] = []
         if ambClaude > 0 {
-            var detall: [String] = []
-            if reprenen > 0 { detall.append(t("\(reprenen) reprenen la seva conversa")) }
-            if noves > 0 { detall.append(t("\(noves) en comencen una de nova")) }
-            parts.append(t("\(ambClaude) amb Claude (\(detall.joined(separator: ", ")))"))
+            // Les dues xifres, en una frase sencera: la coma és la de la llengua («、» en japonès, «，» en xinès).
+            let detall = switch (reprenen > 0, noves > 0) {
+            case (true, true): t("\(reprenen) reprenen la seva conversa, \(noves) en comencen una de nova")
+            case (true, false): t("\(reprenen) reprenen la seva conversa")
+            default: t("\(noves) en comencen una de nova")
+            }
+            parts.append(t("\(ambClaude) amb Claude (\(detall))"))
         }
         if terminal > 0 { parts.append(t("\(terminal) només terminal")) }
         let memoria = ambClaude > 0 ? " · " + t("unes \(Self.gb(memoriaGB)) GB") : ""

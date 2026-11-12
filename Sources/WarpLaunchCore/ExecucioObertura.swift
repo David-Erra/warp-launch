@@ -240,16 +240,16 @@ public enum ExecucioObertura {
         if finestra {
             text = t("S'ha obert «\(nom)» a Warp: \(x.pestanyes) pestanyes, \(ambClaude) amb Claude.")
             if !senseClaude.isEmpty {
-                text += " " + t("Claude encara no ha arrencat a \(llista(senseClaude)): mira-ho a Warp.")
+                text = Idioma.frases(text, t("Claude encara no ha arrencat a \(llista(senseClaude)): mira-ho a Warp."))
             }
         } else if vist != nil {
             text = t("No s'ha pogut reconèixer la finestra nova de «\(nom)» (s'ha vist Claude a \(ambClaude - senseClaude.count) de \(ambClaude) pestanyes): mira-la a Warp abans de tornar-la a obrir.")
         } else {
             text = t("No s'ha pogut confirmar que s'hagi obert «\(nom)»: mira si hi ha una finestra nova a Warp.")
         }
-        if peticio.warpEngegat, !peticio.warpDesaFinestres { text += " " + finestraBuida }
+        if peticio.warpEngegat, !peticio.warpDesaFinestres { text = Idioma.frases(text, finestraBuida) }
         if !llancament.esborrat {
-            text += " " + t("El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app.")
+            text = Idioma.frases(text, t("El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app."))
         }
         return .acabat(Acabat(correcte: finestra && senseClaude.isEmpty, text: text, llancament: llancament, vist: vist,
                               finestra: finestra, senseClaude: senseClaude, desDe: desDe))

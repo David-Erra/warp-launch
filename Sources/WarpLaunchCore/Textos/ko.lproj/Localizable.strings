@@ -114,6 +114,7 @@
 "Manual" = "수동";
 "No preguntis" = "묻지 않음";
 "Planifica" = "계획";
+"%@ (%@)" = "%@(%@)";
 "sense nom" = "이름 없음";
 "Altres" = "기타";
 
@@ -309,12 +310,12 @@
 "corre fora de Warp, o dins de tmux" = "Warp 외부 또는 tmux 안에서 실행됩니다";
 "sessió de Claude «%@» a «%@»: no s'importa (%@)" = "Claude 세션 ‘%@’, 위치 ‘%@’: 가져오지 않습니다(%@)";
 "sessió de Claude a «%@»: no s'importa (%@)" = "‘%@’의 Claude 세션: 가져오지 않습니다(%@)";
-"a la mateixa carpeta hi ha %@, que queda només terminal" = "같은 폴더에 있는 %@ 탭은 터미널만 사용합니다";
-"a la mateixa carpeta hi ha %@, que queden només terminal" = "같은 폴더에 있는 %@ 탭은 터미널만 사용합니다";
+"%@; a la mateixa carpeta hi ha %@, que queda només terminal" = "%@. 같은 폴더에 있는 %@ 탭은 터미널만 사용합니다";
+"%@; a la mateixa carpeta hi ha %@, que queden només terminal" = "%@. 같은 폴더에 있는 %@ 탭은 터미널만 사용합니다";
 "la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "Warp 윈도우 %@에 터미널 탭이 없습니다: 가져오지 않습니다";
 "0 amb Claude" = "Claude 사용 0개";
 "%lld amb Claude, amb la seva ordre" = "Claude 사용 %lld개, 자체 명령 사용";
-"(%lld sense Claude obert)" = "(Claude가 열려 있지 않음 %lld개)";
+"%lld només terminal (%lld sense Claude obert)" = "터미널만 %lld개(Claude가 열려 있지 않음 %lld개)";
 
 /* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
 "no s'ha pogut generar el JSON: %@" = "JSON을 생성할 수 없습니다: %@";

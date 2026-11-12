@@ -66,7 +66,7 @@ public final class FullImportacio {
         case let .success(lectura):
             if let motiu = MotiuSenseFinestres(lectura, ambRefresc: warp.refresc != nil) {
                 // Importar substituiria la configuració per res.
-                estat = .senseFinestres(motiu.text + " " + queFer(motiu))
+                estat = .senseFinestres(Idioma.frases(motiu.text, queFer(motiu)))
                 return
             }
             avisosLectura = lectura.avisos

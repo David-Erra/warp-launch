@@ -114,6 +114,7 @@
 "Manual" = "Manuel";
 "No preguntis" = "Ne pas demander";
 "Planifica" = "Planifier";
+"%@ (%@)" = "%@ (%@)";
 "sense nom" = "sans nom";
 "Altres" = "Autres";
 
@@ -309,12 +310,12 @@
 "corre fora de Warp, o dins de tmux" = "il tourne hors de Warp, ou dans tmux";
 "sessió de Claude «%@» a «%@»: no s'importa (%@)" = "session Claude « %@ » dans « %@ » : elle n’est pas importée (%@)";
 "sessió de Claude a «%@»: no s'importa (%@)" = "session Claude dans « %@ » : elle n’est pas importée (%@)";
-"a la mateixa carpeta hi ha %@, que queda només terminal" = "le même dossier contient %@, qui reste en terminal uniquement";
-"a la mateixa carpeta hi ha %@, que queden només terminal" = "le même dossier contient %@, qui restent en terminal uniquement";
+"%@; a la mateixa carpeta hi ha %@, que queda només terminal" = "%@ ; le même dossier contient %@, qui reste en terminal uniquement";
+"%@; a la mateixa carpeta hi ha %@, que queden només terminal" = "%@ ; le même dossier contient %@, qui restent en terminal uniquement";
 "la finestra %@ de Warp no té cap pestanya de terminal: no s'importa" = "la fenêtre %@ de Warp n’a aucun onglet de terminal : elle n’est pas importée";
 "0 amb Claude" = "0 avec Claude";
 "%lld amb Claude, amb la seva ordre" = "%lld avec Claude, avec leur commande";
-"(%lld sense Claude obert)" = "(%lld sans Claude ouvert)";
+"%lld només terminal (%lld sense Claude obert)" = "%lld en terminal uniquement (%lld sans Claude ouvert)";
 
 /* MagatzemConfiguracio, MagatzemEstat, EstatApp i Preferencies: desar i llegir els fitxers de l'app */
 "no s'ha pogut generar el JSON: %@" = "impossible de générer le JSON : %@";
