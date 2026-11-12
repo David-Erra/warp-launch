@@ -26,7 +26,7 @@
 	<key>no hi ha cap finestra número %@; n'hi ha %lld:</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>il n’y a aucune fenêtre numéro %@ ; il y en a %#@n@ :</string>
+		<string>il n’y a aucune fenêtre numéro %@ ; il y en a %#@n@ :</string>
 		<key>n</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -44,7 +44,7 @@
 	<key>no hi ha cap finestra «%@»; n'hi ha %lld:</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>il n’y a aucune fenêtre « %@ » ; il y en a %#@n@ :</string>
+		<string>il n’y a aucune fenêtre « %@ » ; il y en a %#@n@ :</string>
 		<key>n</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -483,7 +483,7 @@
 	<key>S'ha obert «%@» a Warp: %lld pestanyes, %lld amb Claude.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>La fenêtre « %@ » s’est ouverte dans Warp : %#@p@, %lld avec Claude.</string>
+		<string>La fenêtre « %@ » s’est ouverte dans Warp : %#@p@, %lld avec Claude.</string>
 		<key>p</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -501,7 +501,7 @@
 	<key>No s'ha pogut reconèixer la finestra nova de «%@» (s'ha vist Claude a %lld de %lld pestanyes): mira-la a Warp abans de tornar-la a obrir.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>Impossible de reconnaître la nouvelle fenêtre de « %@ » (Claude a été vu dans %lld sur %#@p@) : vérifiez-la dans Warp avant de la rouvrir.</string>
+		<string>Impossible de reconnaître la nouvelle fenêtre de « %@ » (Claude a été vu dans %lld sur %#@p@) : vérifiez-la dans Warp avant de la rouvrir.</string>
 		<key>p</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -539,7 +539,7 @@
 	<key>«restore_session» hi surt %lld vegades, i n'hi hauria d'haver 1</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>« restore_session » y apparaît %#@v@, et ne devrait y apparaître qu’une fois</string>
+		<string>« restore_session » y apparaît %#@v@, et ne devrait y apparaître qu’une fois</string>
 		<key>v</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -557,7 +557,7 @@
 	<key>«settings.toml» té %lld capçaleres [general], i n'hi hauria d'haver 1</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>« settings.toml » a %#@c@, et ne devrait en avoir qu’un</string>
+		<string>« settings.toml » a %#@c@, et ne devrait en avoir qu’un</string>
 		<key>c</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -575,7 +575,7 @@
 	<key>Warp no ha desat les finestres: n'hi ha %lld pestanyes desades i %lld terminals vius. Pot ser antic: canvia de finestra a Warp i fes «%@».</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>Warp n’a pas enregistré les fenêtres : il y a %#@p@ et %#@t@. Ce n’est peut-être pas à jour : changez de fenêtre dans Warp et choisissez « %@ ».</string>
+		<string>Warp n’a pas enregistré les fenêtres : il y a %#@p@ et %#@t@. Ce n’est peut-être pas à jour : changez de fenêtre dans Warp et choisissez « %@ ».</string>
 		<key>p</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -607,7 +607,7 @@
 	<key>%@: pestanya dividida en %lld panes; només s'importa el principal, i es perd %lld sessions de Claude</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%@ : onglet divisé en %lld panes ; seul le principal est importé, et %#@s@</string>
+		<string>%@ : onglet divisé en %lld panes ; seul le principal est importé, et %#@s@</string>
 		<key>s</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -1190,7 +1190,7 @@
 	<key>%lld pestanyes sortiran a «Per revisar»</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@n@ dans « À vérifier »</string>
+		<string>%#@n@ dans « À vérifier »</string>
 		<key>n</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
