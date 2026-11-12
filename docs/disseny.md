@@ -1485,7 +1485,14 @@ l'app no pot tancar: ho diuen el full i el bàner.
   - **L4:** una finestra oberta en part, el 06/11/2026 amb la 0.26.0, correcta segons en David (el registre no en té cap línia).
   - **Una configuració gran, sencera:** el 06/11/2026, després d'un reinici, totes les pestanyes es tornen a obrir amb el seu Claude.
     No està comprovat si cada pestanya va reprendre la seva conversa.
-  - **Sense fer:** L2, la L3 original, L5 tal com és escrita i la del CLI `--obre`.
+  - **Sense fer:** L2, la L3 original i L5 tal com és escrita. La del CLI `--obre`, feta l'11/11/2026 amb la 0.34.0
+    (`docs/fets-verificats.md`).
+  - **L2, preparada (12/11/2026):** `/tmp/warp-launch-provaL2`, 1 finestra amb 1 pestanya a la carpeta del repo, Claude amb ultracode,
+    esforç mitjà, sense saltar permisos i sense continuar (`configuracio valida`: 0 errors). Obre 1 finestra i 1 sessió nova. Amb l'OK.
+  - **L5, amb el reinici (12/11/2026):** el 12/11 hi havia 78 sessions vives, i totes les converses de més de 200 MB eren de sessions
+    vives (fins a 250 MB). La més gran que es podia reprendre feia 59 MB (llegit a `~/.claude/sessions` i `~/.claude/projects`, només
+    lectura). Com que una pestanya no reprèn mai una conversa viva (D7), L5 tal com és escrita només es pot fer després d'un reinici,
+    amb «Obre-ho tot»: es fa alhora que la prova del reinici (R7), i s'hi mesura el temps, la memòria i els diàlegs.
 
 ### Preguntes obertes i on es resolen
 
