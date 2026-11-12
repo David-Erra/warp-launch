@@ -2421,6 +2421,29 @@ extension GuardaTests {
         }
     }
 
+    /// El diagnòstic és en anglès, i la llengua la fixa `Diagnostic.executa` només dins del seu bloc. La línia de les actualitzacions
+    /// (`Actualitzacions.textDiagnostic`) es compon al fil principal, on aquella llengua fixada no arriba (`WarpLaunchApp.swift`,
+    /// `DispatchQueue.main.sync`): si hi passés per `t()`, sortiria en la llengua de l'usuari (revisió de la 0.36.0). Per això, aquests
+    /// textos s'escriuen en anglès i no criden `t(`, ni el motiu que hi porten (`PoliticaActualitzacions.NoDisponible.diagnostic`).
+    @Test func elsTextosDelDiagnosticDeForaSonEnAnglesSenseTraduir() throws {
+        for (ruta, inici) in [("Sources/WarpLaunchUI/Actualitzacions.swift", "public var textDiagnostic: String {"),
+                              ("Sources/WarpLaunchCore/PoliticaActualitzacions.swift", "public var diagnostic: String {")] {
+            let text = try String(contentsOf: arrel.appending(path: ruta), encoding: .utf8)
+            let rang = try #require(text.range(of: inici), "\(ruta): no hi ha «\(inici)»")
+            // El cos, fins a la clau que el tanca al mateix sagnat que la declaració.
+            let linies = text[rang.lowerBound...].split(separator: "\n", omittingEmptySubsequences: false)
+            let sagnat = (text[..<rang.lowerBound].split(separator: "\n", omittingEmptySubsequences: false).last ?? "").count
+            var cos: [Substring] = []
+            for linia in linies.dropFirst() {
+                if linia.trimmingCharacters(in: .whitespaces) == "}", linia.prefix(while: { $0 == " " }).count == sagnat { break }
+                cos.append(linia)
+            }
+            #expect(!cos.isEmpty, "\(ruta): cos buit")
+            let ambT = cos.filter { $0.contains("t(\"") || $0.contains("Idioma.") }
+            #expect(ambT.isEmpty, "\(ruta): el text del diagnòstic no pot passar per t(): \(ambT)")
+        }
+    }
+
     /// Cada `t("…")` del codi és al català (fase F2): la clau, com la fa el compilador, és al `.strings` o al `.stringsdict` del
     /// català. Un text que no hi és sortiria en català en totes les llengües, sense dir res. Una interpolació fa la clau amb
     /// l'especificador del tipus del valor (`%@` per a un text, `%lld` per a un `Int`…), que no surt del codi font: n'hi ha prou que
