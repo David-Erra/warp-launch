@@ -107,7 +107,7 @@ private func pluralFinestres(_ formes: [String: String]) -> String {
         #expect(Idioma.tria(disponibles: disponibles, preferencies: ["zh-TW"]) == "en")
         // Sense l'anglès, la primera disponible.
         #expect(Idioma.tria(disponibles: ["ca", "es"], preferencies: ["de-DE"]) == "ca")
-        Idioma.$deProva.withValue("de") {
+        Idioma.$deProva.withValue("ru") {
             #expect(Idioma.efectiva == "en")
             #expect(t("Obre a Warp…") == "Open in Warp…")
         }
@@ -144,7 +144,7 @@ private func pluralFinestres(_ formes: [String: String]) -> String {
         #expect(Idioma.text("Obre \("prova2") a Warp", textos: nil, llengua: "en") == "Obre prova2 a Warp")
         // Amb el bundle, una llengua que no hi és o una clau que no hi és: també la clau.
         let textos = try #require(Idioma.textos)
-        #expect(Idioma.text("Obre a Warp…", textos: textos, llengua: "de") == "Obre a Warp…")
+        #expect(Idioma.text("Obre a Warp…", textos: textos, llengua: "ru") == "Obre a Warp…")
         #expect(Idioma.text("Una clau que no hi és", textos: textos, llengua: "en") == "Una clau que no hi és")
     }
 
