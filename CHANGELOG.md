@@ -3,10 +3,10 @@
 Published versions of Warp Launch. Versions in between were never published: their changes are listed under the next
 published one. Dates are when the version was published on GitHub.
 
-## 1.0.0
+## 0.99.0
 
-- **Signed with Developer ID and notarized by Apple:** download it with your browser and open it like any other app. macOS asks once
-  again for the Files & Folders permission, because the app's signature changes.
+The release candidate of 1.0.0: everything 1.0.0 will have, except the Developer ID signature and Apple's notarization.
+
 - **10 languages:** Catalan, English, Spanish, French, German, Italian, Brazilian Portuguese, Japanese, Simplified Chinese
   and Korean. The app follows the language of your Mac; **Settings › General › Language** picks another one (it applies the next
   time you open the app). When your Mac's language isn't one of them, the app is in English. The names of macOS menus and

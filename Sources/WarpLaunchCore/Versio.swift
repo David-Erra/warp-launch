@@ -3,7 +3,7 @@
 public enum WarpLaunch {
     public static let nom = "Warp Launch"
     public static let identificador = "cat.davide.warp-launch"
-    public static let versio = "1.0.0"
+    public static let versio = "0.99.0"
     /// El nom de l'executable de l'app (al `.app` i a `.build`): el CLI no obre res mentre n'hi ha cap en marxa (D17).
     public static let executableApp = "WarpLaunch"
     /// El nom de l'ordre que llegeix Warp amb les finestres (D19), igual al menú Arxiu, al de la icona i al full d'importació
