@@ -284,6 +284,7 @@ scripts/instal·la.sh [--aplica]          # sense --aplica, diu què copiaria a 
 scripts/instal·la.sh --github [--aplica] [--versio x.y.z]  # igual, amb la versió publicada a GitHub (per a altres Macs; README.md)
 GH_TOKEN=… scripts/publica.sh [--aplica]  # sense --aplica, compila i diu què publicaria; amb, signa el zip, crea la versió a GitHub i posa al dia la recepta de Homebrew (regles 3 i 12: --aplica només l'executa l'autor, al seu terminal)
 scripts/revisa-idioma.sh <llengua> [--aplica]  # obre build/ en una llengua amb una configuració buida de prova (F7 del multidioma; --aplica, regla 4: només amb l'OK)
+scripts/mesura-reinici.sh                # després d'un reinici (R7 i L5): arrencada, registre de les obertures, sessions de Claude i memòria (només lectura)
 scripts/warp-restauracio.sh estat         # si Warp desa les finestres (només lectura)
 scripts/warp-restauracio.sh activa|desactiva [--aplica]  # regla 7: sense --aplica no escriu; amb, cal l'OK d'en David
 scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-banana (cal GEMINI_API_KEY)
