@@ -1284,6 +1284,15 @@ L'autor la va publicar amb `scripts/publica.sh --aplica` al seu terminal (v0.33.
 - **Recepta:** `version "0.33.0"`, el sha256 del zip i `auto_updates true`.
 - **No vist encara:** que una còpia 0.33.0 s'actualitzi sola a la versió següent.
 
+### 19. La 0.99.0, publicada (13/11/2026)
+
+L'autor la va publicar amb `scripts/publica.sh --aplica` (v0.99.0; recepta del tap, commit `df97d2e`). Comprovat després, des de fora:
+- **PROVAT:** `releases/latest/download/appcast.xml` dona la 0.99.0; el zip fa 5.258.095 bytes, com diu l'appcast, i el seu sha256 és el de la
+  recepta (`707126724f79…`); `scripts/verifica-signatura.swift` amb la clau pública de l'app: bé.
+- **PROVAT:** l'app de dins és la 0.99.0, porta `SUFeedURL` i `SUPublicEDKey`, les 10 llengües (`CFBundleLocalizations`) i passa
+  `codesign --verify --deep --strict` amb el requisit de «Warp Launch Dev».
+- **Pendent:** veure que una còpia 0.33.0 s'hi actualitza sola (la Porta 3).
+
 ### Què impedeix o canvia el plantejament
 
 1. **Qui té la 0.31.5 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.

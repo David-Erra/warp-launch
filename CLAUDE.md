@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (12/11/2026, 0.99.0 al codi, la candidata de la 1.0.0; publicada, 0.33.0)
+## Estat (13/11/2026, 0.99.0 al codi i publicada, la candidata de la 1.0.0)
 
 - **Fins a la 1.0.0 (decisió de l'autor, 11/11/2026; el detall, al seu pla privat, fora del repo):** 0.34, el nucli fiable (les pestanyes només de terminal
   es reconeixen i no es dupliquen; reinici, L2 i L5 amb l'OK; en publicar-la, la primera actualització automàtica real); 0.35, multidioma en 10 llengües (ca, en, es, fr, de, it, pt-BR, ja,
@@ -197,7 +197,9 @@ Els requisits són a `docs/especificacio.md`.
 - **0.36.0 (12/11/2026, `docs/disseny.md`, secció 14):** el primer ús guiat (l'estat buit de l'editor, en tres passos, i un enllaç a Configuració › General);
   «Obre la configuració del sistema» obre Arxius i carpetes quan macOS no deixa llegir Warp (decisió 8: només `ServeiPermis`, amb una adreça d'una llista fixa,
   llegida a `tccd` de macOS 27.2); i les versions provades, Warp 0.2026.11.04 i Claude Code fins a la 2.1.322. Només proves i codi llegit: no s'ha vist a l'app.
-- **0.99.0 (12/11/2026, decisió de l'autor): la candidata, el mateix codi que serà la 1.0.0, per publicar sense notaritzar.** Arriba sola a
+- **0.99.0 (12/11/2026, decisió de l'autor; publicada per l'autor el 13/11/2026, recepta del tap `df97d2e`): la candidata, el mateix codi que serà la
+  1.0.0, sense notaritzar.** Comprovat des de fora el 13/11: l'appcast de l'app dona la 0.99.0, el zip (5.258.095 bytes) quadra amb l'appcast i amb
+  el sha256 de la recepta, la signatura EdDSA amb la clau pública, i l'app de dins porta l'adreça, les 10 llengües i passa `codesign`. Arriba sola a
   les còpies 0.33.0 (la primera actualització automàtica real) i fa de beta (la fa la primera usuària, 7 dies). La 1.0.0 serà aquest codi signat amb
   Developer ID i notaritzat, quan l'autor tingui el certificat (aquesta setmana, segons ell). Les proves que queden (el reinici amb la L5, la L2 i
   les altres llengües), aquesta setmana.
