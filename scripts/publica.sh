@@ -504,6 +504,11 @@ ORDRE_GITHUB="s=\"\$(gh api -H 'Accept: application/vnd.github.raw' repos/$REPO/
         echo "**L'app s'actualitza sola** des de la 0.33.0: un cop al dia mira a GitHub si hi ha una versió nova (GitHub veu la teva adreça IP i la versió de l'app) i, quan no la fas servir, es reinicia. Warp i Claude no es tanquen. Va encès de sèrie; per apagar-ho, Configuració › «Actualitzacions» › «Actualitza automàticament»."
         echo
         echo "Si tens la 0.31.5 o una d'anterior, l'has d'actualitzar a mà una última vegada, amb les ordres d'aquí dalt. Des de llavors, és automàtic."
+        # La primera amb Developer ID (des de la 1.0.0, totes): la signatura de l'app canvia, i macOS torna a demanar el permís.
+        if [[ "$DEVELOPER_ID" -eq 1 && "${ANTERIOR#v}" == 0.* ]]; then
+            echo
+            echo "**Des d'aquesta versió, l'app és signada amb Developer ID i notaritzada per Apple:** es pot baixar amb el navegador i s'obre com qualsevol app. Com que la signatura canvia, macOS et tornarà a demanar una vegada el permís d'Arxius i carpetes (surt «Accés a les dades bloquejat»: clica «Obre la configuració del sistema» al menú de l'app i activa-hi Warp Launch), i potser hauràs de tornar a activar Configuració › General › «Obre Warp Launch en iniciar sessió»."
+        fi
     fi
 } > "$NOTES"
 

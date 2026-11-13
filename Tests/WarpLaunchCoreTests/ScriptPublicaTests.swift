@@ -1558,6 +1558,24 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
         #expect(((try? String(contentsOf: b.fitxerTokenXcrun, encoding: .utf8)) ?? "") == "")
     }
 
+    /// La primera versió amb Developer ID (l'anterior és 0.x) avisa a les notes que macOS tornarà a demanar el permís; les següents, no.
+    @Test(arguments: [("1.0.0", "v0.99.0", true), ("1.0.1", "v1.0.0", false), ("1.0.0", "", false)])
+    func laPrimeraAmbDeveloperIDAvisaDelPermis(versio: String, anterior: String, avisa: Bool) throws {
+        let b = try Banc(versio: versio)
+        if !anterior.isEmpty {
+            // L'etiqueta de l'anterior, a origin, com la deixa GitHub (les notes en llisten els canvis des d'aquí).
+            try b.git("tag", anterior)
+            try b.git("push", "-q", "origin", anterior)
+            try b.git("tag", "-d", anterior)
+        }
+        try b.posaTeamID(linia: #"TEAM_ID="ABCDE12345""#)
+        try b.ambDeveloperID()
+        let (codi, sortida) = try b.executa(entorn: b.entornDeveloperID.merging(["GH_FALS_ANTERIOR": anterior]) { $1 })
+        #expect(codi == 0, "\(sortida)")
+        #expect(b.notes(versio).contains("macOS et tornarà a demanar una vegada el permís d'Arxius i carpetes") == avisa, "\(b.notes(versio))")
+        #expect(!b.notes(versio).isEmpty)
+    }
+
     /// Si Apple no l'accepta (o no respon, o el tiquet no es pot grapar o no és vàlid), no es publica res: ni el zip es signa, ni es crea
     /// la versió, ni es toca la recepta. Si se sap l'enviament, diu com veure'n el registre.
     @Test(arguments: [
