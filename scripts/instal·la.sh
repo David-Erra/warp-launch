@@ -24,13 +24,14 @@ REPO="${WARP_LAUNCH_REPO:-David-Erra/warp-launch}"
 # El Team ID del Developer ID d'en David: els deu caràcters entre parèntesis de «Developer ID Application: … (XXXXXXXXXX)», a
 # `security find-identity -v -p codesigning`. Mentre és buit (fins que hi hagi el certificat: docs/disseny.md, secció 13), només s'accepta
 # «Warp Launch Dev». publica.sh el llegeix d'aquí, i des que hi és només publica amb aquest Developer ID, notaritzada.
-TEAM_ID=""
+TEAM_ID="NPB9KH56SJ"
 # El certificat «Warp Launch Dev» (D12 de docs/especificacio.md), fins al 2036: `codesign -dr - "/Applications/Warp Launch.app"`.
 REQUISIT_DEV="identifier \"$IDENTIFICADOR\" and certificate leaf = H\"c1ec55b1cb87c881a2c48a4f5256b10ebc12bcc6\""
 # El de Developer ID, el que Apple posa a les apps que s'hi signen (`codesign -d -r-`): un certificat «Developer ID Application» (…6.1.13),
 # emès per l'autoritat de Developer ID (…6.2.6), de l'equip $1.
 requisit_developer_id() { printf 'identifier "%s" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "%s"' "$IDENTIFICADOR" "$1"; }
-EQUIP="${WARP_LAUNCH_TEAM_ID:-$TEAM_ID}"
+# Amb WARP_LAUNCH_TEAM_ID definida (també buida), mana aquesta: les proves poden fer com si no hi hagués Developer ID.
+EQUIP="${WARP_LAUNCH_TEAM_ID-$TEAM_ID}"
 FORMA_TEAM_ID='^[A-Z0-9]{10}$'
 if [[ -n "$EQUIP" && ! "$EQUIP" =~ $FORMA_TEAM_ID ]]; then
     echo "instal·la: el Team ID («${EQUIP}») no té la forma de deu lletres majúscules o xifres. No s'ha copiat res." >&2

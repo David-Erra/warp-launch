@@ -113,8 +113,14 @@ private func actualitzacionsPlist(feed: String = feedDeProva, clau: String = cla
             let scripts = carpeta.appending(path: "repo/scripts")
             try FileManager.default.createDirectory(at: scripts, withIntermediateDirectories: true)
             try FileManager.default.copyItem(at: script, to: scripts.appending(path: "publica.sh"))
-            // El Team ID del Developer ID és a `instal·la.sh`, i `publica.sh` el llegeix d'allà: la còpia de debò, amb el seu TEAM_ID.
-            try FileManager.default.copyItem(at: script.deletingLastPathComponent().appending(path: "instal·la.sh"), to: scripts.appending(path: "instal·la.sh"))
+            // El Team ID del Developer ID és a `instal·la.sh`, i `publica.sh` el llegeix d'allà: la còpia de debò, però el banc comença
+            // sempre sense Team ID (`TEAM_ID=""`), com un Mac sense Developer ID; les proves que en volen un el posen amb `posaTeamID`.
+            let installa = try String(contentsOf: script.deletingLastPathComponent().appending(path: "instal·la.sh"), encoding: .utf8)
+            let linies = installa.components(separatedBy: "\n")
+            #expect(linies.filter { $0.hasPrefix("TEAM_ID=") }.count == 1, "instal·la.sh ha de tenir una sola línia TEAM_ID")
+            try Data(linies.map { $0.hasPrefix("TEAM_ID=") ? #"TEAM_ID="""# : $0 }.joined(separator: "\n").utf8)
+                .write(to: scripts.appending(path: "instal·la.sh"))
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scripts.appending(path: "instal·la.sh").path)
             try Self.executable(scripts.appending(path: "build-app.sh"), #"""
             #!/bin/bash
             set -euo pipefail
