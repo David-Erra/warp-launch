@@ -1453,13 +1453,20 @@ en aquest camí l'app no tanca: ho diuen el full i el bàner (la 1.0.3 només la
     l'acció és a la carpeta d'inici; dels shells que l'app no ha reconegut com a seus (`Confirmacio.perCarpeta` i `shells`, ni fills
     seus), un de sol és a la carpeta d'inici; no té cap fill (de qualsevol usuari, `proc_listchildpids`); l'executable és un shell
     (`SHELL`, o zsh, bash, fish, sh; mai `claude` ni `node`); i va començar després que arrenqués Warp i abans de la confirmació
-    de la primera finestra o, si és més tard, dels 10 s després que arrenqués Warp.
+    de la primera finestra o, si és més tard, dels 5 s després que arrenqués Warp (10 s a la 1.0.3; la 1.0.4 ho escurça).
   - **Just abans** (`ObreWarp.acabaShellDeLaFinestraDeWarp`, l'única crida de senyal de `Sources`): el mateix pid amb la mateixa
     hora d'inici i el mateix pare, a la carpeta d'inici i sense cap fill (`Candidat.encaraEs`). Un sol SIGHUP, res més fort. Al
     registre (categoria `obertura`): el pid, o per què no.
   - **Textos:** el full diu «Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp
     obre en arrencar, si la reconeix.». Si l'ha tancada, el bàner no en parla; si no (un dubte), «Warp ha obert també una
-    finestra seva, que pots tancar.»; si Warp no té cap terminal de més, res.
+    finestra seva, que pots tancar.»; si Warp no té cap terminal de més, res. Si no s'ha obert cap finestra de l'acció (1.0.4,
+    `Resultat.capOberta`), tampoc no en parla: potser Warp ni s'ha engegat.
+  - **1.0.4 (revisió de la 1.0.3):** una pestanya de l'app a la carpeta d'inici fa dubtar també si la seva finestra no s'ha pogut
+    obrir o no s'ha intentat (un error d'obrir l'URL no vol dir que Warp no l'hagi rebut); el marge d'arrencada baixa de 10 a 5 s
+    (menys temps perquè una pestanya feta a mà a l'inici, amb la de Warp ja tancada, passi per la de Warp); i la guarda prohibeix
+    també les altres crides de Darwin que acaben o aturen un procés (`terminate_with_reason`, `task_terminate`, `pid_suspend`…) i
+    qualsevol referència a la funció fora de la definició i les dues crides. Proves per a cada condició de la tria, provades
+    amb mutacions (sense la condició, la prova falla).
   - **Guarda:** `nomesLObridorAcabaElShellDeLaFinestraDeWarp` (la crida, a l'obridor i a aquella funció, amb SIGHUP literal i
     després de la comprovació; cap altre senyal ni cap altra manera d'enviar-ne; la criden només l'app i el CLI).
 

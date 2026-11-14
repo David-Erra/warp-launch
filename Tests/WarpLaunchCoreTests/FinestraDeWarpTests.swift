@@ -157,14 +157,69 @@ private func acabat(_ pestanyes: [PestanyaAObrir], estat: Llancament.Estat = .co
         #expect(esDubte(tria(senseHora)))
     }
 
-    /// Un shell començat massa tard (després de la confirmació i dels 10 s d'arrencada) pot ser una pestanya nova feta a mà:
-    /// res. Un d'abans que arrenqués Warp, tampoc. Sense confirmació, els 10 s compten.
+    /// Un shell començat massa tard (després de la confirmació i dels 5 s d'arrencada) pot ser una pestanya nova feta a mà:
+    /// res. Un d'abans que arrenqués Warp, tampoc. Sense confirmació, els 5 s compten (Warp arrenca a t0 + 1: fins a t0 + 6).
     @Test func elShellHaDeComencarEnArrencarWarp() {
         #expect(esDubte(tria(processos(shellWarp: 20))))
         #expect(esDubte(tria(processos(shellWarp: 0.5))))
-        let als9 = FinestraDeWarp.Decisio.acaba(FinestraDeWarp.Candidat(pid: 102, pare: 50, inici: hora(9), carpeta: inici))
-        #expect(tria(processos(shellWarp: 9)) == als9 && tria(processos(shellWarp: 9), context(confirmada: nil)) == als9)
+        let als5 = FinestraDeWarp.Decisio.acaba(FinestraDeWarp.Candidat(pid: 102, pare: 50, inici: hora(5.5), carpeta: inici))
+        #expect(tria(processos(shellWarp: 5.5)) == als5 && tria(processos(shellWarp: 5.5), context(confirmada: nil)) == als5)
+        // Revisió: 9 s després de Warp ja no (abans, amb 10 s de marge, sí), ni sense confirmació.
+        #expect(esDubte(tria(processos(shellWarp: 9))) && esDubte(tria(processos(shellWarp: 9), context(confirmada: nil))))
         #expect(!esDubte(tria(processos(shellWarp: 25), context(confirmada: t0 + 30))), "abans de la confirmació, encara que tard")
+    }
+
+    /// Revisió de la 1.0.3: cada condició de `tria`, sola (cada prova falla si se'n treu la condició).
+    @Test func cadaCondicioSola() {
+        // Dos `terminal-server` de la mateixa app de Warp.
+        var dosServidors = processos()
+        dosServidors.processos[51] = (InfoProces(executable: warp, argv: [warp, "terminal-server", "--parent-pid=40"]), 40)
+        dosServidors.inicis[51] = hora(1.2)
+        #expect(esDubte(tria(dosServidors)))
+        // Dos terminals de més, un a la carpeta d'inici i l'altre no (una pestanya feta a mà en una altra carpeta): el
+        // recompte no quadra, i no es tanca el de l'inici.
+        var unDeMes = processos()
+        unDeMes.processos[103] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+        unDeMes.carpetes[103] = "/x/altra"
+        unDeMes.inicis[103] = hora(1.6)
+        #expect(esDubte(tria(unDeMes)))
+        // Un altre desconegut sense carpeta coneguda, a més del de l'inici: podria ser a l'inici.
+        var senseCarpeta = processos()
+        senseCarpeta.processos[103] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+        senseCarpeta.inicis[103] = hora(1.6)
+        #expect(esDubte(tria(senseCarpeta, context(pestanyes: 2, nostres: [101]))))
+        // Sense l'hora d'inici del shell.
+        var senseHora = processos()
+        senseHora.inicis[102] = nil
+        #expect(esDubte(tria(senseHora)))
+        // Un dubte del context, també directament a `tria` (no només a `tanca`).
+        #expect(tria(processos(), context(dubte: "x")) == .no(.dubte("x")))
+    }
+
+    /// Cap finestra de l'acció no s'ha obert: no es mira res, i el resultat no parla de cap finestra de Warp (potser ni s'ha
+    /// engegat). Si la primera no s'ha obert però alguna altra sí, el dubte de sempre, amb el text.
+    @Test func capFinestraObertaNoEnParla() {
+        let t1 = pestanya(1, carpeta: "/x/t1", claude: true)
+        let t2 = pestanya(2, carpeta: "/x/t2", claude: false)
+        let cap = FinestraDeWarp.context([([t1], acabat([t1], estat: .error, segons: nil)), ([t2], nil)], inici: inici)
+        #expect(cap.capOberta && cap.dubte != nil)
+        let r = FinestraDeWarp.tanca(cap, foto: {
+            Issue.record("no s'havien de mirar els processos")
+            return processos().fotoFinestraDeWarp(executable: warp)
+        }, shellUsuari: nil, acaba: { _ in
+            Issue.record("no s'havia d'acabar res")
+            return .capFinestra
+        })
+        guard case .capOberta = r else {
+            Issue.record("\(r)")
+            return
+        }
+        #expect(FinestraDeWarp.text(r) == nil)
+        let segona = FinestraDeWarp.context([([t1], acabat([t1], estat: .error, segons: nil)), ([t2], acabat([t2]))], inici: inici)
+        #expect(!segona.capOberta && segona.dubte != nil)
+        #expect(FinestraDeWarp.text(FinestraDeWarp.tanca(segona, foto: { processos().fotoFinestraDeWarp(executable: warp) },
+                                                          shellUsuari: nil, acaba: { _ in .capFinestra }))
+            == ExecucioObertura.finestraSeva)
     }
 
     /// Tants terminals com pestanyes: Warp no n'ha obert cap de seu, i no hi ha res a dir. Un dubte del context: ni es miren
@@ -206,6 +261,11 @@ private func acabat(_ pestanyes: [PestanyaAObrir], estat: Llancament.Estat = .co
         // Una pestanya de l'app a l'inici (de qualsevol finestra): seria igual que la de Warp.
         let aLInici = pestanya(4, carpeta: inici, claude: false)
         #expect(FinestraDeWarp.context([([t1], acabat([t1])), ([aLInici], acabat([aLInici]))], inici: inici).dubte != nil)
+        // Revisió: també si aquella finestra no s'ha pogut obrir (un error d'obrir l'URL no vol dir que Warp no l'hagi rebut)
+        // o no s'ha intentat.
+        #expect(FinestraDeWarp.context([([t1], acabat([t1])), ([aLInici], acabat([aLInici], estat: .error, segons: nil))],
+                                       inici: inici).dubte != nil)
+        #expect(FinestraDeWarp.context([([t1], acabat([t1])), ([aLInici], nil)], inici: inici).dubte != nil)
         #expect(FinestraDeWarp.context([([t1], acabat([t1]))], inici: inici).dubte == nil)
     }
 }

@@ -666,7 +666,7 @@ L'autor, amb la 1.0.2 instal·lada, Warp tancat i `restore_session = false`: l'a
 - **`exit` a la seva única pestanya tanca la finestra:** l'autor l'hi ha escrit, i la finestra s'ha tancat (les de l'app, no).
 - **No s'ha vist encara** (es veurà amb la 1.0.3, que la tanca acabant el shell amb SIGHUP, `FinestraDeWarp`): si SIGHUP sense `exit`
   fa el mateix (és el que rep un shell quan es tanca el terminal; zsh interactiu no fa cas del de terminar); quan comença aquest
-  shell respecte a la primera finestra de l'app (la 1.0.3 accepta fins a la confirmació, o 10 s després que arrenqui Warp); ni si
+  shell respecte a la primera finestra de l'app (la 1.0.3 acceptava fins a la confirmació, o 10 s després que arrenqui Warp; la 1.0.4, 5 s); ni si
   té algun fill (un `gitstatusd` del prompt, per exemple, faria que l'app no la tanqués).
 
 ## Ítems d'inici de macOS (06/11/2026, macOS 27.2)

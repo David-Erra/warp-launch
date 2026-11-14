@@ -298,6 +298,8 @@ public final class Obertura {
             Registre.obertura.notice("finestra de Warp: enviat el senyal de tancar el terminal al shell \(pid, privacy: .public)")
         case .capFinestra:
             Registre.obertura.notice("finestra de Warp: cap terminal de més, no hi ha res a tancar")
+        case let .capOberta(motiu):
+            Registre.obertura.notice("finestra de Warp: no es tanca ni se'n parla, \(motiu, privacy: .public)")
         case let .dubte(motiu):
             Registre.obertura.notice("finestra de Warp: no es tanca, \(motiu, privacy: .public)")
         }

@@ -60,7 +60,10 @@ private let killForaDeLaCrida = #"^(?!\s*guard kill\(candidat\.pid, SIGHUP\) == 
 /// `.terminate(` d'un valor: l'app surt amb `NSApp.terminate(nil)`, i el de les altres apps ja el prohibeix `NSRunningApplication`.
 private let altresSenyals = [#"(^|[^A-Za-z0-9_])SIG(KILL|TERM|QUIT|STOP|CONT|TSTP|USR1|USR2|ABRT|ALRM|PIPE)(?![A-Za-z0-9_])"#,
                              #"pthread_kill"#, #"(^|[^A-Za-z0-9_.])raise\("#, #"sigqueue"#, #"proc_terminate"#,
-                             #"(^|[^A-Za-z0-9_.])terminate\("#]
+                             #"(^|[^A-Za-z0-9_.])terminate\("#,
+                             // Revisió de la 1.0.3: les crides de Darwin que acaben o aturen un altre procés sense `kill`.
+                             #"terminate_with_(reason|payload)"#, #"abort_with_payload"#, #"task_terminate"#, #"task_suspend"#,
+                             #"pid_(suspend|resume|hibernate|shutdown_sockets)"#, #"task_for_pid"#]
 /// Les altres maneres d'executar res que Swift deixa fer a macOS (`popen`, `system` i `fork` no hi són): la família `exec`,
 /// que canviaria l'app per l'ordre, i les tasques d'usuari (`NSUserUnixTask`, `NSUserAppleScriptTask`…).
 private let paraulaExec = #"(^|[^A-Za-z0-9_])exec(l|lp|le|v|vp|vP|ve)(?![A-Za-z0-9_])"#
@@ -2963,6 +2966,9 @@ extension GuardaTests {
         #expect(llocs("ObreWarp.acabaShellDeLaFinestraDeWarp(").sorted() == [app, cli])
         #expect(llocs("FinestraDeWarp.tanca(").sorted() == [app, cli])
         #expect(llocs("entorn.tancaFinestraDeWarp(") == ["Sources/WarpLaunchUI/Obertura.swift"])
+        // Revisió de la 1.0.3: el nom de la funció, fora dels comentaris de documentació, només en aquests tres llocs (la
+        // definició i les dues crides): cap referència sense parèntesi (`let f = ObreWarp.acabaShell…`) que la cridi d'amagat.
+        #expect(llocs("acabaShellDeLaFinestraDeWarp").sorted() == [app, cli, rutaObridor].sorted())
         #expect(llocs("obridor.tancaFinestraDeWarp(") == ["Sources/WarpLaunchCore/OrdreCLI.swift"])
 
         // La mostra: a l'obridor, la crida passa; qualsevol altra amb `kill`, no, ni amb un altre senyal o un altre pid.
@@ -2992,10 +2998,14 @@ extension GuardaTests {
             sigqueue(pid, SIGALRM, valor)
             proc_terminate(pid, &senyal)
             terminate(pid)
+            terminate_with_reason(pid, 0, 0, nil, 0)
+            task_terminate(tasca)
+            pid_suspend(pid)
             signal(SIGINT, SIG_IGN)
             NSApp.terminate(nil)
             NSException(name: n, reason: nil).raise()
-            """)]).map { $0.split(separator: ":")[1] }.reduce(into: Set<Substring>()) { $0.insert($1) } == ["1", "2", "3", "4", "5", "6"])
+            """)]).map { $0.split(separator: ":")[1] }.reduce(into: Set<Substring>()) { $0.insert($1) }
+            == ["1", "2", "3", "4", "5", "6", "7", "8", "9"])
     }
 
     /// Els botons i les ordres «Obre…» només demanen el full (`demanaObertura`), i cap no té drecera; el del full

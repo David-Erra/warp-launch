@@ -11,8 +11,10 @@ import Foundation
 /// ho torna a comprovar just abans (`Candidat.encaraEs`).
 public enum FinestraDeWarp {
     /// Fins quan, després que arrenqui Warp, pot haver començat el shell de la seva finestra, si la primera finestra de l'app
-    /// encara no s'havia confirmat (o no s'ha confirmat mai).
-    public static let margeArrencada: TimeInterval = 10
+    /// encara no s'havia confirmat (o no s'ha confirmat mai). «Uns pocs segons» (la tasca de la 1.0.3); la revisió el baixa de
+    /// 10 a 5: com més curt, menys temps té l'usuari per tancar la de Warp i fer una pestanya a mà a la carpeta d'inici, que
+    /// llavors seria l'única de més.
+    public static let margeArrencada: TimeInterval = 5
     /// Marge del rellotge entre el moment que l'app demana obrir l'URL i l'hora d'inici de l'app de Warp.
     public static let margeRellotge: TimeInterval = 1
     /// Els shells que es poden acabar, pel nom de l'executable (a més del de l'usuari, `SHELL`).
@@ -34,9 +36,12 @@ public enum FinestraDeWarp {
         public var pestanyes: Int
         /// Un dubte que ja es veu sense mirar els processos: llavors no es fa res.
         public var dubte: String?
+        /// Cap finestra de l'acció no s'ha obert: potser Warp ni s'ha engegat, i el resultat no en diu res (`Resultat.capOberta`).
+        public var capOberta: Bool
 
         public init(inici: String, desDe: Date, confirmada: Date? = nil, nostres: Set<Int32> = [], pestanyes: Int,
-                    dubte: String? = nil) {
+                    dubte: String? = nil, capOberta: Bool = false) {
+            self.capOberta = capOberta
             self.inici = inici
             self.desDe = desDe
             self.confirmada = confirmada
@@ -108,6 +113,9 @@ public enum FinestraDeWarp {
         case tancada(Int32)
         /// Warp no té cap terminal de més: no hi ha res a tancar ni a dir.
         case capFinestra
+        /// Cap finestra de l'acció no s'ha obert: no es mira res, i el resultat no parla de cap finestra de Warp, que potser
+        /// ni s'ha engegat (el resultat ja diu que no s'ha pogut obrir).
+        case capOberta(String)
         /// No s'ha fet res, i per què (només per al registre).
         case dubte(String)
     }
@@ -127,22 +135,28 @@ public enum FinestraDeWarp {
     /// pestanyes que s'han demanat i el seu resultat (`nil`: no s'ha intentat). `inici`: la carpeta d'inici canònica.
     public static func context(_ finestres: [(pestanyes: [PestanyaAObrir], resultat: ExecucioObertura.Resultat?)],
                                inici: String) -> Context {
-        guard let primera = finestres.first, case let .acabat(fet)? = primera.resultat, fet.llancament.estat != .error else {
-            return Context(inici: inici, desDe: .distantPast, pestanyes: 0,
-                           dubte: "la primera finestra no s'ha pogut obrir: Warp potser no l'ha engegat l'app")
+        func oberta(_ resultat: ExecucioObertura.Resultat?) -> ExecucioObertura.Acabat? {
+            guard case let .acabat(f)? = resultat, f.llancament.estat != .error else { return nil }
+            return f
+        }
+        guard let primera = finestres.first, let fet = oberta(primera.resultat) else {
+            let motiu = "la primera finestra no s'ha pogut obrir: Warp potser no l'ha engegat l'app"
+            return Context(inici: inici, desDe: .distantPast, pestanyes: 0, dubte: motiu,
+                           capOberta: !finestres.contains { oberta($0.resultat) != nil })
         }
         var nostres = Set<Int32>()
         var pestanyes = 0
-        var aLInici = false
         for finestra in finestres {
-            guard case let .acabat(f)? = finestra.resultat, f.llancament.estat != .error else { continue }
+            guard let f = oberta(finestra.resultat) else { continue }
             pestanyes += finestra.pestanyes.count
             if let vist = f.vist {
                 nostres.formUnion(vist.perCarpeta.values)
                 nostres.formUnion(vist.shells.values.map(\.pid))
             }
-            if finestra.pestanyes.contains(where: { Rutes.canonica($0.yaml.carpeta) == inici }) { aLInici = true }
         }
+        // De totes les finestres de l'acció, també les que no s'han pogut obrir o confirmar: un error d'obrir l'URL no vol
+        // dir que Warp no l'hagi rebut, i una pestanya seva a l'inici seria igual que la de Warp.
+        let aLInici = finestres.contains { $0.pestanyes.contains { Rutes.canonica($0.yaml.carpeta) == inici } }
         let confirmada = fet.finestra ? fet.llancament.segons.map { fet.desDe.addingTimeInterval($0) } : nil
         return Context(inici: inici, desDe: fet.desDe, confirmada: confirmada, nostres: nostres, pestanyes: pestanyes,
                        dubte: aLInici ? "alguna pestanya de l'app és a la carpeta d'inici, com la de Warp" : nil)
@@ -168,7 +182,7 @@ public enum FinestraDeWarp {
     /// - va començar després que arrenqués Warp, i abans de la confirmació de la primera finestra o, si és més tard, dels
     ///   primers `margeArrencada` segons de Warp.
     public static func tria(_ foto: Foto, _ context: Context, shellUsuari: String?) -> Decisio {
-        if let dubte = context.dubte { return .no(.dubte(dubte)) }
+        if let dubte = context.dubte { return .no(context.capOberta ? .capOberta(dubte) : .dubte(dubte)) }
         guard foto.apps.count == 1, let iniciWarp = foto.apps[0] else {
             return .no(.dubte("\(foto.apps.count) apps de Warp, o sense l'hora d'inici"))
         }
@@ -206,7 +220,7 @@ public enum FinestraDeWarp {
     /// context, ni mira els processos (`foto`).
     public static func tanca(_ context: Context, foto: () -> Foto, shellUsuari: String?,
                              acaba: (Candidat) -> Resultat) -> Resultat {
-        if let dubte = context.dubte { return .dubte(dubte) }
+        if let dubte = context.dubte { return context.capOberta ? .capOberta(dubte) : .dubte(dubte) }
         switch tria(foto(), context, shellUsuari: shellUsuari) {
         case let .acaba(candidat): return acaba(candidat)
         case let .no(resultat): return resultat

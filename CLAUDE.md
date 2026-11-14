@@ -218,6 +218,9 @@ Els requisits són a `docs/especificacio.md`.
   proves) i, amb qualsevol dubte, no fa res; l'acaba amb SIGHUP a `ObreWarp.acabaShellDeLaFinestraDeWarp`, l'única crida de senyal
   de `Sources`, després de tornar-ho a comprovar. Si l'ha tancada, el resultat no en parla; si no, «Warp ha obert també una finestra
   seva, que pots tancar.». `docs/disseny.md`, secció 7, «Warp tancat». Falta un reinici real.
+  **1.0.4 (revisió, sense provar a l'app):** una pestanya de l'app a `~` fa dubtar també si la seva finestra ha fallat; marge
+  d'arrencada de 5 s (abans, 10); sense cap finestra oberta, el resultat no parla de la de Warp; la guarda, més crides de Darwin
+  que acaben processos i cap referència amagada a la funció.
 - **0.99.0 (12/11/2026, decisió de l'autor; publicada per l'autor el 13/11/2026, recepta del tap `df97d2e`): la candidata, el mateix codi que serà la
   1.0.0, sense notaritzar.** Comprovat des de fora el 13/11: l'appcast de l'app dona la 0.99.0, el zip (5.258.095 bytes) quadra amb l'appcast i amb
   el sha256 de la recepta, la signatura EdDSA amb la clau pública, i l'app de dins porta l'adreça, les 10 llengües i passa `codesign`. Arriba sola a
