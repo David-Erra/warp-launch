@@ -95,6 +95,11 @@ public enum ExecucioObertura {
         public var terminalsAbans: Set<Int32>
         /// Warp s'acaba d'obrir per a aquesta finestra.
         public var warpEngegat: Bool
+        /// Warp és tancat, i l'URL d'aquesta finestra l'engegarà (1.0.1): l'app sap del cert que Warp no restaurarà res en
+        /// arrencar, i no l'engega buit abans. L'espera de la finestra dura també el que es dona a Warp per arrencar
+        /// (`tempsMaximWarp` i `margeArrencada`), i el resultat diu, prudent, que Warp pot obrir també una finestra seva.
+        /// Compta com si Warp s'acabés d'engegar (`warpAcabatDEngegar`).
+        public var arrencaWarp: Bool
         /// `false`: la restauració de sessió és desactivada (si Warp s'acaba d'obrir, n'ha obert una de buida).
         public var warpDesaFinestres: Bool
         /// S'obren altres finestres alhora («Obre-ho tot»): un terminal reconegut només per la carpeta podria ser d'una
@@ -106,7 +111,8 @@ public enum ExecucioObertura {
 
         public init(pla: Pla, fitxer: FitxerLaunch, panesAbans: Set<String>, terminalsAbans: Set<Int32>,
                     warpEngegat: Bool = false, warpDesaFinestres: Bool = true, ambAltres: Bool = false,
-                    carpetesDAltres: Set<String> = []) {
+                    carpetesDAltres: Set<String> = [], arrencaWarp: Bool = false) {
+            self.arrencaWarp = arrencaWarp
             self.ambAltres = ambAltres
             self.carpetesDAltres = carpetesDAltres
             self.pla = pla
@@ -139,11 +145,17 @@ public enum ExecucioObertura {
     }
 
     public static var finestraBuida: String { t("En arrencar, Warp ha obert també una finestra buida: la pots tancar.") }
+    /// Amb Warp engegat per l'URL de la finestra (`Peticio.arrencaWarp`, 1.0.1): encara no s'ha vist si Warp obre també la seva
+    /// finestra, i per això «pot».
+    public static var finestraSeva: String { t("Warp pot obrir també una finestra seva, que pots tancar.") }
     public static let interval: Duration = .milliseconds(500)
     public static let tempsMaxim: TimeInterval = 30
     /// Quant s'espera que Warp arrenqui, i el marge perquè acabi de restaurar la sessió, si la restaura.
     public static let tempsMaximWarp: TimeInterval = 30
     public static let margeArrencada: Duration = .seconds(2)
+    /// El que es dona a Warp per arrencar quan l'engega l'URL d'una finestra (`Peticio.arrencaWarp`): el mateix que a
+    /// `esperaWarp`, `tempsMaximWarp` més `margeArrencada`.
+    public static var tempsArrencada: TimeInterval { tempsMaximWarp + TimeInterval(margeArrencada.components.seconds) }
 
     /// Obre la finestra. Només s'hi arriba després de la confirmació.
     @MainActor
@@ -198,7 +210,7 @@ public enum ExecucioObertura {
         // 3. La finestra nova i el Claude de cada pestanya, cada 0,5 s fins a 30 s (com a mínim, una lectura).
         entorn.enFase(.esperant)
         let aObrir = pla.aObrir
-        let fins = entorn.rellotge().addingTimeInterval(tempsMaxim)
+        let fins = entorn.rellotge().addingTimeInterval(tempsMaxim + (peticio.arrencaWarp ? tempsArrencada : 0))
         let ids = aObrir.map(\.pestanya.id)
         let inici = Rutes.canonica(entorn.inici)
         var vist: Confirmacio?
@@ -211,7 +223,8 @@ public enum ExecucioObertura {
             let presos = entorn.presosPerAltres().subtracting(vist.map { Set($0.perCarpeta.values) } ?? [])
             guard let nova = ConfirmacioObertura.busca(lectura, obertes: aObrir, panesAbans: peticio.panesAbans,
                                                        terminalsAbans: peticio.terminalsAbans.union(presos), desDe: desDe,
-                                                       inici: inici, warpAcabatDEngegar: peticio.warpEngegat,
+                                                       inici: inici,
+                                                       warpAcabatDEngegar: peticio.warpEngegat || peticio.arrencaWarp,
                                                        carpetesDAltres: peticio.carpetesDAltres)
             else { continue }
             if vist == nil { vist = nova } else { vist?.afegeix(nova) }
@@ -247,7 +260,11 @@ public enum ExecucioObertura {
         } else {
             text = t("No s'ha pogut confirmar que s'hagi obert «\(nom)»: mira si hi ha una finestra nova a Warp.")
         }
-        if peticio.warpEngegat, !peticio.warpDesaFinestres { text = Idioma.frases(text, finestraBuida) }
+        if peticio.arrencaWarp {
+            text = Idioma.frases(text, finestraSeva)
+        } else if peticio.warpEngegat, !peticio.warpDesaFinestres {
+            text = Idioma.frases(text, finestraBuida)
+        }
         if !llancament.esborrat {
             text = Idioma.frases(text, t("El fitxer temporal no s'ha pogut esborrar: es tornarà a provar en obrir l'app."))
         }

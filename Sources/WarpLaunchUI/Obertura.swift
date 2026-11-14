@@ -75,6 +75,10 @@ public final class Obertura {
         /// `false`: la restauració de sessió és desactivada. Warp no desa les finestres, i en arrencar n'obre una de buida.
         /// `true` també si Warp no té `settings.toml` i és tancat (ronda 5, `warpRestauraEnArrencar`).
         public var warpDesaFinestres = true
+        /// Warp és tancat, no restaurarà res, i l'app no en té cap dubte (`senseDubteDeLaRestauracio`): «Obre» no engegarà Warp
+        /// buit, sinó amb l'URL de la finestra (1.0.1). Només per al text del full: en el clic es torna a mirar
+        /// (`arrencaAmbFitxer`).
+        public var arrencaAmbFitxer = false
         /// Els panes de Warp abans d'obrir: la finestra nova és la que només en té de nous.
         var panesAbans: Set<String>
         /// Els terminals vius abans d'obrir: els de la finestra nova són els que no hi eren.
@@ -238,9 +242,11 @@ public final class Obertura {
             return
         }
 
-        // Warp és tancat: l'obre i ho torna a comprovar, perquè en arrencar pot haver restaurat alguna pestanya.
+        // Warp és tancat i no restaurarà res (1.0.1): no s'engega buit, l'engega l'URL de la finestra.
         let engegat = proposta.warpTancat
-        if engegat {
+        let ambFitxer = await arrencaAmbFitxer(warpTancat: proposta.warpTancat, warpDesaFinestres: proposta.warpDesaFinestres)
+        // Si no: l'obre i ho torna a comprovar, perquè en arrencar pot haver restaurat alguna pestanya.
+        if engegat, !ambFitxer {
             estat = .obrint(proposta, .engegant)
             if let motiu = await engegaWarp() {
                 estat = .noEsPot(motiu)
@@ -260,12 +266,32 @@ public final class Obertura {
         // 2 a 5: el llançament a `estat.json`, el fitxer, Warp, i la finestra nova.
         presos = [:]
         defer { presos = [:] }
-        switch await executa(proposta, fitxer: fitxer, engegat: engegat, fase: { [weak self] in
+        switch await executa(proposta, fitxer: fitxer, engegat: engegat, arrencaWarp: ambFitxer, fase: { [weak self] in
             self?.estat = .obrint(proposta, $0)
         }) {
         case let .noEsPot(motiu): estat = .noEsPot(motiu)
         case let .acabat(fet): acaba(correcte: fet.correcte, fet.text)
         }
+    }
+
+    /// Si «Obre», amb Warp tancat, ha d'engegar Warp amb l'URL de la primera finestra en lloc d'engegar-lo buit (decisió d'en
+    /// David, 14/11/2026, opció A): només si l'app sap del cert que Warp no restaurarà res en arrencar. La lectura ho diu
+    /// (`warpDesaFinestres` fals) i, si l'app gestiona l'ajust (`RefrescWarp`), primer el desactiva com abans d'engegar Warp
+    /// (`tancaEsperant`) i després no hi ha de quedar cap dubte: cap desactivació pendent (`settings.toml` que acabava de
+    /// canviar, sense el fitxer, sense la carpeta de Warp) ni cap avís. Amb qualsevol dubte, `false`: el camí d'abans.
+    func arrencaAmbFitxer(warpTancat: Bool, warpDesaFinestres: Bool) async -> Bool {
+        guard warpTancat, !warpDesaFinestres else { return false }
+        if let refresc = consentiment.refresc { await refresc.tancaEsperant() }
+        let senseDubte = senseDubteDeLaRestauracio
+        Registre.obertura.notice("Warp és tancat i \(senseDubte ? "no restaurarà res: l'engegarà l'URL" : "hi ha dubtes: l'obre buit", privacy: .public)")
+        return senseDubte
+    }
+
+    /// L'app no té cap dubte que la restauració de Warp és desactivada: o no la gestiona (una carpeta de prova, que la llegeix
+    /// de `settings.toml`), o l'última vegada la va poder desactivar i no hi ha cap refresc en curs.
+    var senseDubteDeLaRestauracio: Bool {
+        guard let refresc = consentiment.refresc else { return true }
+        return refresc.pendent == nil && refresc.avis == nil && !refresc.refrescant
     }
 
     /// Obre Warp i n'espera l'arrencada. Torna per què no s'ha pogut, o `nil`.
@@ -292,14 +318,14 @@ public final class Obertura {
     /// Els passos 2 a 5 d'una finestra (`ExecucioObertura`, com el CLI), i el que se'n recorda: les converses en curs i
     /// el registre. `llegeix`: d'on surten les lectures mentre s'espera (amb «Obre-ho tot», una de compartida).
     /// `carpetesDAltres`: les carpetes de les pestanyes que obren les altres finestres alhora (`Peticio.carpetesDAltres`).
-    func executa(_ proposta: Proposta, fitxer: FitxerLaunch, engegat: Bool,
+    func executa(_ proposta: Proposta, fitxer: FitxerLaunch, engegat: Bool, arrencaWarp: Bool = false,
                  llegeix: (@MainActor () async -> LecturaWarp?)? = nil, ambAltres: Bool = false,
                  carpetesDAltres: Set<String> = [],
                  fase: @escaping @MainActor (Fase) -> Void) async -> ExecucioObertura.Resultat {
         let peticio = ExecucioObertura.Peticio(pla: proposta.pla, fitxer: fitxer, panesAbans: proposta.panesAbans,
                                                terminalsAbans: proposta.terminalsAbans, warpEngegat: engegat,
                                                warpDesaFinestres: proposta.warpDesaFinestres, ambAltres: ambAltres,
-                                               carpetesDAltres: carpetesDAltres)
+                                               carpetesDAltres: carpetesDAltres, arrencaWarp: arrencaWarp)
         let sessions = sessions
         let carpeta = sessions.carpeta
         let id = fitxer.llancament
@@ -486,9 +512,14 @@ public final class Obertura {
     /// Què diuen els fulls d'«Obre a Warp…» i «Obre-ho tot…» amb Warp tancat: si Warp, en arrencar, restaurarà les seves
     /// finestres (`Proposta.warpDesaFinestres`, `warpRestauraEnArrencar`), o si n'obrirà una de buida. Sense `settings.toml`,
     /// diu que les restaurarà, i no demana d'obrir Warp primer, perquè no ho evitaria (decisió 1 d'en David, 08/11/2026).
-    static func textWarpTancat(restaura: Bool) -> String {
-        restaura ? t("Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude.")
-            : t("Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.")
+    /// Amb `arrencaAmbFitxer` (1.0.1), Warp s'obrirà directament amb les pestanyes: encara no s'ha vist si també n'obre una de
+    /// seva, i per això «pot».
+    static func textWarpTancat(restaura: Bool, arrencaAmbFitxer: Bool = false) -> String {
+        if restaura { return t("Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude.") }
+        if arrencaAmbFitxer {
+            return t("Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.")
+        }
+        return t("Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.")
     }
 
     /// Què poden perdre les feines en segon pla de Claude, als dos fulls (decisió d'en David del 09/11/2026; fet observat una
@@ -538,9 +569,11 @@ public final class Obertura {
             ? nil
             : Result { () throws(LaunchConfigWarp.ErrorLaunch) in try pla.fitxer(llancament: llancament) }
         let panes = Set(lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid))
+        let warpTancat = lectura.warpObert != true
+        let restaura = warpRestauraEnArrencar(lectura)
         return Proposta(pla: pla, llancament: llancament, fitxer: fitxer, versioWarp: entorn.versioWarp(),
-                        warpTancat: lectura.warpObert != true,
-                        warpDesaFinestres: warpRestauraEnArrencar(lectura), panesAbans: panes,
+                        warpTancat: warpTancat, warpDesaFinestres: restaura,
+                        arrencaAmbFitxer: warpTancat && !restaura && senseDubteDeLaRestauracio, panesAbans: panes,
                         terminalsAbans: Set(lectura.terminals.map(\.pid)))
     }
 

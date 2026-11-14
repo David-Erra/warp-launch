@@ -175,6 +175,7 @@
 
 /* ExecucioObertura: el resultat d'obrir */
 "En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "En arrencar, Warp ha obert també una finestra buida: la pots tancar.";
+"Warp pot obrir també una finestra seva, que pots tancar." = "Warp pot obrir també una finestra seva, que pots tancar.";
 "No s'ha pogut desar el llançament a «estat.json»: %@" = "No s'ha pogut desar el llançament a «estat.json»: %@";
 "No s'ha pogut obrir «%@» a Warp: %@" = "No s'ha pogut obrir «%@» a Warp: %@";
 "Claude encara no ha arrencat a %@: mira-ho a Warp." = "Claude encara no ha arrencat a %@: mira-ho a Warp.";
@@ -660,6 +661,7 @@
 "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar.";
 "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude.";
 "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.";
+"Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar." = "Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.";
 "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar.";
 "No s'ha pogut desar la configuració: %@" = "No s'ha pogut desar la configuració: %@";
 "No s'ha pogut desar la configuració" = "No s'ha pogut desar la configuració";

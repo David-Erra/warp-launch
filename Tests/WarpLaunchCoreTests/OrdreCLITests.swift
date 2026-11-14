@@ -1020,6 +1020,61 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
         #expect(o.urls.isEmpty && o.fitxersWarp.isEmpty)
     }
 
+    /// 1.0.1: amb Warp tancat i `restore_session = false`, `--obre` no engega Warp buit: escriu el fitxer i n'obre l'URL, que
+    /// engega Warp. El resultat diu, prudent, que Warp pot obrir també una finestra seva.
+    @Test func ambWarpTancatISenseRestauracioLEngegaLURL() async throws {
+        var e = try Escenari()
+        try Data("[general]\nrestore_session = false\n".utf8).write(to: e.tmp.url("settings.toml"))
+        var tancat = try #require(e.entorn.lector.processos as? ProcessosFalsos)
+        let warp = try #require(tancat.processos[40])
+        tancat.processos[40] = nil
+        let processos = ProcessosCanviants(tancat)
+        e.entorn.lector.processos = processos
+        let a = e.inici + "/GitHub/projectes/a"
+        let carpeta = e.tmp.url("prova")
+        try MagatzemConfiguracio(carpeta: carpeta, inici: e.inici).desa(Configuracio(plantilla: .habituals, finestres: [
+            Finestra(id: uuid(1), nom: "Docs", pestanyes: [
+                Pestanya(id: uuid(4), titol: "Docs", carpeta: a, claude: ClaudePestanya(activat: false)),
+            ]),
+        ]), sobre: nil)
+        let o = try ObridorFals(e)
+        o.mentreObre = {
+            #expect(o.engegades == 0)
+            processos.canvia { p in
+                p.processos[40] = warp
+                p.processos[700] = (InfoProces(executable: "/bin/zsh", argv: ["-zsh"]), 50)
+                p.carpetes[700] = a
+                p.inicis[700] = IniciProces(segons: 1_793_750_000, microsegons: 7)
+            }
+        }
+        let (codi, sortida) = await o.executa(e, "obre", "Docs", "--obre", "--config", carpeta.path)
+        #expect(codi == 0, "\(sortida.errors)")
+        #expect(o.engegades == 0 && o.urls.count == 1)
+        #expect(o.fitxersEnObrir.count == 1)
+        #expect(o.mostrat.contains("Warp és tancat: l'obro"))
+        #expect(sortida.text.hasSuffix("S'ha obert «Docs» a Warp: 1 pestanya, 0 amb Claude. "
+            + "Warp pot obrir també una finestra seva, que pots tancar.\n"), "\(sortida.text)")
+    }
+
+    /// Amb Warp tancat i la restauració activada, o sense la línia (la de sèrie), el camí d'abans: primer engega Warp buit.
+    @Test(arguments: [nil, "[general]\nrestore_session = true\n"])
+    func ambWarpTancatIRestauracioLEngegaBuit(ajustos: String?) async throws {
+        let e = try Escenari()
+        if let ajustos { try Data(ajustos.utf8).write(to: e.tmp.url("settings.toml")) }
+        let carpeta = try configuracio(e)
+        let o = try ObridorFals(e)
+        o.fallaEngegar = true
+        var entorn = e.entorn
+        var processos = ProcessosFalsos.ambWarp()
+        processos.processos[40] = nil
+        entorn.lector.processos = processos
+        var sortida = Sortida()
+        let codi = await OrdreCLI.executa(["obre", "1", "--obre", "--config", carpeta.path], entorn: entorn,
+                                          obridor: o.obridor, sortida: &sortida)
+        #expect(codi == 1)
+        #expect(o.engegades == 1 && o.urls.isEmpty && o.fitxersWarp.isEmpty)
+    }
+
     /// Si Warp és tancat, l'obre; si no pot, no escriu res.
     @Test func siNoPotObrirWarpNoEscriuRes() async throws {
         let e = try Escenari()

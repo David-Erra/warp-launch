@@ -203,6 +203,11 @@ Els requisits són a `docs/especificacio.md`.
   «accepted, source=Notarized Developer ID». El certificat és al clauer de l'autor (amb l'intermedi «Developer ID - G2» d'Apple) i les credencials de
   `notarytool`, al perfil `warp-launch`. Falta: treure de la recepta el bloc que treu la marca de baixada, i les proves de l'autor (el reinici amb la L5, la L2,
   les altres llengües) i la beta.
+- **1.0.1 (14/11/2026, al codi; sense provar a l'app): amb Warp tancat i la restauració desactivada sense cap dubte, Warp no s'engega
+  buit** (decisió de l'autor, opció A): «Obre a Warp…», «Obre-ho tot», el full d'iniciar sessió i `--obre` obren l'URL de la primera
+  finestra, que engega Warp, i n'esperen la confirmació 30 s més els 32 s d'arrencada; després, les altres. Amb la restauració activada
+  o qualsevol dubte (`RefrescWarp` amb una desactivació pendent o un avís; al CLI, sense `restore_session = false`), el camí d'abans
+  (`ObreWarp.engega`). Els textos diuen que Warp «pot» obrir també una finestra seva: falta un reinici real. `docs/disseny.md`, secció 7, «Warp tancat».
 - **0.99.0 (12/11/2026, decisió de l'autor; publicada per l'autor el 13/11/2026, recepta del tap `df97d2e`): la candidata, el mateix codi que serà la
   1.0.0, sense notaritzar.** Comprovat des de fora el 13/11: l'appcast de l'app dona la 0.99.0, el zip (5.258.095 bytes) quadra amb l'appcast i amb
   el sha256 de la recepta, la signatura EdDSA amb la clau pública, i l'app de dins porta l'adreça, les 10 llengües i passa `codesign`. Arriba sola a

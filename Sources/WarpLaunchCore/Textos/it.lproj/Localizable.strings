@@ -175,6 +175,7 @@
 
 /* ExecucioObertura: el resultat d'obrir */
 "En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "All’avvio, Warp ha aperto anche una finestra vuota: puoi chiuderla.";
+"Warp pot obrir també una finestra seva, que pots tancar." = "Warp può aprire anche una finestra sua, che puoi chiudere.";
 "No s'ha pogut desar el llançament a «estat.json»: %@" = "Impossibile salvare l’apertura in “estat.json”: %@";
 "No s'ha pogut obrir «%@» a Warp: %@" = "Impossibile aprire “%@” in Warp: %@";
 "Claude encara no ha arrencat a %@: mira-ho a Warp." = "Claude non si è ancora avviato in %@: controlla in Warp.";
@@ -660,6 +661,7 @@
 "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp è chiuso e, quando si aprirà, ripristinerà questi pannelli, senza Claude. Aprilo e riprova.";
 "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp è chiuso: l’app lo aprirà prima. Warp ripristinerà anche le finestre precedenti, senza Claude.";
 "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp è chiuso: l’app lo aprirà prima. All’avvio, Warp apre anche una finestra vuota, che puoi chiudere.";
+"Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar." = "Warp è chiuso: l’app lo aprirà direttamente con i pannelli. Warp può aprire anche una finestra sua, che puoi chiudere.";
 "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Chiudere Warp può lasciare a metà le attività in background di Claude, e riaprire i pannelli non le fa riprendere.";
 "No s'ha pogut desar la configuració: %@" = "Impossibile salvare la configurazione: %@";
 "No s'ha pogut desar la configuració" = "Impossibile salvare la configurazione";

@@ -1425,6 +1425,22 @@ l'app no pot tancar: ho diuen el full i el bàner.
   límit és el dels 30 s.
 - **Warp restaura la sessió i totes les pestanyes hi són:** el full no diu «ja obertes», sinó que Warp és tancat i les
   restaurarà, sense Claude, i no ofereix obrir res.
+- **1.0.1 (decisió d'en David, 14/11/2026, opció A; sense provar a l'app): sense restauració, Warp no s'engega buit.** Després
+  d'un reinici, la finestra buida de Warp (una pestanya a `~`) quedava oberta al costat de les de l'app. Si Warp és tancat i l'app
+  sap del cert que no restaurarà res, «Obre» escriu el fitxer de la primera finestra i n'obre l'URL (`ObreWarp.obre`), que engega
+  Warp amb ella; no crida `ObreWarp.engega`.
+  - **Del cert:** la lectura diu `warpDesaFinestres` fals i, si l'app gestiona l'ajust (`RefrescWarp`), primer el desactiva com
+    abans d'engegar Warp (`tancaEsperant`) i no hi queda cap dubte: cap desactivació pendent (`settings.toml` que acaba de canviar,
+    sense el fitxer, sense `~/.warp`), cap avís ni cap refresc en curs (`Obertura.arrencaAmbFitxer`). El CLI (`--obre`), només amb
+    `restore_session = false` a `settings.toml`. Amb qualsevol dubte, o amb la restauració activada, el camí d'abans.
+  - **L'espera:** la de la finestra (30 s) més la que es dona a Warp per arrencar (30 s i 2 s de marge,
+    `ExecucioObertura.tempsArrencada`), i compta com si Warp s'acabés d'engegar (la carpeta d'inici no confirma res). Si no es
+    confirma, el resultat ho diu com qualsevol finestra que no es confirma; no es torna a provar (seria duplicar-la).
+  - **«Obre-ho tot» i el full d'iniciar sessió:** primer la primera finestra, sola; després, amb una lectura nova (els terminals que
+    ja hi són no compten per a les altres), les altres alhora, com ara.
+  - **Textos:** encara no se sap si així Warp deixa d'obrir la seva finestra (es provarà amb un reinici real). El full diu «Warp és
+    tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.», i el bàner,
+    «Warp pot obrir també una finestra seva, que pots tancar.». En el camí d'abans, els textos d'abans.
 
 ### Proves reals (cadascuna amb l'OK d'en David)
 

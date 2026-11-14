@@ -88,7 +88,7 @@ struct FullObertura: View {
             }
             Text(p.text)
             if p.warpTancat, !finestres.isEmpty {
-                Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres), systemImage: "power")
+                Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres, arrencaAmbFitxer: p.arrencaAmbFitxer), systemImage: "power")
             }
             if !finestres.isEmpty {
                 Label(Obertura.textFeinesEnSegonPla, systemImage: "exclamationmark.triangle")
@@ -177,7 +177,7 @@ struct FullObertura: View {
             }
             Text(pla.xifres.text)
             if p.warpTancat, !pla.aObrir.isEmpty {
-                Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres), systemImage: "power")
+                Label(Obertura.textWarpTancat(restaura: p.warpDesaFinestres, arrencaAmbFitxer: p.arrencaAmbFitxer), systemImage: "power")
             }
             if !pla.aObrir.isEmpty {
                 Label(Obertura.textFeinesEnSegonPla, systemImage: "exclamationmark.triangle")

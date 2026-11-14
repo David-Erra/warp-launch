@@ -548,6 +548,9 @@ public enum OrdreCLI {
             throw .fallida(t("no s'ha obert res: \(p.pla.motiuEspera ?? "")"))
         }
         let warpTancat = p.lectura.warpObert != true
+        // Warp és tancat i `settings.toml` diu que no restaurarà res (`restore_session = false`, 1.0.1): no s'engega buit, l'engega
+        // l'URL de la finestra. Amb qualsevol dubte (sense la línia, sense el fitxer), el camí d'abans.
+        let arrencaAmbFitxer = warpTancat && p.lectura.warpDesaFinestres == false
         if p.pla.aObrir.isEmpty {
             // Warp és tancat i restaura la sessió: les «obertes» a Warp són les que restaurarà, no les d'ara.
             if warpTancat, p.lectura.warpDesaFinestres != false, p.pla.obertes.contains(where: { $0.on.esAWarp }) {
@@ -566,16 +569,19 @@ public enum OrdreCLI {
             obridor.avisa(sortida.text)
             sortida.text = ""
         }
-        /// El final dels errors: si s'ha obert Warp, no és cert que no s'hagi obert res.
+        /// El final dels errors: si s'ha obert Warp, no és cert que no s'hagi obert res. Si l'engegava l'URL de la finestra,
+        /// abans de fer-la obrir no s'ha obert res.
         func res(_ p: PlaCLI) -> String {
-            guard warpTancat else { return t("No s'ha obert res.") }
+            guard warpTancat, !arrencaAmbFitxer else { return t("No s'ha obert res.") }
             return Idioma.frases(t("S'ha obert Warp, però cap finestra de la configuració."),
                                  p.lectura.warpDesaFinestres == false ? t("En arrencar, Warp ha obert una finestra buida: la pots tancar.") : "")
         }
 
         // Warp és tancat: l'obre, n'espera l'arrencada i torna a calcular. Si el que s'obriria ha canviat, no obre res.
         let llancament = entorn.nouId()
-        if warpTancat {
+        if arrencaAmbFitxer {
+            sortida.escriu(t("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(Int(ExecucioObertura.tempsMaximWarp)) s)."))
+        } else if warpTancat {
             sortida.escriu(t("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(Int(ExecucioObertura.tempsMaximWarp)) s)."))
             mostra()
             var errorEngegant: String?
@@ -656,7 +662,7 @@ public enum OrdreCLI {
             pla: p.pla, fitxer: fitxer,
             panesAbans: Set(p.lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid)),
             terminalsAbans: Set(p.lectura.terminals.map(\.pid)), warpEngegat: warpTancat,
-            warpDesaFinestres: p.lectura.warpDesaFinestres != false)
+            warpDesaFinestres: p.lectura.warpDesaFinestres != false, arrencaWarp: arrencaAmbFitxer)
         switch await ExecucioObertura.executa(peticio, entorn: execucio) {
         case let .noEsPot(motiu):
             throw .fallida("\(motiu). \(res(p))")

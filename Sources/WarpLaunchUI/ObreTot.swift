@@ -27,6 +27,9 @@ extension Obertura {
         public var haCanviat = false
         public var warpTancat: Bool
         public var warpDesaFinestres: Bool
+        /// Warp és tancat i no restaurarà res, sense dubte: «Obre» l'engegarà amb l'URL de la primera finestra (1.0.1;
+        /// `Proposta.arrencaAmbFitxer`). Només per al text del full.
+        public var arrencaAmbFitxer = false
         public var versioWarp: String?
         /// Terminals oberts a Warp que l'app no reconeix com a pestanyes de la configuració: sense marca de Warp Launch i que
         /// cap finestra no compta com a oberta. Per exemple, les que Warp ha restaurat sola, sense Claude (06/11/2026). Si
@@ -128,8 +131,10 @@ extension Obertura {
             Registre.obertura.notice("Warp s'ha tancat: es torna a confirmar")
             return
         }
+        // Warp és tancat i no restaurarà res (1.0.1): no s'engega buit, l'engega l'URL de la primera finestra.
         let engegat = proposta.warpTancat
-        if engegat {
+        let ambFitxer = await arrencaAmbFitxer(warpTancat: proposta.warpTancat, warpDesaFinestres: proposta.warpDesaFinestres)
+        if engegat, !ambFitxer {
             estat = .obrintTot(proposta, .engegant)
             if let motiu = await engegaWarp() {
                 estat = .noEsPot(motiu)
@@ -145,27 +150,47 @@ extension Obertura {
             proposta = nova
         }
 
-        // 2. Totes alhora (D4), amb una lectura de Warp compartida.
-        let finestres = proposta.aObrir
+        // 2. Totes alhora (D4), amb una lectura de Warp compartida. Si l'URL de la primera engega Warp (1.0.1), primer
+        // aquesta, sola, fins que es confirma o se n'acaba l'espera, i després les altres.
+        var finestres = proposta.aObrir
         estat = .obrintTot(proposta, .obrint)
         Registre.obertura.notice("obre-ho tot: \(finestres.count) finestres")
         let compartida = LecturaCompartida(entorn: entorn)
         presos = [:]
         defer { presos = [:] }
         var tasques: [Int: Task<ExecucioObertura.Resultat, Never>] = [:]
+        var resultats: [Int: ExecucioObertura.Resultat] = [:]
+        var arrencaWarp = false
+        if ambFitxer, let primera = finestres.first, case let .success(fitxer)? = primera.fitxer {
+            Registre.obertura.notice("obre-ho tot: la primera finestra engega Warp")
+            // Sola: cap altra no s'obre alhora (`ambAltres`, `carpetesDAltres`).
+            resultats[0] = await executa(primera, fitxer: fitxer, engegat: true, arrencaWarp: true,
+                                         llegeix: { await compartida.llegeix() }, fase: { self.avancaTot($0) })
+            // Les altres no han de prendre els terminals que ja hi són (la primera finestra, o la de Warp, si n'obre cap).
+            if finestres.count > 1, let lectura = try? await entorn.llegeix().get() {
+                let panes = Set(lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid))
+                let terminals = Set(lectura.terminals.map(\.pid))
+                for n in finestres.indices.dropFirst() {
+                    finestres[n].panesAbans.formUnion(panes)
+                    finestres[n].terminalsAbans.formUnion(terminals)
+                }
+                // Si Warp encara no és obert (la primera no l'ha pogut engegar), l'URL de cada una ho tornarà a provar.
+                arrencaWarp = lectura.warpObert != true
+            }
+        }
         let carpetes = finestres.map { Set($0.pla.aObrir.map { Rutes.canonica($0.yaml.carpeta) }) }
-        for n in finestres.indices {
+        for n in finestres.indices where resultats[n] == nil {
             let finestra = finestres[n]
             guard case let .success(fitxer)? = finestra.fitxer else { continue }
             // Un shell nou en una carpeta d'una altra finestra podria ser d'aquella: no es desa (0.34.0).
             let carpetesDAltres = carpetes.indices.filter { $0 != n }.reduce(into: Set<String>()) { $0.formUnion(carpetes[$1]) }
             tasques[n] = Task { @MainActor in
-                await executa(finestra, fitxer: fitxer, engegat: engegat, llegeix: { await compartida.llegeix() },
+                await executa(finestra, fitxer: fitxer, engegat: engegat, arrencaWarp: arrencaWarp,
+                              llegeix: { await compartida.llegeix() },
                               ambAltres: finestres.count > 1, carpetesDAltres: carpetesDAltres,
                               fase: { self.avancaTot($0) })
             }
         }
-        var resultats: [Int: ExecucioObertura.Resultat] = [:]
         for (n, tasca) in tasques { resultats[n] = await tasca.value }
 
         // 3. El resum: quantes s'han obert, i què ha passat amb les altres.
@@ -177,7 +202,7 @@ extension Obertura {
                 correctes += 1
             case let .acabat(fet)?:
                 // La finestra buida de Warp es diu un sol cop, al final.
-                linies.append(fet.text.replacingOccurrences(of: " " + ExecucioObertura.finestraBuida, with: ""))
+                linies.append(Self.senseFinestraDeWarp(fet.text))
             case let .noEsPot(motiu)?:
                 linies.append(t("«\(finestra.pla.finestra.nom)»: \(motiu)"))
             case nil:
@@ -190,7 +215,9 @@ extension Obertura {
             ? t("S'han obert \(finestres.count) finestres a Warp, amb \(pestanyes) pestanyes, \(ambClaude) amb Claude.")
             : t("S'han obert bé \(correctes) de \(finestres.count) finestres a Warp.")
         if !linies.isEmpty { text += "\n" + linies.joined(separator: "\n") }
-        if engegat, !proposta.warpDesaFinestres {
+        if ambFitxer {
+            text += "\n" + ExecucioObertura.finestraSeva
+        } else if engegat, !proposta.warpDesaFinestres {
             text += "\n" + ExecucioObertura.finestraBuida
         }
         Registre.obertura.notice("obre-ho tot: \(correctes) de \(finestres.count) correctes")
@@ -199,6 +226,13 @@ extension Obertura {
     }
 
     // MARK: - Detalls
+
+    /// El text d'una finestra sense la frase de la finestra de Warp (`finestraBuida` o `finestraSeva`), que es diu un sol cop.
+    static func senseFinestraDeWarp(_ text: String) -> String {
+        [ExecucioObertura.finestraBuida, ExecucioObertura.finestraSeva].reduce(text) {
+            $0.replacingOccurrences(of: " " + $1, with: "").replacingOccurrences(of: $1, with: "")
+        }
+    }
 
     /// La primera finestra que espera: el full ho diu.
     private func avancaTot(_ fase: Fase) {
@@ -251,6 +285,7 @@ extension Obertura {
         var proposta = PropostaTot(finestres: finestres,
                                    triades: marcades.intersection(finestres.filter(PropostaTot.esPotObrir).map(\.pla.finestra.id)),
                                    warpTancat: warpTancat, warpDesaFinestres: warpRestauraEnArrencar(lectura),
+                                   arrencaAmbFitxer: warpTancat && !warpRestauraEnArrencar(lectura) && senseDubteDeLaRestauracio,
                                    versioWarp: entorn.versioWarp())
         if !warpTancat {
             // Els reconeguts sense marca (pestanyes de terminal, per la carpeta) ja són a `obertes`.
