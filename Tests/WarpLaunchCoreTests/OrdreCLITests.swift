@@ -1051,7 +1051,7 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
         #expect(codi == 0, "\(sortida.errors)")
         #expect(o.engegades == 0 && o.urls.count == 1)
         #expect(o.fitxersEnObrir.count == 1)
-        #expect(o.mostrat.contains("Warp és tancat: l'obro"))
+        #expect(o.mostrat.contains("Warp és tancat: l'obro i n'espero l'arrencada (fins a 62 s)."))
         #expect(sortida.text.hasSuffix("S'ha obert «Docs» a Warp: 1 pestanya, 0 amb Claude. "
             + "Warp pot obrir també una finestra seva, que pots tancar.\n"), "\(sortida.text)")
     }

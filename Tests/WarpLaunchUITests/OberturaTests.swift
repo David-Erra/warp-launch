@@ -1469,6 +1469,26 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
             + "2 amb Claude.\nWarp pot obrir també una finestra seva, que pots tancar."))
     }
 
+    /// 1.0.1: si la primera finestra, que engega Warp, no es confirma, la segona no es demana fins que se n'acaba l'espera
+    /// amb el marge d'arrencada (30 s de la finestra més 30 s i 2 s de Warp), i no se'n torna a demanar cap. Si Warp encara no
+    /// és obert, la segona també té el marge. El resum ho diu com qualsevol finestra que no es confirma.
+    @Test func siLaPrimeraNoEsConfirmaLesAltresEsperenElMarge() async throws {
+        let b = try Banc(configuracio: duesFinestres)
+        b.lectures = [senseBase([], warpObert: false)]
+        await b.obertura.demanaTot()
+        #expect(try #require(proposta(b)).arrencaAmbFitxer)
+        let inici = b.ara
+        var quan: [TimeInterval] = []
+        b.mentreObre = { quan.append(b.ara.timeIntervalSince(inici)) }
+        await b.obertura.confirmaIObreTot()
+        #expect(b.engegades == 0 && b.urls.count == 2, "cap reintent")
+        #expect(quan.count == 2 && quan[0] < 1 && quan[1] >= 62, "\(quan)")
+        #expect(b.ara.timeIntervalSince(inici) >= 124, "la segona també espera el marge")
+        #expect(b.estatAlDisc.llancaments.count == 2 && b.estatAlDisc.llancaments.allSatisfy { $0.estat == .senseConfirmar })
+        let text = try #require(b.obertura.resultat?.text)
+        #expect(text.components(separatedBy: ExecucioObertura.finestraSeva).count == 2, "un sol cop: \(text)")
+    }
+
     /// Totes de cop (D4): la segona es demana a Warp sense esperar que s'hagi vist la primera, que aquí no es veu mai
     /// (amb una finestra rere l'altra, la segona trigaria 30 s).
     @Test func noEsperaLaPrimera() async throws {

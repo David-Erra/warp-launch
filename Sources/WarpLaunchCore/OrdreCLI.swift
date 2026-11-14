@@ -580,7 +580,9 @@ public enum OrdreCLI {
         // Warp és tancat: l'obre, n'espera l'arrencada i torna a calcular. Si el que s'obriria ha canviat, no obre res.
         let llancament = entorn.nouId()
         if arrencaAmbFitxer {
-            sortida.escriu(t("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(Int(ExecucioObertura.tempsMaximWarp)) s)."))
+            // L'espera és la de la finestra més la d'arrencada (`Peticio.arrencaWarp`): 62 s, no 30.
+            let segons = Int(ExecucioObertura.tempsMaxim + ExecucioObertura.tempsArrencada)
+            sortida.escriu(t("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(segons) s)."))
         } else if warpTancat {
             sortida.escriu(t("Warp és tancat: l'obro i n'espero l'arrencada (fins a \(Int(ExecucioObertura.tempsMaximWarp)) s)."))
             mostra()

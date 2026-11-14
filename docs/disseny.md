@@ -1437,7 +1437,8 @@ l'app no pot tancar: ho diuen el full i el bàner.
     `ExecucioObertura.tempsArrencada`), i compta com si Warp s'acabés d'engegar (la carpeta d'inici no confirma res). Si no es
     confirma, el resultat ho diu com qualsevol finestra que no es confirma; no es torna a provar (seria duplicar-la).
   - **«Obre-ho tot» i el full d'iniciar sessió:** primer la primera finestra, sola; després, amb una lectura nova (els terminals que
-    ja hi són no compten per a les altres), les altres alhora, com ara.
+    ja hi són no compten per a les altres), les altres alhora, com ara. Si Warp encara no és obert, o la lectura falla, les altres també
+    tenen el marge d'arrencada (1.0.2).
   - **Textos:** encara no se sap si així Warp deixa d'obrir la seva finestra (es provarà amb un reinici real). El full diu «Warp és
     tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.», i el bàner,
     «Warp pot obrir també una finestra seva, que pots tancar.». En el camí d'abans, els textos d'abans.

@@ -167,15 +167,19 @@ extension Obertura {
             resultats[0] = await executa(primera, fitxer: fitxer, engegat: true, arrencaWarp: true,
                                          llegeix: { await compartida.llegeix() }, fase: { self.avancaTot($0) })
             // Les altres no han de prendre els terminals que ja hi són (la primera finestra, o la de Warp, si n'obre cap).
-            if finestres.count > 1, let lectura = try? await entorn.llegeix().get() {
-                let panes = Set(lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid))
-                let terminals = Set(lectura.terminals.map(\.pid))
-                for n in finestres.indices.dropFirst() {
-                    finestres[n].panesAbans.formUnion(panes)
-                    finestres[n].terminalsAbans.formUnion(terminals)
+            if finestres.count > 1 {
+                let lectura = try? await entorn.llegeix().get()
+                if let lectura {
+                    let panes = Set(lectura.finestres.flatMap(\.pestanyes).flatMap(\.panes).map(\.uuid))
+                    let terminals = Set(lectura.terminals.map(\.pid))
+                    for n in finestres.indices.dropFirst() {
+                        finestres[n].panesAbans.formUnion(panes)
+                        finestres[n].terminalsAbans.formUnion(terminals)
+                    }
                 }
-                // Si Warp encara no és obert (la primera no l'ha pogut engegar), l'URL de cada una ho tornarà a provar.
-                arrencaWarp = lectura.warpObert != true
+                // Si Warp encara no és obert (la primera no l'ha pogut engegar), o no se sap, l'URL de cada una ho tornarà a
+                // provar, amb el marge d'arrencada: sense, una finestra que arribés tard es donaria per no confirmada.
+                arrencaWarp = lectura?.warpObert != true
             }
         }
         let carpetes = finestres.map { Set($0.pla.aObrir.map { Rutes.canonica($0.yaml.carpeta) }) }

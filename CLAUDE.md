@@ -208,6 +208,8 @@ Els requisits són a `docs/especificacio.md`.
   finestra, que engega Warp, i n'esperen la confirmació 30 s més els 32 s d'arrencada; després, les altres. Amb la restauració activada
   o qualsevol dubte (`RefrescWarp` amb una desactivació pendent o un avís; al CLI, sense `restore_session = false`), el camí d'abans
   (`ObreWarp.engega`). Els textos diuen que Warp «pot» obrir també una finestra seva: falta un reinici real. `docs/disseny.md`, secció 7, «Warp tancat».
+  **1.0.2 (revisió, sense provar a l'app):** a «Obre-ho tot», si després de la primera no es pot llegir Warp, les altres també
+  esperen el marge d'arrencada; el CLI diu l'espera real (62 s).
 - **0.99.0 (12/11/2026, decisió de l'autor; publicada per l'autor el 13/11/2026, recepta del tap `df97d2e`): la candidata, el mateix codi que serà la
   1.0.0, sense notaritzar.** Comprovat des de fora el 13/11: l'appcast de l'app dona la 0.99.0, el zip (5.258.095 bytes) quadra amb l'appcast i amb
   el sha256 de la recepta, la signatura EdDSA amb la clau pública, i l'app de dins porta l'adreça, les 10 llengües i passa `codesign`. Arriba sola a
