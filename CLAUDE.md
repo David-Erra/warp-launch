@@ -17,7 +17,7 @@ Cada pestanya sol ser un repo, amb el seu agent de Claude Code. En un Mac de pro
 pestanyes de terminal, però menys d'una quarta part amb una sessió de Claude viva, d'uns 500 MB cadascuna.
 Els requisits són a `docs/especificacio.md`.
 
-## Estat (13/11/2026, 0.99.0 al codi i publicada, la candidata de la 1.0.0)
+## Estat (14/11/2026, 1.0.0 al codi i publicada, signada amb Developer ID i notaritzada)
 
 - **Fins a la 1.0.0 (decisió de l'autor, 11/11/2026; el detall, al seu pla privat, fora del repo):** 0.34, el nucli fiable (les pestanyes només de terminal
   es reconeixen i no es dupliquen; reinici, L2 i L5 amb l'OK; en publicar-la, la primera actualització automàtica real); 0.35, multidioma en 10 llengües (ca, en, es, fr, de, it, pt-BR, ja,
@@ -197,6 +197,12 @@ Els requisits són a `docs/especificacio.md`.
 - **0.36.0 (12/11/2026, `docs/disseny.md`, secció 14):** el primer ús guiat (l'estat buit de l'editor, en tres passos, i un enllaç a Configuració › General);
   «Obre la configuració del sistema» obre Arxius i carpetes quan macOS no deixa llegir Warp (decisió 8: només `ServeiPermis`, amb una adreça d'una llista fixa,
   llegida a `tccd` de macOS 27.2); i les versions provades, Warp 0.2026.11.04 i Claude Code fins a la 2.1.322. Només proves i codi llegit: no s'ha vist a l'app.
+- **1.0.0, publicada per l'autor el 14/11/2026** (recepta del tap, `3f38646`): signada amb «Developer ID Application: David Erra (NPB9KH56SJ)», amb «hardened
+  runtime» i segell de temps, i notaritzada (Apple l'accepta, enviament `dc74f835…`; el tiquet, grapat). Comprovat des de fora el mateix dia: l'appcast dona la
+  1.0.0; el zip (5.283.165 bytes) quadra amb l'appcast i el sha256 de la recepta; la signatura EdDSA, bé; `stapler validate`, bé; `spctl -a -vv -t exec`:
+  «accepted, source=Notarized Developer ID». El certificat és al clauer de l'autor (amb l'intermedi «Developer ID - G2» d'Apple) i les credencials de
+  `notarytool`, al perfil `warp-launch`. Falta: treure de la recepta el bloc que treu la marca de baixada, i les proves de l'autor (el reinici amb la L5, la L2,
+  les altres llengües) i la beta.
 - **0.99.0 (12/11/2026, decisió de l'autor; publicada per l'autor el 13/11/2026, recepta del tap `df97d2e`): la candidata, el mateix codi que serà la
   1.0.0, sense notaritzar.** Comprovat des de fora el 13/11: l'appcast de l'app dona la 0.99.0, el zip (5.258.095 bytes) quadra amb l'appcast i amb
   el sha256 de la recepta, la signatura EdDSA amb la clau pública, i l'app de dins porta l'adreça, les 10 llengües i passa `codesign`. Arriba sola a

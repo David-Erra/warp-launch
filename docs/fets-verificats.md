@@ -1293,6 +1293,18 @@ L'autor la va publicar amb `scripts/publica.sh --aplica` (v0.99.0; recepta del t
   `codesign --verify --deep --strict` amb el requisit de «Warp Launch Dev».
 - **Pendent:** veure que una còpia 0.33.0 s'hi actualitza sola (la Porta 3).
 
+### 20. La 1.0.0, publicada amb Developer ID i notaritzada (14/11/2026)
+
+- **Certificat:** creat per l'autor al web (developer.apple.com, «Developer ID Application», G2) el 13/11/2026; caduca el 13/12/2027. Xcode refusava crear-lo
+  («This operation can only be performed by the Account Holder») tot i ser un compte individual: el web, sí. `security find-identity -v` no el donava per vàlid
+  fins que es va afegir l'intermedi «Developer ID Certification Authority» (G2, d'apple.com/certificateauthority, emès per l'Apple Root CA, caduca el 2031).
+- **Signar amb segell de temps:** el primer `build-app.sh` va fallar amb «timestamps differ by 418 seconds - check your system clock» mentre macOS esperava
+  el permís per fer servir la clau; el rellotge era bo (`sntp`: +0,007 s). Un cop donat el permís, signa bé.
+- **PROVAT:** `publica.sh --aplica` (l'autor): Apple accepta la notarització en uns minuts, `stapler staple` i `validate` bé. Des de fora: l'appcast de l'app
+  dona la 1.0.0; el zip fa 5.283.165 bytes, com diu l'appcast, amb el sha256 de la recepta (`4394ae5c…`); la signatura EdDSA, bé; l'app de dins porta
+  `flags=0x10000(runtime)` i el Team ID; `spctl -a -vv -t exec`: «accepted, source=Notarized Developer ID».
+- **No vist encara:** una còpia 0.33.0 o 0.99.0 actualitzant-se sola a la 1.0.0 (el canvi de certificat amb la mateixa clau EdDSA, secció 11).
+
 ### Què impedeix o canvia el plantejament
 
 1. **Qui té la 0.31.5 o anterior no té Sparkle.** Han de fer una última actualització manual (Homebrew o l'script) per arribar a la primera versió amb Sparkle.

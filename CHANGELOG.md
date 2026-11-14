@@ -3,12 +3,12 @@
 Published versions of Warp Launch. Versions in between were never published: their changes are listed under the next
 published one. Dates are when the version was published on GitHub.
 
-## 1.0.0
+## 1.0.0 — 2026-11-14
 
 - **Signed with Developer ID and notarized by Apple:** download it with your browser and open it like any other app. macOS
   asks once again for the Files & Folders permission, because the app's signature changes. Everything else is as in 0.99.0.
 
-## 0.99.0
+## 0.99.0 — 2026-11-13
 
 The release candidate of 1.0.0: everything 1.0.0 will have, except the Developer ID signature and Apple's notarization.
 

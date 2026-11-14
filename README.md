@@ -5,10 +5,9 @@
 A menu bar app for macOS that reads, edits and reopens your Warp windows and tabs, each one with its own Claude Code
 session. It can open on its own when you log in and offer to open everything with one click.
 
-**Status (November 11, 2026):** it reads Warp, edits the configuration (windows, tabs and how Claude opens in them), opens one window
-or all of them in Warp and, if you turn it on, opens at login. The latest published version is 0.33.0 (November 11, 2026), the first
-one that updates itself, and it installs with Homebrew. The first real automatic update will come with the next version (see
-“Automatic updates”). Instructions for agents: [`CLAUDE.md`](CLAUDE.md).
+**Status (November 14, 2026):** it reads Warp, edits the configuration (windows, tabs and how Claude opens in them), opens one window
+or all of them in Warp and, if you turn it on, opens at login. The latest published version is **1.0.0** (November 14, 2026): signed
+with Developer ID and notarized by Apple, in 10 languages, and it updates itself (see “Automatic updates”). Instructions for agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Installing it
 
@@ -26,8 +25,7 @@ You need a Mac with Apple silicon (M1 or later) and macOS 26 or later, an admini
    brew install --cask david-erra/tap/warp-launch
    ```
    It adds the `David-Erra/homebrew-tap` tap and trusts only this cask. It downloads the latest published version, checks its
-   sha256, copies it to `/Applications` and removes its downloaded-from-the-internet mark, because it isn't notarized by Apple
-   yet. It doesn't open it, doesn't register it at login and doesn't touch any configuration.
+   sha256 and copies it to `/Applications`. It doesn't open it, doesn't register it at login and doesn't touch any configuration.
 2. **Open Warp Launch** from Applications. It shows up as an icon in the menu bar (not in the Dock).
    - **The first time, your permission** (since 0.29.0): the app explains that it has to turn off the Warp setting “Restore
      windows, tabs, and panes on startup” (if you have Settings Sync, on your other Macs too) and that it will turn it on for a
@@ -73,7 +71,7 @@ With the GitHub tool, `gh`:
    s="$(gh api -H 'Accept: application/vnd.github.raw' repos/David-Erra/warp-launch/contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --aplica
    ```
    If you get `gh: Not Found (HTTP 404)`, `gh` can't find the repo: check the command and step 1. Don't run it with `sudo`.
-   It downloads the latest published version, checks that it's signed with David's certificate (“Warp Launch Dev”) and copies it
+   It downloads the latest published version, checks that it's signed by David (his Developer ID since 1.0.0; “Warp Launch Dev” before) and copies it
    to `/Applications`. It doesn't open it, doesn't register it at login and doesn't touch any configuration. If the app is open,
    it stops and asks you to quit it. Without `--aplica`, it only says what it would do; with `--versio x.y.z` (for example,
    `--versio 0.28.0`), it installs a specific one. The repo has the versions from 0.28.0 on.
@@ -123,9 +121,9 @@ stop a bad version: [`docs/disseny.md`](docs/disseny.md), section 11, part 7.
 ## Automatic updates
 
 **0.33.0 (November 11, 2026) brings them: it's the first version published with automatic updates.** Checked from outside the same
-day: the address the app checks gives 0.33.0, and the zip's signature matches the public key the app carries.
-**The first real automatic update will come with the next version.** So far, **they've only been seen working with test
-versions,** a local server and a one-time key, on the author's Mac: with a test app (rounds A and B in
+day: the address the app checks gives 0.33.0, and the zip's signature matches the public key the app carries. 0.99.0
+(November 13) and 1.0.0 (November 14, notarized) were published the same way, so copies at 0.33.0 or later update themselves to
+1.0.0. Before that, **they had only been seen working with test versions,** a local server and a one-time key, on the author's Mac: with a test app (rounds A and B in
 [`docs/disseny.md`](docs/disseny.md), section 11) and with Warp Launch (round C, in part). It updates itself without any macOS
 dialog, comes back without any window and keeps the Files & Folders permission and the login item. It hasn't been tested for
 another user or on another Mac, or with a Mac restart: the author decided not to run more tests (November 10, 2026). What follows
@@ -195,14 +193,13 @@ windows when it starts, turn the setting back on in Warp's settings.
   session files, transcripts and `~/.claude.json`; the `warp.sqlite` tables; the versions; and Warp's session restore), it says
   whether they still have the shape the app reads. It only reads: it doesn't open, stop or write anything. From the source
   code: `warp-launch diagnostica [--json] [--anonimitza]`.
-- **Signature:** published versions carry David's “Warp Launch Dev” certificate, always the same one: macOS should keep the
-  permissions when updating (deduced, not tested on another Mac yet). It isn't an Apple certificate: downloaded with the
-  browser, macOS wouldn't open it. The Homebrew cask checks its sha256 and removes its downloaded-from-the-internet mark; the
-  “Without Homebrew” command checks its signature and removes the mark too. Built from the source code on another Mac,
-  `build-app.sh` signs it ad hoc, and then, after each update, macOS may ask again for the Files & Folders permission and the
-  login item. Since 0.33.0, automatic updates are only accepted if the zip carries the EdDSA signature of the author's key,
-  checked before extracting it: the certificate alone isn't enough. On the author's Mac, with test versions, macOS let the app be
-  replaced without any dialog and kept its permissions (rounds B and C); on another Mac, it hasn't been tested yet.
+- **Signature:** since 1.0.0, published versions are signed with David's Developer ID (team NPB9KH56SJ) and notarized by Apple:
+  macOS opens them like any other app, also when downloaded with the browser. Up to 0.99.0 they carried “Warp Launch Dev”, David's
+  own certificate; going from 0.99.0 or earlier to 1.0.0, macOS asks once again for the Files & Folders permission (and maybe the
+  login item), because the signature changes. Built from the source code on another Mac, `build-app.sh` signs it with your own
+  Developer ID if you have one, or ad hoc; with ad hoc, macOS may ask again for those permissions after each build. Since 0.33.0,
+  automatic updates are only accepted if the zip carries the EdDSA signature of the author's key, checked before extracting it:
+  the certificate alone isn't enough.
 
 ## Development
 

@@ -5,10 +5,9 @@
 App de barra de menú per a macOS que llegeix, edita i torna a obrir les finestres i pestanyes de Warp,
 cadascuna amb la seva sessió de Claude Code. Pot obrir-se sola en iniciar sessió i proposar-te obrir-ho tot amb un clic.
 
-**Estat (11/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
-obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la 0.33.0 (11/11/2026), la
-primera que s'actualitza sola, i s'instal·la amb Homebrew. La primera actualització automàtica de debò arribarà amb la versió següent (vegeu
-«Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
+**Estat (14/11/2026):** llegeix Warp, edita la configuració (finestres, pestanyes i com s'hi obre Claude),
+obre una finestra o totes a Warp i, si ho actives, s'obre en iniciar sessió. L'última versió publicada és la **1.0.0** (14/11/2026):
+signada amb Developer ID i notaritzada per Apple, en 10 llengües, i s'actualitza sola (vegeu «Actualitzacions automàtiques»). Instruccions per a agents: [`CLAUDE.md`](CLAUDE.md).
 
 ## Instal·lar-la
 
@@ -25,8 +24,7 @@ Cal un Mac amb Apple Silicon (M1 o posterior) i macOS 26 o posterior, un compte 
    brew install --cask david-erra/tap/warp-launch
    ```
    Afegeix el tap `David-Erra/homebrew-tap` i confia només en aquesta recepta. Baixa l'última versió publicada, en comprova
-   el sha256, la copia a `/Applications` i li treu la marca de baixada d'internet, perquè encara no està notaritzada per Apple.
-   No l'obre, no la registra a l'inici de sessió i no toca cap configuració.
+   el sha256 i la copia a `/Applications`. No l'obre, no la registra a l'inici de sessió i no toca cap configuració.
 2. **Obre Warp Launch** des d'Aplicacions. Surt com una icona a la barra de menú (no al Dock).
    - **El primer cop, el teu permís** (des de la 0.29.0): l'app explica que ha de desactivar l'ajust de Warp «Restore windows,
      tabs, and panes on startup» (si tens Settings Sync, també als altres Macs) i que l'activarà uns segons quan li demanis que
@@ -71,7 +69,7 @@ Amb l'eina de GitHub, `gh`:
    s="$(gh api -H 'Accept: application/vnd.github.raw' repos/David-Erra/warp-launch/contents/scripts/instal%C2%B7la.sh)" && bash -c "$s" instal·la --github --aplica
    ```
    Si surt `gh: Not Found (HTTP 404)`, `gh` no troba el repo: revisa la comanda i el pas 1. No la facis amb `sudo`.
-   Baixa l'última versió publicada, comprova que està signada amb el certificat d'en David («Warp Launch Dev») i la
+   Baixa l'última versió publicada, comprova que està signada per en David (amb el seu Developer ID des de la 1.0.0; abans, «Warp Launch Dev») i la
    copia a `/Applications`. No l'obre, no la registra a l'inici de sessió i no toca cap configuració. Si l'app és oberta,
    s'atura i et demana que en surtis. Sense `--aplica`, només diu què faria; amb `--versio x.y.z` (per exemple,
    `--versio 0.28.0`), n'instal·la una de concreta. Al repo hi ha les versions des de la 0.28.0.
@@ -116,7 +114,7 @@ s'atura una versió dolenta: [`docs/disseny.md`](docs/disseny.md), secció 11, a
 
 **Les porta la 0.33.0 (11/11/2026), la primera versió publicada amb actualitzacions automàtiques.** Comprovat des de fora el mateix dia:
 l'adreça que consulta l'app dona la 0.33.0, i la signatura del zip quadra amb la clau pública que porta l'app.
-**La primera actualització automàtica de debò arribarà amb la versió següent.** Fins ara, **només s'han vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
+La 0.99.0 (13/11) i la 1.0.0 (14/11, notaritzada) s'han publicat igual, de manera que les còpies 0.33.0 o posteriors s'actualitzen soles a la 1.0.0. Abans, **només s'havien vist funcionar amb versions de prova,** un servidor local i una clau d'un sol ús, al Mac de l'autor: amb una app de prova
 (rondes A i B de [`docs/disseny.md`](docs/disseny.md), secció 11) i amb Warp Launch (ronda C, en part). S'actualitza sola sense cap diàleg de macOS, torna sense
 cap finestra i conserva el permís d'Arxius i carpetes i l'inici de sessió. No s'ha provat en un altre usuari o un altre Mac, ni amb un reinici del Mac: l'autor ha
 decidit no fer més proves (10/11/2026). El que segueix diu com funcionen.
@@ -183,15 +181,13 @@ Warp torni a obrir les seves finestres en arrencar, torna a activar l'ajust a la
   comprovacions (els terminals de Warp, els fitxers de sessió, les transcripcions i `~/.claude.json` de Claude Code, les taules de
   `warp.sqlite`, les versions i la restauració de Warp), si encara tenen la forma que l'app llegeix. Només llegeix: no obre, no
   atura ni escriu res. Des del codi: `warp-launch diagnostica [--json] [--anonimitza]`.
-- **Signatura:** les versions publicades porten el certificat «Warp Launch Dev» d'en David, sempre el mateix: macOS
-  hauria de mantenir els permisos en actualitzar (deduït, encara no provat en un altre Mac). No és un certificat d'Apple:
-  baixada amb el navegador, macOS no l'obriria. La recepta de Homebrew en comprova el sha256 i li treu la marca de baixada
-  d'internet; la comanda de «Sense Homebrew» en comprova la signatura i també la hi treu. Compilada des del codi en un altre
-  Mac, `build-app.sh` la signa ad hoc, i llavors, després de cada actualització, macOS pot tornar a demanar el permís d'Arxius i
-  carpetes i el de l'inici de sessió. Des de la 0.33.0, les actualitzacions automàtiques només s'accepten si el zip porta la
-  signatura EdDSA de la clau de l'autor, comprovada abans d'extreure'l: amb el certificat sol no n'hi ha prou. Al Mac de l'autor,
-  amb versions de prova, macOS ha deixat substituir l'app sense cap diàleg i n'ha mantingut els permisos (rondes B i C); en un
-  altre Mac, encara no s'ha provat.
+- **Signatura:** des de la 1.0.0, les versions publicades estan signades amb el Developer ID d'en David (equip NPB9KH56SJ) i
+  notaritzades per Apple: macOS les obre com qualsevol app, també baixades amb el navegador. Fins a la 0.99.0 portaven «Warp Launch
+  Dev», un certificat propi d'en David; en passar de la 0.99.0 o anterior a la 1.0.0, macOS torna a demanar una vegada el permís
+  d'Arxius i carpetes (i potser l'inici de sessió), perquè la signatura canvia. Compilada des del codi en un altre Mac,
+  `build-app.sh` la signa amb el teu Developer ID si en tens, o ad hoc; amb ad hoc, macOS pot tornar a demanar aquests permisos
+  després de cada compilació. Des de la 0.33.0, les actualitzacions automàtiques només s'accepten si el zip porta la signatura
+  EdDSA de la clau de l'autor, comprovada abans d'extreure'l: amb el certificat sol no n'hi ha prou.
 
 ## Desenvolupament
 
