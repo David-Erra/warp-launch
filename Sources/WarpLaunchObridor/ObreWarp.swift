@@ -1,8 +1,9 @@
 import AppKit
 import WarpLaunchCore
 
-/// L'única peça que fa obrir alguna cosa a Warp (fase 3.1, D5): li dona l'URL de llançament d'un fitxer temporal
-/// (`URLLlancament`), i l'obre si és tancat, i res més. La fan servir l'app i, a la 0.23.0, el CLI amb `--obre` (D17).
+/// L'única peça que actua sobre Warp (fase 3.1, D5): li dona l'URL de llançament d'un fitxer temporal (`URLLlancament`),
+/// l'obre si és tancat i, des de la 1.0.3, tanca la finestra que Warp obre sola en arrencar, quan l'ha engegat l'URL
+/// (`acabaShellDeLaFinestraDeWarp`). Res més. La fan servir l'app i, a la 0.23.0, el CLI amb `--obre` (D17).
 /// **Només s'hi arriba després de la confirmació** (el full, o `--obre` amb l'OK d'en David).
 public enum ObreWarp {
     public enum ErrorObrir: Error, Equatable, CustomStringConvertible {
@@ -58,5 +59,24 @@ public enum ObreWarp {
         } catch {
             throw .obrir(error.localizedDescription)
         }
+    }
+
+    /// Tanca la finestra que Warp obre sola en arrencar (1.0.3, decisió d'en David del 14/11/2026; regla 2, excepció): acaba
+    /// el shell de la seva única pestanya amb SIGHUP, el que rep un shell quan es tanca el terminal (zsh interactiu no fa cas
+    /// del de terminar), i Warp tanca la pestanya i la finestra, com amb `exit`. L'única crida de senyal de tot `Sources/`.
+    /// - Només el candidat de `FinestraDeWarp.tria`, amb totes les seves condicions, i només quan l'URL de la primera finestra
+    ///   ha engegat Warp en aquesta mateixa acció (`Obertura`, `OrdreCLI`).
+    /// - Just abans, ho torna a comprovar (`Candidat.encaraEs`): el mateix pid amb la mateixa hora d'inici i el mateix pare
+    ///   (el pid no s'ha reutilitzat), a la carpeta d'inici, i encara sense cap fill.
+    /// - Un sol intent, i res més fort: si el shell no acaba, la finestra hi queda.
+    public static func acabaShellDeLaFinestraDeWarp(_ candidat: FinestraDeWarp.Candidat,
+                                                    processos: any FontProcessos) -> FinestraDeWarp.Resultat {
+        guard candidat.encaraEs(processos) else {
+            return .dubte("el terminal \(candidat.pid) ha canviat abans d'acabar-lo")
+        }
+        guard kill(candidat.pid, SIGHUP) == 0 else {
+            return .dubte("el senyal al terminal \(candidat.pid) ha fallat (errno \(errno))")
+        }
+        return .tancada(candidat.pid)
     }
 }

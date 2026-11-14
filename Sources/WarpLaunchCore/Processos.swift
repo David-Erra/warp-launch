@@ -50,11 +50,16 @@ public protocol FontProcessos: Sendable {
     /// És aquí, i no a `InstallacioWarp.ambLaCopiaOberta`, perquè els processos falsos de les proves només el llegeixin
     /// dins de la seva carpeta temporal: un binari inventat amb una ruta de debò no ha de llegir el Warp de debò.
     func warpDelBinari(_ ruta: String) -> AppWarp?
+    /// Quants processos fills té un procés, de qualsevol usuari (1.0.3: el shell de la finestra de Warp, `FinestraDeWarp`);
+    /// `nil` si no es pot saber. Per defecte, els de `fills()`, que només són els de l'usuari.
+    func nombreDeFills(_ pid: Int32) -> Int?
 }
 
 extension FontProcessos {
+    public func nombreDeFills(_ pid: Int32) -> Int? { fills()[pid]?.count ?? 0 }
+
     /// Els processos d'un binari: el nom que en sap el sistema (`p_comm`, tallat a 16 caràcters) i la ruta exacta.
-    private func processos(executable: String) -> [(pid: Int32, info: InfoProces)] {
+    func processos(executable: String) -> [(pid: Int32, info: InfoProces)] {
         let nom = String((executable as NSString).lastPathComponent.prefix(16))
         return pids(nom: nom).compactMap { pid in
             guard let info = proces(pid), info.executable == executable else { return nil }
@@ -156,6 +161,14 @@ public struct ProcessosDelSistema: FontProcessos {
     }
 
     public func warpDelBinari(_ ruta: String) -> AppWarp? { AppWarp.delBinari(ruta) }
+
+    /// `proc_listchildpids`: els fills de qualsevol usuari (un `sudo`, per exemple, no surt a `fills()`). `nil` si falla.
+    public func nombreDeFills(_ pid: Int32) -> Int? {
+        var pids = [Int32](repeating: 0, count: 1024)
+        let n = pids.withUnsafeMutableBytes { proc_listchildpids(pid, $0.baseAddress, Int32($0.count)) }
+        guard n >= 0 else { return nil }
+        return pids.prefix(Int(n)).filter { $0 > 0 }.count
+    }
 
     /// `PROC_PIDVNODEPATHINFO`: la carpeta de treball del procés.
     public func carpeta(_ pid: Int32) -> String? {

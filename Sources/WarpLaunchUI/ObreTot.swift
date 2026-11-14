@@ -5,6 +5,8 @@ import WarpLaunchCore
 ///
 /// - **Decisions d'en David (05/11/2026):** totes de cop (D4), sense esperar que s'hagi vist l'anterior; si una no s'obre o no
 ///   es reconeix, les altres continuen, i el resultat ho diu al final; al full, una casella per finestra, totes marcades.
+/// - **La finestra que Warp obre sola** quan l'engega l'URL de la primera (1.0.3): l'app la tanca, o ho diu, un sol cop al
+///   final, quan totes les finestres s'han confirmat o se n'ha acabat l'espera (`tancaFinestraDeWarp`).
 /// - Llegeix Warp un sol cop i calcula el pla de cada finestra en ordre. Les converses que reprèn una finestra ja no les
 ///   reprèn cap altra (`EntradaObertura.jaRepreses`, R9).
 /// - **Només `confirmaIObreTot` (el botó del full) obre res.** Torna a llegir i a calcular: si alguna finestra triada ha
@@ -196,6 +198,8 @@ extension Obertura {
             }
         }
         for (n, tasca) in tasques { resultats[n] = await tasca.value }
+        // La finestra que Warp obre sola, si l'ha engegat l'URL de la primera: un sol cop, quan s'han acabat totes (1.0.3).
+        let fraseWarp = ambFitxer ? tancaFinestraDeWarp(finestres.indices.map { (finestres[$0].pla.aObrir, resultats[$0]) }) : nil
 
         // 3. El resum: quantes s'han obert, i què ha passat amb les altres.
         var correctes = 0
@@ -220,7 +224,7 @@ extension Obertura {
             : t("S'han obert bé \(correctes) de \(finestres.count) finestres a Warp.")
         if !linies.isEmpty { text += "\n" + linies.joined(separator: "\n") }
         if ambFitxer {
-            text += "\n" + ExecucioObertura.finestraSeva
+            if let fraseWarp { text += "\n" + fraseWarp }
         } else if engegat, !proposta.warpDesaFinestres {
             text += "\n" + ExecucioObertura.finestraBuida
         }

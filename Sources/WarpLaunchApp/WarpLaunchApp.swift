@@ -182,7 +182,13 @@ final class Aplicacio {
                 transcripcions: transcripcions,
                 confianca: confianca,
                 versioWarp: { lector.installacio().app.versio },
-                inici: inici))
+                inici: inici,
+                // 1.0.3: la finestra que Warp obre sola quan l'engega l'URL de la primera, només sense cap dubte.
+                tancaFinestraDeWarp: { context in
+                    FinestraDeWarp.tanca(context, foto: { processos.fotoFinestraDeWarp(executable: lector.installacio().executable) },
+                                         shellUsuari: ProcessInfo.processInfo.environment["SHELL"],
+                                         acaba: { ObreWarp.acabaShellDeLaFinestraDeWarp($0, processos: processos) })
+                }))
         }
         editor.obertura = obertura
         editor.lligam = obertura == nil ? nil

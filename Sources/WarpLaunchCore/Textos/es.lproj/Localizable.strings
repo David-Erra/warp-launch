@@ -174,7 +174,7 @@
 
 /* ExecucioObertura: el resultat d'obrir */
 "En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "Al arrancar, Warp también ha abierto una ventana vacía: puedes cerrarla.";
-"Warp pot obrir també una finestra seva, que pots tancar." = "Warp puede abrir también una ventana suya, que puedes cerrar.";
+"Warp ha obert també una finestra seva, que pots tancar." = "Warp también ha abierto una ventana suya, que puedes cerrar.";
 "No s'ha pogut desar el llançament a «estat.json»: %@" = "No se ha podido guardar el lanzamiento en “estat.json”: %@";
 "No s'ha pogut obrir «%@» a Warp: %@" = "No se ha podido abrir “%@” en Warp: %@";
 "Claude encara no ha arrencat a %@: mira-ho a Warp." = "Claude aún no ha arrancado en %@: revísalo en Warp.";
@@ -660,7 +660,7 @@
 "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp está cerrado, y al abrirse restaurará estas pestañas, sin Claude. Ábrelo y vuelve a intentarlo.";
 "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp está cerrado: la app lo abrirá antes. Warp también restaurará las ventanas de antes, sin Claude.";
 "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp está cerrado: la app lo abrirá antes. Al arrancar, Warp también abre una ventana vacía, que puedes cerrar.";
-"Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar." = "Warp está cerrado: la app lo abrirá directamente con las pestañas. Warp puede abrir también una ventana suya, que puedes cerrar.";
+"Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix." = "Warp está cerrado: la app lo abrirá directamente con las pestañas, y cerrará la ventana vacía que Warp abre al arrancar, si la reconoce.";
 "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Cerrar Warp puede dejar a medias las tareas en segundo plano de Claude, y volver a abrir las pestañas no las hace continuar.";
 "No s'ha pogut desar la configuració: %@" = "No se ha podido guardar la configuración: %@";
 "No s'ha pogut desar la configuració" = "No se ha podido guardar la configuración";

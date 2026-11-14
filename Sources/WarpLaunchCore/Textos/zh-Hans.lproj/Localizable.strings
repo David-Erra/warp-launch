@@ -174,7 +174,7 @@
 
 /* ExecucioObertura: el resultat d'obrir */
 "En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "启动时，Warp还打开了一个空窗口：你可以将其关闭。";
-"Warp pot obrir també una finestra seva, que pots tancar." = "Warp也可能打开一个自己的窗口，你可以将其关闭。";
+"Warp ha obert també una finestra seva, que pots tancar." = "Warp还打开了一个自己的窗口，你可以将其关闭。";
 "No s'ha pogut desar el llançament a «estat.json»: %@" = "无法将启动记录保存到“estat.json”：%@";
 "No s'ha pogut obrir «%@» a Warp: %@" = "无法在Warp中打开“%@”：%@";
 "Claude encara no ha arrencat a %@: mira-ho a Warp." = "%@中的Claude尚未启动：请在Warp中检查。";
@@ -660,7 +660,7 @@
 "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp已关闭，打开时会恢复这些标签页，但不带Claude。请打开Warp后重试。";
 "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp已关闭：App会先打开它。Warp还会恢复之前的窗口，但不带Claude。";
 "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp已关闭：App会先打开它。启动时，Warp还会打开一个空窗口，你可以将其关闭。";
-"Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar." = "Warp已关闭：App会直接带着标签页打开它。Warp也可能打开一个自己的窗口，你可以将其关闭。";
+"Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix." = "Warp已关闭：App会直接带着标签页打开它，并在能识别时关闭Warp启动时打开的空窗口。";
 "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "退出Warp可能会使Claude的后台任务中途停止，重新打开标签页也不会使其继续。";
 "No s'ha pogut desar la configuració: %@" = "无法保存配置：%@";
 "No s'ha pogut desar la configuració" = "无法保存配置";

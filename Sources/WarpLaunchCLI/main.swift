@@ -35,7 +35,13 @@ let obridor = ObridorCLI(obre: { try await ObreWarp.obre($0, warp: lector.instal
                          fitxers: FitxersLaunchWarp.real,
                          appOberta: { !processos.pids(nom: WarpLaunch.executableApp).isEmpty },
                          avisa: { FileHandle.standardOutput.write(Data($0.utf8)) },
-                         enInterrupcio: { interrupcio = $0 })
+                         enInterrupcio: { interrupcio = $0 },
+                         // 1.0.3: la finestra que Warp obre sola quan l'engega l'URL, només sense cap dubte.
+                         tancaFinestraDeWarp: { context in
+                             FinestraDeWarp.tanca(context, foto: { processos.fotoFinestraDeWarp(executable: lector.installacio().executable) },
+                                                  shellUsuari: ProcessInfo.processInfo.environment["SHELL"],
+                                                  acaba: { ObreWarp.acabaShellDeLaFinestraDeWarp($0, processos: processos) })
+                         })
 @MainActor
 func executa() async -> (Int32, Sortida) {
     var sortida = Sortida()

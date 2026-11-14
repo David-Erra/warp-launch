@@ -36,6 +36,9 @@ public final class Obertura {
         public var nouId: () -> UUID
         public var rellotge: () -> Date
         public var espera: @MainActor (Duration) async -> Void
+        /// Tanca la finestra que Warp obre sola en arrencar, si no hi ha cap dubte (`FinestraDeWarp.tanca`, 1.0.3): només
+        /// quan l'URL de la primera finestra ha engegat Warp, i un sol cop, al final de l'acció. Per defecte, res.
+        public var tancaFinestraDeWarp: @MainActor (FinestraDeWarp.Context) -> FinestraDeWarp.Resultat
 
         public init(llegeix: @escaping @MainActor () async -> Result<LecturaWarp, EstatWarp.ErrorLectura>,
                     obre: @escaping @MainActor (URLLlancament) async throws -> Void,
@@ -44,7 +47,10 @@ public final class Obertura {
                     versioWarp: @escaping () -> String?, inici: String,
                     carpetaExisteix: @escaping (String) -> Bool = Validacio.carpetaExisteixAlDisc,
                     nouId: @escaping () -> UUID = { UUID() }, rellotge: @escaping () -> Date = { Date() },
-                    espera: @escaping @MainActor (Duration) async -> Void = { try? await Task.sleep(for: $0) }) {
+                    espera: @escaping @MainActor (Duration) async -> Void = { try? await Task.sleep(for: $0) },
+                    tancaFinestraDeWarp: @escaping @MainActor (FinestraDeWarp.Context) -> FinestraDeWarp.Resultat = {
+                        _ in .dubte("sense res per tancar-la")
+                    }) {
             self.llegeix = llegeix
             self.obre = obre
             self.engegaWarp = engegaWarp
@@ -57,6 +63,7 @@ public final class Obertura {
             self.nouId = nouId
             self.rellotge = rellotge
             self.espera = espera
+            self.tancaFinestraDeWarp = tancaFinestraDeWarp
         }
     }
 
@@ -270,8 +277,31 @@ public final class Obertura {
             self?.estat = .obrint(proposta, $0)
         }) {
         case let .noEsPot(motiu): estat = .noEsPot(motiu)
-        case let .acabat(fet): acaba(correcte: fet.correcte, fet.text)
+        case let .acabat(fet):
+            var text = fet.text
+            // L'URL ha engegat Warp: la finestra que Warp obre sola, l'app la tanca o ho diu (1.0.3).
+            if ambFitxer, let frase = tancaFinestraDeWarp([(proposta.pla.aObrir, .acabat(fet))]) {
+                text = Idioma.frases(text, frase)
+            }
+            acaba(correcte: fet.correcte, text)
         }
+    }
+
+    /// La finestra que Warp obre sola quan l'engega l'URL de la primera finestra (1.0.3, `FinestraDeWarp`): un sol cop, quan
+    /// totes les finestres de l'acció s'han confirmat o se n'ha acabat l'espera. `finestres`: la primera és la que ha engegat
+    /// Warp. Torna el text que cal afegir al resultat, si n'hi ha.
+    func tancaFinestraDeWarp(_ finestres: [(pestanyes: [PestanyaAObrir], resultat: ExecucioObertura.Resultat?)]) -> String? {
+        let context = FinestraDeWarp.context(finestres, inici: Rutes.canonica(entorn.inici))
+        let resultat = entorn.tancaFinestraDeWarp(context)
+        switch resultat {
+        case let .tancada(pid):
+            Registre.obertura.notice("finestra de Warp: enviat el senyal de tancar el terminal al shell \(pid, privacy: .public)")
+        case .capFinestra:
+            Registre.obertura.notice("finestra de Warp: cap terminal de més, no hi ha res a tancar")
+        case let .dubte(motiu):
+            Registre.obertura.notice("finestra de Warp: no es tanca, \(motiu, privacy: .public)")
+        }
+        return FinestraDeWarp.text(resultat)
     }
 
     /// Si «Obre», amb Warp tancat, ha d'engegar Warp amb l'URL de la primera finestra en lloc d'engegar-lo buit (decisió d'en
@@ -512,12 +542,12 @@ public final class Obertura {
     /// Què diuen els fulls d'«Obre a Warp…» i «Obre-ho tot…» amb Warp tancat: si Warp, en arrencar, restaurarà les seves
     /// finestres (`Proposta.warpDesaFinestres`, `warpRestauraEnArrencar`), o si n'obrirà una de buida. Sense `settings.toml`,
     /// diu que les restaurarà, i no demana d'obrir Warp primer, perquè no ho evitaria (decisió 1 d'en David, 08/11/2026).
-    /// Amb `arrencaAmbFitxer` (1.0.1), Warp s'obrirà directament amb les pestanyes: encara no s'ha vist si també n'obre una de
-    /// seva, i per això «pot».
+    /// Amb `arrencaAmbFitxer` (1.0.1), Warp s'obrirà directament amb les pestanyes, i també amb una finestra seva, que l'app
+    /// tancarà si la reconeix sense dubte (1.0.3, `FinestraDeWarp`).
     static func textWarpTancat(restaura: Bool, arrencaAmbFitxer: Bool = false) -> String {
         if restaura { return t("Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude.") }
         if arrencaAmbFitxer {
-            return t("Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.")
+            return t("Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix.")
         }
         return t("Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar.")
     }

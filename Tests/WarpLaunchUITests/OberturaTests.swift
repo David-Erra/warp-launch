@@ -129,6 +129,10 @@ private final class Banc {
     var abansDeLlegir: ((Int) -> Void)?
     /// Es crida quan es demana obrir Warp (per exemple, perquè l'app creï `settings.toml` mentre Warp arrenca).
     var enEngegar: (() -> Void)?
+    /// 1.0.3: cada vegada que l'app ha demanat tancar la finestra de Warp (cap senyal: és un fals), amb el context i quantes
+    /// URL s'havien demanat llavors; i què torna.
+    var tancaments: [(context: FinestraDeWarp.Context, urls: Int)] = []
+    var resultatTancament: FinestraDeWarp.Resultat = .dubte("prova")
 
     /// - Parameter refresc: l'ajust de Warp, fals (`AjustSenseFitxer`). Sense, no hi ha refresc, com amb una carpeta de prova.
     init(estat: Data? = nil, configuracio: Configuracio = configuracio, consentiment acceptat: Bool = true,
@@ -191,6 +195,10 @@ private final class Banc {
             espera: { [unowned self] durada in
                 ara += Double(durada.components.seconds) + Double(durada.components.attoseconds) / 1e18
                 rellotge.ara = ara
+            },
+            tancaFinestraDeWarp: { [unowned self] context in
+                tancaments.append((context, urls.count))
+                return resultatTancament
             }))
         editor.obertura = obertura
     }
@@ -274,6 +282,7 @@ private final class ComptaLectures: @unchecked Sendable {
         await b.obertura.confirmaIObre()
         #expect(alObrir == Data(EntornClaude.text.utf8))
         #expect(b.urls.count == 1)
+        #expect(b.tancaments.isEmpty, "Warp ja era obert: cap finestra seva no es toca (1.0.3)")
     }
 
     /// Sense poder escriure l'entorn, no obre res: quedaria una feina en `auto` sense que ningú ho sabés.
@@ -408,6 +417,7 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(b.engegades == 1)
         #expect(b.urlsEnEngegar == 0, "primer Warp, i després la finestra")
         #expect(b.urls.count == 1)
+        #expect(b.tancaments.isEmpty, "pel camí d'abans (Warp engegat buit), la finestra buida no es toca (1.0.3)")
         #expect(b.estatAlDisc.llancaments.last?.estat == .confirmat)
         let resultat = try #require(b.obertura.resultat)
         #expect(resultat.correcte)
@@ -417,7 +427,8 @@ private final class ComptaLectures: @unchecked Sendable {
 
     /// 1.0.1 (decisió d'en David, 14/11/2026, opció A): amb Warp tancat i la restauració desactivada sense cap dubte, «Obre»
     /// no engega Warp buit: la primera crida és obrir l'URL de la finestra, amb el fitxer ja escrit, i Warp arrenca amb ella.
-    /// El full i el bàner diuen, prudents, que Warp pot obrir també una finestra seva.
+    /// El full diu que l'app tancarà la finestra que Warp obre en arrencar, si la reconeix; el bàner, si no l'ha tancada
+    /// (aquí, el fals torna un dubte), que Warp n'ha obert una de seva (1.0.3).
     @Test func ambWarpTancatISenseRestauracioLEngegaLURL() async throws {
         let b = try Banc()
         b.lectures = [senseBase([], warpObert: false)]
@@ -425,7 +436,7 @@ private final class ComptaLectures: @unchecked Sendable {
         let proposta = try #require(b.proposta)
         #expect(proposta.warpTancat && !proposta.warpDesaFinestres && proposta.arrencaAmbFitxer)
         #expect(Obertura.textWarpTancat(restaura: false, arrencaAmbFitxer: true)
-            == "Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.")
+            == "Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix.")
         b.llegides = 0
         var lecturesEnObrir: Int?
         b.mentreObre = { lecturesEnObrir = b.llegides }
@@ -438,7 +449,26 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(b.enObrir?.fitxers.count == 1 && b.enObrir?.llancament?.estat == .pendent)
         #expect(b.estatAlDisc.llancaments.last?.estat == .confirmat)
         #expect(b.obertura.resultat == Obertura.Resultat(correcte: true, text: "S'ha obert «W» a Warp: 2 pestanyes, 1 amb Claude. "
-            + "Warp pot obrir també una finestra seva, que pots tancar."))
+            + "Warp ha obert també una finestra seva, que pots tancar."))
+        // 1.0.3: un sol cop, després de confirmar la finestra, amb les seves dues pestanyes. El fals torna un dubte.
+        #expect(b.tancaments.count == 1 && b.tancaments.first?.urls == 1)
+        let context = try #require(b.tancaments.first?.context)
+        #expect(context.pestanyes == 2 && context.dubte == nil && context.inici == "/Users/prova")
+        #expect(context.nostres == [602] && context.confirmada != nil)
+    }
+
+    /// 1.0.3 (decisió d'en David, 14/11/2026): si l'app ha tancat la finestra de Warp, el resultat no en parla.
+    @Test func siHaTancatLaFinestraDeWarpNoEnParla() async throws {
+        let b = try Banc()
+        b.resultatTancament = .tancada(500)
+        b.lectures = [senseBase([], warpObert: false)]
+        await b.obertura.demana(id(100))
+        b.llegides = 0
+        b.lectures = [senseBase([], warpObert: false), senseBase([], warpObert: false), senseBase([]),
+                      senseBase(terminalsNous, sessions: [claudeT1()])]
+        await b.obertura.confirmaIObre()
+        #expect(b.tancaments.count == 1)
+        #expect(b.obertura.resultat == Obertura.Resultat(correcte: true, text: "S'ha obert «W» a Warp: 2 pestanyes, 1 amb Claude."))
     }
 
     /// Si la finestra que engega Warp no es confirma, el resultat ho diu com qualsevol altra, després de l'espera de Warp
@@ -453,7 +483,7 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(b.engegades == 0 && b.urls.count == 1)
         #expect(b.estatAlDisc.llancaments.last?.estat == .senseConfirmar)
         #expect(b.obertura.resultat == Obertura.Resultat(correcte: false, text: "No s'ha pogut confirmar que s'hagi obert «W»: "
-            + "mira si hi ha una finestra nova a Warp. Warp pot obrir també una finestra seva, que pots tancar."))
+            + "mira si hi ha una finestra nova a Warp. Warp ha obert també una finestra seva, que pots tancar."))
     }
 
     /// Amb el refresc de l'app, la restauració només és segura si l'ajust s'ha pogut desactivar: si `settings.toml` no para
@@ -500,7 +530,7 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(proposta.arrencaAmbFitxer == !senseFitxer)
         #expect(Obertura.textWarpTancat(restaura: proposta.warpDesaFinestres, arrencaAmbFitxer: proposta.arrencaAmbFitxer)
             == (senseFitxer ? "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude."
-                : "Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar."))
+                : "Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix."))
         b.llegides = 0
         // Mentre Warp arrenca, la vigilància de cada minut el veu obert amb un terminal, i crea el fitxer.
         b.enEngegar = {
@@ -515,7 +545,7 @@ private final class ComptaLectures: @unchecked Sendable {
         #expect(b.engegades == (senseFitxer ? 1 : 0) && b.urls.count == 1)
         #expect(!ajust.senseFitxer && refresc.pendent == nil, "l'app ha creat el fitxer mentre Warp arrencava")
         #expect(b.obertura.resultat?.text == "S'ha obert «W» a Warp: 2 pestanyes, 1 amb Claude."
-            + (senseFitxer ? "" : " Warp pot obrir també una finestra seva, que pots tancar."))
+            + (senseFitxer ? "" : " Warp ha obert també una finestra seva, que pots tancar."))
     }
 
     /// Si en arrencar Warp ha restaurat alguna pestanya, el pla canvia: no s'obre res, i es torna al full. El segon «Obre» ja
@@ -1425,7 +1455,7 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         // Decisió 1 (08/11/2026): el full ho diu, i no demana d'obrir Warp primer. «Obre» continua obrint-lo.
         #expect(p.arrencaAmbFitxer == !senseFitxer)
         #expect(Obertura.textWarpTancat(restaura: p.warpDesaFinestres, arrencaAmbFitxer: p.arrencaAmbFitxer).hasSuffix(senseFitxer
-            ? " Warp també restaurarà les finestres d'abans, sense Claude." : " Warp pot obrir també una finestra seva, que pots tancar."))
+            ? " Warp també restaurarà les finestres d'abans, sense Claude." : ", i tancarà la finestra buida que Warp obre en arrencar, si la reconeix."))
         b.llegides = 0
         b.enEngegar = {
             ajust.warpArrencat = true
@@ -1439,7 +1469,7 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         #expect(b.engegades == (senseFitxer ? 1 : 0) && b.urls.count == 2)
         #expect(!ajust.senseFitxer && refresc.pendent == nil, "l'app ha creat el fitxer mentre Warp arrencava")
         #expect(b.obertura.resultat?.text == "S'han obert 2 finestres a Warp, amb 2 pestanyes, 2 amb Claude."
-            + (senseFitxer ? "" : "\nWarp pot obrir també una finestra seva, que pots tancar."))
+            + (senseFitxer ? "" : "\nWarp ha obert també una finestra seva, que pots tancar."))
     }
 
     /// 1.0.1: amb Warp tancat i la restauració desactivada sense dubte, Warp no s'engega buit: l'URL de la primera finestra
@@ -1464,9 +1494,28 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         await b.obertura.confirmaIObreTot()
         #expect(b.engegades == 0 && b.urls.count == 2)
         #expect(lecturesEnObrir == [1, 5], "la primera després de la comprovació; la segona, després de confirmar la primera")
+        // 1.0.3: la finestra de Warp, un sol cop, al final (amb les dues URL ja demanades), amb les pestanyes de totes dues.
+        #expect(b.tancaments.count == 1 && b.tancaments.first?.urls == 2)
+        #expect(b.tancaments.first?.context.pestanyes == 2 && b.tancaments.first?.context.dubte == nil)
         #expect(b.estatAlDisc.llancaments.count == 2 && b.estatAlDisc.llancaments.allSatisfy { $0.estat == .confirmat })
         #expect(b.obertura.resultat == Obertura.Resultat(correcte: true, text: "S'han obert 2 finestres a Warp, amb 2 pestanyes, "
-            + "2 amb Claude.\nWarp pot obrir també una finestra seva, que pots tancar."))
+            + "2 amb Claude.\nWarp ha obert també una finestra seva, que pots tancar."))
+    }
+
+    /// 1.0.3: si l'app ha tancat la finestra de Warp, el resum de «Obre-ho tot» no en parla.
+    @Test func ambTotSiHaTancatLaFinestraDeWarpNoEnParla() async throws {
+        let b = try Banc(configuracio: duesFinestres)
+        b.resultatTancament = .tancada(500)
+        b.lectures = [senseBase([], warpObert: false)]
+        await b.obertura.demanaTot()
+        b.llegides = 0
+        let primera = obertesTotes([(id(1), "/x/t1", 601)])
+        b.lectures = [senseBase([], warpObert: false), senseBase([], warpObert: false), senseBase([]), primera, primera,
+                      obertesTotes([(id(1), "/x/t1", 601), (id(11), "/x/u1", 701)])]
+        await b.obertura.confirmaIObreTot()
+        #expect(b.tancaments.count == 1 && b.tancaments.first?.urls == 2)
+        #expect(b.obertura.resultat == Obertura.Resultat(correcte: true,
+                                                         text: "S'han obert 2 finestres a Warp, amb 2 pestanyes, 2 amb Claude."))
     }
 
     /// 1.0.1: si la primera finestra, que engega Warp, no es confirma, la segona no es demana fins que se n'acaba l'espera
@@ -1487,6 +1536,7 @@ private func obertesTotes(_ quines: [(UUID, String, Int32)]) -> LecturaWarp {
         #expect(b.estatAlDisc.llancaments.count == 2 && b.estatAlDisc.llancaments.allSatisfy { $0.estat == .senseConfirmar })
         let text = try #require(b.obertura.resultat?.text)
         #expect(text.components(separatedBy: ExecucioObertura.finestraSeva).count == 2, "un sol cop: \(text)")
+        #expect(b.tancaments.count == 1 && b.tancaments.first?.urls == 2, "un sol intent, al final")
     }
 
     /// Totes de cop (D4): la segona es demana a Warp sense esperar que s'hagi vist la primera, que aquí no es veu mai

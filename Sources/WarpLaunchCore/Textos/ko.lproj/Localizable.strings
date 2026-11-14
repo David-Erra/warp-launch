@@ -174,7 +174,7 @@
 
 /* ExecucioObertura: el resultat d'obrir */
 "En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "시작할 때 Warp가 빈 윈도우도 열었습니다: 닫아도 됩니다.";
-"Warp pot obrir també una finestra seva, que pots tancar." = "Warp가 자체 윈도우도 열 수 있는데, 닫아도 됩니다.";
+"Warp ha obert també una finestra seva, que pots tancar." = "Warp가 자체 윈도우도 열었는데, 닫아도 됩니다.";
 "No s'ha pogut desar el llançament a «estat.json»: %@" = "실행 정보를 ‘estat.json’에 저장할 수 없습니다: %@";
 "No s'ha pogut obrir «%@» a Warp: %@" = "‘%@’ 윈도우를 Warp에서 열 수 없습니다: %@";
 "Claude encara no ha arrencat a %@: mira-ho a Warp." = "%@에서 Claude가 아직 시작되지 않았습니다: Warp에서 확인하십시오.";
@@ -660,7 +660,7 @@
 "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp가 닫혀 있으며, 열리면 이 탭들을 Claude 없이 복원합니다. Warp를 열고 다시 시도하십시오.";
 "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp가 닫혀 있습니다: 앱이 먼저 Warp를 엽니다. Warp는 이전 윈도우도 Claude 없이 복원합니다.";
 "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp가 닫혀 있습니다: 앱이 먼저 Warp를 엽니다. 시작할 때 Warp가 빈 윈도우도 여는데, 닫아도 됩니다.";
-"Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar." = "Warp가 닫혀 있습니다: 앱이 탭과 함께 바로 Warp를 엽니다. Warp가 자체 윈도우도 열 수 있는데, 닫아도 됩니다.";
+"Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix." = "Warp가 닫혀 있습니다: 앱이 탭과 함께 바로 Warp를 열고, Warp가 시작할 때 여는 빈 윈도우를 알아보면 닫습니다.";
 "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Warp를 종료하면 Claude의 백그라운드 작업이 중간에 멈출 수 있으며, 탭을 다시 열어도 작업이 재개되지 않습니다.";
 "No s'ha pogut desar la configuració: %@" = "구성을 저장할 수 없습니다: %@";
 "No s'ha pogut desar la configuració" = "구성을 저장할 수 없습니다";

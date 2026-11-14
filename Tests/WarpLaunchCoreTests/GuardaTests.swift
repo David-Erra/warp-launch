@@ -44,9 +44,23 @@ private func aparicions(de expressions: [String], a fitxers: [(ruta: String, tex
 /// `Foundation.Process(`, `\bNSApp\b` no veia `NSApp.terminate(nil)`, i `\bregister\b` no veia `mainApp.register()`.
 /// Davant d'un nom, `(^|[^A-Za-z0-9_])`; darrere, `(?![A-Za-z0-9_])`.
 /// `Process` i `kill`, com a paraula, sense demanar el parèntesi: quan el demanaven, `Process.init()`,
-/// `let p: Process = .init()` i `let k = kill` passaven. Cap línia de `Sources` no els esmenta, ni en un comentari.
+/// `let p: Process = .init()` i `let k = kill` passaven. Cap línia de `Sources` no els esmenta, ni en un comentari, excepte
+/// la crida de senyal de l'obridor (`cridaSenyal`, 1.0.3).
 private let paraulaProcess = #"(^|[^A-Za-z0-9_])Process(?![A-Za-z0-9_])"#
 private let paraulaKill = #"(^|[^A-Za-z0-9_])kill(pg)?(?![A-Za-z0-9_])"#
+/// 1.0.3 (regla 2, excepció d'en David del 14/11/2026): l'única crida de senyal de tot `Sources`, a l'obridor, dins
+/// d'`acabaShellDeLaFinestraDeWarp`, amb SIGHUP escrit així, després de tornar a comprovar el shell
+/// (`nomesLObridorAcabaElShellDeLaFinestraDeWarp`). A l'obridor, `paraulaKill` passa a ser `killForaDeLaCrida`: qualsevol
+/// altra línia amb la paraula hi continua prohibida.
+private let rutaObridor = "Sources/WarpLaunchObridor/ObreWarp.swift"
+private let cridaSenyal = "guard kill(candidat.pid, SIGHUP) == 0 else {"
+private let killForaDeLaCrida = #"^(?!\s*guard kill\(candidat\.pid, SIGHUP\) == 0 else \{\s*$).*(^|[^A-Za-z0-9_])kill(pg)?(?![A-Za-z0-9_])"#
+/// Les altres maneres d'enviar un senyal, i els senyals que no són el de l'obridor, a tot `Sources`, també en un comentari.
+/// `SIGINT`, no: el CLI només el desvia per esborrar el fitxer temporal si es prem Ctrl-C, i no n'envia cap. Ni el mètode
+/// `.terminate(` d'un valor: l'app surt amb `NSApp.terminate(nil)`, i el de les altres apps ja el prohibeix `NSRunningApplication`.
+private let altresSenyals = [#"(^|[^A-Za-z0-9_])SIG(KILL|TERM|QUIT|STOP|CONT|TSTP|USR1|USR2|ABRT|ALRM|PIPE)(?![A-Za-z0-9_])"#,
+                             #"pthread_kill"#, #"(^|[^A-Za-z0-9_.])raise\("#, #"sigqueue"#, #"proc_terminate"#,
+                             #"(^|[^A-Za-z0-9_.])terminate\("#]
 /// Les altres maneres d'executar res que Swift deixa fer a macOS (`popen`, `system` i `fork` no hi són): la família `exec`,
 /// que canviaria l'app per l'ordre, i les tasques d'usuari (`NSUserUnixTask`, `NSUserAppleScriptTask`…).
 private let paraulaExec = #"(^|[^A-Za-z0-9_])exec(l|lp|le|v|vp|vP|ve)(?![A-Za-z0-9_])"#
@@ -366,6 +380,7 @@ private func prohibidesCodi(a ruta: String) -> [String] {
     case serveiPermis: prohibidesCodi.filter { $0 != configuracioDelSistema }
     case trobaWarp: prohibidesCodi.map { $0 == workspace ? workspaceTrobaWarp : $0 }
     case serveiActualitzacions: prohibidesCodi.map { $0 == #"launchApplication"# ? obrirAppAlServei : $0 }
+    case rutaObridor: prohibidesCodi.map { $0 == paraulaKill ? killForaDeLaCrida : $0 }
     default: prohibidesCodi
     }
 }
@@ -2913,6 +2928,74 @@ extension GuardaTests {
         let entrada = try #require(ordreCLI.text.range(of: "obridor: ObridorCLI,\n                               sortida: inout Sortida) async -> Int32"))
         #expect(entrada.upperBound < crida.lowerBound && crida.lowerBound < definicio.lowerBound)
         #expect(ordreCLI.text[entrada.upperBound..<crida.lowerBound].contains(#"args.first == "obre", args.contains("--obre")"#))
+    }
+
+    /// 1.0.3 (regla 2, excepció d'en David del 14/11/2026): la finestra que Warp obre sola en arrencar, l'app la tanca acabant
+    /// el shell de la seva pestanya. És l'única crida de senyal de tot `Sources`: a l'obridor, a `acabaShellDeLaFinestraDeWarp`,
+    /// amb SIGHUP escrit així, un sol cop i després de tornar a comprovar el shell (`Candidat.encaraEs`). Cap altre senyal ni
+    /// cap altra manera d'enviar-ne, ni en un comentari. La criden només l'app i el CLI, a través de `FinestraDeWarp.tanca`.
+    @Test func nomesLObridorAcabaElShellDeLaFinestraDeWarp() throws {
+        let codi = try fitxers("Sources")
+        // `kill`, com a paraula: una sola línia, la de l'obridor, també comptant els comentaris.
+        #expect(try aparicions(de: [paraulaKill], a: codi) == ["\(rutaObridor):\(try numeroDeLinia(cridaSenyal, a: codi)): «\(paraulaKill)»"])
+        let obridor = try #require(codi.first { $0.ruta == rutaObridor }).text
+        let linies = obridor.split(separator: "\n", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
+        #expect(linies.filter { $0 == cridaSenyal }.count == 1)
+        let n = try #require(linies.firstIndex(of: cridaSenyal))
+        // Dins de la funció, i després de la comprovació.
+        let funcio = try #require(linies[..<n].lastIndex { $0.contains("func ") })
+        #expect(linies[funcio].hasPrefix("public static func acabaShellDeLaFinestraDeWarp(_ candidat: FinestraDeWarp.Candidat,"))
+        #expect(linies[funcio..<n].contains("guard candidat.encaraEs(processos) else {"))
+        // SIGHUP, fora dels comentaris, només en aquella línia.
+        let ambSighup = codi.flatMap { f in
+            f.text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { $0.contains("SIGHUP") && !$0.hasPrefix("//") }.map { "\(f.ruta): \($0)" }
+        }
+        #expect(ambSighup == ["\(rutaObridor): \(cridaSenyal)"])
+        // Cap altre senyal ni cap altra manera d'enviar-ne.
+        #expect(try aparicions(de: altresSenyals, a: codi).isEmpty)
+        // La criden l'app i el CLI, un cop cadascun, a través de `FinestraDeWarp.tanca`; i ningú més no fa la tria.
+        func llocs(_ text: String) -> [String] {
+            codi.flatMap { f in f.text.split(separator: "\n").filter { $0.contains(text) && !$0.contains("///") }.map { _ in f.ruta } }
+        }
+        let app = "Sources/WarpLaunchApp/WarpLaunchApp.swift"
+        let cli = "Sources/WarpLaunchCLI/main.swift"
+        #expect(llocs("ObreWarp.acabaShellDeLaFinestraDeWarp(").sorted() == [app, cli])
+        #expect(llocs("FinestraDeWarp.tanca(").sorted() == [app, cli])
+        #expect(llocs("entorn.tancaFinestraDeWarp(") == ["Sources/WarpLaunchUI/Obertura.swift"])
+        #expect(llocs("obridor.tancaFinestraDeWarp(") == ["Sources/WarpLaunchCore/OrdreCLI.swift"])
+
+        // La mostra: a l'obridor, la crida passa; qualsevol altra amb `kill`, no, ni amb un altre senyal o un altre pid.
+        let mostra = [(ruta: rutaObridor, text: """
+            \(cridaSenyal)
+                    guard kill(candidat.pid, SIGHUP) == 0 else {
+            kill(candidat.pid, SIGKILL)
+            guard kill(pid, SIGHUP) == 0 else {
+            guard kill(candidat.pid, SIGHUP) == 0 else { killpg(1, SIGHUP)
+            let k = Darwin.kill
+            // kill
+            """)]
+        #expect(try obrenOTanquen(mostra) == [
+            "\(rutaObridor):3: «\(killForaDeLaCrida)»", "\(rutaObridor):4: «\(killForaDeLaCrida)»",
+            "\(rutaObridor):5: «\(killForaDeLaCrida)»", "\(rutaObridor):6: «\(killForaDeLaCrida)»",
+            "\(rutaObridor):7: «\(killForaDeLaCrida)»",
+        ])
+        // A qualsevol altre fitxer, també la mateixa línia.
+        #expect(try obrenOTanquen([(ruta: "Sources/WarpLaunchCore/Altre.swift", text: cridaSenyal)])
+            == ["Sources/WarpLaunchCore/Altre.swift:1: «\(paraulaKill)»"])
+        #expect(Set(prohibidesCodi(a: rutaObridor)).symmetricDifference(prohibidesCodi) == [paraulaKill, killForaDeLaCrida])
+        // Els altres senyals i maneres d'enviar-ne.
+        #expect(try aparicions(de: altresSenyals, a: [(ruta: "mostra.swift", text: """
+            Darwin.kill(pid, SIGTERM)
+            pthread_kill(fil, SIGUSR1)
+            raise(SIGABRT)
+            sigqueue(pid, SIGALRM, valor)
+            proc_terminate(pid, &senyal)
+            terminate(pid)
+            signal(SIGINT, SIG_IGN)
+            NSApp.terminate(nil)
+            NSException(name: n, reason: nil).raise()
+            """)]).map { $0.split(separator: ":")[1] }.reduce(into: Set<Substring>()) { $0.insert($1) } == ["1", "2", "3", "4", "5", "6"])
     }
 
     /// Els botons i les ordres «Obre…» només demanen el full (`demanaObertura`), i cap no té drecera; el del full

@@ -174,7 +174,7 @@
 
 /* ExecucioObertura: el resultat d'obrir */
 "En arrencar, Warp ha obert també una finestra buida: la pots tancar." = "Beim Start hat Warp auch ein leeres Fenster geöffnet: Du kannst es schließen.";
-"Warp pot obrir també una finestra seva, que pots tancar." = "Warp kann auch ein eigenes Fenster öffnen, das du schließen kannst.";
+"Warp ha obert també una finestra seva, que pots tancar." = "Warp hat auch ein eigenes Fenster geöffnet, das du schließen kannst.";
 "No s'ha pogut desar el llançament a «estat.json»: %@" = "Das Öffnen konnte nicht in „estat.json“ gesichert werden: %@";
 "No s'ha pogut obrir «%@» a Warp: %@" = "„%@“ konnte nicht in Warp geöffnet werden: %@";
 "Claude encara no ha arrencat a %@: mira-ho a Warp." = "Claude ist in %@ noch nicht gestartet: Sieh in Warp nach.";
@@ -660,7 +660,7 @@
 "Warp és tancat, i en obrir-se restaurarà aquestes pestanyes, sense Claude. Obre'l i torna-ho a provar." = "Warp ist geschlossen und stellt beim Öffnen diese Tabs wieder her, ohne Claude. Öffne Warp und versuche es erneut.";
 "Warp és tancat: l'app l'obrirà abans. Warp també restaurarà les finestres d'abans, sense Claude." = "Warp ist geschlossen: Die App öffnet es zuerst. Warp stellt auch seine vorherigen Fenster wieder her, ohne Claude.";
 "Warp és tancat: l'app l'obrirà abans. En arrencar, Warp obre també una finestra buida, que pots tancar." = "Warp ist geschlossen: Die App öffnet es zuerst. Beim Start öffnet Warp auch ein leeres Fenster, das du schließen kannst.";
-"Warp és tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar." = "Warp ist geschlossen: Die App öffnet es direkt mit den Tabs. Warp kann auch ein eigenes Fenster öffnen, das du schließen kannst.";
+"Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp obre en arrencar, si la reconeix." = "Warp ist geschlossen: Die App öffnet es direkt mit den Tabs und schließt das leere Fenster, das Warp beim Start öffnet, wenn sie es erkennt.";
 "Tancar Warp pot deixar a mitges les feines en segon pla de Claude, i reobrir les pestanyes no les fa continuar." = "Wird Warp beendet, können Hintergrundjobs von Claude unvollständig bleiben, und das erneute Öffnen der Tabs setzt sie nicht fort.";
 "No s'ha pogut desar la configuració: %@" = "Die Konfiguration konnte nicht gesichert werden: %@";
 "No s'ha pogut desar la configuració" = "Die Konfiguration konnte nicht gesichert werden";

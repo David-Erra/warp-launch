@@ -50,16 +50,23 @@ public struct ObridorCLI {
     /// Què cal fer si es prem Ctrl-C (esborrar el fitxer temporal i desar el llançament), mentre n'hi ha cap d'escrit; `nil`
     /// quan ja no cal.
     public var enInterrupcio: @MainActor ((@MainActor () -> Void)?) -> Void
+    /// Tanca la finestra que Warp obre sola en arrencar, si no hi ha cap dubte (`FinestraDeWarp.tanca`, 1.0.3): només quan
+    /// l'URL de la finestra ha engegat Warp. Per defecte, res.
+    public var tancaFinestraDeWarp: @MainActor (FinestraDeWarp.Context) -> FinestraDeWarp.Resultat
 
     public init(obre: @escaping @MainActor (URLLlancament) async throws -> Void,
                 engega: @escaping @MainActor () async throws -> Void, fitxers: FitxersLaunchWarp,
                 appOberta: @escaping () -> Bool,
                 espera: @escaping @MainActor (Duration) async -> Void = { try? await Task.sleep(for: $0) },
                 avisa: @escaping @MainActor (String) -> Void = { _ in },
-                enInterrupcio: @escaping @MainActor ((@MainActor () -> Void)?) -> Void = { _ in }) {
+                enInterrupcio: @escaping @MainActor ((@MainActor () -> Void)?) -> Void = { _ in },
+                tancaFinestraDeWarp: @escaping @MainActor (FinestraDeWarp.Context) -> FinestraDeWarp.Resultat = {
+                    _ in .dubte("sense res per tancar-la")
+                }) {
         self.obre = obre
         self.avisa = avisa
         self.enInterrupcio = enInterrupcio
+        self.tancaFinestraDeWarp = tancaFinestraDeWarp
         self.engega = engega
         self.fitxers = fitxers
         self.appOberta = appOberta
@@ -79,7 +86,8 @@ public struct Sortida: Sendable, Equatable {
 
 /// La comanda `warp-launch` (docs/disseny.md, «Arquitectura»). Llegeix Warp i Claude, i només escriu amb
 /// `importa --desa --config <carpeta>`, que no pot ser la configuració real. `obre` només mostra el pla (mode de prova,
-/// D17); amb `--obre`, obre la finestra (`executa(_:entorn:obridor:sortida:)`, 0.24.0). No tanca mai res.
+/// D17); amb `--obre`, obre la finestra (`executa(_:entorn:obridor:sortida:)`, 0.24.0). No tanca res, excepte la finestra que
+/// Warp obre sola quan l'engega l'URL de la finestra, i només sense cap dubte (`FinestraDeWarp`, 1.0.3).
 public enum OrdreCLI {
     public enum Codi {
         public static let correcte: Int32 = 0
@@ -669,8 +677,14 @@ public enum OrdreCLI {
         case let .noEsPot(motiu):
             throw .fallida("\(motiu). \(res(p))")
         case let .acabat(fet):
+            var text = fet.text
+            // L'URL ha engegat Warp: la finestra que Warp obre sola, la tanca o ho diu (1.0.3).
+            if arrencaAmbFitxer {
+                let context = FinestraDeWarp.context([(p.pla.aObrir, .acabat(fet))], inici: Rutes.canonica(entorn.inici))
+                if let frase = FinestraDeWarp.text(obridor.tancaFinestraDeWarp(context)) { text = Idioma.frases(text, frase) }
+            }
             sortida.escriu("")
-            sortida.escriu(fet.text)
+            sortida.escriu(text)
             for linia in sortida2 { sortida.errors += linia + "\n" }
             guard fet.correcte else { return Codi.fallida }
             return p.pla.excloses.isEmpty ? Codi.correcte : Codi.configuracioAmbErrors

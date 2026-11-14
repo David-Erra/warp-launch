@@ -97,8 +97,8 @@ public enum ExecucioObertura {
         public var warpEngegat: Bool
         /// Warp és tancat, i l'URL d'aquesta finestra l'engegarà (1.0.1): l'app sap del cert que Warp no restaurarà res en
         /// arrencar, i no l'engega buit abans. L'espera de la finestra dura també el que es dona a Warp per arrencar
-        /// (`tempsMaximWarp` i `margeArrencada`), i el resultat diu, prudent, que Warp pot obrir també una finestra seva.
-        /// Compta com si Warp s'acabés d'engegar (`warpAcabatDEngegar`).
+        /// (`tempsMaximWarp` i `margeArrencada`). El resultat no parla de la finestra de Warp: qui crida la tanca o ho diu
+        /// (`FinestraDeWarp`, 1.0.3). Compta com si Warp s'acabés d'engegar (`warpAcabatDEngegar`).
         public var arrencaWarp: Bool
         /// `false`: la restauració de sessió és desactivada (si Warp s'acaba d'obrir, n'ha obert una de buida).
         public var warpDesaFinestres: Bool
@@ -145,9 +145,10 @@ public enum ExecucioObertura {
     }
 
     public static var finestraBuida: String { t("En arrencar, Warp ha obert també una finestra buida: la pots tancar.") }
-    /// Amb Warp engegat per l'URL de la finestra (`Peticio.arrencaWarp`, 1.0.1): encara no s'ha vist si Warp obre també la seva
-    /// finestra, i per això «pot».
-    public static var finestraSeva: String { t("Warp pot obrir també una finestra seva, que pots tancar.") }
+    /// Amb Warp engegat per l'URL de la finestra (`Peticio.arrencaWarp`, 1.0.1): Warp obre igualment la seva finestra
+    /// (14/11/2026). L'app la tanca si no en té cap dubte (`FinestraDeWarp`, 1.0.3); si no, ho diu aquest text. No el posa
+    /// `executa`, sinó qui l'ha cridat, quan ja s'ha intentat tancar (al final de totes les finestres de l'acció).
+    public static var finestraSeva: String { t("Warp ha obert també una finestra seva, que pots tancar.") }
     public static let interval: Duration = .milliseconds(500)
     public static let tempsMaxim: TimeInterval = 30
     /// Quant s'espera que Warp arrenqui, i el marge perquè acabi de restaurar la sessió, si la restaura.
@@ -260,9 +261,8 @@ public enum ExecucioObertura {
         } else {
             text = t("No s'ha pogut confirmar que s'hagi obert «\(nom)»: mira si hi ha una finestra nova a Warp.")
         }
-        if peticio.arrencaWarp {
-            text = Idioma.frases(text, finestraSeva)
-        } else if peticio.warpEngegat, !peticio.warpDesaFinestres {
+        // Amb `arrencaWarp`, la finestra de Warp la diu (o la tanca) qui ha cridat, al final (`FinestraDeWarp`, 1.0.3).
+        if !peticio.arrencaWarp, peticio.warpEngegat, !peticio.warpDesaFinestres {
             text = Idioma.frases(text, finestraBuida)
         }
         if !llancament.esborrat {

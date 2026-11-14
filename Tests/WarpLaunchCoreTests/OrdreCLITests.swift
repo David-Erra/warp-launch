@@ -850,6 +850,9 @@ private final class ObridorFals {
     var mostrat = ""
     /// El que s'ha de fer si es prem Ctrl-C ara.
     var interrupcio: (@MainActor () -> Void)?
+    /// 1.0.3: els contextos amb què s'ha demanat tancar la finestra de Warp (cap senyal: és un fals), i què torna.
+    var tancaments: [FinestraDeWarp.Context] = []
+    var resultatTancament: FinestraDeWarp.Resultat = .dubte("prova")
 
     init(_ e: Escenari) throws {
         let carpeta = e.tmp.url("warp-launch-configurations")
@@ -870,7 +873,11 @@ private final class ObridorFals {
                    fitxers: fitxers, appOberta: { [unowned self] in appOberta },
                    espera: { [rellotge] durada in rellotge.ara += Double(durada.components.seconds) + 0.5 },
                    avisa: { [unowned self] in mostrat += $0 },
-                   enInterrupcio: { [unowned self] in interrupcio = $0 })
+                   enInterrupcio: { [unowned self] in interrupcio = $0 },
+                   tancaFinestraDeWarp: { [unowned self] in
+                       tancaments.append($0)
+                       return resultatTancament
+                   })
     }
 
     var fitxersWarp: [String] { (try? FileManager.default.contentsOfDirectory(atPath: fitxers.carpeta.path)) ?? [] }
@@ -952,6 +959,7 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
         #expect(sortida.text.contains("S'ha obert «Feina» a Warp: 2 pestanyes, 1 amb Claude. Claude encara no ha arrencat a «B2»"),
                 "\(sortida.text)")
         #expect(o.urls.count == 1)
+        #expect(o.tancaments.isEmpty && !sortida.text.contains("finestra seva"), "Warp ja era obert: no es toca cap finestra seva")
         #expect(o.fitxersEnObrir.count == 1 && o.fitxersEnObrir[0].hasPrefix("warp-launch-"))
         #expect(o.fitxersWarp.isEmpty, "el fitxer temporal s'esborra")
         let estat = try MagatzemEstat(carpeta: carpeta).carrega()
@@ -1021,8 +1029,10 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
     }
 
     /// 1.0.1: amb Warp tancat i `restore_session = false`, `--obre` no engega Warp buit: escriu el fitxer i n'obre l'URL, que
-    /// engega Warp. El resultat diu, prudent, que Warp pot obrir també una finestra seva.
-    @Test func ambWarpTancatISenseRestauracioLEngegaLURL() async throws {
+    /// engega Warp. 1.0.3: al final, demana un sol cop de tancar la finestra que Warp obre sola; si no pot (un dubte), el
+    /// resultat diu que Warp n'ha obert una de seva, i si l'ha tancada, no en parla.
+    @Test(arguments: [false, true])
+    func ambWarpTancatISenseRestauracioLEngegaLURL(tancada: Bool) async throws {
         var e = try Escenari()
         try Data("[general]\nrestore_session = false\n".utf8).write(to: e.tmp.url("settings.toml"))
         var tancat = try #require(e.entorn.lector.processos as? ProcessosFalsos)
@@ -1038,6 +1048,7 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
             ]),
         ]), sobre: nil)
         let o = try ObridorFals(e)
+        if tancada { o.resultatTancament = .tancada(800) }
         o.mentreObre = {
             #expect(o.engegades == 0)
             processos.canvia { p in
@@ -1052,8 +1063,12 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
         #expect(o.engegades == 0 && o.urls.count == 1)
         #expect(o.fitxersEnObrir.count == 1)
         #expect(o.mostrat.contains("Warp és tancat: l'obro i n'espero l'arrencada (fins a 62 s)."))
-        #expect(sortida.text.hasSuffix("S'ha obert «Docs» a Warp: 1 pestanya, 0 amb Claude. "
-            + "Warp pot obrir també una finestra seva, que pots tancar.\n"), "\(sortida.text)")
+        #expect(sortida.text.hasSuffix("S'ha obert «Docs» a Warp: 1 pestanya, 0 amb Claude."
+            + (tancada ? "" : " Warp ha obert també una finestra seva, que pots tancar.") + "\n"), "\(sortida.text)")
+        #expect(o.tancaments.count == 1)
+        let context = try #require(o.tancaments.first)
+        #expect(context.pestanyes == 1 && context.dubte == nil && context.inici == Rutes.canonica(e.inici))
+        #expect(context.confirmada != nil && context.nostres == [700], "el shell de la pestanya de terminal és de l'app")
     }
 
     /// Amb Warp tancat i la restauració activada, o sense la línia (la de sèrie), el camí d'abans: primer engega Warp buit.
@@ -1073,6 +1088,7 @@ private final class ProcessosCanviants: FontProcessos, @unchecked Sendable {
                                           obridor: o.obridor, sortida: &sortida)
         #expect(codi == 1)
         #expect(o.engegades == 1 && o.urls.isEmpty && o.fitxersWarp.isEmpty)
+        #expect(o.tancaments.isEmpty, "pel camí d'abans, la finestra de Warp no es toca mai")
     }
 
     /// Si Warp és tancat, l'obre; si no pot, no escriu res.
