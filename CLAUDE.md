@@ -209,7 +209,15 @@ Els requisits són a `docs/especificacio.md`.
   o qualsevol dubte (`RefrescWarp` amb una desactivació pendent o un avís; al CLI, sense `restore_session = false`), el camí d'abans
   (`ObreWarp.engega`). Els textos diuen que Warp «pot» obrir també una finestra seva: falta un reinici real. `docs/disseny.md`, secció 7, «Warp tancat».
   **1.0.2 (revisió, sense provar a l'app):** a «Obre-ho tot», si després de la primera no es pot llegir Warp, les altres també
-  esperen el marge d'arrencada; el CLI diu l'espera real (62 s).
+  esperen el marge d'arrencada; el CLI diu l'espera real (62 s). **Amb la 1.0.2, l'autor ha vist** (14/11/2026) que funciona (6 de
+  6, la primera confirmada en 1,2 s), però que Warp obre igualment la seva finestra per defecte (una pestanya a `~`), i que `exit`
+  la tanca (`docs/fets-verificats.md`).
+- **1.0.3 (14/11/2026, al codi; sense provar a l'app): l'app tanca la finestra que Warp obre en arrencar** (decisió de l'autor, «fes-ho»;
+  regla 2, excepció). Només en el camí de la 1.0.1 (l'URL ha engegat Warp en aquella acció: «Obre a Warp…», «Obre-ho tot», el full
+  d'iniciar sessió i `--obre`), un sol cop, quan s'han acabat totes les finestres. Tria el shell a `FinestraDeWarp` (pura, amb
+  proves) i, amb qualsevol dubte, no fa res; l'acaba amb SIGHUP a `ObreWarp.acabaShellDeLaFinestraDeWarp`, l'única crida de senyal
+  de `Sources`, després de tornar-ho a comprovar. Si l'ha tancada, el resultat no en parla; si no, «Warp ha obert també una finestra
+  seva, que pots tancar.». `docs/disseny.md`, secció 7, «Warp tancat». Falta un reinici real.
 - **0.99.0 (12/11/2026, decisió de l'autor; publicada per l'autor el 13/11/2026, recepta del tap `df97d2e`): la candidata, el mateix codi que serà la
   1.0.0, sense notaritzar.** Comprovat des de fora el 13/11: l'appcast de l'app dona la 0.99.0, el zip (5.258.095 bytes) quadra amb l'appcast i amb
   el sha256 de la recepta, la signatura EdDSA amb la clau pública, i l'app de dins porta l'adreça, les 10 llengües i passa `codesign`. Arriba sola a
@@ -329,7 +337,7 @@ scripts/genera-imatge.sh "<prompt>" <sortida.png> [1:1]   # imatge amb nano-bana
 |---|---|
 | `Sources/WarpLaunchCore/` | Lògica sense interfície: models, lectura de Warp i de Claude, configuració JSON |
 | `Sources/WarpLaunchUI/` | Model de l'editor (`Editor`, `EstatWarp`) i vistes SwiftUI; no toca `NSApp` |
-| `Sources/WarpLaunchObridor/` | L'única crida que obre res a Warp (`ObreWarp`) i l'única pregunta a macOS d'on és Warp (`TrobaWarp`); la fan servir l'app i el CLI, cap prova no en depèn |
+| `Sources/WarpLaunchObridor/` | L'única crida que obre res a Warp (`ObreWarp`), l'única crida de senyal (acabar el shell de la finestra buida de Warp, 1.0.3) i l'única pregunta a macOS d'on és Warp (`TrobaWarp`); la fan servir l'app i el CLI, cap prova no en depèn |
 | `Sources/WarpLaunchApp/` | App de barra de menú, prima: escenes, activació i Dock (executable `WarpLaunch`, `--config <carpeta>`); `ServeiActualitzacions.swift`, l'únic que importa Sparkle |
 | `Sources/WarpLaunchCLI/` | Comanda `warp-launch`: només hi posa els valors reals; la lògica és a `OrdreCLI` (core), que es prova amb fixtures |
 | `Tests/WarpLaunchCoreTests/` | Proves `swift-testing`, sempre amb dades fictícies; inclou la prova de guarda (`GuardaTests`) |
@@ -359,6 +367,12 @@ desenes de sessions o les tanca totes de cop.
 2. **No tanquis, reiniciïs ni forcis la sortida de Warp**, ni tanquis-ne pestanyes o finestres: es tancarien
    totes les sessions de Claude que hi corren. No matis mai cap procés de Claude. Si una prova demana
    reiniciar Warp o el Mac, ho fa en David.
+   - **Única excepció (en David, 14/11/2026, 1.0.3): l'app** pot acabar el shell de la finestra buida que Warp obre en arrencar,
+     només quan l'ha engegat ella mateixa amb l'URL de la primera finestra en aquella mateixa acció, i amb totes les condicions de
+     `FinestraDeWarp.tria` (un sol shell desconegut, a `~`, sense fills, un shell i no `claude` ni `node`, començat en arrencar
+     Warp…), tornant-les a comprovar just abans. Un sol SIGHUP, des d'un sol lloc (`ObreWarp.acabaShellDeLaFinestraDeWarp`; guarda
+     `nomesLObridorAcabaElShellDeLaFinestraDeWarp`). Cap altra pestanya, finestra ni procés, i mai Claude. Tu no envies cap senyal
+     a cap procés real, tampoc per provar-ho.
 
 **Instal·lació i execució**
 

@@ -553,7 +553,8 @@ reactivar-lo hauria de posar la base al dia de seguida. **No s'ha provat.**
     a Warp, sense Claude», i les de la finestra oberta, «tancada fa menys d'1 minut». Calculat amb les dades reals, sense
     obrir res.
 - **En arrencar, Warp obre una finestra buida** (`open_from_restored`, `open_new`, «Opening window with id 0», un shell a
-  la carpeta d'inici). En David la va tancar. L'app no la pot tancar (regla 2).
+  la carpeta d'inici). En David la va tancar. L'app no la pot tancar (regla 2), fins a la 1.0.3: vegeu «La finestra que Warp obre
+  en arrencar amb l'URL d'una finestra» (14/11/2026).
 - **Què se'n pot saber sense la base** (05/11/2026, només lectura):
   - **Els processos, que és el que fa servir l'app:** cada terminal viu és un fill de `stable terminal-server`. El 05/11/2026,
     un `-zsh -g --no_rcs` per pestanya oberta. No cal cap permís, i és l'estat d'ara mateix.
@@ -653,6 +654,20 @@ Amb l'OK d'en David, l'app tancada i `restore_session = false`. Configuració te
 - L'avís «potser ja és oberta… hi ha un Claude a la seva carpeta» el feia la sessió de Claude Code que feia la prova, a la carpeta del
   repo: no afecta l'aparellament, que només mira els shells nous.
 - No s'ha provat des de l'app («Obre a Warp…» i «Obre-ho tot…»), que fa servir el mateix `ExecucioObertura`.
+
+## La finestra que Warp obre en arrencar amb l'URL d'una finestra (14/11/2026, 1.0.2)
+
+L'autor, amb la 1.0.2 instal·lada, Warp tancat i `restore_session = false`: l'app engega Warp amb l'URL de la primera finestra
+(`arrencaAmbFitxer`, 1.0.1), no buit.
+- **Warp obre igualment la seva finestra per defecte**, també quan l'engega l'URL d'una launch configuration: una pestanya a `~`,
+  sense res, al costat de les finestres de l'app. Comprovat per l'autor a la pantalla i al registre de l'app (18:49:31, «Warp és
+  tancat i no restaurarà res: l'engegarà l'URL»; la primera finestra, confirmada en 1,2 s; 6 de 6 finestres). Corregeix el «pot» de la
+  1.0.1, que no ho sabia.
+- **`exit` a la seva única pestanya tanca la finestra:** l'autor l'hi ha escrit, i la finestra s'ha tancat (les de l'app, no).
+- **No s'ha vist encara** (es veurà amb la 1.0.3, que la tanca acabant el shell amb SIGHUP, `FinestraDeWarp`): si SIGHUP sense `exit`
+  fa el mateix (és el que rep un shell quan es tanca el terminal; zsh interactiu no fa cas del de terminar); quan comença aquest
+  shell respecte a la primera finestra de l'app (la 1.0.3 accepta fins a la confirmació, o 10 s després que arrenqui Warp); ni si
+  té algun fill (un `gitstatusd` del prompt, per exemple, faria que l'app no la tanqués).
 
 ## Ítems d'inici de macOS (06/11/2026, macOS 27.2)
 

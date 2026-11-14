@@ -1419,7 +1419,7 @@ n'obriria només una part, que la finestra quedarà partida (`.potserTancadaFaPo
 **Warp tancat.** Abans, «Obre Warp primer». Ara el full ho diu i el botó «Obre» l'obre (`ObreWarp.engega`), n'espera l'arrencada
 (fins a 30 s, i 2 s de marge), i torna a calcular el pla: si Warp ha restaurat alguna pestanya, torna al full («Warp ha canviat»).
 Només després escriu el fitxer. Demanar el full no obre res. Si Warp no restaura la sessió, obre també una finestra buida, que
-l'app no pot tancar: ho diuen el full i el bàner.
+en aquest camí l'app no tanca: ho diuen el full i el bàner (la 1.0.3 només la tanca quan l'ha engegat l'URL, vegeu sota).
 - **El full es queda obert i Warp es tanca:** «Obre» no l'engega, torna al full, i ho diu. El segon «Obre» l'engega.
 - **`openApplication` no s'espera** (un diàleg del sistema el podria aturar, i «Cancel·la» està desactivat): corre apart, i el
   límit és el dels 30 s.
@@ -1439,9 +1439,29 @@ l'app no pot tancar: ho diuen el full i el bàner.
   - **«Obre-ho tot» i el full d'iniciar sessió:** primer la primera finestra, sola; després, amb una lectura nova (els terminals que
     ja hi són no compten per a les altres), les altres alhora, com ara. Si Warp encara no és obert, o la lectura falla, les altres també
     tenen el marge d'arrencada (1.0.2).
-  - **Textos:** encara no se sap si així Warp deixa d'obrir la seva finestra (es provarà amb un reinici real). El full diu «Warp és
-    tancat: l'app l'obrirà directament amb les pestanyes. Warp pot obrir també una finestra seva, que pots tancar.», i el bàner,
-    «Warp pot obrir també una finestra seva, que pots tancar.». En el camí d'abans, els textos d'abans.
+  - **Textos (fins a la 1.0.2):** el full deia «Warp pot obrir també una finestra seva, que pots tancar.», i el bàner, el mateix.
+    En el camí d'abans, els textos d'abans.
+- **1.0.3 (decisió d'en David, 14/11/2026, «fes-ho»; regla 2, excepció; sense provar a l'app): l'app tanca la finestra que Warp
+  obre en arrencar.** Amb la 1.0.2 es va veure que Warp l'obre igualment, també amb l'URL, i que `exit` a la seva pestanya la tanca
+  (`docs/fets-verificats.md`, 14/11/2026). L'app hi fa el mateix: acaba aquell shell amb SIGHUP.
+  - **Només en el camí de la 1.0.1** (l'URL de la primera finestra ha engegat Warp en aquesta mateixa acció): «Obre a Warp…»,
+    «Obre-ho tot», el full d'iniciar sessió (que és «Obre-ho tot») i `--obre`. Mai amb Warp obert ni pel camí d'`ObreWarp.engega`.
+  - **Quan:** un sol cop, quan totes les finestres de l'acció s'han confirmat o se n'ha acabat l'espera (a «Obre-ho tot», al
+    final, no després de la primera).
+  - **Quin shell** (`FinestraDeWarp.tria`, pura i amb proves; amb qualsevol dubte, res): una sola app de Warp, arrencada després
+    de demanar l'URL, i un sol `terminal-server`; Warp té exactament un terminal més que les pestanyes demanades; cap pestanya de
+    l'acció és a la carpeta d'inici; dels shells que l'app no ha reconegut com a seus (`Confirmacio.perCarpeta` i `shells`, ni fills
+    seus), un de sol és a la carpeta d'inici; no té cap fill (de qualsevol usuari, `proc_listchildpids`); l'executable és un shell
+    (`SHELL`, o zsh, bash, fish, sh; mai `claude` ni `node`); i va començar després que arrenqués Warp i abans de la confirmació
+    de la primera finestra o, si és més tard, dels 10 s després que arrenqués Warp.
+  - **Just abans** (`ObreWarp.acabaShellDeLaFinestraDeWarp`, l'única crida de senyal de `Sources`): el mateix pid amb la mateixa
+    hora d'inici i el mateix pare, a la carpeta d'inici i sense cap fill (`Candidat.encaraEs`). Un sol SIGHUP, res més fort. Al
+    registre (categoria `obertura`): el pid, o per què no.
+  - **Textos:** el full diu «Warp és tancat: l'app l'obrirà directament amb les pestanyes, i tancarà la finestra buida que Warp
+    obre en arrencar, si la reconeix.». Si l'ha tancada, el bàner no en parla; si no (un dubte), «Warp ha obert també una
+    finestra seva, que pots tancar.»; si Warp no té cap terminal de més, res.
+  - **Guarda:** `nomesLObridorAcabaElShellDeLaFinestraDeWarp` (la crida, a l'obridor i a aquella funció, amb SIGHUP literal i
+    després de la comprovació; cap altre senyal ni cap altra manera d'enviar-ne; la criden només l'app i el CLI).
 
 ### Proves reals (cadascuna amb l'OK d'en David)
 
